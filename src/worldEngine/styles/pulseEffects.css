@@ -1,0 +1,4 @@
+.blink {
+  filter: brightness(2) saturate(1.5);
+}
+
