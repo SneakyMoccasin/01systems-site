@@ -1,0 +1,34 @@
+{
+  // Disable auto-open browser preview
+  "browser-preview.startUrl": "",
+  "browser-preview.chromeExecutable": "",
+  "browser-preview.internal.enabled": false,
+  "browser-preview.openOnStart": false,
+  
+  // Disable auto-open localhost
+  "debug.openDebug": "neverOpen",
+  "debug.internalConsoleOptions": "neverOpen",
+  
+  // Disable auto-open URLs in terminal
+  "terminal.integrated.allowWorkspaceConfiguration": false,
+  "terminal.integrated.enablePersistentSessions": false,
+  
+  // Disable auto-launch DevTools Preview
+  "workbench.editor.enablePreview": false,
+  "workbench.editor.enablePreviewFromQuickOpen": false,
+  
+  // Disable auto-preview for Next.js, React, Vite, Vercel
+  "next.serverActions.allowBodyParserLimit": false,
+  "vite.autoPreview": false,
+  
+  // Disable internal browser panel
+  "workbench.panel.defaultLocation": "bottom",
+  "workbench.editorAssociations": {
+    "*.html": "default"
+  },
+  
+  // Additional settings to prevent auto-opening
+  "files.autoSave": "off",
+  "window.openFilesInNewWindow": "off"
+}
+

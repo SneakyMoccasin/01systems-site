@@ -1,492 +1,389 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useWorld } from "../core/worldState";
-import { Entity } from "../types";
+import { findDynamicSpreadPosition } from "../core/poissonHelper";
 
 export default function PromptDock() {
+  const { addEntity, deleteEntity, clearEntities, memory, forceRender } = useWorld();
   const [input, setInput] = useState("");
   const [output, setOutput] = useState<string[]>([]);
-  const world = useWorld();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const logContainerRef = useRef<HTMLDivElement>(null);
 
-  const addToConsole = (message: string) => {
-    setOutput((prev) => [...prev, message]);
-  };
+  // Autofocus
+  useEffect(() => {
+    if (inputRef.current) inputRef.current.focus();
+  }, []);
 
-  const findByShortId = (id: string) => {
-    return world.memory.entities.find((e) => e.id === id);
-  };
+  // Selected entity from PixiStage
+  useEffect(() => {
+    function handler(e: any) {
+      (window as any).__selectedEntity = e.detail;
+    }
+    window.addEventListener("entity-selected", handler);
+    return () => window.removeEventListener("entity-selected", handler);
+  }, []);
 
-  const getLastEntity = () => {
-    const ents = world.memory.entities;
-    return ents.length > 0 ? ents[ents.length - 1] : null;
-  };
+  // Keyboard arrow-key movement
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const selected = (window as any).__selectedEntity;
+      if (!selected) return;
 
-  const getLastOfType = (t: "unit" | "prop" | "marker" | "effect") => {
-    const ents = world.memory.entities.filter((e) => e.type === t);
-    return ents.length > 0 ? ents[ents.length - 1] : null;
-  };
+      const ent = memory.entities.find(e => e.id === selected);
+      if (!ent) return;
 
-  const clampToBounds = (x: number, y: number) => {
-    const margin = 20; // how close to edges entities are allowed
-    const maxX = window.innerWidth - margin;
-    const maxY = window.innerHeight - margin;
+      const step = 18;
 
-    let clampedX = Math.max(margin, Math.min(x, maxX));
-    let clampedY = Math.max(margin, Math.min(y, maxY));
+      if (e.key === "ArrowLeft")  ent.transform.x -= step;
+      if (e.key === "ArrowRight") ent.transform.x += step;
+      if (e.key === "ArrowUp")    ent.transform.y -= step;
+      if (e.key === "ArrowDown")  ent.transform.y += step;
 
-    return { x: clampedX, y: clampedY };
-  };
+      ent.ai.targetX = ent.transform.x;
+      ent.ai.targetY = ent.transform.y;
 
-  // === MASS SPAWN (CLEAN GRID VERSION) ===
-  const spawnMany = (count: number, type: Entity["type"]) => {
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-
-    // === TYPE-BASED GRID OFFSETS ===  
-    let offsetX = 0;
-    let offsetY = 0;
-
-    switch (type) {
-      case "unit":
-        offsetX = 0;
-        offsetY = 0;
-        break;
-      case "prop":
-        offsetX = 0;
-        offsetY = 100;
-        break;
-      case "marker":
-        offsetX = 0;
-        offsetY = -100;
-        break;
-      case "effect":
-        offsetX = 150;
-        offsetY = 0;
-        break;
+      forceRender();
     }
 
-    const cellSize = 50;
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [memory.entities, forceRender]);
 
-    const gridSize = Math.ceil(Math.sqrt(count));
-    const totalSize = gridSize * cellSize;
-
-    const startX = (width - totalSize) / 2;
-    const startY = (height - totalSize) / 2;
-
-    const toSpawn: Entity[] = [];
-    let spawned = 0;
-
-    for (let row = 0; row < gridSize; row++) {
-      for (let col = 0; col < gridSize; col++) {
-        if (spawned >= count) break;
-
-        const x = startX + col * cellSize + offsetX;
-        const y = startY + row * cellSize + offsetY;
-
-        toSpawn.push(
-          world.createEntity(type, type, x, y, type)
-        );
-
-        spawned++;
-      }
+  // --- LEVENSHTEIN DISTANCE ---
+  function levenshtein(a: string, b: string): number {
+    const matrix: number[][] = [];
+    for (let i = 0; i <= b.length; i++) {
+      matrix[i] = [i];
     }
-
-    if (world.addManyEntities) {
-      world.addManyEntities(toSpawn);
+    for (let j = 0; j <= a.length; j++) {
+      matrix[0][j] = j;
     }
-
-    addToConsole(`Spawned ${spawned} ${type}(s) in GRID formation.`);
-
-    if (world.blinkAll) setTimeout(() => world.blinkAll!(), 10);
-  };
-
-  const moveEntity = (entity: Entity, args: string[]) => {
-    const keyword = args[0];
-
-    if (!entity.transform) entity.transform = {};
-
-    // ---- MOVE IMMEDIATELY ----
-    let newX: number;
-    let newY: number;
-
-    if (keyword === "center") {
-      newX = window.innerWidth / 2;
-      newY = window.innerHeight / 2;
-    } else if (keyword === "left") {
-      newX = 50;
-      newY = entity.transform.y ?? window.innerHeight / 2;
-    } else if (keyword === "right") {
-      newX = window.innerWidth - 50;
-      newY = entity.transform.y ?? window.innerHeight / 2;
-    } else if (keyword === "top") {
-      newX = entity.transform.x ?? window.innerWidth / 2;
-      newY = 50;
-    } else if (keyword === "bottom") {
-      newX = entity.transform.x ?? window.innerWidth / 2;
-      newY = window.innerHeight - 50;
-    } else if (keyword === "random") {
-      newX = Math.random() * window.innerWidth;
-      newY = Math.random() * window.innerHeight;
-    }
-    // direct numeric coordinates
-    else if (!isNaN(parseFloat(args[0])) && !isNaN(parseFloat(args[1]))) {
-      newX = parseFloat(args[0]);
-      newY = parseFloat(args[1]);
-    } else {
-      addToConsole("Unknown move argument.");
-      return;
-    }
-
-    // clamp movement inside screen bounds
-    const bounded = clampToBounds(newX, newY);
-    entity.transform.x = bounded.x;
-    entity.transform.y = bounded.y;
-
-    // FORCE RENDER — makes movement visible immediately
-    world.forceRender();
-    addToConsole(`Moved ${entity.id}`);
-
-    // ---- BLINK FEEDBACK AFTER MOVEMENT ----
-    if (world.blinkAll) {
-      setTimeout(() => {
-        world.blinkAll!();
-      }, 10); // almost immediate, but AFTER render
-    }
-  };
-
-  const parseCommand = (rawText: string) => {
-    const cmd = rawText.trim().toLowerCase();
-
-    if (!cmd) return;
-
-    // MASS SPAWN
-    if (cmd.startsWith("spawn")) {
-      const parts = cmd.split(" ");
-
-      // Supported patterns:
-      // spawn 10 unit
-      // spawn many 10 unit
-      // spawn unit 10
-      // spawn many unit 10
-
-      let count: number | null = null;
-      let type: Entity["type"] | null = null;
-
-      for (const p of parts) {
-        if (!isNaN(parseInt(p))) count = parseInt(p);
-        if (["unit", "prop", "marker", "effect"].includes(p)) {
-          type = p as Entity["type"];
+    for (let i = 1; i <= b.length; i++) {
+      for (let j = 1; j <= a.length; j++) {
+        if (b.charAt(i - 1) === a.charAt(j - 1)) {
+          matrix[i][j] = matrix[i - 1][j - 1];
+        } else {
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j - 1] + 1,
+            matrix[i][j - 1] + 1,
+            matrix[i - 1][j] + 1
+          );
         }
       }
+    }
+    return matrix[b.length][a.length];
+  }
 
-      if (type && count && count > 1) {
-        spawnMany(count, type);
-        return;
+  // --- FUZZY MATCH HELPER ---
+  function fuzzyMatch(input: string, list: string[]): string | null {
+    input = input.toLowerCase();
+    let best: string | null = null;
+    let bestDist = 999;
+    for (const item of list) {
+      const dist = levenshtein(input, item);
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = item;
       }
     }
+    return bestDist <= 2 ? best : null;
+  }
 
-    // SPAWN command
-    if (cmd.startsWith("spawn ")) {
-      const parts = cmd.split(/\s+/);
-      if (parts.length < 2) {
-        addToConsole("Error: spawn requires type. Example: spawn unit role=villager");
-        return;
+  // --- ADD LOG HELPER ---
+  function addLog(message: string) {
+    setOutput((p) => [...p, message]);
+    setInput("");
+    setTimeout(() => {
+      const logRef = logContainerRef?.current;
+      if (logRef) {
+        logRef.scrollTop = logRef.scrollHeight;
       }
+    }, 0);
+  }
 
-      const type = parts[1] as "unit" | "prop" | "marker" | "effect";
-      if (type !== "unit" && type !== "prop" && type !== "marker" && type !== "effect") {
-        addToConsole(`Error: Invalid type "${parts[1]}". Must be: unit, prop, marker, or effect`);
-        return;
-      }
-
-      let role = "generic";
-      for (let i = 2; i < parts.length; i++) {
-        if (parts[i].startsWith("role=")) {
-          role = parts[i].slice(5);
-          break;
-        }
-      }
-
-      const windowWidth = typeof window !== "undefined" ? window.innerWidth : 800;
-      const windowHeight = typeof window !== "undefined" ? window.innerHeight : 600;
-
-      world.addEntity({
-        type,
-        role,
-        x: Math.random() * windowWidth,
-        y: Math.random() * windowHeight,
-      });
-
-      addToConsole(`Spawned ${type}`);
-      return;
-    }
-
-    // MOVE command
-    if (cmd.startsWith("move ")) {
-      const parts = cmd.split(" ");
-
-      // AUTO-SELECT: move last <keyword or coords>
-      if (parts[1] === "last") {
-        const ent = getLastEntity();
-        if (!ent) {
-          addToConsole("No entities exist.");
-          return;
-        }
-        return moveEntity(ent, parts.slice(2));
-      }
-
-      // AUTO-SELECT: move unit/prop/marker/effect <keyword>
-      if (["unit", "prop", "marker", "effect"].includes(parts[1])) {
-        const ent = getLastOfType(parts[1] as "unit" | "prop" | "marker" | "effect");
-        if (!ent) {
-          addToConsole(`No ${parts[1]} exists.`);
-          return;
-        }
-        return moveEntity(ent, parts.slice(2));
-      }
-
-      // DIRECT ID mode:
-      const ent = findByShortId(parts[1]);
-      if (ent) {
-        return moveEntity(ent, parts.slice(2));
-      }
-
-      addToConsole(`No entity with ID ${parts[1]}`);
-      return;
-    }
-
-    // DELETE command
-    if (cmd.startsWith("delete ")) {
-      const parts = cmd.split(" ");
-      if (parts.length < 2) {
-        addToConsole("Error: delete requires entity ID. Example: delete e2");
-        return;
-      }
-
-      const id = parts[1];
-      const entity = world.memory.entities.find((e) => e.id === id);
-      if (!entity) {
-        addToConsole(`Error: Entity "${id}" not found`);
-        return;
-      }
-
-      world.deleteEntity(id);
-      addToConsole(`Deleted ${id}`);
-      return;
-    }
-
-    // CLEAR command
-    if (cmd === "clear world") {
-      world.clearEntities();
-      addToConsole("World cleared");
-      return;
-    }
-
-    // LIST command
-    if (cmd === "list") {
-      const entities = world.memory.entities;
-
-      if (entities.length === 0) {
-        addToConsole("No entities in world.");
-        return;
-      }
-
-      // Build output
-      let out = "";
-      for (const e of entities) {
-        const x = e.transform?.x ?? "n/a";
-        const y = e.transform?.y ?? "n/a";
-        out += `${e.id}  ${e.type}  x:${x}  y:${y}\n`;
-      }
-
-      addToConsole(out.trim());
-
-      // VISUAL BLINK (0.3s)
-      if (world.blinkAll) {
-        world.blinkAll();
-      }
-
-      return;
-    }
-
-    addToConsole(`Unknown command: ${cmd.split(" ")[0]}. Available: spawn, move, delete, clear, list`);
-  };
-
-  const handleSend = () => {
+  // --- SEND COMMAND ---
+  function handleSend() {
     if (!input.trim()) return;
 
-    setOutput((prev) => [...prev, `> ${input}`]);
-    parseCommand(input);
-    setInput("");
-  };
+    const raw = input.trim();
+    const lower = raw.toLowerCase();
+    const words = lower.split(" ");
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      handleSend();
+    setOutput((prev) => [...prev, `> ${raw}`]);
+
+    // ---------- STRICT COMMAND VALIDATION ----------
+    const cmd = words[0];
+    const validCommands = ["spawn", "move", "delete", "clear", "list"];
+    
+    if (!validCommands.includes(cmd)) {
+      addLog(`Unknown command: "${cmd}"`);
+      return;
     }
-  };
 
-  function createRipple(e: React.MouseEvent<HTMLElement>) {
-    const button = e.currentTarget;
-    
-    // Remove any existing ripple
-    const old = button.querySelector(".ripple-effect");
-    if (old) old.remove();
+    // ---------- MULTI-SPAWN ----------
+    if (cmd === "spawn") {
+      // spawn 5 unit OR spawn unit
+      let count = 1;
+      let typeIndex = 1;
 
-    const rect = button.getBoundingClientRect();
-    const ripple = document.createElement("span");
-    ripple.className = "ripple-effect";
-    
-    const size = Math.max(rect.width, rect.height) * 1.8;
-    ripple.style.width = ripple.style.height = `${size}px`;
+      if (!isNaN(Number(words[1]))) {
+        count = Math.max(1, Number(words[1]));
+        typeIndex = 2;
+      }
 
-    const x = e.clientX - rect.left - size / 2;
-    const y = e.clientY - rect.top - size / 2;
+      const rawType = words[typeIndex];
+      if (!rawType) {
+        addLog("(missing type: unit/prop/marker/effect)");
+        return;
+      }
 
-    ripple.style.left = `${x}px`;
-    ripple.style.top = `${y}px`;
+      // Fuzzy match entity types
+      const canonicalTypes = ["unit", "prop", "marker", "effect"];
+      const pluralTypes = ["units", "props", "markers", "effects"];
+      const allTypes = [...canonicalTypes, ...pluralTypes];
 
-    button.appendChild(ripple);
+      let matched = fuzzyMatch(rawType, allTypes);
+      if (!matched) {
+        addLog(`Unknown entity type: "${rawType}"`);
+        return;
+      }
+
+      // Convert plural → singular
+      if (matched.endsWith("s")) {
+        matched = matched.slice(0, -1);
+      }
+
+      const type = matched as "unit" | "prop" | "marker" | "effect";
+      const role = "generic";
+
+      for (let i = 0; i < count; i++) {
+        const pos = findDynamicSpreadPosition(type);
+        addEntity({ type, role, x: pos.x, y: pos.y });
+      }
+
+      setInput("");
+      return;
+    }
+
+    // ---------- DELETE ----------
+    if (cmd === "delete") {
+      const id = words[1];
+      if (!id) {
+        addLog("(missing id)");
+        return;
+      }
+      deleteEntity(id);
+      setInput("");
+      return;
+    }
+
+    // ---------- MOVE (uses selected entity) ----------
+    if (cmd === "move") {
+      const selected = (window as any).__selectedEntity;
+      if (!selected) {
+        setOutput(prev => [...prev, "(no entity selected)"]);
+        setInput("");
+        return;
+      }
+
+      const ent = memory.entities.find(e => e.id === selected);
+      if (!ent) {
+        setOutput(prev => [...prev, "(invalid selected entity)"]);
+        setInput("");
+        return;
+      }
+
+      const words = raw.split(" ");
+
+      // --- move left / right / up / down ---
+      const step = 25;
+
+      if (words[1] === "left")  ent.transform.x -= step;
+      else if (words[1] === "right") ent.transform.x += step;
+      else if (words[1] === "up")    ent.transform.y -= step;
+      else if (words[1] === "down")  ent.transform.y += step;
+
+      // --- move center ---
+      else if (words[1] === "center") {
+        ent.transform.x = window.innerWidth / 2;
+        ent.transform.y = window.innerHeight / 2;
+      }
+
+      // --- move random ---
+      else if (words[1] === "random") {
+        ent.transform.x = Math.random() * window.innerWidth;
+        ent.transform.y = Math.random() * window.innerHeight;
+      }
+
+      // --- move x y (absolute position) ---
+      else if (words.length === 3) {
+        const x = parseFloat(words[1]);
+        const y = parseFloat(words[2]);
+        if (!isNaN(x) && !isNaN(y)) {
+          ent.transform.x = x;
+          ent.transform.y = y;
+        } else {
+          setOutput(prev => [...prev, "(invalid coordinates)"]);
+        }
+      } 
+      else {
+        setOutput(prev => [...prev, "(unknown move command)"]);
+      }
+
+      // update AI targets
+      ent.ai.targetX = ent.transform.x;
+      ent.ai.targetY = ent.transform.y;
+
+      forceRender();
+      setInput("");
+      return;
+    }
+
+    // ---------- LIST ----------
+    if (cmd === "list") {
+      const lines = memory.entities.map(
+        (e) => `${e.id}  (${e.type})  x=${e.transform.x}  y=${e.transform.y}`
+      );
+      setOutput((p) => [...p, ...lines]);
+      setInput("");
+      return;
+    }
+
+    // ---------- CLEAR ----------
+    if (cmd === "clear") {
+      clearEntities();
+      setInput("");
+      return;
+    }
   }
 
   return (
     <>
-      <style jsx>{`
-        .ripple-effect {
-          position: absolute;
-          border-radius: 50%;
-          background: rgba(0,229,255,0.45);
-          transform: scale(0);
-          animation: rippleAnim 0.45s ease-out forwards;
-          pointer-events: none;
-        }
-        @keyframes rippleAnim {
-          from {
-            transform: scale(0);
-            opacity: 0.8;
-          }
-          to {
-            transform: scale(3.2);
-            opacity: 0;
-          }
+      <style>{`
+        @keyframes caretPulse {
+          0%   { opacity: 0.25; }
+          50%  { opacity: 1.0; }
+          100% { opacity: 0.25; }
         }
       `}</style>
-    <div
-      style={{
-        position: "absolute",
-        bottom: "30px",
-        left: "50%",
-        transform: "translateX(-50%)",
-        width: "90%",
-        maxWidth: "700px",
-        background: "rgba(0, 0, 0, 0.45)",
-        backdropFilter: "blur(14px)",
-        WebkitBackdropFilter: "blur(14px)",
-        borderRadius: "14px",
-        border: "1px solid rgba(255,255,255,0.08)",
-        boxShadow: "0 0 45px rgba(0, 255, 255, 0.08)",
-        padding: "18px 20px 14px 20px",
-        pointerEvents: "auto",
-        zIndex: 200,
-      }}
-    >
-      <div style={{
-        width: "100%",
-        height: "2px",
-        background: "linear-gradient(90deg, #00e5ff, #007bff)",
-        borderRadius: "2px",
-        marginBottom: "12px",
-      }} />
+
       <div
         style={{
-          maxHeight: "200px",
-          overflowY: "auto",
-          marginBottom: "12px",
-          fontFamily: "Menlo, Consolas, monospace",
-          fontSize: "13px",
-          color: "#e8f7ff",
-          whiteSpace: "pre-wrap",
-          lineHeight: "1.45",
+          position: "absolute",
+          bottom: "32px",
+          left: "50%",
+          transform: "translateX(-50%)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
+
+          // --- OLD STYLE EXACT ---
+          background: "rgba(0,0,0,0.28)",
+          border: "1px solid rgba(0,255,255,0.35)",
+          boxShadow: "0 0 10px rgba(0,255,255,0.25)",
+          padding: "10px 14px",
+          borderRadius: "12px",
+
+          width: "fit-content",
+          maxWidth: "760px",
+          pointerEvents: "auto",
+          backdropFilter: "blur(6px)",
+          WebkitBackdropFilter: "blur(6px)",
+          overflow: "visible",
+          zIndex: 5,
         }}
       >
-        {output.length === 0 ? (
-          <div style={{ color: "#77ddee", opacity: 0.55 }}>Type commands: spawn, move, delete, clear, list</div>
-        ) : (
-          output.map((line, i) => (
-            <div key={i} style={{ marginBottom: "4px" }}>
-              {line}
-            </div>
-          ))
+        {/* --- OUTPUT CONSOLE --- */}
+        {output.length > 0 && (
+          <div
+            ref={logContainerRef}
+            style={{
+              fontFamily: "monospace",
+              fontSize: "12px",
+              color: "#7FF7FF",
+              maxHeight: "120px",
+              overflowY: "auto",
+              marginBottom: "6px",
+              opacity: 0.9,
+            }}
+          >
+            {output.map((line, i) => (
+              <div key={i}>{line}</div>
+            ))}
+          </div>
         )}
-      </div>
-      <div style={{ display: "flex", gap: "8px" }}>
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyPress={handleKeyPress}
-          placeholder="Enter command..."
+
+        {/* --- COMMAND HINT BAR --- */}
+        <div
           style={{
-            flex: 1,
-            padding: "10px 12px",
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(255,255,255,0.18)",
-            borderRadius: "8px",
-            color: "#eaffff",
-            fontFamily: "Menlo, Consolas, monospace",
+            fontFamily: "monospace",
             fontSize: "13px",
-            outline: "none",
-            transition: "border 0.2s, box-shadow 0.2s",
-          }}
-          onFocus={(e) => {
-            const target = e.target as HTMLInputElement;
-            target.style.border = "1px solid #00e5ff";
-            target.style.boxShadow = "0 0 6px rgba(0,229,255,0.4)";
-          }}
-          onBlur={(e) => {
-            const target = e.target as HTMLInputElement;
-            target.style.border = "1px solid rgba(255,255,255,0.18)";
-            target.style.boxShadow = "none";
-          }}
-        />
-        <button
-          onClick={(e) => {
-            createRipple(e);
-            handleSend();
-          }}
-          style={{
-            position: "relative",
-            overflow: "hidden",
-            padding: "10px 18px",
-            background: "linear-gradient(135deg, #00e5ff, #0099cc)",
-            color: "#000",
-            border: "none",
-            borderRadius: "8px",
-            cursor: "pointer",
-            fontWeight: "bold",
-            letterSpacing: "0.4px",
-            transition: "transform 0.15s, box-shadow 0.2s",
-          }}
-          onMouseEnter={(e) => {
-            const target = e.target as HTMLButtonElement;
-            target.style.boxShadow = "0 0 12px rgba(0,229,255,0.7)";
-            target.style.transform = "translateY(-2px)";
-          }}
-          onMouseLeave={(e) => {
-            const target = e.target as HTMLButtonElement;
-            target.style.boxShadow = "none";
-            target.style.transform = "translateY(0)";
-          }}
-          onMouseDown={(e) => {
-            const target = e.target as HTMLButtonElement;
-            target.style.transform = "scale(0.97)";
+            color: "#7FF7FF",
+            marginBottom: "4px",
+            opacity: 0.9,
           }}
         >
-          Send
-        </button>
+          Type commands: spawn, move, delete, clear, list
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <input
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSend()}
+            placeholder="Enter command..."
+            style={{
+              width: "520px",
+
+              // --- OLD INPUT STYLE EXACT ---
+              background: "rgba(0,0,0,0.35)",
+              border: "1px solid rgba(0,255,255,0.35)",
+              borderRadius: "8px",
+              padding: "8px 12px",
+              color: "#cfffff",
+              outline: "none",
+              fontFamily: "monospace",
+              fontSize: "14px",
+
+              boxShadow: "inset 0 0 6px rgba(0,255,255,0.22)",
+              caretColor: "#00eaff",
+              animation: "caretPulse 1.4s ease-in-out infinite",
+            }}
+          />
+
+          <button
+            onClick={handleSend}
+            style={{
+              border: "1px solid rgba(0,255,255,0.25)",
+              borderRadius: "6px",
+              background: "rgba(0, 10, 20, 0.35)",
+              backdropFilter: "blur(6px)",
+              fontFamily: "inherit",
+              padding: "6px 14px",
+              color: "#cfffff",
+              fontSize: "14px",
+              cursor: "pointer",
+              outline: "none",
+              transition: "background 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(0, 25, 40, 0.45)";
+              e.currentTarget.style.borderColor = "rgba(0,255,255,0.45)";
+              e.currentTarget.style.boxShadow = "0 0 8px rgba(0,255,255,0.35)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "rgba(0, 10, 20, 0.35)";
+              e.currentTarget.style.borderColor = "rgba(0,255,255,0.25)";
+              e.currentTarget.style.boxShadow = "none";
+            }}
+          >
+            Send
+          </button>
+        </div>
       </div>
-    </div>
     </>
   );
 }
