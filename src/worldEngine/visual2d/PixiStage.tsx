@@ -6,13 +6,6 @@ import { useWorld } from '../core/worldState';
 import { ENTITY_COLORS } from '../config/entityColors';
 import { PULSE_SETTINGS } from '../config/pulseConfig';
 
-// --- UI SOUND EFFECTS ---
-const hoverSound = typeof Audio !== "undefined" ? new Audio("/sfx/hover_tick.wav") : null;
-const clickSound = typeof Audio !== "undefined" ? new Audio("/sfx/ui_click_tick.wav") : null;
-
-if (hoverSound) hoverSound.volume = 0.14;
-if (clickSound) clickSound.volume = 0.18;
-
 // Extend PIXI.Graphics and Container to include custom properties
 declare module 'pixi.js' {
   interface Graphics {
@@ -57,10 +50,28 @@ export default function PixiStage() {
   const appRef = useRef<PIXI.Application | null>(null);
   const graphicsMapRef = useRef<Map<string, PIXI.Container>>(new Map());
   const tickerRef = useRef<PIXI.Ticker | null>(null);
+  const pointerRef = useRef({ x: 0, y: 0 });
+  // --- WEB AUDIO ENGINE (always works) ---
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const clickBufferRef = useRef<AudioBuffer | null>(null);
+  
+  // helper to play a buffer
+  const playBuffer = (buf: AudioBuffer | null, vol = 1.0) => {
+    if (!buf || !audioCtxRef.current) return;
+    const source = audioCtxRef.current.createBufferSource();
+    source.buffer = buf;
+    const gain = audioCtxRef.current.createGain();
+    gain.gain.value = vol;
+    source.connect(gain).connect(audioCtxRef.current.destination);
+    source.start();
+  };
+  
+  let pulseLogoTime = 0;
 
   const vignetteRef = useRef<PIXI.Graphics | null>(null);
   const twinkleContainerRef = useRef<PIXI.Container | null>(null);
   const introPlayedRef = useRef(false);
+  const inIntroRef = useRef(false);
   const startScreenRef = useRef<PIXI.Container | null>(null);
   const audioUnlockedRef = useRef(false);
   const hudContainerRef = useRef<PIXI.Container | null>(null);
@@ -288,13 +299,89 @@ export default function PixiStage() {
     if (!app) return;
     if (graphicsMap.size === 0) return;
 
+    // ==== DRAG UPDATE (frame-driven) ====
+    for (const [id, gfx] of graphicsMapRef.current.entries()) {
+      if (gfx.dragging && gfx.dragOffset) {
+        const targetX = pointerRef.current.x - gfx.dragOffset.x;
+        const targetY = pointerRef.current.y - gfx.dragOffset.y;
+
+        // light smoothing (85% toward target – instant but silky)
+        gfx.x = Math.round(gfx.x + (targetX - gfx.x) * 0.85);
+        gfx.y = Math.round(gfx.y + (targetY - gfx.y) * 0.85);
+
+        // sync worldState immediately
+        const ent = world.memory.entities.find(e => e.id === id);
+        if (ent && ent.transform) {
+          ent.transform.x = gfx.x;
+          ent.transform.y = gfx.y;
+        }
+        continue;
+      }
+    }
+
     // ==== WANDER AI (units only) ====
     for (const [entityId, gfx] of graphicsMap.entries()) {
+      const isSelected = (entityId === selectedIdRef.current);
+
       const entity = world.memory.entities.find(e => e.id === entityId);
+      
+      const isThinking = (() => {
+        if (!entity) return false;
+        // "AI thinking" = during wander target updates OR global thinking event
+        const recentThinking = thinkingStartRef.current 
+            && (Date.now() - thinkingStartRef.current) < 1400;
+        const updatingAI = !!(entity.ai && entity.ai.targetX != null && entity.ai.targetY != null);
+        return recentThinking || updatingAI;
+      })();
+
+      // --- SELECTED PULSE ---
+      if (isSelected) {
+        const t = Date.now();
+        const pulse = 1 + Math.sin(t * 0.004) * 0.05; 
+        gfx.scale.set((gfx.baseScale ?? 1) * pulse);
+
+        // brighten highlight ring if present
+        const hl = gfx.getChildByName("highlight-ring");
+        if (hl) {
+          const hlPulse = 0.65 + Math.sin(t * 0.006) * 0.10;
+          hl.alpha = hlPulse;
+        }
+      }
+
+      // --- AI THINKING PULSE ---
+      else if (isThinking && entity && entity.type === "unit") {
+        const t = Date.now();
+        const pulse = 1 + Math.sin(t * 0.010) * 0.03;
+        gfx.scale.set((gfx.baseScale ?? 1) * pulse);
+
+        // brighten core fill if child[0] is core circle
+        const core = gfx.children[0];
+        if (core && core instanceof PIXI.Graphics) {
+          core.alpha = 0.95;   // subtle intensity
+        }
+      }
+
+      // --- IDLE (RESET) ---
+      else {
+        gfx.scale.set(gfx.baseScale ?? 1);
+
+        const core = gfx.children[0];
+        if (core && core instanceof PIXI.Graphics) {
+          core.alpha = 1.0; 
+        }
+      }
+
       if (!entity) continue;
       if (!(gfx instanceof PIXI.Container)) continue;
 
       const entityContainer = gfx;
+
+      // --- FAST DRAG OVERRIDE ---
+      if (gfx.dragging) {
+        // During drag: NEVER apply AI sync
+        // Ensure Pixi follows pointer instantly
+        continue;
+      }
 
       // Only units move - all other entities are locked still
       if (entity.type === "unit" || (entity as any).category === "unit") {
@@ -359,9 +446,9 @@ export default function PixiStage() {
           }
         }
       } else {
-        // Freeze everything else - no movement, no drift
-        entityContainer.x = Math.round(entityContainer.x);
-        entityContainer.y = Math.round(entityContainer.y);
+        // Non-units must follow transform exactly
+        if (entity.transform?.x != null) entityContainer.x = Math.round(entity.transform.x);
+        if (entity.transform?.y != null) entityContainer.y = Math.round(entity.transform.y);
       }
     }
   }, [world.memory.entities]);
@@ -395,6 +482,33 @@ export default function PixiStage() {
   useEffect(() => {
     if (!containerRef.current) return;
 
+    // --- WEB AUDIO ENGINE (always works) ---
+    audioCtxRef.current = new AudioContext();
+
+    // helper to load audio into a buffer
+    async function loadBuffer(url: string) {
+      const res = await fetch(url);
+      const arrayBuf = await res.arrayBuffer();
+      return await audioCtxRef.current!.decodeAudioData(arrayBuf);
+    }
+
+    // load UI click sound
+    (async () => {
+      clickBufferRef.current = await loadBuffer("/sfx/ui_click_tick.wav");
+    })();
+
+    // --- AUDIO UNLOCK (browser only) ---
+    const unlockAudio = () => {
+      const ctx = new AudioContext();
+      const buffer = ctx.createBuffer(1, 1, 22050);
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(ctx.destination);
+      source.start(0);
+      window.removeEventListener("pointerdown", unlockAudio);
+    };
+    window.addEventListener("pointerdown", unlockAudio, { once: true });
+
     // Improve rendering crispness
     PIXI.settings.RESOLUTION = window.devicePixelRatio;
     PIXI.settings.ROUND_PIXELS = true;
@@ -410,6 +524,12 @@ export default function PixiStage() {
     containerRef.current.appendChild(app.view as HTMLCanvasElement);
 
     appRef.current = app;
+
+    app.stage.eventMode = "static";
+    app.stage.on("pointermove", (e) => {
+      pointerRef.current.x = e.global.x;
+      pointerRef.current.y = e.global.y;
+    });
 
     // === VIGNETTE (MEDIUM CINEMATIC) ===
     const vignette = new PIXI.Graphics();
@@ -459,10 +579,20 @@ export default function PixiStage() {
       twinkleContainer.addChild(star);
     }
 
-    // --- CINEMATIC START SCREEN ---
+    // --- CLEAN CINEMATIC START SCREEN (NO ANIMATION, NO UNDERLINE, NO EFFECTS) ---
     const startScreen = new PIXI.Container();
     startScreenRef.current = startScreen;
     startScreen.alpha = 0;
+
+    // Ensure startScreen never blocks pointer events after fade-out
+    startScreen.eventMode = "static";
+    startScreen.interactive = true;
+    startScreen.hitArea = new PIXI.Rectangle(0, 0, window.innerWidth, window.innerHeight);
+
+    startScreen.on("removed", () => {
+      startScreen.eventMode = "none";
+      startScreen.interactive = false;
+    });
 
     // Black overlay
     const black = new PIXI.Graphics();
@@ -471,40 +601,72 @@ export default function PixiStage() {
     black.endFill();
     startScreen.addChild(black);
 
-    // Title styling
-    const titleStyle = new PIXI.TextStyle({
-      fill: "#66faff",
-      fontSize: 64,
-      fontWeight: "800",
-      fontFamily: "Arial",
-      dropShadow: true,
-      dropShadowColor: "#00d0ff",
-      dropShadowBlur: 12,
-    });
-
     // Tagline styling
     const taglineStyle = new PIXI.TextStyle({
       fill: "#e6e6e6",
       fontSize: 30,
       fontWeight: "400",
-      fontFamily: "Arial",
+      fontFamily: "Montserrat",
       letterSpacing: 1.4,
     });
 
-    // Click to start styling
+    // Click to Start styling
     const clickStyle = new PIXI.TextStyle({
       fill: "#ffffff",
       fontSize: 32,
       fontWeight: "500",
-      fontFamily: "Arial",
+      fontFamily: "Montserrat",
     });
 
-    // Title
-    const title = new PIXI.Text("Pulse Engine // X", titleStyle);
-    title.anchor.set(0.5);
-    title.x = window.innerWidth / 2;
-    title.y = window.innerHeight / 2 - 90;
-    startScreen.addChild(title);
+    // --- TITLE WITH MAGENTA SLASHES ---
+    const titleLeft = new PIXI.Text("Pulse Engine ", {
+      fontFamily: "Montserrat",
+      fontSize: 72,
+      fill: 0x00ffff,
+      fontWeight: "700"
+    });
+
+    const titleSlashes = new PIXI.Text("//", {
+      fontFamily: "Montserrat",
+      fontSize: 72,
+      fill: 0xb855d3, // perfect darker, cooler match to on-screen pulse-line magenta
+      fontWeight: "700"
+    });
+
+    const titleRight = new PIXI.Text(" X", {
+      fontFamily: "Montserrat",
+      fontSize: 72,
+      fill: 0x00ffff,
+      fontWeight: "700"
+    });
+
+    // anchor & positioning
+    titleLeft.anchor.set(0.5);
+    titleSlashes.anchor.set(0.5);
+    titleRight.anchor.set(0.5);
+
+    // baseline
+    const titleY = window.innerHeight / 2 - 80;
+
+    titleLeft.y = titleY;
+    titleSlashes.y = titleY;
+    titleRight.y = titleY;
+
+    // horizontal centering as a group
+    const totalWidth =
+      titleLeft.width +
+      titleSlashes.width +
+      titleRight.width;
+
+    const centerX = window.innerWidth / 2;
+
+    titleLeft.x = centerX - totalWidth / 2 + titleLeft.width / 2;
+    titleSlashes.x = titleLeft.x + titleLeft.width / 2 + titleSlashes.width / 2;
+    titleRight.x = titleSlashes.x + titleSlashes.width / 2 + titleRight.width / 2;
+
+    startScreen.addChild(titleLeft);
+    startScreen.addChild(titleSlashes);
+    startScreen.addChild(titleRight);
 
     // Tagline
     const tagline = new PIXI.Text("Everything starts with a Pulse.", taglineStyle);
@@ -513,90 +675,61 @@ export default function PixiStage() {
     tagline.y = window.innerHeight / 2 - 15;
     startScreen.addChild(tagline);
 
-    // --- ANIMATED PULSE LINE ---
-    const line = new PIXI.Graphics();
-    line.__isPulseLine = true;
-    startScreen.addChild(line);
-
-    let pulseTime = 0;
-    app.ticker.add(() => {
-      if (!startScreenRef.current) return;  // start screen removed
-      const line = startScreenRef.current.children.find(c => c.__isPulseLine === true);
-      if (!line) return; // line removed or not created yet
-
-      pulseTime += 0.04;
-      (line as PIXI.Graphics).clear();
-
-      const glowStrength = 0.55 + Math.sin(pulseTime * 1.2) * 0.25;
-      const lineWidth = 3 + Math.sin(pulseTime * 2.1) * 1.3;
-
-      const colorShift = (Math.sin(pulseTime * 0.9) + 1) / 2;
-      const color = PIXI.utils.rgb2hex([
-        0.0,
-        0.82 * (1 - colorShift) + 0.5 * colorShift,
-        1.0 * (1 - colorShift) + 0.9 * colorShift,
-      ]);
-
-      (line as PIXI.Graphics).lineStyle(lineWidth, color, 0.9);
-      const startX = window.innerWidth / 2 - 140;
-      const endX = window.innerWidth / 2 + 140;
-      const y = window.innerHeight / 2 + 22;
-      const waveOffset = Math.sin(pulseTime * 3) * 4;
-
-      (line as PIXI.Graphics).moveTo(startX, y + waveOffset);
-      (line as PIXI.Graphics).lineTo(endX, y - waveOffset * 0.7);
-
-      const glowFilter = new PIXI.BlurFilter();
-      glowFilter.blur = 4 + Math.sin(pulseTime * 1.5) * 1.5;
-      (line as PIXI.Graphics).filters = [glowFilter];
-    });
+    // --- STATIC LOGO BETWEEN TAGLINE & CLICK ---
+    const pulseLogo = PIXI.Sprite.from("/branding/pulse_engine_static.png");
+    pulseLogo.anchor.set(0.5);
+    pulseLogo.x = window.innerWidth / 2;
+    pulseLogo.y = window.innerHeight / 2 + 150;
+    pulseLogo.alpha = 1;
+    pulseLogo.scale.set(0.58); // new baseline scale
+    pulseLogo.filters = [
+      new PIXI.filters.BlurFilter(0) // light blur, animated later
+    ];
+    startScreen.addChild(pulseLogo);
 
     // Click to Start
     const clickText = new PIXI.Text("Click to Start", clickStyle);
     clickText.anchor.set(0.5);
     clickText.x = window.innerWidth / 2;
-    clickText.y = window.innerHeight / 2 + 90;
+    clickText.y = window.innerHeight / 2 + 265;
     startScreen.addChild(clickText);
-
-    // Pulse animation for click-text
-    app.ticker.add(() => {
-      clickText.alpha = 0.7 + Math.sin(Date.now() * 0.003) * 0.3;
-    });
 
     app.stage.addChild(startScreen);
 
-    startScreen.eventMode = "static";
-    startScreen.cursor = "pointer";
+    // Subtle glow-pulse animation on pulseLogo (only for start screen)
+    const pulseLogoTicker = (delta: number) => {
+      // --- SUBTLE GLOW PULSE ON PULSE LOGO ---
+      if (startScreen.parent && startScreen.alpha > 0) {
+        pulseLogoTime += delta * 0.03;
 
-    startScreen.on("pointerdown", () => {
-      if (!audioUnlockedRef.current) {
-        const temp = new Audio();
-        temp.muted = true;
-        temp.play().then(() => {
-          temp.pause();
-          temp.muted = false;
-          audioUnlockedRef.current = true;
-        }).catch(() => {});
-      }
+        // small breathing scale effect
+        const scale = 0.58 + Math.sin(pulseLogoTime) * 0.010;
+        // small vibration around new baseline
+        pulseLogo.scale.set(scale);
 
-      const fadeOutStart = performance.now();
-      const fadeOutDuration = 700;
-      function fadeOutStartScreen() {
-        const t = performance.now() - fadeOutStart;
-        const p = Math.min(1, t / fadeOutDuration);
-        startScreen.alpha = 1 - p;
-        if (p < 1) requestAnimationFrame(fadeOutStartScreen);
-        else {
-          app.stage.removeChild(startScreen);
-          startScreen.destroy(true);
-          runIntroSequence();
+        // subtle glow (blur radius)
+        const blurAmount = 0.3 + (Math.sin(pulseLogoTime * 0.7) + 1) * 0.8;
+        if (pulseLogo.filters && pulseLogo.filters[0] instanceof PIXI.BlurFilter) {
+          pulseLogo.filters[0].blur = blurAmount;
         }
-      }
-      requestAnimationFrame(fadeOutStartScreen);
-    });
 
+        // slight luminance pulse (alpha breathing)
+        pulseLogo.alpha = 0.93 + Math.sin(pulseLogoTime * 0.6) * 0.05;
+      }
+    };
+    app.ticker.add(pulseLogoTicker);
+
+    // Clean up ticker when start screen is removed
+    const originalDestroy = startScreen.destroy.bind(startScreen);
+    startScreen.destroy = (options?: boolean | { children?: boolean; texture?: boolean; baseTexture?: boolean }) => {
+      app.ticker.remove(pulseLogoTicker);
+      return originalDestroy(options);
+    };
+
+    // Fade-in only
     const fadeInStart = performance.now();
     const fadeInDuration = 800;
+
     function fadeInStartScreen() {
       const t = performance.now() - fadeInStart;
       const p = Math.min(1, t / fadeInDuration);
@@ -604,6 +737,33 @@ export default function PixiStage() {
       if (p < 1) requestAnimationFrame(fadeInStartScreen);
     }
     requestAnimationFrame(fadeInStartScreen);
+
+    // On click → fade out only, then run intro
+    startScreen.cursor = "pointer";
+
+    startScreen.on("pointerdown", () => {
+      // Play click sound
+      playBuffer(clickBufferRef.current, 0.85);
+
+      const fadeOutStart = performance.now();
+      const fadeOutDuration = 700;
+
+      function fadeOutStartScreen() {
+        const t = performance.now() - fadeOutStart;
+        const p = Math.min(1, t / fadeOutDuration);
+        startScreen.alpha = 1 - p;
+        if (p < 1) requestAnimationFrame(fadeOutStartScreen);
+        else {
+          startScreen.interactiveChildren = false;
+          startScreen.eventMode = "none";
+          app.stage.removeChild(startScreen);
+          startScreen.destroy(true);
+          runIntroSequence();
+        }
+      }
+
+      requestAnimationFrame(fadeOutStartScreen);
+    });
 
     // === DUAL INTRO SEQUENCE ===
     const playIntro = async (introTexture: PIXI.Texture, withSound: boolean): Promise<void> => {
@@ -614,35 +774,38 @@ export default function PixiStage() {
           return;
         }
         
+        // Force pure black background in intro scenes
+        app.renderer.background.color = 0x000000;
+        
+        // Mark as in intro and hide stars
+        inIntroRef.current = true;
+        if (twinkleContainerRef.current) {
+          twinkleContainerRef.current.visible = false;
+        }
+        if (vignetteRef.current) {
+          vignetteRef.current.visible = false;
+        }
+        
         const introSprite = new PIXI.Sprite(introTexture);
         
         // Center on stage
         introSprite.anchor.set(0.5);
         introSprite.x = window.innerWidth / 2;
         introSprite.y = window.innerHeight / 2;
-        const baseScale = 0.8;
-        introSprite.scale.set(baseScale);
+        
+        
+        // Set static scale
+        introSprite.scale.set(0.85);
         introSprite.alpha = 0;
         
         // Add to stage at highest z-index (above everything, including overlay)
         app.stage.addChildAt(introSprite, app.stage.children.length - 1);
         
-        // Pulse animation setup
-        let pulseTime = 0;
-        const pulseSpeed = 0.003; // animation speed
-        const pulseAmplitude = 0.02; // ±0.02 scale oscillation
-        
-        const updatePulse = () => {
-          pulseTime += pulseSpeed;
-          const pulseOffset = Math.sin(pulseTime) * pulseAmplitude;
-          introSprite.scale.set(baseScale + pulseOffset);
-        };
-        
         // Create audio if enabled (before fade-in)
         let introSound: HTMLAudioElement | null = null;
         if (withSound) {
-          introSound = new Audio("/audio/intro/PE_intro_signaturePulse_v1.wav");
-          introSound.volume = 1.0;
+          introSound = new Audio("/audio/intro/pulse_engine_intro_heartbeat.wav");
+          introSound.volume = 0.85;
         }
         
         // Fade in: 0 → 1 over 1200ms
@@ -659,12 +822,11 @@ export default function PixiStage() {
           const elapsed = Date.now() - fadeInStart;
           const progress = Math.min(elapsed / fadeInDuration, 1);
           introSprite.alpha = progress;
-          updatePulse();
           
           if (progress < 1) {
             requestAnimationFrame(fadeIn);
           } else {
-            // Hold visible for 2600ms (with pulse animation, matches audio length)
+            // Hold visible for 2600ms (static, no animation)
             const holdStart = Date.now();
             const holdDuration = 2600;
             
@@ -678,7 +840,6 @@ export default function PixiStage() {
                 const p = Math.min(1, t);
 
                 introSprite.alpha = 1 - p;
-                updatePulse();
 
                 if (p < 1) {
                   requestAnimationFrame(step);
@@ -687,6 +848,14 @@ export default function PixiStage() {
                     app.stage.removeChild(introSprite);
                   }
                   introSprite.destroy(true);
+                  // Mark intro as complete and show stars again
+                  inIntroRef.current = false;
+                  if (twinkleContainerRef.current) {
+                    twinkleContainerRef.current.visible = true;
+                  }
+                  if (vignetteRef.current) {
+                    vignetteRef.current.visible = true;
+                  }
                   resolve(); // continue sequence
                 }
               };
@@ -695,7 +864,6 @@ export default function PixiStage() {
             }
             
             const hold = () => {
-              updatePulse();
               const elapsed = Date.now() - holdStart;
               
               if (elapsed < holdDuration) {
@@ -730,83 +898,31 @@ export default function PixiStage() {
       const app = appRef.current;
       if (!app || !app.stage) return;
 
-      // === INTRO OVERLAY SETUP ===
-      const overlay = new PIXI.Graphics();
-      overlay.beginFill(0x000000, 1);
-      overlay.drawRect(0, 0, window.innerWidth, window.innerHeight);
-      overlay.endFill();
-      overlay.alpha = 0;
-      app.stage.addChildAt(overlay, 0);
-
-      // === OVERLAY FADE HELPERS ===
-      function fadeInOverlay(duration = 500): Promise<void> {
-        return new Promise(resolve => {
-          const start = performance.now();
-          function tick(ts: number) {
-            const t = Math.min(1, (ts - start) / duration);
-            overlay.alpha = t;
-            if (t < 1) requestAnimationFrame(tick);
-            else resolve();
-          }
-          requestAnimationFrame(tick);
-        });
-      }
-
-      function fadeOutOverlay(duration = 600): Promise<void> {
-        return new Promise(resolve => {
-          const start = performance.now();
-          function tick(ts: number) {
-            const t = Math.min(1, (ts - start) / duration);
-            overlay.alpha = 1 - t;
-            if (t < 1) requestAnimationFrame(tick);
-            else resolve();
-          }
-          requestAnimationFrame(tick);
-        });
-      }
-
       // === LOAD INTRO TEXTURES ===
       const arctaviaTexture = await PIXI.Assets.load("/branding/arctavia_labs_intro.png");
-      const pulseTexture = await PIXI.Assets.load("/branding/pulse_engine_x_intro.png");
+      const pulseTexture = await PIXI.Assets.load("/branding/pulse_engine_x_intro_v5.png");
 
       // === RUN INTRO SEQUENCE ===
       // --- Arctavia intro (silent) ---
-      await fadeInOverlay(700);
       await playIntro(arctaviaTexture, false);
-      await fadeOutOverlay(600);
 
       // --- Pulse Engine // X intro (WITH SOUND) ---
-      await fadeInOverlay(700);
       await playIntro(pulseTexture, true);
-      await fadeOutOverlay(600);
       // Intros complete - world spawning can now proceed
 
       // --- WATERMARK (Pulse Engine // X) ---
       {
         const app = appRef.current;
         if (app && app.stage) {
-          // Glow plate
-          const glow = new PIXI.Graphics();
-          glow.beginFill(0x000000, 0.12);
-          glow.drawEllipse(0, 0, 200, 70);
-          glow.endFill();
-          glow.filters = [new PIXI.BlurFilter(6)];
-
-          // Position glow (anchor as center)
-          glow.x = window.innerWidth - 200;
-          glow.y = window.innerHeight - 70;
-
           // Watermark
-          const watermarkTexture = PIXI.Texture.from("/branding/pulse_engine_x_watermark_clean.svg");
+          const watermarkTexture = PIXI.Texture.from("/branding/pulse_engine_watermark_white.png");
           const watermark = new PIXI.Sprite(watermarkTexture);
           watermark.anchor.set(1, 1);
+          watermark.alpha = 0.38;
           watermark.scale.set(0.22);
-          watermark.alpha = 0.15;
-          watermark.x = window.innerWidth - 38;
-          watermark.y = window.innerHeight - 70;
+          watermark.position.set(app.screen.width - 22, app.screen.height - 22);
+          watermark.zIndex = 9999;
 
-          // Add glow then watermark
-          app.stage.addChild(glow);
           app.stage.addChild(watermark);
         }
       }
@@ -817,10 +933,22 @@ export default function PixiStage() {
     };
 
     // Resize handler
+    function onResize() {
+      const w = Math.floor(window.innerWidth);
+      const h = Math.floor(window.innerHeight);
+      const app = appRef.current;
+      if (!app) return;
+      app.renderer.resize(w, h);
+    }
+
     function handleVignetteResize() {
       drawVignette();
     }
-    window.addEventListener("resize", handleVignetteResize);
+    
+    window.addEventListener("resize", () => {
+      onResize();
+      handleVignetteResize();
+    });
 
     // Create ticker for pulse animation
     const ticker = PIXI.Ticker.shared;
@@ -989,6 +1117,10 @@ export default function PixiStage() {
 
         entityContainerRef.on("pointerdown", (e) => {
           e.stopPropagation();
+
+          // UI click sound
+          playBuffer(clickBufferRef.current, 0.45);
+
           entityContainerRef.dragging = true;
           entityContainerRef.dragOffset = {
             x: e.global.x - entityContainerRef.x,
@@ -1013,27 +1145,6 @@ export default function PixiStage() {
           entityContainerRef.dragging = false;
         });
 
-        entityContainerRef.on("pointermove", (e: PIXI.FederatedPointerEvent) => {
-          if (!entityContainerRef.dragging) return;
-          
-          e.stopPropagation();
-
-          // Update PIXI position every frame
-          entityContainerRef.x = Math.round(e.global.x - entityContainerRef.dragOffset!.x);
-          entityContainerRef.y = Math.round(e.global.y - entityContainerRef.dragOffset!.y);
-
-          // Throttle world_state sync to every ~90ms
-          const now = performance.now();
-          if (!entityContainerRef.lastSync || (now - entityContainerRef.lastSync) > 90) {
-            const entity = world.memory.entities.find(ent => ent.id === entityContainerRef.entityId);
-            if (entity) {
-              entity.transform = entity.transform || {};
-              entity.transform.x = entityContainerRef.x;
-              entity.transform.y = entityContainerRef.y;
-            }
-            entityContainerRef.lastSync = now;
-          }
-        });
 
         app.stage.addChild(gfx);
         graphicsMap.set(ent.id, gfx);
@@ -1055,9 +1166,9 @@ export default function PixiStage() {
               gfx.y = Math.round(ent.transform.y);
             }
           } else {
-            // Freeze non-units - round current position to prevent any drift
-            gfx.x = Math.round(gfx.x);
-            gfx.y = Math.round(gfx.y);
+            // Non-units must follow transform exactly
+            if (ent.transform?.x != null) gfx.x = Math.round(ent.transform.x);
+            if (ent.transform?.y != null) gfx.y = Math.round(ent.transform.y);
           }
 
           // Update base scale if changed (no animations, just set directly)
@@ -1072,15 +1183,20 @@ export default function PixiStage() {
 
     // Global pointer move handler for hover detection (only add once)
     if (!app.stage.listenerCount("pointermove")) {
-      app.stage.eventMode = "static";
+      app.stage.eventMode = "dynamic";
       app.stage.on("pointermove", (e) => {
+        // Ensure WebAudio is active
+        if (audioCtxRef.current?.state === "suspended") {
+          audioCtxRef.current.resume();
+        }
+
         const mx = e.global.x;
         const my = e.global.y;
 
         let nearest: string | null = null;
         let minDist = 99999;
 
-        // Check all entities
+        // Find nearest entity
         memory.entities.forEach((entity) => {
           const x = entity.transform?.x ?? 0;
           const y = entity.transform?.y ?? 0;
@@ -1088,20 +1204,22 @@ export default function PixiStage() {
           const dy = my - y;
           const dist = Math.sqrt(dx * dx + dy * dy);
 
-          if (dist < 28 && dist < minDist) {  // hover radius
+          if (dist < 28 && dist < minDist) {
             minDist = dist;
             nearest = entity.id;
           }
         });
 
-        // Play hover sound only when hover actually changes
-        if (nearest !== lastHoveredIdRef.current) {
-          if (nearest && hoverSound) hoverSound.play().catch(() => {});
-          lastHoveredIdRef.current = nearest;
-        }
+        // Update hover state for selection highlight
+        lastHoveredIdRef.current = nearest;
+      });
 
-        // Hover should be handled internally by PIXI graphics, not React
-        // setHoveredId(nearest); // COMMENTED OUT to prevent re-renders
+      app.stage.on("pointerdown", (e) => {
+        // Only deselect if clicked on empty space (no entity hit)
+        if (!e.target || !(e.target instanceof PIXI.Graphics) || !e.target.entityId) {
+          selectedIdRef.current = null;
+          highlightSelectedEntity();
+        }
       });
     }
     

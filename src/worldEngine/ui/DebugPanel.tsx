@@ -13,7 +13,7 @@ export default function DebugPanel() {
   const [pulseTime, setPulseTime] = useState(0);
 
   const leftButtonStyle: React.CSSProperties = {
-    width: "130px",
+    width: "150px",
     height: "34px",
     padding: "0 14px",
     lineHeight: "34px",
