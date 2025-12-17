@@ -1,65 +1,78 @@
-import Image from "next/image";
-
-export default function Home() {
+export default function HomePage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
+    <main
+      style={{
+        padding: 48,
+        maxWidth: 900,
+        margin: "0 auto",
+        fontFamily: "system-ui, sans-serif",
+        background: "#000",
+        color: "#eaeaea",
+        minHeight: "100vh"
+      }}
+    >
+      <h1>Pulse Engine — Decision Flow Pilot</h1>
+
+      <p style={{ marginTop: 16, fontSize: 18 }}>
+        This is a pilot system for testing how decisions affect complex systems
+        over time — before those decisions are made in the real world.
+      </p>
+
+      <section style={{ marginTop: 32 }}>
+        <h2>What this pilot does</h2>
+        <ul style={{ marginTop: 12, lineHeight: 1.6 }}>
+          <li>Defines a clear baseline (reference scenario)</li>
+          <li>Applies external pressure or change</li>
+          <li>Applies a decision or policy</li>
+          <li>Simulates consequences over time</li>
+          <li>Compares outcomes against the baseline</li>
+        </ul>
+      </section>
+
+      <section style={{ marginTop: 32 }}>
+        <h2>Try it</h2>
+        <p style={{ marginTop: 8 }}>
+          You can explore the decision flow visually or run the simulation
+          headlessly via an API.
+        </p>
+
+        <div style={{ marginTop: 16, display: "flex", gap: 16 }}>
           <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="/decision-flow"
+            style={{
+              padding: "12px 16px",
+              background: "#ffffff",
+              color: "#000000",
+              border: "2px solid #ffffff",
+              borderRadius: 8,
+              textDecoration: "none",
+              fontWeight: 600
+            }}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
+            Open Decision Flow (Visual)
           </a>
+
           <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="/api/decision-flow"
+            style={{
+              padding: "12px 16px",
+              background: "transparent",
+              color: "#ffffff",
+              border: "2px dashed rgba(255,255,255,0.8)",
+              borderRadius: 8,
+              textDecoration: "none"
+            }}
           >
-            Documentation
+            Run via API (Headless)
           </a>
         </div>
-      </main>
-    </div>
+      </section>
+
+      <section style={{ marginTop: 48, opacity: 0.7 }}>
+        <p>
+          Pilot v1 — deterministic, headless-first, UI as presentation only.
+        </p>
+      </section>
+    </main>
   );
 }

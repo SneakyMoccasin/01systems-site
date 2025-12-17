@@ -1,41 +1,36 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# =================================================
+# Pulse Engine — Pilot v1 (Decision Flow ONLY)
+# Repo is intentionally minimal and locked
+# =================================================
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
+# --- backups & exports ---
+Backups/
+exports/
 
-# testing
-/coverage
+# --- demos & legacy scenarios ---
+app/traffic-demo/
+app/waterloo-test/
+app/archive/
+src/demos/
+src/scenarios/
 
-# next.js
-/.next/
-/out/
+# --- legacy world engine UI (NOT part of Pilot v1) ---
+src/worldEngine/ui/
+src/worldEngine/waterloo/
+src/worldEngine/ui/__archive_old_ui__/
 
-# production
-/build
+# --- build & dependencies ---
+node_modules/
+.next/
+out/
+build/
 
-# misc
+# --- env & system ---
+.env*
 .DS_Store
-*.pem
 
-# debug
+# --- logs ---
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
+pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
-
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
