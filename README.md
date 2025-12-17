@@ -1,4 +1,289 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Pulse Engine — Pilot v1 (Decision Flow)
+
+**Status:** ✅ Locked  
+**Version:** Pilot v1  
+**Purpose:** Decision Flow / Decision Consequence Sandbox
+
+---
+
+## What this is
+
+This repository contains **Pilot v1 of Pulse Engine**, focused exclusively on the **Decision Flow** concept.
+
+The pilot demonstrates how:
+- A **baseline system state** is defined
+- **External changes** apply pressure
+- A **decision** is applied
+- The system **evolves over time**
+- **Consequences** are observed and compared to baseline
+
+This is **not a game engine**, **not a demo collection**, and **not a full simulation platform**.
+
+It is a **locked decision-consequence pilot** intended for:
+- Early customer conversations
+- Investor demos
+- Architecture validation
+- Future LLM integration
+
+---
+
+## What is included
+
+✅ Decision Flow engine  
+✅ Headless API (`/api/decision-flow`)  
+✅ Visual Decision Flow UI (`/decision-flow`)  
+✅ Input form (baseline, change, policy, steps)  
+✅ Deterministic simulation output  
+✅ 2D visualizations (bars + timeline)  
+
+---
+
+## What is intentionally excluded
+
+❌ Waterloo demo  
+❌ Traffic demo  
+❌ World engine UI  
+❌ Gameplay systems  
+❌ Agent AI  
+❌ LLM integration  
+
+These live in other repositories and are **explicitly excluded** from Pilot v1.
+
+---
+
+## Core idea
+
+Inputs
+↓
+Decision Engine (Pulse)
+↓
+Simulation Over Time
+↓
+Consequences
+↓
+Compare vs Baseline
+
+yaml
+Kopiera kod
+
+The **LLM is not the engine**.  
+The LLM will later act as a **policy selector on top of this system**.
+
+---
+
+## Tech stack
+
+- Next.js (App Router)
+- TypeScript
+- Deterministic simulation core
+- Headless-first architecture
+
+---
+
+## Lock policy
+
+This repository is **locked by design**.
+
+No refactors.  
+No feature creep.  
+No demo mixing.
+
+All future work happens in **new pilots or separate repos**.
+
+---
+
+© 01 Systems — Pulse Engine  
+“Everything starts with a Pulse.# Pulse Engine — Pilot v1 (Decision Flow)
+
+**Status:** ✅ Locked  
+**Version:** Pilot v1  
+**Purpose:** Decision Flow / Decision Consequence Sandbox
+
+---
+
+## What this is
+
+This repository contains **Pilot v1 of Pulse Engine**, focused exclusively on the **Decision Flow** concept.
+
+The pilot demonstrates how:
+- A **baseline system state** is defined
+- **External changes** apply pressure
+- A **decision** is applied
+- The system **evolves over time**
+- **Consequences** are observed and compared to baseline
+
+This is **not a game engine**, **not a demo collection**, and **not a full simulation platform**.
+
+It is a **locked decision-consequence pilot** intended for:
+- Early customer conversations
+- Investor demos
+- Architecture validation
+- Future LLM integration
+
+---
+
+## What is included
+
+✅ Decision Flow engine  
+✅ Headless API (`/api/decision-flow`)  
+✅ Visual Decision Flow UI (`/decision-flow`)  
+✅ Input form (baseline, change, policy, steps)  
+✅ Deterministic simulation output  
+✅ 2D visualizations (bars + timeline)  
+
+---
+
+## What is intentionally excluded
+
+❌ Waterloo demo  
+❌ Traffic demo  
+❌ World engine UI  
+❌ Gameplay systems  
+❌ Agent AI  
+❌ LLM integration  
+
+These live in other repositories and are **explicitly excluded** from Pilot v1.
+
+---
+
+## Core idea
+
+Inputs
+↓
+Decision Engine (Pulse)
+↓
+Simulation Over Time
+↓
+Consequences
+↓
+Compare vs Baseline
+
+yaml
+Kopiera kod
+
+The **LLM is not the engine**.  
+The LLM will later act as a **policy selector on top of this system**.
+
+---
+
+## Tech stack
+
+- Next.js (App Router)
+- TypeScript
+- Deterministic simulation core
+- Headless-first architecture
+
+---
+
+## Lock policy
+
+This repository is **locked by design**.
+
+No refactors.  
+No feature creep.  
+No demo mixing.
+
+All future work happens in **new pilots or separate repos**.
+
+---
+
+© 01 Systems — Pulse Engine  
+“Everything starts with a Pulse.”# Pulse Engine — Pilot v1 (Decision Flow)
+
+**Status:** ✅ Locked  
+**Version:** Pilot v1  
+**Purpose:** Decision Flow / Decision Consequence Sandbox
+
+---
+
+## What this is
+
+This repository contains **Pilot v1 of Pulse Engine**, focused exclusively on the **Decision Flow** concept.
+
+The pilot demonstrates how:
+- A **baseline system state** is defined
+- **External changes** apply pressure
+- A **decision** is applied
+- The system **evolves over time**
+- **Consequences** are observed and compared to baseline
+
+This is **not a game engine**, **not a demo collection**, and **not a full simulation platform**.
+
+It is a **locked decision-consequence pilot** intended for:
+- Early customer conversations
+- Investor demos
+- Architecture validation
+- Future LLM integration
+
+---
+
+## What is included
+
+✅ Decision Flow engine  
+✅ Headless API (`/api/decision-flow`)  
+✅ Visual Decision Flow UI (`/decision-flow`)  
+✅ Input form (baseline, change, policy, steps)  
+✅ Deterministic simulation output  
+✅ 2D visualizations (bars + timeline)  
+
+---
+
+## What is intentionally excluded
+
+❌ Waterloo demo  
+❌ Traffic demo  
+❌ World engine UI  
+❌ Gameplay systems  
+❌ Agent AI  
+❌ LLM integration  
+
+These live in other repositories and are **explicitly excluded** from Pilot v1.
+
+---
+
+## Core idea
+
+Inputs
+↓
+Decision Engine (Pulse)
+↓
+Simulation Over Time
+↓
+Consequences
+↓
+Compare vs Baseline
+
+yaml
+Kopiera kod
+
+The **LLM is not the engine**.  
+The LLM will later act as a **policy selector on top of this system**.
+
+---
+
+## Tech stack
+
+- Next.js (App Router)
+- TypeScript
+- Deterministic simulation core
+- Headless-first architecture
+
+---
+
+## Lock policy
+
+This repository is **locked by design**.
+
+No refactors.  
+No feature creep.  
+No demo mixing.
+
+All future work happens in **new pilots or separate repos**.
+
+---
+
+© 01 Systems — Pulse Engine  
+“Everything starts with a Pulse.”This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
 
