@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { DecisionFlowEngine } from "@/src/decisionFlow/engine";
 
@@ -198,6 +198,10 @@ function TimelineRow({ time, metric, delta, value }: TimelineRowProps) {
 
 export default function DecisionFlowPage() {
   const [activeStep, setActiveStep] = useState<string | null>(null);
+  const [isPresentationMode, setIsPresentationMode] = useState(false);
+  const [systemUpdatedAt, setSystemUpdatedAt] = useState<number | null>(null);
+  const [showUpdateIndicator, setShowUpdateIndicator] = useState(false);
+  const [showHelper, setShowHelper] = useState(false);
   
   // Simplified UI state (three questions)
   const [situation, setSituation] = useState<"calm" | "manageable" | "strained" | "heavy-pressure">("manageable");
@@ -281,6 +285,7 @@ export default function DecisionFlowPage() {
     const data = await res.json();
     setResult(data);
     setLoading(false);
+    setSystemUpdatedAt(Date.now());
   }
 
 
@@ -433,6 +438,17 @@ export default function DecisionFlowPage() {
   const decisionANarrative = generateNarrative(data);
   const implications = generateImplications(data);
 
+  // Auto-hide update indicator after 1800ms
+  useEffect(() => {
+    if (systemUpdatedAt !== null) {
+      setShowUpdateIndicator(true);
+      const timer = setTimeout(() => {
+        setShowUpdateIndicator(false);
+      }, 1800);
+      return () => clearTimeout(timer);
+    }
+  }, [systemUpdatedAt]);
+
   return (
     <main style={{
       background: COLORS.pageBg,
@@ -453,7 +469,99 @@ export default function DecisionFlowPage() {
         </Link>
       </div>
 
-      <h1>Decision Flow Sandbox</h1>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+        <div>
+          <h1 style={{ marginBottom: 4 }}>Decision Flow Sandbox</h1>
+          <button
+            onClick={() => setShowHelper(!showHelper)}
+            style={{
+              fontSize: 12,
+              background: "transparent",
+              color: COLORS.pageText,
+              border: "none",
+              cursor: "pointer",
+              opacity: 0.6,
+              padding: 0,
+              textDecoration: "underline",
+              textDecorationStyle: "dotted"
+            }}
+          >
+            What am I seeing?
+          </button>
+        </div>
+        <button
+          onClick={() => setIsPresentationMode(!isPresentationMode)}
+          style={{
+            padding: "6px 12px",
+            fontSize: 12,
+            background: "transparent",
+            color: COLORS.pageText,
+            border: "1px solid #2f333a",
+            borderRadius: 4,
+            cursor: "pointer",
+            opacity: 0.8
+          }}
+        >
+          {isPresentationMode ? "Exit presentation mode" : "Enter presentation mode"}
+        </button>
+      </div>
+
+      {showHelper && (
+        <div style={{
+          marginBottom: 24,
+          padding: 16,
+          background: "#1a1a1a",
+          border: "1px solid #2f333a",
+          borderRadius: 8,
+          maxWidth: 600
+        }}>
+          <h3 style={{
+            fontSize: 14,
+            fontWeight: 600,
+            marginBottom: 12,
+            color: COLORS.pageText
+          }}>
+            About this view
+          </h3>
+          <div style={{
+            fontSize: 13,
+            lineHeight: 1.6,
+            color: COLORS.pageText,
+            opacity: 0.9
+          }}>
+            <p style={{ marginBottom: 12 }}>
+              This simulation shows how different response choices play out over time under a given set of conditions. Each time you run it, the system recalculates the trajectory based on your inputs.
+            </p>
+            <p style={{ marginBottom: 12 }}>
+              The decision narrative explains how a chosen response unfolds step by step. System implications describe broader signals the system emits if current conditions persist, regardless of response.
+            </p>
+            <p>
+              This tool illustrates patterns and consequences. It does not provide recommendations, predictions, or exact forecasts.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {showUpdateIndicator && (
+        <div style={{
+          fontSize: 12,
+          opacity: 0.7,
+          marginBottom: 16,
+          color: COLORS.pageText,
+          display: "flex",
+          alignItems: "center",
+          gap: 6
+        }}>
+          <span style={{
+            width: 6,
+            height: 6,
+            borderRadius: "50%",
+            background: COLORS.pageText,
+            opacity: 0.6
+          }}></span>
+          System state updated
+        </div>
+      )}
 
       <section style={{ marginBottom: 32 }}>
         <h2>Simulation Inputs</h2>
@@ -896,17 +1004,21 @@ export default function DecisionFlowPage() {
         </p>
       </section>
 
-      <h2>Baseline</h2>
-      <pre>{JSON.stringify(data.baseline, null, 2)}</pre>
+      {!isPresentationMode && (
+        <>
+          <h2>Baseline</h2>
+          <pre>{JSON.stringify(data.baseline, null, 2)}</pre>
 
-      <h2>Final State</h2>
-      <pre>{JSON.stringify(data.final, null, 2)}</pre>
+          <h2>Final State</h2>
+          <pre>{JSON.stringify(data.final, null, 2)}</pre>
 
-      <h2>Compare vs Baseline</h2>
-      <pre>{JSON.stringify(data.compare, null, 2)}</pre>
+          <h2>Compare vs Baseline</h2>
+          <pre>{JSON.stringify(data.compare, null, 2)}</pre>
 
-      <h2>Consequences Over Time</h2>
-      <pre>{JSON.stringify(data.consequences, null, 2)}</pre>
+          <h2>Consequences Over Time</h2>
+          <pre>{JSON.stringify(data.consequences, null, 2)}</pre>
+        </>
+      )}
     </main>
   );
 }
