@@ -26,3 +26,20 @@ body {
   color: var(--foreground);
   font-family: Montserrat, sans-serif;
 }
+
+/* === PIXI CANVAS RESIZE FIX — ALWAYS MATCH VISIBLE SCREEN === */
+.pixi-container {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+.pixi-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+}

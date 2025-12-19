@@ -19,6 +19,14 @@ export function computeRallyPositions(
   units: EntityLike[],
   center: FormationPoint
 ): FormationPoint[] {
+  const app = (window as any).__pixiApp;
+  const maxW = app ? app.screen.width - 40 : window.innerWidth - 40;
+  const maxH = app ? app.screen.height - 40 : window.innerHeight - 40;
+
+  function clamp(v: number, min: number, max: number) {
+    return Math.max(min, Math.min(v, max));
+  }
+
   const count = units.length;
   if (count === 0) return [];
 
@@ -28,8 +36,8 @@ export function computeRallyPositions(
   return units.map((_, i) => {
     const angle = i * angleStep;
     return {
-      x: center.x + Math.cos(angle) * radius,
-      y: center.y + Math.sin(angle) * radius,
+      x: clamp(center.x + Math.cos(angle) * radius, 40, maxW),
+      y: clamp(center.y + Math.sin(angle) * radius, 40, maxH),
     };
   });
 }
@@ -38,13 +46,21 @@ export function computeScatterPositions(
   units: EntityLike[],
   center: FormationPoint
 ): FormationPoint[] {
+  const app = (window as any).__pixiApp;
+  const maxW = app ? app.screen.width - 40 : window.innerWidth - 40;
+  const maxH = app ? app.screen.height - 40 : window.innerHeight - 40;
+
+  function clamp(v: number, min: number, max: number) {
+    return Math.max(min, Math.min(v, max));
+  }
+
   const count = units.length;
   if (count === 0) return [];
 
   return units.map(() => {
     return {
-      x: center.x + (Math.random() - 0.5) * 300,
-      y: center.y + (Math.random() - 0.5) * 300,
+      x: clamp(center.x + (Math.random() - 0.5) * 300, 40, maxW),
+      y: clamp(center.y + (Math.random() - 0.5) * 300, 40, maxH),
     };
   });
 }
@@ -53,6 +69,14 @@ export function computeLineFormationPositions(
   units: EntityLike[],
   center: FormationPoint
 ): FormationPoint[] {
+  const app = (window as any).__pixiApp;
+  const maxW = app ? app.screen.width - 40 : window.innerWidth - 40;
+  const maxH = app ? app.screen.height - 40 : window.innerHeight - 40;
+
+  function clamp(v: number, min: number, max: number) {
+    return Math.max(min, Math.min(v, max));
+  }
+
   const count = units.length;
   if (count === 0) return [];
 
@@ -61,8 +85,8 @@ export function computeLineFormationPositions(
 
   return units.map((_, i) => {
     return {
-      x: center.x - totalWidth / 2 + i * spacing,
-      y: center.y,
+      x: clamp(center.x - totalWidth / 2 + i * spacing, 40, maxW),
+      y: clamp(center.y, 40, maxH),
     };
   });
 }

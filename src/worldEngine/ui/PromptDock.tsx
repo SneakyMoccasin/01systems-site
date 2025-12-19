@@ -1,390 +1,264 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useWorld } from "../core/worldState";
-import { findDynamicSpreadPosition } from "../core/poissonHelper";
+import PulseButton from "./components/PulseButton";
+import "./components/pulse-ui.css";
 
 export default function PromptDock() {
-  const { addEntity, deleteEntity, clearEntities, memory, forceRender } = useWorld();
+  const world = useWorld();
+
   const [input, setInput] = useState("");
-  const [output, setOutput] = useState<string[]>([]);
-  const [hoveredSend, setHoveredSend] = useState(false);
-  const [shimmerSend, setShimmerSend] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const logContainerRef = useRef<HTMLDivElement>(null);
+  const [showLog, setShowLog] = useState(false);
 
-  // Autofocus
+  // ENDA NYA: logItems = ren text (ingen object object längre)
+  const [logItems, setLogItems] = useState<string[]>([]);
+
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const logRef = useRef<HTMLDivElement | null>(null);
+
+  // ------------------------------------------------------------
+  // ROTATING PLACEHOLDER
+  // ------------------------------------------------------------
+  const placeholders = [
+    "Try: spawn 5 units",
+    "Try: spawn 1 marker",
+    "Try: move selected with arrow keys",
+    "Try: spawn unit",
+    "Try: spawn prop",
+    "Try: spawn marker",
+    "Try: spawn effect"
+  ];
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+
   useEffect(() => {
-    inputRef.current?.focus();
+    const id = setInterval(() => {
+      setPlaceholderIndex((i) => (i + 1) % placeholders.length);
+    }, 2200);
+    return () => clearInterval(id);
   }, []);
 
-  // Listen for selection events from PixiStage
+  const activePlaceholder = placeholders[placeholderIndex];
+
+  // ------------------------------------------------------------
+  // GLOBAL LOG HOOK – REN TEXT (INGA OBJEKT MER!)
+  // ------------------------------------------------------------
   useEffect(() => {
-    function handler(e: any) {
-      (window as any).__selectedEntity = e.detail;
-    }
-    window.addEventListener("entity-selected", handler);
-    return () => window.removeEventListener("entity-selected", handler);
+    // === GLOBAL LOG BRIDGE v2 — always works ===
+    (window as any).__pulseLog = (msg: string | any, level = "info") => {
+      const ts = new Date().toLocaleTimeString("sv-SE", { hour12: false });
+      const entry = `[${ts}] ${msg}`;
+
+      // 1) Console fallback (for components that fire before PromptDock exists)
+      console.log("[PULSE LOG]", entry);
+
+      // 2) Write into PromptDock once mounted
+      setLogItems(prev => [...prev, entry]);
+    };
   }, []);
 
-  // --- ARROW KEY MOVEMENT ---
+  // ------------------------------------------------------------
+  // OPEN LOGS PANEL FUNCTION
+  // ------------------------------------------------------------
+  const openLogsPanel = () => {
+    setShowLog(true);
+  };
+
   useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      const id = (window as any).__selectedEntity;
-      if (!id) return;
-
-      const ent = memory.entities.find((x) => x.id === id);
-      if (!ent || !ent.transform) return;
-
-      const step = 22;
-
-      if (e.key === "ArrowLeft") ent.transform.x -= step;
-      if (e.key === "ArrowRight") ent.transform.x += step;
-      if (e.key === "ArrowUp") ent.transform.y -= step;
-      if (e.key === "ArrowDown") ent.transform.y += step;
-
-      if (ent.ai) {
-        ent.ai.targetX = ent.transform.x;
-        ent.ai.targetY = ent.transform.y;
-      }
-
-      forceRender();
+    if (typeof window !== "undefined") {
+      (window as any).__pulseOpenLogs = openLogsPanel;
     }
+  }, []);
 
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [memory.entities, forceRender]);
-
-  // LOG HELPER
-  function addLog(message: string) {
-    setOutput((p) => [...p, message]);
-    setInput("");
-    setTimeout(() => {
-      const box = logContainerRef.current;
-      if (box) box.scrollTop = box.scrollHeight;
-    }, 20);
-  }
-
-  // ---------------------------
-  // FUZZY MATCH HELPERS
-  // ---------------------------
-  function levenshtein(a: string, b: string): number {
-    const m = [];
-    for (let i = 0; i <= b.length; i++) m[i] = [i];
-    for (let j = 0; j <= a.length; j++) m[0][j] = j;
-
-    for (let i = 1; i <= b.length; i++) {
-      for (let j = 1; j <= a.length; j++) {
-        if (b.charAt(i - 1) === a.charAt(j - 1)) {
-          m[i][j] = m[i - 1][j - 1];
-        } else {
-          m[i][j] = Math.min(
-            m[i - 1][j - 1] + 1,
-            m[i][j - 1] + 1,
-            m[i - 1][j] + 1
-          );
-        }
-      }
+  // ------------------------------------------------------------
+  // AUTO-SCROLL
+  // ------------------------------------------------------------
+  useEffect(() => {
+    if (showLog && logRef.current) {
+      logRef.current.scrollTop = logRef.current.scrollHeight;
     }
-    return m[b.length][a.length];
-  }
+  }, [logItems, showLog]);
 
-  function fuzzyMatch(input: string, list: string[]): string | null {
-    input = input.toLowerCase();
-    let best = null;
-    let bestDist = 999;
-
-    for (const item of list) {
-      const d = levenshtein(input, item);
-      if (d < bestDist) {
-        bestDist = d;
-        best = item;
-      }
-    }
-    return bestDist <= 2 ? best : null;
-  }
-
-  // ---------------------------
-  // COMMAND PARSER
-  // ---------------------------
-  function handleSend() {
+  // ------------------------------------------------------------
+  // SEND COMMAND
+  // ------------------------------------------------------------
+  const send = () => {
     if (!input.trim()) return;
 
-    const raw = input.trim();
-    const lower = raw.toLowerCase();
-    const words = lower.split(" ");
-
-    setOutput((p) => [...p, `> ${raw}`]);
-
-    const cmd = words[0];
-    const valid = ["spawn", "move", "delete", "clear", "list"];
-    if (!valid.includes(cmd)) {
-      addLog(`Unknown command: "${cmd}"`);
-      return;
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play();
     }
 
-    // ------------------------
-    // SPAWN
-    // ------------------------
-    if (cmd === "spawn") {
-      let count = 1;
-      let typeIndex = 1;
+    const text = input.trim();
+    (window as any).__pulseLog("> " + text, "info");
 
-      if (!isNaN(Number(words[1]))) {
-        count = Math.max(1, Number(words[1]));
-        typeIndex = 2;
+    window.dispatchEvent(
+      new CustomEvent("pulse-command", { detail: { msg: text } })
+    );
+
+    const lower = text.toLowerCase();
+    const parts = lower.split(" ");
+
+    // ------------------------------------------------------
+    // MOVE
+    // ------------------------------------------------------
+    if (parts[0] === "move" && parts.length >= 2) {
+      const direction = parts[1];
+      let amount: number | undefined;
+
+      if (parts.length >= 3) {
+        const num = Number(parts[2]);
+        if (!isNaN(num)) amount = num;
       }
 
-      const rawType = words[typeIndex];
-      if (!rawType) return addLog("(missing type)");
+      const valid = ["up", "down", "left", "right", "center"];
 
-      const base = ["unit", "prop", "marker", "effect"];
-      const plural = ["units", "props", "markers", "effects"];
-      let match = fuzzyMatch(rawType, [...base, ...plural]);
-
-      if (!match) return addLog(`Unknown entity type: "${rawType}"`);
-      if (match.endsWith("s")) match = match.slice(0, -1);
-
-      for (let i = 0; i < count; i++) {
-        const pos = findDynamicSpreadPosition(match as any);
-        addEntity({ type: match as any, role: "generic", x: pos.x, y: pos.y });
+      if (valid.includes(direction)) {
+        world.moveSelected?.(direction, amount);
+        setInput("");
+        return;
       }
-      setInput("");
-      return;
     }
 
-    // ------------------------
-    // DELETE
-    // ------------------------
-    if (cmd === "delete") {
-      const id = words[1];
-      if (!id) return addLog("(missing id)");
+    // ------------------------------------------------------
+    // SPAWN MANY + SPAWN 1 FIXAR BÅDA
+    // ------------------------------------------------------
+    if (parts[0] === "spawn" && parts.length >= 3) {
+      const count = parseInt(parts[1], 10);
+      let t = parts[2];
 
-      deleteEntity(id);
-      setInput("");
-      return;
+      if (t.endsWith("s")) t = t.slice(0, -1);
+
+      const valid = ["unit", "prop", "marker", "effect"];
+      if (!isNaN(count) && count > 0 && valid.includes(t)) {
+        world.spawnMany?.(t as any, count);
+        setInput("");
+        return;
+      }
     }
 
-    // ------------------------
-    // MOVE — FIXED VERSION
-    // ------------------------
-    if (cmd === "move") {
-      const tokens = raw.trim().split(/\s+/);
-      const id = tokens[1];
-      if (!id) return addLog("(missing id)");
+    // ------------------------------------------------------
+    // FALLBACK → HANDLECOMMAND
+    // ------------------------------------------------------
+    world.handleCommand?.(text);
+    setInput("");
+  };
 
-      const ent = memory.entities.find((e) => e.id === id);
-      if (!ent || !ent.transform) return addLog("(invalid entity)");
-
-      const direction = tokens[2]?.toLowerCase();
-      const step = 35;
-
-      const ok = (msg: string) => {
-        addLog(msg);
-        forceRender();
-      };
-
-      // DIRECTION SHORTCUTS
-      if (direction === "up") {
-        ent.transform.y -= step;
-        if (ent.ai) ent.ai.targetY = ent.transform.y;
-        if (ent.ai) ent.ai.targetX = ent.transform.x;
-        return ok(`Moved ${id} up`);
-      }
-      if (direction === "down") {
-        ent.transform.y += step;
-        if (ent.ai) ent.ai.targetY = ent.transform.y;
-        if (ent.ai) ent.ai.targetX = ent.transform.x;
-        return ok(`Moved ${id} down`);
-      }
-      if (direction === "left") {
-        ent.transform.x -= step;
-        if (ent.ai) ent.ai.targetX = ent.transform.x;
-        if (ent.ai) ent.ai.targetY = ent.transform.y;
-        return ok(`Moved ${id} left`);
-      }
-      if (direction === "right") {
-        ent.transform.x += step;
-        if (ent.ai) ent.ai.targetX = ent.transform.x;
-        if (ent.ai) ent.ai.targetY = ent.transform.y;
-        return ok(`Moved ${id} right`);
-      }
-      if (direction === "center") {
-        ent.transform.x = window.innerWidth / 2;
-        ent.transform.y = window.innerHeight / 2;
-        if (ent.ai) {
-          ent.ai.targetX = ent.transform.x;
-          ent.ai.targetY = ent.transform.y;
-        }
-        return ok(`Moved ${id} to center`);
-      }
-
-      // NUMERIC MOVE
-      const nx = parseFloat(tokens[2]);
-      const ny = parseFloat(tokens[3]);
-
-      if (isNaN(nx) || isNaN(ny)) return addLog("(invalid coordinates)");
-
-      ent.transform.x = nx;
-      ent.transform.y = ny;
-
-      if (ent.ai) {
-        ent.ai.targetX = ent.transform.x;
-        ent.ai.targetY = ent.transform.y;
-      }
-
-      return ok(`Moved ${id}`);
-    }
-
-    // ------------------------
-    // LIST
-    // ------------------------
-    if (cmd === "list") {
-      const lines = memory.entities.map(
-        (e) => `${e.id} (${e.type}) x=${e.transform.x} y=${e.transform.y}`
-      );
-      setOutput((p) => [...p, ...lines]);
-      setInput("");
-      return;
-    }
-
-    // ------------------------
-    // CLEAR
-    // ------------------------
-    if (cmd === "clear") {
-      clearEntities();
-      setInput("");
-      return;
-    }
-  }
-
-  // ----------------------
-  // UI
-  // ----------------------
+  // ------------------------------------------------------
+  // UI RENDER
+  // ------------------------------------------------------
   return (
-    <>
-      <style>{`
-        @keyframes caretPulse {
-          0% { opacity: 0.25; }
-          50% { opacity: 1; }
-          100% { opacity: 0.25; }
-        }
-      `}</style>
-
-      <div
-        style={{
-          position: "absolute",
-          bottom: "32px",
-          left: "50%",
-          transform: "translateX(-50%)",
-          display: "flex",
-          flexDirection: "column",
-          background: "rgba(0,0,0,0.28)",
-          border: "1px solid rgba(0,255,255,0.35)",
-          boxShadow: "0 0 10px rgba(0,255,255,0.25)",
-          padding: "10px 14px",
-          borderRadius: "12px",
-          pointerEvents: "auto",
-          backdropFilter: "blur(6px)",
-          WebkitBackdropFilter: "blur(6px)",
-          zIndex: 5,
+    <div className="pulse-dock-container" style={{ position: "relative" }}>
+      <form
+        className="pulse-dock"
+        onSubmit={(e) => {
+          e.preventDefault();
         }}
       >
-        {output.length > 0 && (
-          <div
-            ref={logContainerRef}
-            style={{
-              fontFamily: "monospace",
-              fontSize: "12px",
-              color: "#7FF7FF",
-              maxHeight: "120px",
-              overflowY: "auto",
-              marginBottom: "6px",
-            }}
-          >
-            {output.map((line, i) => (
-              <div key={i}>{line}</div>
-            ))}
-          </div>
-        )}
+        <audio ref={audioRef} src="/sfx/ui_click_tick.wav" preload="auto" />
 
-        <div
+        <PulseButton
+          type="button"
+          className="pulse-logs-btn-inline"
+          onClick={() => setShowLog(!showLog)}
+        >
+          Logs
+        </PulseButton>
+
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Type a command..."
           style={{
-            fontFamily: "monospace",
+            width: "100%",
+            padding: "8px 10px",
+            borderRadius: "0",
+            border: "1px solid rgba(120,180,190,0.25)",
+            background: "rgba(0,0,0,0.45)",
+            color: "#E8E8E8",
             fontSize: "13px",
-            color: "#7FF7FF",
-            marginBottom: "4px",
+            fontWeight: "400",
+            lineHeight: "1.4",
+            outline: "none",
+            boxShadow: "none",
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") send();
+          }}
+        />
+
+        <PulseButton type="button" onClick={send}>
+          SEND
+        </PulseButton>
+      </form>
+
+      {/* LOG WINDOW */}
+      {showLog && (
+        <div
+          ref={logRef}
+          className="pulse-log-window"
+          style={{
+            maxHeight: "260px",
+            overflowY: "auto",
+            marginTop: "8px",
+            padding: "10px 12px",
+            background: "rgba(0,0,0,0.45)",
+            border: "1px solid rgba(120,180,190,0.22)",
+            borderRadius: "0",
+            backdropFilter: "blur(6px)",
+            fontFamily: "ui-monospace, monospace",
+            fontSize: "11.5px",
+            lineHeight: "1.35",
+            whiteSpace: "pre-wrap",
           }}
         >
-          Type commands: spawn, move, delete, clear, list
-        </div>
+          {logItems.map((line, i) => {
+            const isError = line.toLowerCase().includes("error") || line.toLowerCase().includes("fail");
+            return (
+              <div 
+                key={i} 
+                style={{ 
+                  color: isError ? "rgba(230,100,100,0.8)" : "#E8E8E8", 
+                  marginBottom: "4px", 
+                  fontFamily: "ui-monospace, monospace",
+                  fontWeight: 400 
+                }}
+              >
+                {line}
+              </div>
+            );
+          })}
 
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <input
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            placeholder="Enter command..."
-            style={{
-              width: "520px",
-              background: "rgba(0,0,0,0.35)",
-              border: "1px solid rgba(0,255,255,0.35)",
-              borderRadius: "8px",
-              padding: "8px 12px",
-              color: "#cfffff",
-              fontFamily: "monospace",
-              fontSize: "14px",
-              caretColor: "#00eaff",
-              animation: "caretPulse 1.4s infinite",
-              outline: "none",
-            }}
-          />
-
-          <button
-            onClick={handleSend}
-            onMouseEnter={() => {
-              setHoveredSend(true);
-              setShimmerSend(true);
-              setTimeout(() => setShimmerSend(false), 220);
-            }}
-            onMouseLeave={() => {
-              setHoveredSend(false);
-            }}
-            style={{
-              position: "relative",
-              overflow: "hidden",
-              border: hoveredSend ? "1px solid rgba(0,255,255,0.35)" : "1px solid rgba(0,255,255,0.25)",
-              borderRadius: "6px",
-              background: hoveredSend ? "rgba(0,0,0,0.45)" : "rgba(0, 10, 20, 0.35)",
-              backdropFilter: "blur(12px)",
-              boxShadow: hoveredSend 
-                ? "0 0 12px rgba(0,255,255,0.25)" 
-                : "inset 0 0 6px rgba(255,255,255,0.09)",
-              fontFamily: "inherit",
-              padding: "6px 14px",
-              color: "#cfffff",
-              fontSize: "14px",
-              cursor: "pointer",
-              transition: "background 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease",
-            }}
-          >
-            Send
-            <div style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: "100%",
-              pointerEvents: "none",
-              background: "linear-gradient(120deg, rgba(255,255,255,0.0) 0%, rgba(255,255,255,0.10) 45%, rgba(255,255,255,0.18) 50%, rgba(255,255,255,0.10) 55%, rgba(255,255,255,0.0) 100%)",
-              opacity: shimmerSend ? 1 : 0,
-              transform: shimmerSend ? "translateX(38%)" : "translateX(-62%)",
-              transition: "opacity 180ms ease, transform 220ms ease",
-            }} />
-          </button>
+          <div style={{ marginTop: "12px", textAlign: "right" }}>
+            <button
+              onClick={() => {
+                const blob = new Blob([logItems.join("\n")], { type: "text/plain" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "pulse_logs.txt";
+                a.click();
+              }}
+              style={{
+                background: "rgba(0,0,0,0.25)",
+                border: "1px solid rgba(120,180,190,0.22)",
+                padding: "4px 10px",
+                borderRadius: "0",
+                color: "#E8E8E8",
+                cursor: "pointer",
+                fontSize: "11px",
+              }}
+            >
+              Export Logs
+            </button>
+          </div>
         </div>
+      )}
+
+      <div className="pulse-dock-hints">
+        Commands: spawn • move • select • use arrow keys to move selected
       </div>
-    </>
+    </div>
   );
 }

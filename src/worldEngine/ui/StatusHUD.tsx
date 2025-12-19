@@ -1,47 +1,49 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useWorld } from "../core/worldState";
 
 export default function StatusHUD() {
-  const { currentMode } = useWorld();
-  const [selectedCount, setSelectedCount] = useState(0);
+  const [mode, setMode] = useState<string>("none");
+  const [selected, setSelected] = useState<string>("none");
 
   useEffect(() => {
+    function onModeChange(e: any) {
+      setMode(e.detail);
+    }
+    window.addEventListener("mode-change", onModeChange);
+
     function onSelect(e: any) {
-      if (!e?.detail) {
-        setSelectedCount(0);
-        return;
-      }
-      setSelectedCount(1);
+      setSelected(e.detail);
     }
-
-    function onClear() {
-      setSelectedCount(0);
-    }
-
     window.addEventListener("entity-selected", onSelect);
-    window.addEventListener("entity-cleared", onClear);
 
     return () => {
+      window.removeEventListener("mode-change", onModeChange);
       window.removeEventListener("entity-selected", onSelect);
-      window.removeEventListener("entity-cleared", onClear);
     };
   }, []);
 
+  const hasData = mode !== "none" || selected !== "none";
+  
   return (
-    <div data-dom-ui="true" className="pulse-panel hud-panel">
-      <div className="hud-label">MODE</div>
-      <div className="hud-value">
-        {currentMode === "wake" ? "" : currentMode?.toUpperCase()}
-      </div>
-
-      <div className="hud-label">SELECTED</div>
-      <div className="hud-value">{selectedCount}</div>
-
-      <div className="hud-note">
-        Formations apply to units only
-      </div>
+    <div
+      style={{
+        width: "260px",
+        padding: "10px 12px",
+        background: "rgba(0,0,0,0.30)",
+        border: "1px solid rgba(120,180,190,0.22)",
+        borderRadius: "0",
+        color: hasData ? "#E8E8E8" : "rgba(232,232,232,0.4)",
+        fontSize: "13px",
+        fontFamily: "ui-monospace, monospace",
+        fontWeight: 400,
+        lineHeight: "1.35",
+        letterSpacing: "0.02em",
+        boxShadow: "none",
+      }}
+    >
+      <div style={{ marginBottom: "4px" }}><span style={{ fontSize: "11px", opacity: 0.7, fontWeight: 500, letterSpacing: "0.08em" }}>MODE:</span> <span style={{ fontSize: "12px", fontWeight: 600, letterSpacing: "0.02em" }}>{mode !== "none" ? mode.toUpperCase() : "—"}</span></div>
+      <div><span style={{ fontSize: "11px", opacity: 0.7, fontWeight: 500, letterSpacing: "0.08em" }}>SELECTED:</span> <span style={{ fontSize: "12px", fontWeight: 600, letterSpacing: "0.02em" }}>{selected !== "none" ? selected : "—"}</span></div>
     </div>
   );
 }

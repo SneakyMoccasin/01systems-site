@@ -23,6 +23,9 @@ import { registerMovementRuntime } from "./movementLoop";
 // -------------------------------
 const tickRegistry = new Set<() => void>();
 
+// DEBUG: expose global tick registry
+;(window as any).__pulseTicks = tickRegistry;
+
 export function registerTick(fn: () => void) {
   tickRegistry.add(fn);
 }

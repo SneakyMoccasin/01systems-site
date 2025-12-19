@@ -207,6 +207,9 @@ export default function DecisionFlowPage() {
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
+  // Comparison state (read-only, no API calls)
+  const [policyB, setPolicyB] = useState<PolicyKey>("aggressive");
+
   const engine = new DecisionFlowEngine({
     time: 0,
     metrics: {
@@ -259,6 +262,7 @@ export default function DecisionFlowPage() {
     setLoading(false);
   }
 
+
   const data = result ?? defaultResult;
 
   const baselineLoadVal = data.baseline.metrics.load;
@@ -268,6 +272,24 @@ export default function DecisionFlowPage() {
 
   const maxLoad = Math.max(baselineLoadVal, finalLoadVal) || 1;
   const maxCost = Math.max(baselineCostVal, finalCostVal) || 1;
+
+  // Derive summary from existing data (UI-only, no engine changes)
+  const loadRecovery = Math.abs(data.compare.load) < 0.01;
+  const costRecovery = Math.abs(data.compare.cost) < 0.01;
+  const hasRecovery = loadRecovery && costRecovery;
+
+  // System state: check how long load stays above baseline
+  const loadConsequences = data.consequences.filter((c: any) => c.metric === "load" && c.delta > 0);
+  const loadAboveBaselineCount = loadConsequences.length;
+  const totalSteps = data.final.time;
+  const loadAboveBaselineRatio = totalSteps > 0 ? loadAboveBaselineCount / totalSteps : 0;
+  
+  let systemState = "Stable";
+  if (loadAboveBaselineRatio > 0.5) {
+    systemState = "Unstable";
+  } else if (loadAboveBaselineRatio > 0) {
+    systemState = "Under pressure";
+  }
 
   return (
     <main style={{
@@ -507,6 +529,109 @@ export default function DecisionFlowPage() {
             />
           ))}
         </div>
+      </section>
+
+      <section style={{ marginBottom: 32, padding: 20, background: "#1a1f2e", borderRadius: 8, border: "1px solid #2f333a" }}>
+        <h2>Observed consequences</h2>
+
+        <div style={{ marginTop: 16 }}>
+          <div style={{ marginBottom: 16 }}>
+            <h3 style={{ fontSize: 14, marginBottom: 8 }}>Accumulated impact</h3>
+            <p style={{ fontSize: 13, opacity: 0.8 }}>
+              Small differences early can result in significant long-term effects.
+            </p>
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <h3 style={{ fontSize: 14, marginBottom: 8 }}>Recovery</h3>
+            <p style={{ fontSize: 13 }}>
+              {hasRecovery
+                ? "The system returns to baseline within the selected time horizon."
+                : "The system does not recover within the selected time horizon."}
+            </p>
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <h3 style={{ fontSize: 14, marginBottom: 8 }}>System state</h3>
+            <p style={{ fontSize: 13 }}>{systemState}</p>
+          </div>
+
+          <p style={{ fontSize: 12, opacity: 0.7, marginTop: 20, fontStyle: "italic" }}>
+            This simulation shows consequences — not recommendations.
+          </p>
+        </div>
+      </section>
+
+      <section style={{ marginBottom: 32, padding: 20, background: "#1a1f2e", borderRadius: 8, border: "1px solid #2f333a" }}>
+        <h2>Compare decisions</h2>
+        <p style={{ fontSize: 13, opacity: 0.8, marginTop: 8, marginBottom: 20 }}>
+          Different decisions can lead to different futures under the same conditions.
+        </p>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+          <div>
+            <label style={{ display: "block", fontSize: 13, marginBottom: 8 }}>Decision A</label>
+            <div style={{ padding: 8, fontSize: 14, width: "100%", background: "#0e1117", color: COLORS.pageText, border: "1px solid #2f333a", borderRadius: 4, opacity: 0.7 }}>
+              {POLICIES[policy].label} (last run)
+            </div>
+          </div>
+
+          <div>
+            <label style={{ display: "block", fontSize: 13, marginBottom: 8 }}>Decision B</label>
+            <select
+              value={policyB}
+              onChange={e => setPolicyB(e.target.value as PolicyKey)}
+              style={{ padding: 8, fontSize: 14, width: "100%", background: "#0e1117", color: COLORS.pageText, border: "1px solid #2f333a", borderRadius: 4 }}
+            >
+              {Object.entries(POLICIES).map(([key, p]) => (
+                <option key={key} value={key}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <p style={{ fontSize: 12, opacity: 0.7, marginBottom: 20, fontStyle: "italic" }}>
+          Comparison uses last run
+        </p>
+
+        <div style={{ padding: 16, background: "#0e1117", borderRadius: 8, border: "1px solid #2f333a", marginBottom: 16 }}>
+          <h3 style={{ fontSize: 14, marginBottom: 12 }}>Decision A ({POLICIES[policy].label})</h3>
+          
+          <div style={{ marginBottom: 12 }}>
+            <h4 style={{ fontSize: 13, marginBottom: 4, opacity: 0.8 }}>Accumulated impact</h4>
+            <p style={{ fontSize: 12 }}>
+              Load: {data.compare.load > 0 ? "+" : ""}{data.compare.load.toFixed(2)}, 
+              Cost: {data.compare.cost > 0 ? "+" : ""}{data.compare.cost.toFixed(2)}
+            </p>
+          </div>
+
+          <div style={{ marginBottom: 12 }}>
+            <h4 style={{ fontSize: 13, marginBottom: 4, opacity: 0.8 }}>Recovery</h4>
+            <p style={{ fontSize: 12 }}>
+              {hasRecovery
+                ? "Recovers within the selected time horizon."
+                : "Does not recover within the selected time horizon."}
+            </p>
+          </div>
+
+          <div>
+            <h4 style={{ fontSize: 13, marginBottom: 4, opacity: 0.8 }}>System state</h4>
+            <p style={{ fontSize: 12 }}>{systemState}</p>
+          </div>
+        </div>
+
+        <div style={{ padding: 16, background: "#0e1117", borderRadius: 8, border: "1px solid #2f333a", opacity: 0.6 }}>
+          <h3 style={{ fontSize: 14, marginBottom: 12 }}>Decision B ({POLICIES[policyB].label})</h3>
+          <p style={{ fontSize: 12, opacity: 0.8 }}>
+            This view compares consequences when two scenarios are available. Run a second scenario to compare.
+          </p>
+        </div>
+
+        <p style={{ fontSize: 12, opacity: 0.7, marginTop: 20, fontStyle: "italic" }}>
+          This comparison highlights consequences — not recommendations.
+        </p>
       </section>
 
       <h2>Baseline</h2>
