@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { DecisionFlowEngine } from "@/src/decisionFlow/engine";
+import { uiTextSV } from "./uiTextSV";
 
 const COLORS = {
   pageBg: "#0e1117",        // fixed dark background
@@ -72,34 +73,34 @@ const STEP_DETAILS: Record<
   { title: string; explanation: string }
 > = {
   baseline: {
-    title: "Baseline",
+    title: uiTextSV.flowBoxBaseline,
     explanation:
-      "This represents the system in its initial state. No decisions have been applied. It is the reference point used to compare outcomes."
+      "Detta representerar systemet i dess initiala tillstånd. Inga beslut har tillämpats. Det är referenspunkten som används för att jämföra utfall."
   },
   load: {
-    title: "Load / Change",
+    title: uiTextSV.flowBoxLoad,
     explanation:
-      "External pressure or changed conditions applied to the system. This is not a decision, but context the system must handle."
+      "Externt tryck eller förändrade förhållanden tillämpade på systemet. Detta är inte ett beslut, utan kontext som systemet måste hantera."
   },
   decision: {
-    title: "Decision",
+    title: uiTextSV.flowBoxDecision,
     explanation:
-      "An intentional action applied to the system. This is the variable being tested."
+      "En avsiktlig åtgärd tillämpad på systemet. Detta är variabeln som testas."
   },
   time: {
-    title: "Simulation Over Time",
+    title: uiTextSV.flowBoxTime,
     explanation:
-      "The system is allowed to evolve as time progresses. Effects may accumulate or emerge."
+      "Systemet tillåts utvecklas när tiden går. Effekter kan ackumuleras eller uppstå."
   },
   consequences: {
-    title: "Consequences",
+    title: uiTextSV.flowBoxConsequences,
     explanation:
-      "Observed effects, trade-offs, and emergent outcomes caused by the decision under the given conditions."
+      "Observerade effekter, avvägningar och uppkommande utfall orsakade av beslutet under de givna förhållandena."
   },
   compare: {
-    title: "Compare vs Baseline",
+    title: uiTextSV.flowBoxCompare,
     explanation:
-      "A comparison between the final outcome and doing nothing at all. This is where insight is created."
+      "En jämförelse mellan det slutliga utfallet och att inte göra något alls. Det är här insikten skapas."
   }
 };
 
@@ -114,24 +115,24 @@ const POLICIES: Record<
   }
 > = {
   balanced: {
-    label: "Balanced",
-    description: "Moderate trade-off between load reduction and cost.",
+    label: uiTextSV.policyBalanced,
+    description: uiTextSV.policyDescriptionGeneric,
     apply: state => {
       state.metrics.load -= 1;
       state.metrics.cost += 1;
     }
   },
   aggressive: {
-    label: "Aggressive",
-    description: "Strong load reduction at higher cost.",
+    label: uiTextSV.policyAggressive,
+    description: uiTextSV.policyDescriptionGeneric,
     apply: state => {
       state.metrics.load -= 2;
       state.metrics.cost += 3;
     }
   },
   conservative: {
-    label: "Conservative",
-    description: "Minimal intervention, low cost impact.",
+    label: uiTextSV.policyConservative,
+    description: uiTextSV.policyDescriptionGeneric,
     apply: state => {
       state.metrics.load -= 0.5;
       state.metrics.cost += 0.5;
@@ -310,11 +311,11 @@ export default function DecisionFlowPage() {
   const totalSteps = data.final.time;
   const loadAboveBaselineRatio = totalSteps > 0 ? loadAboveBaselineCount / totalSteps : 0;
   
-  let systemState = "Stable";
+  let systemState = uiTextSV.systemStateStable;
   if (loadAboveBaselineRatio > 0.5) {
-    systemState = "Unstable";
+    systemState = uiTextSV.systemStateUnstable;
   } else if (loadAboveBaselineRatio > 0) {
-    systemState = "Under pressure";
+    systemState = uiTextSV.systemStateUnderPressure;
   }
 
   // Narrative generation from existing data
@@ -332,11 +333,11 @@ export default function DecisionFlowPage() {
     const loadAboveBaseline = resultData.consequences.filter((c: any) => c.metric === "load" && c.delta > 0);
     const loadAboveBaselineRatio = resultTotalSteps > 0 ? loadAboveBaseline.length / resultTotalSteps : 0;
     
-    let systemStateText = "Stable";
+    let systemStateText = uiTextSV.systemStateStable;
     if (loadAboveBaselineRatio > 0.5) {
-      systemStateText = "Unstable";
+      systemStateText = uiTextSV.systemStateUnstable;
     } else if (loadAboveBaselineRatio > 0) {
-      systemStateText = "Under pressure";
+      systemStateText = uiTextSV.systemStateUnderPressure;
     }
 
     // Phase 1: Early response
@@ -346,50 +347,50 @@ export default function DecisionFlowPage() {
     
     let phase1 = "";
     if (earlyLoadIncrease) {
-      phase1 = "Pressure rises quickly.";
+      phase1 = uiTextSV.narrativePhase1PressureRises;
     } else if (earlyLoadStable) {
-      phase1 = "The system absorbs the initial change.";
+      phase1 = uiTextSV.narrativePhase1SystemAbsorbs;
     } else {
-      phase1 = "The system responds to the initial change.";
+      phase1 = uiTextSV.narrativePhase1SystemResponds;
     }
     if (earlyCostRise) {
-      phase1 += " Early trade-offs emerge.";
+      phase1 += uiTextSV.narrativePhase1EarlyTradeoffs;
     }
 
     // Phase 2: Accumulation
     let phase2 = "";
     if (loadAboveBaselineRatio > 0.5) {
-      phase2 = "Sustained pressure narrows future options. The system's flexibility decreases as constraints become more entrenched.";
+      phase2 = uiTextSV.narrativePhase2SustainedPressure;
     } else if (loadAboveBaselineRatio > 0 && loadAboveBaselineRatio <= 0.5) {
-      phase2 = "The system oscillates between stability and strain. Some flexibility remains, but repeated imbalances create lock-in effects.";
+      phase2 = uiTextSV.narrativePhase2Oscillates;
     } else {
-      phase2 = "The system maintains relative stability with minimal constraint formation.";
+      phase2 = uiTextSV.narrativePhase2Stable;
     }
     if (resultData.compare.cost !== 0) {
       const costIncrease = resultData.compare.cost > 0;
       if (costIncrease) {
-        phase2 += " Resources are committed, reducing available margin for future adjustments.";
+        phase2 += uiTextSV.narrativePhase2ResourcesCommitted;
       } else {
-        phase2 += " Resource allocation shifts, affecting the system's resilience.";
+        phase2 += uiTextSV.narrativePhase2ResourceAllocation;
       }
     }
 
     // Phase 3: Outcome
     let phase3 = "";
     if (hasRecovery) {
-      phase3 = `The system reaches a new equilibrium that aligns with baseline conditions. The system state is ${systemStateText.toLowerCase()}.`;
+      phase3 = `${uiTextSV.narrativePhase3Recovery} ${systemStateText.toLowerCase()}.`;
     } else {
       const costIncrease = resultData.compare.cost > 0;
       const loadIncrease = resultData.compare.load > 0;
       
       if (costIncrease && loadIncrease) {
-        phase3 = `The system stabilizes at a new equilibrium with higher sustained cost and pressure. Flexibility and margin are reduced. The system state is ${systemStateText.toLowerCase()}.`;
+        phase3 = `${uiTextSV.narrativePhase3CostAndLoad} ${systemStateText.toLowerCase()}.`;
       } else if (costIncrease) {
-        phase3 = `The system reaches a new equilibrium with higher sustained cost. Recovery is incomplete, and available margin is diminished. The system state is ${systemStateText.toLowerCase()}.`;
+        phase3 = `${uiTextSV.narrativePhase3CostOnly} ${systemStateText.toLowerCase()}.`;
       } else if (loadIncrease) {
-        phase3 = `The system stabilizes with sustained pressure above baseline. Recovery is delayed, and operational flexibility is constrained. The system state is ${systemStateText.toLowerCase()}.`;
+        phase3 = `${uiTextSV.narrativePhase3LoadOnly} ${systemStateText.toLowerCase()}.`;
       } else {
-        phase3 = `The system reaches a new equilibrium that differs from baseline. Recovery is incomplete. The system state is ${systemStateText.toLowerCase()}.`;
+        phase3 = `${uiTextSV.narrativePhase3Other} ${systemStateText.toLowerCase()}.`;
       }
     }
 
@@ -411,25 +412,25 @@ export default function DecisionFlowPage() {
     // Pressure signal: sensitivity and fragility
     let pressure = "";
     if (loadAboveBaselineRatio > 0.5) {
-      pressure = "Elevated pressure signals increased sensitivity and fragility to additional disruptions.";
+      pressure = uiTextSV.implicationsPressureElevated;
     } else {
-      pressure = "Intermittent pressure signals that the system retains some adaptive capacity, though sensitivity remains present.";
+      pressure = uiTextSV.implicationsPressureIntermittent;
     }
     
     // Commitment signal: reduced flexibility / margin
     let commitment = "";
     if (costIncrease) {
-      commitment = "Sustained commitments signal reduced flexibility and diminished margin for future adjustments.";
+      commitment = uiTextSV.implicationsCommitmentReduced;
     } else {
-      commitment = "Resource commitments remain closer to baseline, signaling preserved flexibility.";
+      commitment = uiTextSV.implicationsCommitmentPreserved;
     }
     
     // Recovery signal: dependency on external change
     let recovery = "";
     if (!hasRecovery) {
-      recovery = "Recovery signals depend on changes outside the current response pattern, indicating structural dependency on external conditions.";
+      recovery = uiTextSV.implicationsRecoveryDependent;
     } else {
-      recovery = "The system signals the ability to realign with baseline conditions under current response patterns.";
+      recovery = uiTextSV.implicationsRecoveryAbility;
     }
     
     return { pressure, commitment, recovery };
@@ -465,13 +466,13 @@ export default function DecisionFlowPage() {
             fontSize: 14
           }}
         >
-          ← Back to Intro
+          {uiTextSV.backToIntro}
         </Link>
       </div>
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
         <div>
-          <h1 style={{ marginBottom: 4 }}>Decision Flow Sandbox</h1>
+          <h1 style={{ marginBottom: 4 }}>{uiTextSV.pageTitle}</h1>
           <button
             onClick={() => setShowHelper(!showHelper)}
             style={{
@@ -486,7 +487,7 @@ export default function DecisionFlowPage() {
               textDecorationStyle: "dotted"
             }}
           >
-            What am I seeing?
+            {uiTextSV.whatAmISeeing}
           </button>
         </div>
         <button
@@ -502,7 +503,7 @@ export default function DecisionFlowPage() {
             opacity: 0.8
           }}
         >
-          {isPresentationMode ? "Exit presentation mode" : "Enter presentation mode"}
+          {isPresentationMode ? uiTextSV.exitPresentationMode : uiTextSV.enterPresentationMode}
         </button>
       </div>
 
@@ -521,7 +522,7 @@ export default function DecisionFlowPage() {
             marginBottom: 12,
             color: COLORS.pageText
           }}>
-            About this view
+            {uiTextSV.helperTitle}
           </h3>
           <div style={{
             fontSize: 13,
@@ -530,13 +531,13 @@ export default function DecisionFlowPage() {
             opacity: 0.9
           }}>
             <p style={{ marginBottom: 12 }}>
-              This simulation shows how different response choices play out over time under a given set of conditions. Each time you run it, the system recalculates the trajectory based on your inputs.
+              {uiTextSV.helperParagraph1}
             </p>
             <p style={{ marginBottom: 12 }}>
-              The decision narrative explains how a chosen response unfolds step by step. System implications describe broader signals the system emits if current conditions persist, regardless of response.
+              {uiTextSV.helperParagraph2}
             </p>
             <p>
-              This tool illustrates patterns and consequences. It does not provide recommendations, predictions, or exact forecasts.
+              {uiTextSV.helperParagraph3}
             </p>
           </div>
         </div>
@@ -559,19 +560,25 @@ export default function DecisionFlowPage() {
             background: COLORS.pageText,
             opacity: 0.6
           }}></span>
-          System state updated
+          {uiTextSV.systemStateUpdated}
         </div>
       )}
 
       <section style={{ marginBottom: 32 }}>
-        <h2>Simulation Inputs</h2>
+        <h2>{uiTextSV.simulationInputs}</h2>
+        <p style={{ fontSize: 13, opacity: 0.8, marginBottom: 16, marginTop: 8 }}>
+          {uiTextSV.simulationInputsExplanation}
+        </p>
+        <p style={{ fontSize: 12, opacity: 0.7, marginBottom: 16, fontStyle: "italic" }}>
+          {uiTextSV.simulationInputsPurpose}
+        </p>
 
         <div style={{ maxWidth: 500 }}>
           {/* Question 1: Current system state */}
           <div style={{ marginBottom: 24 }}>
-            <h3 style={{ fontSize: 15, marginBottom: 4 }}>Current system state</h3>
+            <h3 style={{ fontSize: 15, marginBottom: 4 }}>{uiTextSV.currentSystemState}</h3>
             <p style={{ fontSize: 13, opacity: 0.8, marginBottom: 12 }}>
-              How strained is the system right now?
+              {uiTextSV.currentSystemStateDescription}
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
@@ -583,7 +590,7 @@ export default function DecisionFlowPage() {
                   onChange={e => setSituation(e.target.value as "calm" | "manageable" | "strained" | "heavy-pressure")}
                   style={{ cursor: "pointer" }}
                 />
-                <span style={{ fontSize: 14 }}>Calm and stable</span>
+                <span style={{ fontSize: 14 }}>{uiTextSV.calmAndStable}</span>
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
                 <input
@@ -594,7 +601,7 @@ export default function DecisionFlowPage() {
                   onChange={e => setSituation(e.target.value as "calm" | "manageable" | "strained" | "heavy-pressure")}
                   style={{ cursor: "pointer" }}
                 />
-                <span style={{ fontSize: 14 }}>Manageable</span>
+                <span style={{ fontSize: 14 }}>{uiTextSV.manageable}</span>
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
                 <input
@@ -605,7 +612,7 @@ export default function DecisionFlowPage() {
                   onChange={e => setSituation(e.target.value as "calm" | "manageable" | "strained" | "heavy-pressure")}
                   style={{ cursor: "pointer" }}
                 />
-                <span style={{ fontSize: 14 }}>Strained</span>
+                <span style={{ fontSize: 14 }}>{uiTextSV.strained}</span>
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
                 <input
@@ -616,16 +623,16 @@ export default function DecisionFlowPage() {
                   onChange={e => setSituation(e.target.value as "calm" | "manageable" | "strained" | "heavy-pressure")}
                   style={{ cursor: "pointer" }}
                 />
-                <span style={{ fontSize: 14 }}>Under heavy pressure</span>
+                <span style={{ fontSize: 14 }}>{uiTextSV.underHeavyPressure}</span>
               </label>
             </div>
           </div>
 
           {/* Question 2: External change */}
           <div style={{ marginBottom: 24 }}>
-            <h3 style={{ fontSize: 15, marginBottom: 4 }}>External change</h3>
+            <h3 style={{ fontSize: 15, marginBottom: 4 }}>{uiTextSV.externalChange}</h3>
             <p style={{ fontSize: 13, opacity: 0.8, marginBottom: 12 }}>
-              What is increasing pressure on the system?
+              {uiTextSV.externalChangeDescription}
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
@@ -637,7 +644,7 @@ export default function DecisionFlowPage() {
                   onChange={e => setChange(e.target.value as "increasing-pressure" | "loss-capacity" | "no-change")}
                   style={{ cursor: "pointer" }}
                 />
-                <span style={{ fontSize: 14 }}>Increasing pressure</span>
+                <span style={{ fontSize: 14 }}>{uiTextSV.increasingPressure}</span>
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
                 <input
@@ -648,7 +655,7 @@ export default function DecisionFlowPage() {
                   onChange={e => setChange(e.target.value as "increasing-pressure" | "loss-capacity" | "no-change")}
                   style={{ cursor: "pointer" }}
                 />
-                <span style={{ fontSize: 14 }}>Loss of capacity</span>
+                <span style={{ fontSize: 14 }}>{uiTextSV.lossOfCapacity}</span>
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
                 <input
@@ -659,16 +666,16 @@ export default function DecisionFlowPage() {
                   onChange={e => setChange(e.target.value as "increasing-pressure" | "loss-capacity" | "no-change")}
                   style={{ cursor: "pointer" }}
                 />
-                <span style={{ fontSize: 14 }}>No major change</span>
+                <span style={{ fontSize: 14 }}>{uiTextSV.noMajorChange}</span>
               </label>
             </div>
           </div>
 
           {/* Question 3: Response focus */}
           <div style={{ marginBottom: 24 }}>
-            <h3 style={{ fontSize: 15, marginBottom: 4 }}>Response focus</h3>
+            <h3 style={{ fontSize: 15, marginBottom: 4 }}>{uiTextSV.responseFocus}</h3>
             <p style={{ fontSize: 13, opacity: 0.8, marginBottom: 12 }}>
-              What is the primary focus of the response?
+              {uiTextSV.responseFocusDescription}
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
@@ -680,7 +687,7 @@ export default function DecisionFlowPage() {
                   onChange={e => setDecision(e.target.value as PolicyKey)}
                   style={{ cursor: "pointer" }}
                 />
-                <span style={{ fontSize: 14 }}>Protect people and stability</span>
+                <span style={{ fontSize: 14 }}>{uiTextSV.protectPeopleAndStability}</span>
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
                 <input
@@ -691,7 +698,7 @@ export default function DecisionFlowPage() {
                   onChange={e => setDecision(e.target.value as PolicyKey)}
                   style={{ cursor: "pointer" }}
                 />
-                <span style={{ fontSize: 14 }}>Balance short-term pressure and long-term health</span>
+                <span style={{ fontSize: 14 }}>{uiTextSV.balanceShortTermAndLongTerm}</span>
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
                 <input
@@ -702,14 +709,13 @@ export default function DecisionFlowPage() {
                   onChange={e => setDecision(e.target.value as PolicyKey)}
                   style={{ cursor: "pointer" }}
                 />
-                <span style={{ fontSize: 14 }}>Push hard to meet current demands</span>
+                <span style={{ fontSize: 14 }}>{uiTextSV.pushHardToMeetDemands}</span>
               </label>
             </div>
           </div>
 
           <p style={{ fontSize: 12, opacity: 0.7, marginBottom: 16, fontStyle: "italic" }}>
-            This pilot uses indexed values to illustrate how decisions affect a system over time.
-            The focus is on patterns, trade-offs, and consequences — not exact numbers.
+            {uiTextSV.pilotHelperText}
           </p>
 
           <button
@@ -726,22 +732,22 @@ export default function DecisionFlowPage() {
               fontWeight: 600
             }}
           >
-            {loading ? "Running…" : "Run Simulation"}
+            {loading ? uiTextSV.running : uiTextSV.runSimulation}
           </button>
         </div>
       </section>
 
       <section style={{ marginBottom: 24 }}>
-        <h2>Decision Policy</h2>
+        <h2>{uiTextSV.decisionPolicy}</h2>
 
         <select
           value={decision}
           onChange={e => setDecision(e.target.value as PolicyKey)}
           style={{ padding: 8, fontSize: 14 }}
         >
-          <option value="conservative">Protect people and stability</option>
-          <option value="balanced">Balance short-term pressure and long-term health</option>
-          <option value="aggressive">Push hard to meet current demands</option>
+          <option value="conservative">{uiTextSV.policyConservative}</option>
+          <option value="balanced">{uiTextSV.policyBalanced}</option>
+          <option value="aggressive">{uiTextSV.policyAggressive}</option>
         </select>
 
         <p style={{ marginTop: 8, fontSize: 14, maxWidth: 400 }}>
@@ -750,9 +756,9 @@ export default function DecisionFlowPage() {
       </section>
 
       <section style={{ marginBottom: 40 }}>
-        <h2>Decision Flow</h2>
+        <h2>{uiTextSV.decisionFlow}</h2>
         <p style={{ fontSize: 14, opacity: 0.7 }}>
-          Click a step to focus on it
+          {uiTextSV.clickStepToFocus}
         </p>
 
         <div
@@ -764,43 +770,43 @@ export default function DecisionFlowPage() {
           }}
         >
           <FlowBox
-            title="Baseline"
-            description="Initial system state. No decisions applied. Reference point."
+            title={uiTextSV.flowBoxBaseline}
+            description={uiTextSV.flowBoxBaselineDesc}
             active={activeStep === "baseline"}
             onClick={() => setActiveStep("baseline")}
           />
           <Arrow />
           <FlowBox
-            title="Load / Change"
-            description="External pressure or changed conditions. Not a decision."
+            title={uiTextSV.flowBoxLoad}
+            description={uiTextSV.flowBoxLoadDesc}
             active={activeStep === "load"}
             onClick={() => setActiveStep("load")}
           />
           <Arrow />
           <FlowBox
-            title="Decision"
-            description="Intentional action applied to the system."
+            title={uiTextSV.flowBoxDecision}
+            description={uiTextSV.flowBoxDecisionDesc}
             active={activeStep === "decision"}
             onClick={() => setActiveStep("decision")}
           />
           <Arrow />
           <FlowBox
-            title="Simulation Over Time"
-            description="System evolves as time progresses."
+            title={uiTextSV.flowBoxTime}
+            description={uiTextSV.flowBoxTimeDesc}
             active={activeStep === "time"}
             onClick={() => setActiveStep("time")}
           />
           <Arrow />
           <FlowBox
-            title="Consequences"
-            description="Observed effects, trade-offs, and emergent outcomes."
+            title={uiTextSV.flowBoxConsequences}
+            description={uiTextSV.flowBoxConsequencesDesc}
             active={activeStep === "consequences"}
             onClick={() => setActiveStep("consequences")}
           />
           <Arrow />
           <FlowBox
-            title="Compare vs Baseline"
-            description="Differences between outcome and doing nothing."
+            title={uiTextSV.flowBoxCompare}
+            description={uiTextSV.flowBoxCompareDesc}
             active={activeStep === "compare"}
             onClick={() => setActiveStep("compare")}
           />
@@ -825,21 +831,21 @@ export default function DecisionFlowPage() {
       )}
 
       <section style={{ marginBottom: 32 }}>
-        <h2>Visual Results</h2>
+        <h2>{uiTextSV.visualResults}</h2>
 
         <div style={{ maxWidth: 420 }}>
-          <h3 style={{ marginTop: 12 }}>Load</h3>
-          <Bar label="Baseline" value={baselineLoadVal} max={maxLoad} />
-          <Bar label="Final" value={finalLoadVal} max={maxLoad} />
+          <h3 style={{ marginTop: 12 }}>{uiTextSV.load}</h3>
+          <Bar label={uiTextSV.baseline} value={baselineLoadVal} max={maxLoad} />
+          <Bar label={uiTextSV.final} value={finalLoadVal} max={maxLoad} />
 
-          <h3 style={{ marginTop: 16 }}>Cost</h3>
-          <Bar label="Baseline" value={baselineCostVal} max={maxCost} />
-          <Bar label="Final" value={finalCostVal} max={maxCost} />
+          <h3 style={{ marginTop: 16 }}>{uiTextSV.cost}</h3>
+          <Bar label={uiTextSV.baseline} value={baselineCostVal} max={maxCost} />
+          <Bar label={uiTextSV.final} value={finalCostVal} max={maxCost} />
         </div>
       </section>
 
       <section style={{ marginBottom: 32 }}>
-        <h2>Consequences Over Time</h2>
+        <h2>{uiTextSV.consequencesOverTime}</h2>
 
         <div style={{ maxWidth: 520 }}>
           <div
@@ -854,10 +860,10 @@ export default function DecisionFlowPage() {
               marginBottom: 4
             }}
           >
-            <div>Time</div>
-            <div>Metric</div>
-            <div>Δ Change</div>
-            <div>Value</div>
+            <div>{uiTextSV.time}</div>
+            <div>{uiTextSV.metric}</div>
+            <div>{uiTextSV.deltaChange}</div>
+            <div>{uiTextSV.value}</div>
           </div>
 
           {data.consequences.map((c: any, i: number) => (
@@ -873,76 +879,76 @@ export default function DecisionFlowPage() {
       </section>
 
       <section style={{ marginBottom: 32, padding: 20, background: "#1a1f2e", borderRadius: 8, border: "1px solid #2f333a" }}>
-        <h2>Observed consequences</h2>
+        <h2>{uiTextSV.observedConsequences}</h2>
 
         <div style={{ marginTop: 16 }}>
           <div style={{ marginBottom: 16 }}>
-            <h3 style={{ fontSize: 14, marginBottom: 8 }}>Accumulated impact</h3>
+            <h3 style={{ fontSize: 14, marginBottom: 8 }}>{uiTextSV.accumulatedImpact}</h3>
             <p style={{ fontSize: 13, opacity: 0.8 }}>
-              Small differences early can result in significant long-term effects.
+              {uiTextSV.accumulatedImpactText}
             </p>
           </div>
 
           <div style={{ marginBottom: 16 }}>
-            <h3 style={{ fontSize: 14, marginBottom: 8 }}>Recovery</h3>
+            <h3 style={{ fontSize: 14, marginBottom: 8 }}>{uiTextSV.recovery}</h3>
             <p style={{ fontSize: 13 }}>
               {hasRecovery
-                ? "The system returns to baseline within the selected time horizon."
-                : "The system does not recover within the selected time horizon."}
+                ? uiTextSV.recoveryReturns
+                : uiTextSV.recoveryNotReturns}
             </p>
           </div>
 
           <div style={{ marginBottom: 16 }}>
-            <h3 style={{ fontSize: 14, marginBottom: 8 }}>System state</h3>
+            <h3 style={{ fontSize: 14, marginBottom: 8 }}>{uiTextSV.systemState}</h3>
             <p style={{ fontSize: 13 }}>{systemState}</p>
           </div>
 
           <p style={{ fontSize: 12, opacity: 0.7, marginTop: 20, fontStyle: "italic" }}>
-            This simulation shows consequences — not recommendations.
+            {uiTextSV.observedConsequencesDisclaimer}
           </p>
         </div>
       </section>
 
       <section style={{ marginBottom: 32, padding: 20, background: "#1a1f2e", borderRadius: 8, border: "1px solid #2f333a" }}>
-        <h2>Decision narrative</h2>
+        <h2>{uiTextSV.decisionNarrative}</h2>
         <p style={{ fontSize: 13, opacity: 0.8, marginTop: 8, marginBottom: 24 }}>
-          How different choices shape the system over time under the same conditions.
+          {uiTextSV.decisionNarrativeSubtitle}
         </p>
 
         <div style={{ marginBottom: 24 }}>
-          <label style={{ display: "block", fontSize: 13, marginBottom: 8 }}>Alternative response</label>
+          <label style={{ display: "block", fontSize: 13, marginBottom: 8 }}>{uiTextSV.alternativeResponse}</label>
           <select
             value={policyB}
             onChange={e => setPolicyB(e.target.value as PolicyKey)}
             style={{ padding: 8, fontSize: 14, width: "100%", maxWidth: 400, background: "#0e1117", color: COLORS.pageText, border: "1px solid #2f333a", borderRadius: 4 }}
           >
-            <option value="conservative">Protect people and stability</option>
-            <option value="balanced">Balance short-term pressure and long-term health</option>
-            <option value="aggressive">Push hard to meet current demands</option>
+            <option value="conservative">{uiTextSV.policyConservative}</option>
+            <option value="balanced">{uiTextSV.policyBalanced}</option>
+            <option value="aggressive">{uiTextSV.policyAggressive}</option>
           </select>
         </div>
 
         <div style={{ padding: 20, background: "#0e1117", borderRadius: 8, border: "1px solid #2f333a", marginBottom: 20 }}>
           <h3 style={{ fontSize: 15, marginBottom: 16 }}>
-            {decision === "conservative" ? "Protect people and stability" : decision === "balanced" ? "Balance short-term pressure and long-term health" : "Push hard to meet current demands"}
+            {decision === "conservative" ? uiTextSV.policyConservative : decision === "balanced" ? uiTextSV.policyBalanced : uiTextSV.policyAggressive}
           </h3>
 
           <div style={{ marginBottom: 20 }}>
-            <h4 style={{ fontSize: 14, marginBottom: 8, opacity: 0.9 }}>Early response</h4>
+            <h4 style={{ fontSize: 14, marginBottom: 8, opacity: 0.9 }}>{uiTextSV.earlyResponse}</h4>
             <p style={{ fontSize: 13, lineHeight: 1.6 }}>
               {decisionANarrative.phase1}
             </p>
           </div>
 
           <div style={{ marginBottom: 20 }}>
-            <h4 style={{ fontSize: 14, marginBottom: 8, opacity: 0.9 }}>Accumulation</h4>
+            <h4 style={{ fontSize: 14, marginBottom: 8, opacity: 0.9 }}>{uiTextSV.accumulation}</h4>
             <p style={{ fontSize: 13, lineHeight: 1.6 }}>
               {decisionANarrative.phase2}
             </p>
           </div>
 
           <div>
-            <h4 style={{ fontSize: 14, marginBottom: 8, opacity: 0.9 }}>Outcome</h4>
+            <h4 style={{ fontSize: 14, marginBottom: 8, opacity: 0.9 }}>{uiTextSV.outcome}</h4>
             <p style={{ fontSize: 13, lineHeight: 1.6 }}>
               {decisionANarrative.phase3}
             </p>
@@ -951,38 +957,37 @@ export default function DecisionFlowPage() {
 
         <div style={{ padding: 20, background: "#0e1117", borderRadius: 8, border: "1px solid #2f333a", opacity: 0.8 }}>
           <h3 style={{ fontSize: 15, marginBottom: 12 }}>
-            {policyB === "conservative" ? "Protect people and stability" : policyB === "balanced" ? "Balance short-term pressure and long-term health" : "Push hard to meet current demands"}
+            {policyB === "conservative" ? uiTextSV.policyConservative : policyB === "balanced" ? uiTextSV.policyBalanced : uiTextSV.policyAggressive}
           </h3>
           <p style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 12 }}>
-            If a different response is applied under the same conditions:
+            {uiTextSV.ifDifferentResponse}
           </p>
           <p style={{ fontSize: 13, lineHeight: 1.6, opacity: 0.9 }}>
             {(() => {
               const policyBDiff = policyB !== decision;
               if (!policyBDiff) {
-                return "Under the same conditions, choosing the same response leads to a similar trajectory. Meaningful divergence would require different timing, scale, or focus in the response.";
+                return uiTextSV.sameResponseNote;
               }
               if (policyB === "conservative" && decision !== "conservative") {
-                return "Pressure reduction occurs earlier, but the path to recovery extends. The system prioritizes stability and preserves flexibility, though immediate capacity gains are deferred.";
+                return uiTextSV.policyBComparisonConservative;
               } else if (policyB === "aggressive" && decision !== "aggressive") {
-                return "The system responds more quickly to immediate demands, accelerating initial relief. However, sustained pressure accumulates over time, and long-term flexibility is reduced. Short-term disruption is lower, but operational margin narrows.";
+                return uiTextSV.policyBComparisonAggressive;
               } else {
-                return "The trajectory diverges in timing and trade-off patterns. The system balances immediate response with longer-term considerations differently, affecting when constraints form and how flexibility is preserved or reduced.";
+                return uiTextSV.policyBComparisonOther;
               }
             })()}
           </p>
         </div>
 
         <p style={{ fontSize: 12, opacity: 0.7, marginTop: 24, fontStyle: "italic" }}>
-          This narrative shows how decisions unfold over time.
-          It does not recommend actions or optimize outcomes.
+          {uiTextSV.decisionNarrativeDisclaimer}
         </p>
       </section>
 
       <section style={{ marginBottom: 32, padding: 20, background: "#1a1f2e", borderRadius: 8, border: "1px solid #2f333a" }}>
-        <h2>System implications (if conditions persist)</h2>
+        <h2>{uiTextSV.systemImplications}</h2>
         <p style={{ fontSize: 13, opacity: 0.8, marginTop: 8, marginBottom: 16 }}>
-          Signals the system emits under sustained pressure, regardless of response strategy.
+          {uiTextSV.systemImplicationsSubtitle}
         </p>
 
         <div style={{ marginTop: 16 }}>
@@ -1000,22 +1005,22 @@ export default function DecisionFlowPage() {
         </div>
 
         <p style={{ fontSize: 12, opacity: 0.7, marginTop: 20, fontStyle: "italic" }}>
-          These implications describe system-level signals under the current conditions. They are not tied to a specific decision and do not constitute recommendations.
+          {uiTextSV.systemImplicationsDisclaimer}
         </p>
       </section>
 
       {!isPresentationMode && (
         <>
-          <h2>Baseline</h2>
+          <h2>{uiTextSV.baselineData}</h2>
           <pre>{JSON.stringify(data.baseline, null, 2)}</pre>
 
-          <h2>Final State</h2>
+          <h2>{uiTextSV.finalState}</h2>
           <pre>{JSON.stringify(data.final, null, 2)}</pre>
 
-          <h2>Compare vs Baseline</h2>
+          <h2>{uiTextSV.compareVsBaseline}</h2>
           <pre>{JSON.stringify(data.compare, null, 2)}</pre>
 
-          <h2>Consequences Over Time</h2>
+          <h2>{uiTextSV.consequencesData}</h2>
           <pre>{JSON.stringify(data.consequences, null, 2)}</pre>
         </>
       )}
