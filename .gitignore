@@ -1,3 +1,10 @@
+determinism_run_*.json
+node_modules/
+.next/
+.env
+.env.local
+Backups/
+.DS_Store
 # =================================================
 # Pulse Engine — Pilot v1 (Decision Flow ONLY)
 # Repo is intentionally minimal and locked
