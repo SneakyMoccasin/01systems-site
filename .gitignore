@@ -1,3 +1,8 @@
+# --- generated simulation output ---
+output/
+runs/
+*.zip
+scripts/
 determinism_run_*.json
 node_modules/
 .next/

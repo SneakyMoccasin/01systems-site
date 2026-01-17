@@ -4,6 +4,10 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { DecisionFlowEngine } from "@/src/decisionFlow/engine";
 import { uiTextSV } from "./uiTextSV";
+import AIInterpretationPanel from "./AIInterpretationPanel";
+import AIInterpretationExplanation from "./AIInterpretationExplanation";
+
+const ENABLE_AI_INTERPRETATION_PANEL = true;
 
 const COLORS = {
   pageBg: "#0e1117",        // fixed dark background
@@ -393,7 +397,6 @@ export default function DecisionFlowPage() {
         phase3 = `${uiTextSV.narrativePhase3Other} ${systemStateText.toLowerCase()}.`;
       }
     }
-
     return { phase1, phase2, phase3 };
   };
 
@@ -449,6 +452,208 @@ export default function DecisionFlowPage() {
       return () => clearTimeout(timer);
     }
   }, [systemUpdatedAt]);
+
+  interface AIInterpretation {
+    metadata: {
+      contractVersion: string;
+      timestamp: string;
+      inputSource: string;
+      totalTimeSteps: number;
+      inputValidation: {
+        format: "CSV" | "JSON";
+        valid: boolean;
+        errors: string[];
+      };
+    };
+    systemPhaseAnalysis: {
+      phases: Array<{
+        time: number;
+        phase: "stable" | "fragile" | "unstable";
+        indicators: {
+          loadCapacityRatio: number;
+          stress: number;
+          recovery: number;
+          capacityTrend: "increasing" | "decreasing" | "stable";
+        };
+      }>;
+      phaseDistribution: {
+        stable: number;
+        fragile: number;
+        unstable: number;
+      };
+    };
+    phaseTransitions: Array<{
+      fromTime: number;
+      toTime: number;
+      fromPhase: "stable" | "fragile" | "unstable";
+      toPhase: "stable" | "fragile" | "unstable";
+      transitionType: string;
+      triggeringConditions: string[];
+    }>;
+    loadCapacityAnalysis: {
+      loadCapacityRatios: Array<{
+        time: number;
+        ratio: number;
+        overCapacity: boolean;
+      }>;
+      overCapacityPeriods: Array<{
+        startTime: number;
+        endTime: number | null;
+        duration: number;
+        maxRatio: number;
+      }>;
+      trend: {
+        direction: "increasing" | "decreasing" | "stable" | "oscillating";
+        finalRatio: number;
+        initialRatio: number;
+      };
+    };
+    stressAnalysis: {
+      stressPatterns: Array<{
+        time: number;
+        stress: number;
+        pattern: "accumulating" | "dissipating" | "sustained";
+      }>;
+      accumulationPeriods: Array<{
+        startTime: number;
+        endTime: number | null;
+        initialStress: number;
+        peakStress: number;
+        rate: number;
+      }>;
+      sustainedHighStress: Array<{
+        startTime: number;
+        endTime: number | null;
+        threshold: number;
+        averageStress: number;
+      }>;
+    };
+    recoveryAnalysis: {
+      recoveryPatterns: Array<{
+        time: number;
+        recovery: number;
+        pattern: "degrading" | "stable" | "improving";
+        rate: number;
+      }>;
+      degradationPeriods: Array<{
+        startTime: number;
+        endTime: number | null;
+        initialRecovery: number;
+        finalRecovery: number;
+        rate: number;
+      }>;
+      lowRecoveryPeriods: Array<{
+        startTime: number;
+        endTime: number | null;
+        threshold: number;
+        minRecovery: number;
+      }>;
+    };
+    capacityAnalysis: {
+      capacityPatterns: Array<{
+        time: number;
+        capacity: number;
+        pattern: "eroding" | "stable" | "rebuilding";
+        rate: number;
+        percentageOfInitial: number;
+      }>;
+      erosionPeriods: Array<{
+        startTime: number;
+        endTime: number | null;
+        initialCapacity: number;
+        finalCapacity: number;
+        rate: number;
+      }>;
+      rebuildingPeriods: Array<{
+        startTime: number;
+        endTime: number | null;
+        initialCapacity: number;
+        finalCapacity: number;
+        rate: number;
+      }>;
+    };
+    feedbackLoopAnalysis: {
+      detectedLoops: Array<{
+        startTime: number;
+        endTime: number | null;
+        loopType: "reinforcing" | "balancing";
+        components: string[];
+        severity: "low" | "medium" | "high";
+      }>;
+    };
+    riskSignals: Array<{
+      time: number;
+      signalType: string;
+      severity: "low" | "medium" | "high" | "critical";
+      indicators: {
+        loadCapacityRatio: number | null;
+        stress: number | null;
+        recovery: number | null;
+        capacityChange: number | null;
+      };
+      threshold: number;
+      exceedance: number;
+    }>;
+    trajectoryAnalysis: {
+      classification: "stabilizing" | "deteriorating" | "oscillating" | "stable";
+      indicators: {
+        finalPhase: "stable" | "fragile" | "unstable";
+        phaseChangeCount: number;
+        netLoadChange: number;
+        netCapacityChange: number;
+        netRecoveryChange: number;
+        netStressChange: number;
+      };
+      trends: {
+        load: "increasing" | "decreasing" | "stable";
+        capacity: "increasing" | "decreasing" | "stable";
+        recovery: "increasing" | "decreasing" | "stable";
+        stress: "increasing" | "decreasing" | "stable";
+      };
+    };
+    criticalPoints: Array<{
+      time: number;
+      pointType: "recoveryThreshold" | "capacityThreshold" | "stressThreshold" | "phaseTransition";
+      threshold: number;
+      value: number;
+      direction: "approaching" | "crossing" | "receding";
+    }>;
+    summary: {
+      overallSystemState: "stable" | "fragile" | "unstable";
+      keyFindings: string[];
+      riskLevel: "low" | "medium" | "high" | "critical";
+      phaseTransitionCount: number;
+      longestUnstablePeriod: number | null;
+    };
+  }
+
+  const [aiInterpretationData, setAIInterpretationData] = useState<AIInterpretation | null>(null);
+
+  useEffect(() => {
+    if (!ENABLE_AI_INTERPRETATION_PANEL) {
+      return;
+    }
+
+    async function fetchAIInterpretation() {
+      try {
+        const res = await fetch("/api/ai-interpretation");
+        if (res.status === 204) {
+          setAIInterpretationData(null);
+          return;
+        }
+        if (!res.ok) {
+          setAIInterpretationData(null);
+          return;
+        }
+        const data: AIInterpretation = await res.json();
+        setAIInterpretationData(data);
+      } catch (error) {
+        setAIInterpretationData(null);
+      }
+    }
+
+    fetchAIInterpretation();
+  }, []);
 
   return (
     <main style={{
@@ -576,6 +781,9 @@ export default function DecisionFlowPage() {
         <div style={{ maxWidth: 500 }}>
           {/* Question 1: Current system state */}
           <div style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 8, maxWidth: 480 }}>
+              Beskriv hur systemet upplevs just nu. Inte hur det borde vara, utan hur det faktiskt är. Om ni är oense – välj det läge som flest i rummet kan enas om.
+            </div>
             <h3 style={{ fontSize: 15, marginBottom: 4 }}>{uiTextSV.currentSystemState}</h3>
             <p style={{ fontSize: 13, opacity: 0.8, marginBottom: 12 }}>
               {uiTextSV.currentSystemStateDescription}
@@ -630,6 +838,9 @@ export default function DecisionFlowPage() {
 
           {/* Question 2: External change */}
           <div style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 8, maxWidth: 480 }}>
+              Detta är inte ett beslut. Det är något som påverkar systemet oavsett vad ni gör. Frågan är: vad trycker på systemet just nu?
+            </div>
             <h3 style={{ fontSize: 15, marginBottom: 4 }}>{uiTextSV.externalChange}</h3>
             <p style={{ fontSize: 13, opacity: 0.8, marginBottom: 12 }}>
               {uiTextSV.externalChangeDescription}
@@ -673,6 +884,9 @@ export default function DecisionFlowPage() {
 
           {/* Question 3: Response focus */}
           <div style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 8, maxWidth: 480 }}>
+              Här testar ni inte vad som är rätt, utan vad som händer när olika prioriteringar får styra systemets utveckling över tid.
+            </div>
             <h3 style={{ fontSize: 15, marginBottom: 4 }}>{uiTextSV.responseFocus}</h3>
             <p style={{ fontSize: 13, opacity: 0.8, marginBottom: 12 }}>
               {uiTextSV.responseFocusDescription}
@@ -1009,6 +1223,18 @@ export default function DecisionFlowPage() {
         </p>
       </section>
 
+      {/* Read-only AI explanation layer - the UI performs zero interpretation or transformation */}
+      {ENABLE_AI_INTERPRETATION_PANEL && aiInterpretationData && (
+        <>
+          <section style={{ marginBottom: 32, padding: 20, background: "#1a1f2e", borderRadius: 8, border: "1px solid #2f333a" }}>
+            <AIInterpretationExplanation data={aiInterpretationData} />
+          </section>
+          <section style={{ marginBottom: 32, padding: 20, background: "#1a1f2e", borderRadius: 8, border: "1px solid #2f333a" }}>
+            <AIInterpretationPanel data={aiInterpretationData} />
+          </section>
+        </>
+      )}
+
       {!isPresentationMode && (
         <>
           <h2>{uiTextSV.baselineData}</h2>
@@ -1027,4 +1253,5 @@ export default function DecisionFlowPage() {
     </main>
   );
 }
+
 
