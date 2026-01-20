@@ -8,6 +8,7 @@ import AIInterpretationPanel from "./AIInterpretationPanel";
 import AIInterpretationExplanation from "./AIInterpretationExplanation";
 
 const ENABLE_AI_INTERPRETATION_PANEL = true;
+const ENABLE_PREMIUM_CLASSIFICATION = false;
 
 const COLORS = {
   pageBg: "#0e1117",        // fixed dark background
@@ -148,23 +149,58 @@ type BarProps = {
   label: string;
   value: number;
   max: number;
+  scenarioName?: string;
+  metricName?: string;
+  time?: number;
 };
 
-function Bar({ label, value, max }: BarProps) {
+function Bar({ label, value, max, scenarioName, metricName, time }: BarProps) {
   const widthPct = Math.max(0, Math.min(100, (value / max) * 100));
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  const tooltipText = scenarioName && metricName && time !== undefined
+    ? `${scenarioName}\n${metricName}\n${value.toFixed(1)}\nt = ${time}`
+    : null;
 
   return (
-    <div style={{ marginBottom: 12 }}>
+    <div style={{ marginBottom: 12, position: "relative" }}>
       <div style={{ fontSize: 12, marginBottom: 4 }}>{label}: {value}</div>
-      <div style={{ background: "#1f2937", borderRadius: 4, height: 12 }}>
+      <div 
+        style={{ background: "#1f2937", borderRadius: 4, height: 12, position: "relative" }}
+        onMouseEnter={() => tooltipText && setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
+      >
         <div
           style={{
             width: `${widthPct}%`,
             height: "100%",
             background: "#60a5fa",
-            borderRadius: 4
+            borderRadius: 4,
+            cursor: tooltipText ? "pointer" : "default"
           }}
         />
+        {showTooltip && tooltipText && (
+          <div
+            style={{
+              position: "absolute",
+              bottom: "100%",
+              left: "50%",
+              transform: "translateX(-50%)",
+              marginBottom: 4,
+              padding: "6px 8px",
+              background: "#1a1a1a",
+              color: "#e6edf3",
+              fontSize: 11,
+              borderRadius: 4,
+              whiteSpace: "pre-line",
+              border: "1px solid #2f333a",
+              zIndex: 1000,
+              pointerEvents: "none"
+            }}
+          >
+            {tooltipText}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -197,6 +233,345 @@ function TimelineRow({ time, metric, delta, value }: TimelineRowProps) {
         {isPositive ? "+" : ""}{delta}
       </div>
       <div>{value}</div>
+    </div>
+  );
+}
+
+type ScenarioTimeSeries = {
+  name: string;
+  data: Array<{
+    time: number;
+    load: number;
+    cost: number;
+  }>;
+  collapseTime: number | null;
+};
+
+function runScenarioWithTimeSeries(
+  baselineLoad: number,
+  baselineCost: number,
+  changeLoad: number,
+  changeCost: number,
+  policy: PolicyKey,
+  maxSteps: number
+): ScenarioTimeSeries {
+  const engine = new DecisionFlowEngine({
+    time: 0,
+    metrics: {
+      load: baselineLoad,
+      cost: baselineCost
+    }
+  });
+
+  engine.applyLoad(state => {
+    state.metrics.load += changeLoad;
+    state.metrics.cost += changeCost;
+  });
+
+  engine.applyDecision(POLICIES[policy].apply);
+
+  const timeSeries: Array<{ time: number; load: number; cost: number }> = [];
+  let collapseTime: number | null = null;
+
+  // Record initial state
+  const initialState = engine.snapshot();
+  timeSeries.push({
+    time: initialState.time,
+    load: initialState.metrics.load,
+    cost: initialState.metrics.cost
+  });
+
+  // Run simulation step by step
+  for (let i = 0; i < maxSteps; i++) {
+    engine.tick();
+    const state = engine.snapshot();
+    
+    timeSeries.push({
+      time: state.time,
+      load: state.metrics.load,
+      cost: state.metrics.cost
+    });
+
+    // Detect collapse: metrics hit 0 or go negative, or load exceeds 10x baseline
+    if (collapseTime === null) {
+      const loadCollapsed = state.metrics.load <= 0 || state.metrics.load > baselineLoad * 10;
+      const costCollapsed = state.metrics.cost <= 0 || state.metrics.cost > baselineCost * 10;
+      
+      if (loadCollapsed || costCollapsed) {
+        collapseTime = state.time;
+      }
+    }
+  }
+
+  return {
+    name: policy,
+    data: timeSeries,
+    collapseTime
+  };
+}
+
+type TimelineComparisonProps = {
+  scenarios: ScenarioTimeSeries[];
+  metric: "load" | "cost";
+};
+
+function TimelineComparison({ scenarios, metric }: TimelineComparisonProps) {
+  const [hoveredPoint, setHoveredPoint] = useState<{ scenarioIdx: number; pointIdx: number } | null>(null);
+  if (scenarios.length === 0) return null;
+
+  // Find maximum time across all scenarios
+  const maxTime = Math.max(...scenarios.map(s => Math.max(...s.data.map(d => d.time))));
+  
+  // Find maximum value for consistent Y-axis scaling
+  const maxValue = Math.max(...scenarios.map(s => Math.max(...s.data.map(d => d[metric]))));
+  const minValue = Math.min(0, ...scenarios.map(s => Math.min(...s.data.map(d => d[metric]))));
+  const valueRange = maxValue - minValue || 1;
+
+  // Create time points for the shared axis
+  const timePoints = Array.from({ length: maxTime + 1 }, (_, i) => i);
+
+  // Get value at each time point for each scenario (interpolate if needed)
+  const getValueAtTime = (scenario: ScenarioTimeSeries, time: number): number | null => {
+    const point = scenario.data.find(d => d.time === time);
+    if (point) return point[metric];
+    
+    // Find surrounding points for interpolation
+    const before = scenario.data.filter(d => d.time < time).sort((a, b) => b.time - a.time)[0];
+    const after = scenario.data.filter(d => d.time > time).sort((a, b) => a.time - b.time)[0];
+    
+    if (!before && !after) return null;
+    if (!before) return after[metric];
+    if (!after) return before[metric];
+    
+    // Linear interpolation
+    const ratio = (time - before.time) / (after.time - before.time);
+    return before[metric] + (after[metric] - before[metric]) * ratio;
+  };
+
+  const colors = {
+    baseline: "#9ca3af",
+    balanced: "#60a5fa",
+    aggressive: "#f87171",
+    conservative: "#34d399"
+  };
+
+  const getColor = (name: string) => {
+    if (name === "baseline") return colors.baseline;
+    if (name === "balanced") return colors.balanced;
+    if (name === "aggressive") return colors.aggressive;
+    if (name === "conservative") return colors.conservative;
+    return "#9ca3af";
+  };
+
+  return (
+    <div style={{ marginBottom: 32 }}>
+      <div style={{ 
+        position: "relative",
+        height: 200, 
+        borderBottom: "2px solid #334155",
+        borderLeft: "2px solid #334155",
+        paddingBottom: 8,
+        paddingLeft: 8,
+        marginBottom: 8
+      }}>
+        {/* Y-axis labels */}
+        <div style={{
+          position: "absolute",
+          left: -40,
+          top: 0,
+          bottom: 8,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          fontSize: 10,
+          opacity: 0.6,
+          width: 35
+        }}>
+          <span>{maxValue.toFixed(1)}</span>
+          <span>{((maxValue + minValue) / 2).toFixed(1)}</span>
+          <span>{minValue.toFixed(1)}</span>
+        </div>
+
+        {/* Chart area */}
+        <div style={{ position: "relative", width: "100%", height: "100%" }}>
+          {scenarios.map((scenario, scenarioIdx) => {
+            const points = timePoints
+              .map(time => {
+                const value = getValueAtTime(scenario, time);
+                if (value === null) return null;
+                const x = (time / maxTime) * 100;
+                const y = 100 - ((value - minValue) / valueRange) * 100;
+                return { x, y, time, value };
+              })
+              .filter((p): p is { x: number; y: number; time: number; value: number } => p !== null);
+
+            if (points.length === 0) return null;
+
+            const color = getColor(scenario.name);
+            const pathData = points.map((p, i) => 
+              `${i === 0 ? 'M' : 'L'} ${p.x}% ${p.y}%`
+            ).join(' ');
+
+            const metricName = metric === "load" ? "Belastning" : "Kostnad";
+            const scenarioLabel = scenario.name === "baseline" ? "Baseline" : POLICIES[scenario.name as PolicyKey].label;
+
+            return (
+              <div key={scenarioIdx} style={{ position: "absolute", inset: 0 }}>
+                {/* Line path */}
+                <svg
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: "100%",
+                    pointerEvents: "none"
+                  }}
+                  viewBox="0 0 100 100"
+                  preserveAspectRatio="none"
+                >
+                  <path
+                    d={pathData}
+                    fill="none"
+                    stroke={color}
+                    strokeWidth="0.5"
+                    opacity={0.8}
+                  />
+                </svg>
+                
+                {/* Interactive points */}
+                {points.map((p, i) => {
+                  const isHovered = hoveredPoint?.scenarioIdx === scenarioIdx && hoveredPoint?.pointIdx === i;
+                  return (
+                    <div
+                      key={i}
+                      style={{
+                        position: "absolute",
+                        left: `${p.x}%`,
+                        top: `${p.y}%`,
+                        transform: "translate(-50%, -50%)",
+                        width: 8,
+                        height: 8,
+                        cursor: "pointer",
+                        pointerEvents: "auto",
+                        zIndex: 2
+                      }}
+                      onMouseEnter={() => setHoveredPoint({ scenarioIdx, pointIdx: i })}
+                      onMouseLeave={() => setHoveredPoint(null)}
+                    >
+                      <div
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          borderRadius: "50%",
+                          background: color,
+                          opacity: scenario.collapseTime === p.time ? 1 : 0.6
+                        }}
+                      />
+                      {isHovered && (
+                        <div
+                          style={{
+                            position: "absolute",
+                            bottom: "100%",
+                            left: "50%",
+                            transform: "translateX(-50%)",
+                            marginBottom: 4,
+                            padding: "6px 8px",
+                            background: "#1a1a1a",
+                            color: "#e6edf3",
+                            fontSize: 11,
+                            borderRadius: 4,
+                            whiteSpace: "pre-line",
+                            border: "1px solid #2f333a",
+                            zIndex: 1000,
+                            pointerEvents: "none"
+                          }}
+                        >
+                          {`${scenarioLabel}\n${metricName}\n${p.value.toFixed(1)}\nt = ${p.time}`}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {/* Collapse marker */}
+                {scenario.collapseTime !== null && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      left: `${(scenario.collapseTime / maxTime) * 100}%`,
+                      bottom: -16,
+                      transform: "translateX(-50%)",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      pointerEvents: "none"
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 10,
+                        height: 10,
+                        background: "#ef4444",
+                        borderRadius: "50%",
+                        border: "2px solid #0e1117",
+                        marginBottom: 2
+                      }}
+                    />
+                    <div
+                      style={{
+                        width: 1,
+                        height: 8,
+                        background: "#ef4444",
+                        opacity: 0.5
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      
+      {/* Time axis labels */}
+      <div style={{ 
+        display: "flex", 
+        justifyContent: "space-between", 
+        fontSize: 11, 
+        opacity: 0.7,
+        marginTop: 4,
+        paddingLeft: 8
+      }}>
+        <span>t=0</span>
+        <span>t={maxTime}</span>
+      </div>
+      
+      {/* Legend */}
+      <div style={{ 
+        display: "flex", 
+        gap: 16, 
+        marginTop: 12, 
+        fontSize: 12,
+        flexWrap: "wrap"
+      }}>
+        {scenarios.map((scenario, idx) => (
+          <div key={idx} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{
+              width: 12,
+              height: 12,
+              background: getColor(scenario.name),
+              borderRadius: 2
+            }} />
+            <span>{scenario.name === "baseline" ? "Baseline" : POLICIES[scenario.name as PolicyKey].label}</span>
+            {scenario.collapseTime !== null && (
+              <span style={{ opacity: 0.7, fontSize: 10 }}>
+                (t={scenario.collapseTime})
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -303,6 +678,121 @@ export default function DecisionFlowPage() {
 
   const maxLoad = Math.max(baselineLoadVal, finalLoadVal) || 1;
   const maxCost = Math.max(baselineCostVal, finalCostVal) || 1;
+
+  // Generate scenarios for comparison timeline
+  // Use extended steps to capture collapse if it occurs
+  const extendedSteps = 20;
+  
+  // Baseline scenario: applies load but no decision
+  const baselineEngine = new DecisionFlowEngine({
+    time: 0,
+    metrics: {
+      load: baselineLoad,
+      cost: baselineCost
+    }
+  });
+  
+  baselineEngine.applyLoad(state => {
+    state.metrics.load += changeLoad;
+    state.metrics.cost += changeCost;
+  });
+  // No decision applied for baseline
+  
+  const baselineTimeSeries: Array<{ time: number; load: number; cost: number }> = [];
+  let baselineCollapseTime: number | null = null;
+  
+  const baselineInitial = baselineEngine.snapshot();
+  baselineTimeSeries.push({
+    time: baselineInitial.time,
+    load: baselineInitial.metrics.load,
+    cost: baselineInitial.metrics.cost
+  });
+  
+  for (let i = 0; i < extendedSteps; i++) {
+    baselineEngine.tick();
+    const state = baselineEngine.snapshot();
+    
+    baselineTimeSeries.push({
+      time: state.time,
+      load: state.metrics.load,
+      cost: state.metrics.cost
+    });
+    
+    if (baselineCollapseTime === null) {
+      const loadCollapsed = state.metrics.load <= 0 || state.metrics.load > baselineLoad * 10;
+      const costCollapsed = state.metrics.cost <= 0 || state.metrics.cost > baselineCost * 10;
+      
+      if (loadCollapsed || costCollapsed) {
+        baselineCollapseTime = state.time;
+      }
+    }
+  }
+  
+  const baselineScenario: ScenarioTimeSeries = {
+    name: "baseline",
+    data: baselineTimeSeries,
+    collapseTime: baselineCollapseTime
+  };
+
+  const decisionScenario = runScenarioWithTimeSeries(
+    baselineLoad,
+    baselineCost,
+    changeLoad,
+    changeCost,
+    decision,
+    extendedSteps
+  );
+
+  const policyBScenario = runScenarioWithTimeSeries(
+    baselineLoad,
+    baselineCost,
+    changeLoad,
+    changeCost,
+    policyB,
+    extendedSteps
+  );
+
+  const allScenarios = [baselineScenario, decisionScenario, policyBScenario];
+
+  // STEP 3 — Minimal neutral status (Pulse Core only)
+  // Based strictly on existing simulated "now" (data.final.time) and detected collapse time.
+  const simulatedNowTime = data.final.time;
+  const selectedScenarioCollapseTime = decisionScenario.collapseTime;
+
+  const selectedScenarioStatus =
+    selectedScenarioCollapseTime !== null && selectedScenarioCollapseTime <= simulatedNowTime
+      ? "Kollaps inträffad"
+      : selectedScenarioCollapseTime !== null && selectedScenarioCollapseTime > simulatedNowTime
+        ? "Fungerar nu, kollaps inträffar senare"
+        : "Stabilt förlopp";
+
+  const selectedScenarioStatusSentence =
+    selectedScenarioCollapseTime !== null && selectedScenarioCollapseTime <= simulatedNowTime
+      ? `Kollaps markeras vid t=${selectedScenarioCollapseTime} och ligger inom den simulerade perioden.`
+      : selectedScenarioCollapseTime !== null && selectedScenarioCollapseTime > simulatedNowTime
+        ? `Systemet är intakt vid t=${simulatedNowTime}, och kollaps markeras vid t=${selectedScenarioCollapseTime}.`
+        : `Ingen kollaps markeras inom den simulerade tidsramen (t=0 till t=${simulatedNowTime}).`;
+
+  const baselineAtFinalTime = baselineScenario.data.find(d => d.time === simulatedNowTime);
+  const selectedAtFinalTime = decisionScenario.data.find(d => d.time === simulatedNowTime);
+
+  const loadDeltaVsBaseline =
+    baselineAtFinalTime && selectedAtFinalTime
+      ? selectedAtFinalTime.load - baselineAtFinalTime.load
+      : 0;
+
+  const costDeltaVsBaseline =
+    baselineAtFinalTime && selectedAtFinalTime
+      ? selectedAtFinalTime.cost - baselineAtFinalTime.cost
+      : 0;
+
+  // STEP 4 — Pulse Premium classification (behind feature flag)
+  // Truth Rule 1.1: render only when all conditions are clearly satisfied using existing signals.
+  const shouldRenderPremiumClassification =
+    ENABLE_PREMIUM_CLASSIFICATION &&
+    selectedScenarioStatus === "Fungerar nu, kollaps inträffar senare" &&
+    selectedScenarioCollapseTime !== null &&
+    hasRecovery === false;
 
   // Derive summary from existing data (UI-only, no engine changes)
   const loadRecovery = Math.abs(data.compare.load) < 0.01;
@@ -769,7 +1259,16 @@ export default function DecisionFlowPage() {
         </div>
       )}
 
-      <section style={{ marginBottom: 32 }}>
+      {/* Three-column layout */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "320px 1fr 320px",
+        gap: 24,
+        alignItems: "start"
+      }}>
+        {/* Left Column: Setup */}
+        <div style={{ position: "sticky", top: 32 }}>
+          <section style={{ marginBottom: 32 }}>
         <h2>{uiTextSV.simulationInputs}</h2>
         <p style={{ fontSize: 13, opacity: 0.8, marginBottom: 16, marginTop: 8 }}>
           {uiTextSV.simulationInputsExplanation}
@@ -951,25 +1450,28 @@ export default function DecisionFlowPage() {
         </div>
       </section>
 
-      <section style={{ marginBottom: 24 }}>
-        <h2>{uiTextSV.decisionPolicy}</h2>
+          <section style={{ marginBottom: 24 }}>
+            <h2>{uiTextSV.decisionPolicy}</h2>
 
-        <select
-          value={decision}
-          onChange={e => setDecision(e.target.value as PolicyKey)}
-          style={{ padding: 8, fontSize: 14 }}
-        >
-          <option value="conservative">{uiTextSV.policyConservative}</option>
-          <option value="balanced">{uiTextSV.policyBalanced}</option>
-          <option value="aggressive">{uiTextSV.policyAggressive}</option>
-        </select>
+            <select
+              value={decision}
+              onChange={e => setDecision(e.target.value as PolicyKey)}
+              style={{ padding: 8, fontSize: 14, width: "100%" }}
+            >
+              <option value="conservative">{uiTextSV.policyConservative}</option>
+              <option value="balanced">{uiTextSV.policyBalanced}</option>
+              <option value="aggressive">{uiTextSV.policyAggressive}</option>
+            </select>
 
-        <p style={{ marginTop: 8, fontSize: 14, maxWidth: 400 }}>
-          {POLICIES[decision].description}
-        </p>
-      </section>
+            <p style={{ marginTop: 8, fontSize: 14 }}>
+              {POLICIES[decision].description}
+            </p>
+          </section>
+        </div>
 
-      <section style={{ marginBottom: 40 }}>
+        {/* Center Column: Flow */}
+        <div>
+          <section style={{ marginBottom: 40 }}>
         <h2>{uiTextSV.decisionFlow}</h2>
         <p style={{ fontSize: 14, opacity: 0.7 }}>
           {uiTextSV.clickStepToFocus}
@@ -1027,41 +1529,63 @@ export default function DecisionFlowPage() {
         </div>
       </section>
 
-      {activeStep && (
-        <section
-          style={{
-            marginTop: 32,
-            padding: 16,
-            border: "2px dashed #ccc",
-            borderRadius: 8,
-            maxWidth: 600
-          }}
-        >
-          <h3>{STEP_DETAILS[activeStep].title}</h3>
-          <p style={{ marginTop: 8, fontSize: 14 }}>
-            {STEP_DETAILS[activeStep].explanation}
-          </p>
-        </section>
-      )}
-
-      <section style={{ marginBottom: 32 }}>
+          <section style={{ marginBottom: 32 }}>
         <h2>{uiTextSV.visualResults}</h2>
 
         <div style={{ maxWidth: 420 }}>
           <h3 style={{ marginTop: 12 }}>{uiTextSV.load}</h3>
-          <Bar label={uiTextSV.baseline} value={baselineLoadVal} max={maxLoad} />
-          <Bar label={uiTextSV.final} value={finalLoadVal} max={maxLoad} />
+          <Bar 
+            label={uiTextSV.baseline} 
+            value={baselineLoadVal} 
+            max={maxLoad}
+            scenarioName="Baseline"
+            metricName="Belastning"
+            time={data.final.time}
+          />
+          <Bar 
+            label={uiTextSV.final} 
+            value={finalLoadVal} 
+            max={maxLoad}
+            scenarioName={POLICIES[decision].label}
+            metricName="Belastning"
+            time={data.final.time}
+          />
 
           <h3 style={{ marginTop: 16 }}>{uiTextSV.cost}</h3>
-          <Bar label={uiTextSV.baseline} value={baselineCostVal} max={maxCost} />
-          <Bar label={uiTextSV.final} value={finalCostVal} max={maxCost} />
+          <Bar 
+            label={uiTextSV.baseline} 
+            value={baselineCostVal} 
+            max={maxCost}
+            scenarioName="Baseline"
+            metricName="Kostnad"
+            time={data.final.time}
+          />
+          <Bar 
+            label={uiTextSV.final} 
+            value={finalCostVal} 
+            max={maxCost}
+            scenarioName={POLICIES[decision].label}
+            metricName="Kostnad"
+            time={data.final.time}
+          />
         </div>
       </section>
 
       <section style={{ marginBottom: 32 }}>
         <h2>{uiTextSV.consequencesOverTime}</h2>
 
-        <div style={{ maxWidth: 520 }}>
+        <div style={{ marginBottom: 32 }}>
+          <h3 style={{ fontSize: 14, marginBottom: 12, opacity: 0.9 }}>Load över tid</h3>
+          <TimelineComparison scenarios={allScenarios} metric="load" />
+        </div>
+
+        <div style={{ marginBottom: 32 }}>
+          <h3 style={{ fontSize: 14, marginBottom: 12, opacity: 0.9 }}>Cost över tid</h3>
+          <TimelineComparison scenarios={allScenarios} metric="cost" />
+        </div>
+
+        <div style={{ maxWidth: 520, marginTop: 32 }}>
+          <h3 style={{ fontSize: 14, marginBottom: 12, opacity: 0.9 }}>Detaljerad logg</h3>
           <div
             style={{
               display: "grid",
@@ -1223,33 +1747,110 @@ export default function DecisionFlowPage() {
         </p>
       </section>
 
-      {/* Read-only AI explanation layer - the UI performs zero interpretation or transformation */}
-      {ENABLE_AI_INTERPRETATION_PANEL && aiInterpretationData && (
-        <>
-          <section style={{ marginBottom: 32, padding: 20, background: "#1a1f2e", borderRadius: 8, border: "1px solid #2f333a" }}>
-            <AIInterpretationExplanation data={aiInterpretationData} />
+          {/* Read-only AI explanation layer - the UI performs zero interpretation or transformation */}
+          {ENABLE_AI_INTERPRETATION_PANEL && aiInterpretationData && (
+            <>
+              <section style={{ marginBottom: 32, padding: 20, background: "#1a1f2e", borderRadius: 8, border: "1px solid #2f333a" }}>
+                <AIInterpretationExplanation data={aiInterpretationData} />
+              </section>
+              <section style={{ marginBottom: 32, padding: 20, background: "#1a1f2e", borderRadius: 8, border: "1px solid #2f333a" }}>
+                <AIInterpretationPanel data={aiInterpretationData} />
+              </section>
+            </>
+          )}
+
+          {!isPresentationMode && (
+            <>
+              <h2>{uiTextSV.baselineData}</h2>
+              <pre>{JSON.stringify(data.baseline, null, 2)}</pre>
+
+              <h2>{uiTextSV.finalState}</h2>
+              <pre>{JSON.stringify(data.final, null, 2)}</pre>
+
+              <h2>{uiTextSV.compareVsBaseline}</h2>
+              <pre>{JSON.stringify(data.compare, null, 2)}</pre>
+
+              <h2>{uiTextSV.consequencesData}</h2>
+              <pre>{JSON.stringify(data.consequences, null, 2)}</pre>
+            </>
+          )}
+        </div>
+
+        {/* Right Column: Explanation */}
+        <div style={{ position: "sticky", top: 32 }}>
+          <section
+            style={{
+              padding: 16,
+              borderRadius: 8,
+              background: "#1a1f2e",
+              border: "1px solid #2f333a",
+              marginBottom: 16
+            }}
+          >
+            <div style={{ fontSize: 14, opacity: 0.9 }}>{selectedScenarioStatus}</div>
+            <div style={{ marginTop: 6, fontSize: 13, opacity: 0.75, lineHeight: 1.5 }}>
+              {selectedScenarioStatusSentence}
+            </div>
           </section>
-          <section style={{ marginBottom: 32, padding: 20, background: "#1a1f2e", borderRadius: 8, border: "1px solid #2f333a" }}>
-            <AIInterpretationPanel data={aiInterpretationData} />
+
+          <section
+            style={{
+              padding: 16,
+              borderRadius: 8,
+              background: "#1a1f2e",
+              border: "1px solid #2f333a",
+              marginBottom: 16
+            }}
+          >
+            <div style={{ fontSize: 14, opacity: 0.9 }}>Jämförelse mot utgångsläge</div>
+            <div style={{ marginTop: 6, fontSize: 13, opacity: 0.75, lineHeight: 1.6 }}>
+              Belastning: {loadDeltaVsBaseline >= 0 ? "+" : ""}{loadDeltaVsBaseline.toFixed(1)} jämfört med baseline vid t = {simulatedNowTime}
+            </div>
+            <div style={{ marginTop: 4, fontSize: 13, opacity: 0.75, lineHeight: 1.6 }}>
+              Kostnad: {costDeltaVsBaseline >= 0 ? "+" : ""}{costDeltaVsBaseline.toFixed(1)} jämfört med baseline vid t = {simulatedNowTime}
+            </div>
           </section>
-        </>
-      )}
 
-      {!isPresentationMode && (
-        <>
-          <h2>{uiTextSV.baselineData}</h2>
-          <pre>{JSON.stringify(data.baseline, null, 2)}</pre>
+          {shouldRenderPremiumClassification && (
+            <section
+              style={{
+                padding: 16,
+                borderRadius: 8,
+                background: "#1a1f2e",
+                border: "1px solid #2f333a",
+                marginBottom: 16
+              }}
+            >
+              <div style={{ fontSize: 14, opacity: 0.9 }}>Oundviklig kollaps</div>
+              <div style={{ marginTop: 6, fontSize: 13, opacity: 0.75, lineHeight: 1.5 }}>
+                Vid detta tillstånd är systemets misslyckande redan beslutat av dess interna dynamik.
+              </div>
+              {selectedScenarioCollapseTime !== null && (
+                <div style={{ marginTop: 6, fontSize: 13, opacity: 0.75, lineHeight: 1.5 }}>
+                  Point of no return: T = {selectedScenarioCollapseTime}
+                </div>
+              )}
+            </section>
+          )}
 
-          <h2>{uiTextSV.finalState}</h2>
-          <pre>{JSON.stringify(data.final, null, 2)}</pre>
-
-          <h2>{uiTextSV.compareVsBaseline}</h2>
-          <pre>{JSON.stringify(data.compare, null, 2)}</pre>
-
-          <h2>{uiTextSV.consequencesData}</h2>
-          <pre>{JSON.stringify(data.consequences, null, 2)}</pre>
-        </>
-      )}
+          {activeStep && (
+            <section
+              style={{
+                padding: 16,
+                border: "2px dashed #ccc",
+                borderRadius: 8,
+                background: "#1a1f2e",
+                borderColor: "#2f333a"
+              }}
+            >
+              <h3>{STEP_DETAILS[activeStep].title}</h3>
+              <p style={{ marginTop: 8, fontSize: 14 }}>
+                {STEP_DETAILS[activeStep].explanation}
+              </p>
+            </section>
+          )}
+        </div>
+      </div>
     </main>
   );
 }
