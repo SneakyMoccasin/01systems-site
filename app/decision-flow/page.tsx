@@ -3,9 +3,17 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { DecisionFlowEngine } from "@/src/decisionFlow/engine";
+import { setSystemSnapshot } from "@/src/systemSnapshot/systemSnapshotStore";
 import { uiTextSV } from "./uiTextSV";
 import AIInterpretationPanel from "./AIInterpretationPanel";
 import AIInterpretationExplanation from "./AIInterpretationExplanation";
+import UnifiedHeader from "./components/UnifiedHeader";
+import DecisionControls from "./components/DecisionControls";
+import DecisionNarrative from "./components/DecisionNarrative";
+import SystemTimeline from "./components/SystemTimeline";
+import BevisMeetingCard from "./components/BevisMeetingCard";
+import BevisLeadershipNarrative from "./components/BevisLeadershipNarrative";
+import BevisIntroModal from "./components/BevisIntroModal";
 
 const ENABLE_AI_INTERPRETATION_PANEL = true;
 const ENABLE_PREMIUM_CLASSIFICATION = false;
@@ -577,6 +585,22 @@ function TimelineComparison({ scenarios, metric }: TimelineComparisonProps) {
 }
 
 export default function DecisionFlowPage() {
+  const [viewMode, setViewMode] = useState<"decision" | "bevis">("decision");
+  const [bevisCaseId, setBevisCaseId] = useState("1");
+  const [bevisTimelineData, setBevisTimelineData] = useState<{
+    planA: Array<{ time: number; belastning: number; kapacitet: number; aterhamtning: number }>;
+    planB: Array<{ time: number; belastning: number; kapacitet: number; aterhamtning: number }>;
+    breakpoint?: number;
+  } | null>(null);
+  
+  // Decision Flow demo state
+  const [inflow, setInflow] = useState(1.0);
+  const [decisionTimelineData, setDecisionTimelineData] = useState<Array<{
+    time: number;
+    belastning: number;
+    kapacitet: number;
+    aterhamtning: number;
+  }> | null>(null);
   const [activeStep, setActiveStep] = useState<string | null>(null);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [systemUpdatedAt, setSystemUpdatedAt] = useState<number | null>(null);
@@ -664,6 +688,7 @@ export default function DecisionFlowPage() {
 
     const data = await res.json();
     setResult(data);
+    setSystemSnapshot(data);
     setLoading(false);
     setSystemUpdatedAt(Date.now());
   }
@@ -1145,714 +1170,135 @@ export default function DecisionFlowPage() {
     fetchAIInterpretation();
   }, []);
 
+  const handlePrimaryAction = () => {
+    if (viewMode === "decision") {
+      // TODO: Trigger simulation
+      console.log("Simulera clicked");
+    }
+    // Bevis mode is read-only, no action needed
+  };
+
+  const handleModeChange = (mode: "decision" | "bevis") => {
+    setViewMode(mode);
+    // Reset to case 1 when entering Bevis mode
+    if (mode === "bevis") {
+      setBevisCaseId("1");
+    }
+  };
+
+  const handleBevisCaseChange = (caseId: string) => {
+    setBevisCaseId(caseId);
+  };
+
+  const handleBevisTimelineDataChange = (
+    planAData: Array<{ time: number; belastning: number; kapacitet: number; aterhamtning: number }>,
+    planBData: Array<{ time: number; belastning: number; kapacitet: number; aterhamtning: number }>,
+    breakpoint?: number
+  ) => {
+    setBevisTimelineData({ planA: planAData, planB: planBData, breakpoint });
+  };
+
+  // Generate Decision Flow timeline data based on inflow
+  // Demo-only: deterministic, stable data (no collapse)
+  const generateDecisionTimeline = (inflowValue: number): Array<{
+    time: number;
+    belastning: number;
+    kapacitet: number;
+    aterhamtning: number;
+  }> => {
+    const data = [];
+    const numTicks = 20;
+    const baseLoad = 35;
+    const baseCapacity = 50;
+    const baseRecovery = 45;
+    
+    for (let i = 0; i <= numTicks; i++) {
+      // Belastning scales with inflow, with slight variation
+      const belastning = baseLoad + (i * 1.5 * inflowValue) + Math.sin(i * 0.2) * 2;
+      
+      // Kapacitet remains constant (system-defined limit)
+      const kapacitet = baseCapacity;
+      
+      // Återhämtning decreases slightly over time, affected by inflow
+      const aterhamtning = baseRecovery - (i * 0.3 * inflowValue) + Math.cos(i * 0.15) * 2;
+      
+      data.push({
+        time: i,
+        belastning: Math.max(0, belastning),
+        kapacitet: kapacitet,
+        aterhamtning: Math.max(0, aterhamtning)
+      });
+    }
+    
+    return data;
+  };
+
+  // Generate timeline on load and when inflow changes
+  useEffect(() => {
+    const timeline = generateDecisionTimeline(inflow);
+    setDecisionTimelineData(timeline);
+  }, [inflow]);
+
   return (
-    <main style={{
+    <div style={{
       background: COLORS.pageBg,
       color: COLORS.pageText,
       minHeight: "100vh",
-      padding: 32
+      display: "flex",
+      flexDirection: "column"
     }}>
-      <div style={{ marginBottom: 24 }}>
-        <Link
-          href="/"
-          style={{
-            color: "#9ca3af",
-            textDecoration: "none",
-            fontSize: 14
-          }}
-        >
-          {uiTextSV.backToIntro}
-        </Link>
-      </div>
+      {viewMode === "bevis" && <BevisIntroModal />}
+      
+      <UnifiedHeader
+        mode={viewMode}
+        onModeChange={handleModeChange}
+        onPrimaryAction={handlePrimaryAction}
+      />
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <div>
-          <h1 style={{ marginBottom: 4 }}>{uiTextSV.pageTitle}</h1>
-          <button
-            onClick={() => setShowHelper(!showHelper)}
-            style={{
-              fontSize: 12,
-              background: "transparent",
-              color: COLORS.pageText,
-              border: "none",
-              cursor: "pointer",
-              opacity: 0.6,
-              padding: 0,
-              textDecoration: "underline",
-              textDecorationStyle: "dotted"
-            }}
-          >
-            {uiTextSV.whatAmISeeing}
-          </button>
-        </div>
-        <button
-          onClick={() => setIsPresentationMode(!isPresentationMode)}
-          style={{
-            padding: "6px 12px",
-            fontSize: 12,
-            background: "transparent",
-            color: COLORS.pageText,
-            border: "1px solid #2f333a",
-            borderRadius: 4,
-            cursor: "pointer",
-            opacity: 0.8
-          }}
-        >
-          {isPresentationMode ? uiTextSV.exitPresentationMode : uiTextSV.enterPresentationMode}
-        </button>
-      </div>
-
-      {showHelper && (
-        <div style={{
-          marginBottom: 24,
-          padding: 16,
-          background: "#1a1a1a",
-          border: "1px solid #2f333a",
-          borderRadius: 8,
-          maxWidth: 600
-        }}>
-          <h3 style={{
-            fontSize: 14,
-            fontWeight: 600,
-            marginBottom: 12,
-            color: COLORS.pageText
-          }}>
-            {uiTextSV.helperTitle}
-          </h3>
-          <div style={{
-            fontSize: 13,
-            lineHeight: 1.6,
-            color: COLORS.pageText,
-            opacity: 0.9
-          }}>
-            <p style={{ marginBottom: 12 }}>
-              {uiTextSV.helperParagraph1}
-            </p>
-            <p style={{ marginBottom: 12 }}>
-              {uiTextSV.helperParagraph2}
-            </p>
-            <p>
-              {uiTextSV.helperParagraph3}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {showUpdateIndicator && (
-        <div style={{
-          fontSize: 12,
-          opacity: 0.7,
-          marginBottom: 16,
-          color: COLORS.pageText,
-          display: "flex",
-          alignItems: "center",
-          gap: 6
-        }}>
-          <span style={{
-            width: 6,
-            height: 6,
-            borderRadius: "50%",
-            background: COLORS.pageText,
-            opacity: 0.6
-          }}></span>
-          {uiTextSV.systemStateUpdated}
-        </div>
-      )}
-
-      {/* Three-column layout */}
-      <div style={{
+      <main style={{
+        flex: 1,
         display: "grid",
         gridTemplateColumns: "320px 1fr 320px",
         gap: 24,
-        alignItems: "start"
+        padding: 24,
+        overflow: "hidden"
       }}>
-        {/* Left Column: Setup */}
-        <div style={{ position: "sticky", top: 32 }}>
-          <section style={{ marginBottom: 32 }}>
-        <h2>{uiTextSV.simulationInputs}</h2>
-        <p style={{ fontSize: 13, opacity: 0.8, marginBottom: 16, marginTop: 8 }}>
-          {uiTextSV.simulationInputsExplanation}
-        </p>
-        <p style={{ fontSize: 12, opacity: 0.7, marginBottom: 16, fontStyle: "italic" }}>
-          {uiTextSV.simulationInputsPurpose}
-        </p>
-
-        <div style={{ maxWidth: 500 }}>
-          {/* Question 1: Current system state */}
-          <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 8, maxWidth: 480 }}>
-              Beskriv hur systemet upplevs just nu. Inte hur det borde vara, utan hur det faktiskt är. Om ni är oense – välj det läge som flest i rummet kan enas om.
-            </div>
-            <h3 style={{ fontSize: 15, marginBottom: 4 }}>{uiTextSV.currentSystemState}</h3>
-            <p style={{ fontSize: 13, opacity: 0.8, marginBottom: 12 }}>
-              {uiTextSV.currentSystemStateDescription}
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-                <input
-                  type="radio"
-                  name="situation"
-                  value="calm"
-                  checked={situation === "calm"}
-                  onChange={e => setSituation(e.target.value as "calm" | "manageable" | "strained" | "heavy-pressure")}
-                  style={{ cursor: "pointer" }}
-                />
-                <span style={{ fontSize: 14 }}>{uiTextSV.calmAndStable}</span>
-              </label>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-                <input
-                  type="radio"
-                  name="situation"
-                  value="manageable"
-                  checked={situation === "manageable"}
-                  onChange={e => setSituation(e.target.value as "calm" | "manageable" | "strained" | "heavy-pressure")}
-                  style={{ cursor: "pointer" }}
-                />
-                <span style={{ fontSize: 14 }}>{uiTextSV.manageable}</span>
-              </label>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-                <input
-                  type="radio"
-                  name="situation"
-                  value="strained"
-                  checked={situation === "strained"}
-                  onChange={e => setSituation(e.target.value as "calm" | "manageable" | "strained" | "heavy-pressure")}
-                  style={{ cursor: "pointer" }}
-                />
-                <span style={{ fontSize: 14 }}>{uiTextSV.strained}</span>
-              </label>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-                <input
-                  type="radio"
-                  name="situation"
-                  value="heavy-pressure"
-                  checked={situation === "heavy-pressure"}
-                  onChange={e => setSituation(e.target.value as "calm" | "manageable" | "strained" | "heavy-pressure")}
-                  style={{ cursor: "pointer" }}
-                />
-                <span style={{ fontSize: 14 }}>{uiTextSV.underHeavyPressure}</span>
-              </label>
-            </div>
-          </div>
-
-          {/* Question 2: External change */}
-          <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 8, maxWidth: 480 }}>
-              Detta är inte ett beslut. Det är något som påverkar systemet oavsett vad ni gör. Frågan är: vad trycker på systemet just nu?
-            </div>
-            <h3 style={{ fontSize: 15, marginBottom: 4 }}>{uiTextSV.externalChange}</h3>
-            <p style={{ fontSize: 13, opacity: 0.8, marginBottom: 12 }}>
-              {uiTextSV.externalChangeDescription}
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-                <input
-                  type="radio"
-                  name="change"
-                  value="increasing-pressure"
-                  checked={change === "increasing-pressure"}
-                  onChange={e => setChange(e.target.value as "increasing-pressure" | "loss-capacity" | "no-change")}
-                  style={{ cursor: "pointer" }}
-                />
-                <span style={{ fontSize: 14 }}>{uiTextSV.increasingPressure}</span>
-              </label>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-                <input
-                  type="radio"
-                  name="change"
-                  value="loss-capacity"
-                  checked={change === "loss-capacity"}
-                  onChange={e => setChange(e.target.value as "increasing-pressure" | "loss-capacity" | "no-change")}
-                  style={{ cursor: "pointer" }}
-                />
-                <span style={{ fontSize: 14 }}>{uiTextSV.lossOfCapacity}</span>
-              </label>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-                <input
-                  type="radio"
-                  name="change"
-                  value="no-change"
-                  checked={change === "no-change"}
-                  onChange={e => setChange(e.target.value as "increasing-pressure" | "loss-capacity" | "no-change")}
-                  style={{ cursor: "pointer" }}
-                />
-                <span style={{ fontSize: 14 }}>{uiTextSV.noMajorChange}</span>
-              </label>
-            </div>
-          </div>
-
-          {/* Question 3: Response focus */}
-          <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 8, maxWidth: 480 }}>
-              Här testar ni inte vad som är rätt, utan vad som händer när olika prioriteringar får styra systemets utveckling över tid.
-            </div>
-            <h3 style={{ fontSize: 15, marginBottom: 4 }}>{uiTextSV.responseFocus}</h3>
-            <p style={{ fontSize: 13, opacity: 0.8, marginBottom: 12 }}>
-              {uiTextSV.responseFocusDescription}
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-                <input
-                  type="radio"
-                  name="decision"
-                  value="conservative"
-                  checked={decision === "conservative"}
-                  onChange={e => setDecision(e.target.value as PolicyKey)}
-                  style={{ cursor: "pointer" }}
-                />
-                <span style={{ fontSize: 14 }}>{uiTextSV.protectPeopleAndStability}</span>
-              </label>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-                <input
-                  type="radio"
-                  name="decision"
-                  value="balanced"
-                  checked={decision === "balanced"}
-                  onChange={e => setDecision(e.target.value as PolicyKey)}
-                  style={{ cursor: "pointer" }}
-                />
-                <span style={{ fontSize: 14 }}>{uiTextSV.balanceShortTermAndLongTerm}</span>
-              </label>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-                <input
-                  type="radio"
-                  name="decision"
-                  value="aggressive"
-                  checked={decision === "aggressive"}
-                  onChange={e => setDecision(e.target.value as PolicyKey)}
-                  style={{ cursor: "pointer" }}
-                />
-                <span style={{ fontSize: 14 }}>{uiTextSV.pushHardToMeetDemands}</span>
-              </label>
-            </div>
-          </div>
-
-          <p style={{ fontSize: 12, opacity: 0.7, marginBottom: 16, fontStyle: "italic" }}>
-            {uiTextSV.pilotHelperText}
-          </p>
-
-          <button
-            onClick={runSimulation}
-            disabled={loading}
-            style={{ 
-              padding: "8px 16px",
-              background: loading ? "#2f333a" : "#2563eb",
-              color: "#ffffff",
-              border: "none",
-              borderRadius: 4,
-              cursor: loading ? "not-allowed" : "pointer",
-              fontSize: 14,
-              fontWeight: 600
-            }}
-          >
-            {loading ? uiTextSV.running : uiTextSV.runSimulation}
-          </button>
-        </div>
-      </section>
-
-          <section style={{ marginBottom: 24 }}>
-            <h2>{uiTextSV.decisionPolicy}</h2>
-
-            <select
-              value={decision}
-              onChange={e => setDecision(e.target.value as PolicyKey)}
-              style={{ padding: 8, fontSize: 14, width: "100%" }}
-            >
-              <option value="conservative">{uiTextSV.policyConservative}</option>
-              <option value="balanced">{uiTextSV.policyBalanced}</option>
-              <option value="aggressive">{uiTextSV.policyAggressive}</option>
-            </select>
-
-            <p style={{ marginTop: 8, fontSize: 14 }}>
-              {POLICIES[decision].description}
-            </p>
-          </section>
-        </div>
-
-        {/* Center Column: Flow */}
-        <div>
-          <section style={{ marginBottom: 40 }}>
-        <h2>{uiTextSV.decisionFlow}</h2>
-        <p style={{ fontSize: 14, opacity: 0.7 }}>
-          {uiTextSV.clickStepToFocus}
-        </p>
-
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 4
-          }}
-        >
-          <FlowBox
-            title={uiTextSV.flowBoxBaseline}
-            description={uiTextSV.flowBoxBaselineDesc}
-            active={activeStep === "baseline"}
-            onClick={() => setActiveStep("baseline")}
-          />
-          <Arrow />
-          <FlowBox
-            title={uiTextSV.flowBoxLoad}
-            description={uiTextSV.flowBoxLoadDesc}
-            active={activeStep === "load"}
-            onClick={() => setActiveStep("load")}
-          />
-          <Arrow />
-          <FlowBox
-            title={uiTextSV.flowBoxDecision}
-            description={uiTextSV.flowBoxDecisionDesc}
-            active={activeStep === "decision"}
-            onClick={() => setActiveStep("decision")}
-          />
-          <Arrow />
-          <FlowBox
-            title={uiTextSV.flowBoxTime}
-            description={uiTextSV.flowBoxTimeDesc}
-            active={activeStep === "time"}
-            onClick={() => setActiveStep("time")}
-          />
-          <Arrow />
-          <FlowBox
-            title={uiTextSV.flowBoxConsequences}
-            description={uiTextSV.flowBoxConsequencesDesc}
-            active={activeStep === "consequences"}
-            onClick={() => setActiveStep("consequences")}
-          />
-          <Arrow />
-          <FlowBox
-            title={uiTextSV.flowBoxCompare}
-            description={uiTextSV.flowBoxCompareDesc}
-            active={activeStep === "compare"}
-            onClick={() => setActiveStep("compare")}
-          />
-        </div>
-      </section>
-
-          <section style={{ marginBottom: 32 }}>
-        <h2>{uiTextSV.visualResults}</h2>
-
-        <div style={{ maxWidth: 420 }}>
-          <h3 style={{ marginTop: 12 }}>{uiTextSV.load}</h3>
-          <Bar 
-            label={uiTextSV.baseline} 
-            value={baselineLoadVal} 
-            max={maxLoad}
-            scenarioName="Baseline"
-            metricName="Belastning"
-            time={data.final.time}
-          />
-          <Bar 
-            label={uiTextSV.final} 
-            value={finalLoadVal} 
-            max={maxLoad}
-            scenarioName={POLICIES[decision].label}
-            metricName="Belastning"
-            time={data.final.time}
-          />
-
-          <h3 style={{ marginTop: 16 }}>{uiTextSV.cost}</h3>
-          <Bar 
-            label={uiTextSV.baseline} 
-            value={baselineCostVal} 
-            max={maxCost}
-            scenarioName="Baseline"
-            metricName="Kostnad"
-            time={data.final.time}
-          />
-          <Bar 
-            label={uiTextSV.final} 
-            value={finalCostVal} 
-            max={maxCost}
-            scenarioName={POLICIES[decision].label}
-            metricName="Kostnad"
-            time={data.final.time}
-          />
-        </div>
-      </section>
-
-      <section style={{ marginBottom: 32 }}>
-        <h2>{uiTextSV.consequencesOverTime}</h2>
-
-        <div style={{ marginBottom: 32 }}>
-          <h3 style={{ fontSize: 14, marginBottom: 12, opacity: 0.9 }}>Load över tid</h3>
-          <TimelineComparison scenarios={allScenarios} metric="load" />
-        </div>
-
-        <div style={{ marginBottom: 32 }}>
-          <h3 style={{ fontSize: 14, marginBottom: 12, opacity: 0.9 }}>Cost över tid</h3>
-          <TimelineComparison scenarios={allScenarios} metric="cost" />
-        </div>
-
-        <div style={{ maxWidth: 520, marginTop: 32 }}>
-          <h3 style={{ fontSize: 14, marginBottom: 12, opacity: 0.9 }}>Detaljerad logg</h3>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "60px 80px 1fr 80px",
-              gap: 8,
-              fontSize: 12,
-              opacity: 0.7,
-              borderBottom: "1px solid #334155",
-              paddingBottom: 4,
-              marginBottom: 4
-            }}
-          >
-            <div>{uiTextSV.time}</div>
-            <div>{uiTextSV.metric}</div>
-            <div>{uiTextSV.deltaChange}</div>
-            <div>{uiTextSV.value}</div>
-          </div>
-
-          {data.consequences.map((c: any, i: number) => (
-            <TimelineRow
-              key={i}
-              time={c.time}
-              metric={c.metric}
-              delta={c.delta}
-              value={c.value}
+        {/* Left Panel */}
+        <div style={{ overflowY: "auto", overflowX: "hidden" }}>
+          {viewMode === "decision" ? (
+            <DecisionControls 
+              inflow={inflow}
+              onInflowChange={setInflow}
             />
-          ))}
-        </div>
-      </section>
-
-      <section style={{ marginBottom: 32, padding: 20, background: "#1a1f2e", borderRadius: 8, border: "1px solid #2f333a" }}>
-        <h2>{uiTextSV.observedConsequences}</h2>
-
-        <div style={{ marginTop: 16 }}>
-          <div style={{ marginBottom: 16 }}>
-            <h3 style={{ fontSize: 14, marginBottom: 8 }}>{uiTextSV.accumulatedImpact}</h3>
-            <p style={{ fontSize: 13, opacity: 0.8 }}>
-              {uiTextSV.accumulatedImpactText}
-            </p>
-          </div>
-
-          <div style={{ marginBottom: 16 }}>
-            <h3 style={{ fontSize: 14, marginBottom: 8 }}>{uiTextSV.recovery}</h3>
-            <p style={{ fontSize: 13 }}>
-              {hasRecovery
-                ? uiTextSV.recoveryReturns
-                : uiTextSV.recoveryNotReturns}
-            </p>
-          </div>
-
-          <div style={{ marginBottom: 16 }}>
-            <h3 style={{ fontSize: 14, marginBottom: 8 }}>{uiTextSV.systemState}</h3>
-            <p style={{ fontSize: 13 }}>{systemState}</p>
-          </div>
-
-          <p style={{ fontSize: 12, opacity: 0.7, marginTop: 20, fontStyle: "italic" }}>
-            {uiTextSV.observedConsequencesDisclaimer}
-          </p>
-        </div>
-      </section>
-
-      <section style={{ marginBottom: 32, padding: 20, background: "#1a1f2e", borderRadius: 8, border: "1px solid #2f333a" }}>
-        <h2>{uiTextSV.decisionNarrative}</h2>
-        <p style={{ fontSize: 13, opacity: 0.8, marginTop: 8, marginBottom: 24 }}>
-          {uiTextSV.decisionNarrativeSubtitle}
-        </p>
-
-        <div style={{ marginBottom: 24 }}>
-          <label style={{ display: "block", fontSize: 13, marginBottom: 8 }}>{uiTextSV.alternativeResponse}</label>
-          <select
-            value={policyB}
-            onChange={e => setPolicyB(e.target.value as PolicyKey)}
-            style={{ padding: 8, fontSize: 14, width: "100%", maxWidth: 400, background: "#0e1117", color: COLORS.pageText, border: "1px solid #2f333a", borderRadius: 4 }}
-          >
-            <option value="conservative">{uiTextSV.policyConservative}</option>
-            <option value="balanced">{uiTextSV.policyBalanced}</option>
-            <option value="aggressive">{uiTextSV.policyAggressive}</option>
-          </select>
-        </div>
-
-        <div style={{ padding: 20, background: "#0e1117", borderRadius: 8, border: "1px solid #2f333a", marginBottom: 20 }}>
-          <h3 style={{ fontSize: 15, marginBottom: 16 }}>
-            {decision === "conservative" ? uiTextSV.policyConservative : decision === "balanced" ? uiTextSV.policyBalanced : uiTextSV.policyAggressive}
-          </h3>
-
-          <div style={{ marginBottom: 20 }}>
-            <h4 style={{ fontSize: 14, marginBottom: 8, opacity: 0.9 }}>{uiTextSV.earlyResponse}</h4>
-            <p style={{ fontSize: 13, lineHeight: 1.6 }}>
-              {decisionANarrative.phase1}
-            </p>
-          </div>
-
-          <div style={{ marginBottom: 20 }}>
-            <h4 style={{ fontSize: 14, marginBottom: 8, opacity: 0.9 }}>{uiTextSV.accumulation}</h4>
-            <p style={{ fontSize: 13, lineHeight: 1.6 }}>
-              {decisionANarrative.phase2}
-            </p>
-          </div>
-
-          <div>
-            <h4 style={{ fontSize: 14, marginBottom: 8, opacity: 0.9 }}>{uiTextSV.outcome}</h4>
-            <p style={{ fontSize: 13, lineHeight: 1.6 }}>
-              {decisionANarrative.phase3}
-            </p>
-          </div>
-        </div>
-
-        <div style={{ padding: 20, background: "#0e1117", borderRadius: 8, border: "1px solid #2f333a", opacity: 0.8 }}>
-          <h3 style={{ fontSize: 15, marginBottom: 12 }}>
-            {policyB === "conservative" ? uiTextSV.policyConservative : policyB === "balanced" ? uiTextSV.policyBalanced : uiTextSV.policyAggressive}
-          </h3>
-          <p style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 12 }}>
-            {uiTextSV.ifDifferentResponse}
-          </p>
-          <p style={{ fontSize: 13, lineHeight: 1.6, opacity: 0.9 }}>
-            {(() => {
-              const policyBDiff = policyB !== decision;
-              if (!policyBDiff) {
-                return uiTextSV.sameResponseNote;
-              }
-              if (policyB === "conservative" && decision !== "conservative") {
-                return uiTextSV.policyBComparisonConservative;
-              } else if (policyB === "aggressive" && decision !== "aggressive") {
-                return uiTextSV.policyBComparisonAggressive;
-              } else {
-                return uiTextSV.policyBComparisonOther;
-              }
-            })()}
-          </p>
-        </div>
-
-        <p style={{ fontSize: 12, opacity: 0.7, marginTop: 24, fontStyle: "italic" }}>
-          {uiTextSV.decisionNarrativeDisclaimer}
-        </p>
-      </section>
-
-      <section style={{ marginBottom: 32, padding: 20, background: "#1a1f2e", borderRadius: 8, border: "1px solid #2f333a" }}>
-        <h2>{uiTextSV.systemImplications}</h2>
-        <p style={{ fontSize: 13, opacity: 0.8, marginTop: 8, marginBottom: 16 }}>
-          {uiTextSV.systemImplicationsSubtitle}
-        </p>
-
-        <div style={{ marginTop: 16 }}>
-          <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-            <li style={{ marginBottom: 12, fontSize: 13, lineHeight: 1.6 }}>
-              • {implications.pressure}
-            </li>
-            <li style={{ marginBottom: 12, fontSize: 13, lineHeight: 1.6 }}>
-              • {implications.commitment}
-            </li>
-            <li style={{ marginBottom: 12, fontSize: 13, lineHeight: 1.6 }}>
-              • {implications.recovery}
-            </li>
-          </ul>
-        </div>
-
-        <p style={{ fontSize: 12, opacity: 0.7, marginTop: 20, fontStyle: "italic" }}>
-          {uiTextSV.systemImplicationsDisclaimer}
-        </p>
-      </section>
-
-          {/* Read-only AI explanation layer - the UI performs zero interpretation or transformation */}
-          {ENABLE_AI_INTERPRETATION_PANEL && aiInterpretationData && (
-            <>
-              <section style={{ marginBottom: 32, padding: 20, background: "#1a1f2e", borderRadius: 8, border: "1px solid #2f333a" }}>
-                <AIInterpretationExplanation data={aiInterpretationData} />
-              </section>
-              <section style={{ marginBottom: 32, padding: 20, background: "#1a1f2e", borderRadius: 8, border: "1px solid #2f333a" }}>
-                <AIInterpretationPanel data={aiInterpretationData} />
-              </section>
-            </>
-          )}
-
-          {!isPresentationMode && (
-            <>
-              <h2>{uiTextSV.baselineData}</h2>
-              <pre>{JSON.stringify(data.baseline, null, 2)}</pre>
-
-              <h2>{uiTextSV.finalState}</h2>
-              <pre>{JSON.stringify(data.final, null, 2)}</pre>
-
-              <h2>{uiTextSV.compareVsBaseline}</h2>
-              <pre>{JSON.stringify(data.compare, null, 2)}</pre>
-
-              <h2>{uiTextSV.consequencesData}</h2>
-              <pre>{JSON.stringify(data.consequences, null, 2)}</pre>
-            </>
+          ) : (
+            <BevisMeetingCard
+              selectedCaseId={bevisCaseId}
+              onCaseChange={handleBevisCaseChange}
+              onTimelineDataChange={handleBevisTimelineDataChange}
+            />
           )}
         </div>
 
-        {/* Right Column: Explanation */}
-        <div style={{ position: "sticky", top: 32 }}>
-          <section
-            style={{
-              padding: 16,
-              borderRadius: 8,
-              background: "#1a1f2e",
-              border: "1px solid #2f333a",
-              marginBottom: 16
-            }}
-          >
-            <div style={{ fontSize: 14, opacity: 0.9 }}>{selectedScenarioStatus}</div>
-            <div style={{ marginTop: 6, fontSize: 13, opacity: 0.75, lineHeight: 1.5 }}>
-              {selectedScenarioStatusSentence}
-            </div>
-          </section>
+        {/* Center Panel */}
+        <div style={{ overflowY: "auto", overflowX: "hidden", position: "relative" }}>
+          <SystemTimeline
+            mode={viewMode}
+            planAData={bevisTimelineData?.planA}
+            planBData={bevisTimelineData?.planB}
+            breakpoint={bevisTimelineData?.breakpoint}
+            decisionTimelineData={decisionTimelineData || undefined}
+          />
+        </div>
 
-          <section
-            style={{
-              padding: 16,
-              borderRadius: 8,
-              background: "#1a1f2e",
-              border: "1px solid #2f333a",
-              marginBottom: 16
-            }}
-          >
-            <div style={{ fontSize: 14, opacity: 0.9 }}>Jämförelse mot utgångsläge</div>
-            <div style={{ marginTop: 6, fontSize: 13, opacity: 0.75, lineHeight: 1.6 }}>
-              Belastning: {loadDeltaVsBaseline >= 0 ? "+" : ""}{loadDeltaVsBaseline.toFixed(1)} jämfört med baseline vid t = {simulatedNowTime}
-            </div>
-            <div style={{ marginTop: 4, fontSize: 13, opacity: 0.75, lineHeight: 1.6 }}>
-              Kostnad: {costDeltaVsBaseline >= 0 ? "+" : ""}{costDeltaVsBaseline.toFixed(1)} jämfört med baseline vid t = {simulatedNowTime}
-            </div>
-          </section>
-
-          {shouldRenderPremiumClassification && (
-            <section
-              style={{
-                padding: 16,
-                borderRadius: 8,
-                background: "#1a1f2e",
-                border: "1px solid #2f333a",
-                marginBottom: 16
-              }}
-            >
-              <div style={{ fontSize: 14, opacity: 0.9 }}>Oundviklig kollaps</div>
-              <div style={{ marginTop: 6, fontSize: 13, opacity: 0.75, lineHeight: 1.5 }}>
-                Vid detta tillstånd är systemets misslyckande redan beslutat av dess interna dynamik.
-              </div>
-              {selectedScenarioCollapseTime !== null && (
-                <div style={{ marginTop: 6, fontSize: 13, opacity: 0.75, lineHeight: 1.5 }}>
-                  Point of no return: T = {selectedScenarioCollapseTime}
-                </div>
-              )}
-            </section>
-          )}
-
-          {activeStep && (
-            <section
-              style={{
-                padding: 16,
-                border: "2px dashed #ccc",
-                borderRadius: 8,
-                background: "#1a1f2e",
-                borderColor: "#2f333a"
-              }}
-            >
-              <h3>{STEP_DETAILS[activeStep].title}</h3>
-              <p style={{ marginTop: 8, fontSize: 14 }}>
-                {STEP_DETAILS[activeStep].explanation}
-              </p>
-            </section>
+        {/* Right Panel */}
+        <div style={{ overflowY: "auto", overflowX: "hidden" }}>
+          {viewMode === "decision" ? (
+            <DecisionNarrative inflow={inflow} />
+          ) : (
+            <BevisLeadershipNarrative selectedCaseId={bevisCaseId} />
           )}
         </div>
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }
-
-
