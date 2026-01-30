@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>01 Systems — Decision-flow simulation</title>
+  <meta name="description" content="01 Systems builds deterministic decision-flow simulations that make delayed consequences visible." />
+
+  <style>
+    :root{
+      --bg:#ffffff;
+      --text:#111111;
+      --muted:#555555;
+      --line:#eaeaea;
+      --card:#fafafa;
+    }
+    * { box-sizing: border-box; }
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      line-height:1.6;
+    }
+    .container{
+      max-width: 760px;
+      margin: 72px auto;
+      padding: 0 20px 64px;
+    }
+    header{
+      display:flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+    }
+    .brand{
+      font-size: 0.95rem;
+      color: var(--muted);
+      letter-spacing: 0.02em;
+    }
+    h1{
+      margin: 10px 0 12px;
+      font-size: 2.1rem;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+    }
+    .lead{
+      margin: 0 0 26px;
+      font-size: 1.05rem;
+      color: var(--text);
+    }
+    .lang{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      user-select:none;
+    }
+    .lang button{
+      appearance:none;
+      border:1px solid var(--line);
+      background:transparent;
+      color:var(--text);
+      padding:8px 10px;
+      border-radius:10px;
+      cursor:pointer;
+      font-size:0.9rem;
+    }
+    .lang button[aria-pressed="true"]{
+      background: var(--card);
+      border-color: #dcdcdc;
+    }
+    hr{
+      border:0;
+      border-top: 1px solid var(--line);
+      margin: 28px 0;
+    }
+    h2{
+      margin: 28px 0 10px;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+    p{ margin: 10px 0; }
+    ul, ol{
+      margin: 10px 0 0;
+      padding-left: 18px;
+    }
+    li{ margin: 6px 0; }
+    .footer{
+      margin-top: 42px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .footer a{ color: var(--text); text-decoration: none; border-bottom: 1px solid var(--line); }
+    .note{
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .card{
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-top: 14px;
+    }
+    .hidden{ display:none; }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+
+    <header>
+      <div>
+        <div class="brand">01 Systems</div>
+
+        <!-- EN headline -->
+        <h1 id="h1-en">Decision-flow simulations for complex systems</h1>
+        <!-- SV headline -->
+        <h1 id="h1-sv" class="hidden">Beslutsflödes-simuleringar för komplexa system</h1>
+
+        <!-- EN lead -->
+        <p id="lead-en" class="lead">
+          We build deterministic simulation tools that help organizations understand how reasonable decisions can lead to delayed and sometimes irreversible outcomes over time.
+        </p>
+        <!-- SV lead -->
+        <p id="lead-sv" class="lead hidden">
+          Vi bygger deterministiska simuleringsverktyg som hjälper organisationer att förstå hur rimliga beslut kan leda till fördröjda och ibland irreversibla konsekvenser över tid.
+        </p>
+      </div>
+
+      <div class="lang" aria-label="Language switch">
+        <button id="btn-en" type="button" aria-pressed="true">EN</button>
+        <button id="btn-sv" type="button" aria-pressed="false">SV</button>
+      </div>
+    </header>
+
+    <hr/>
+
+    <!-- WHAT -->
+    <section>
+      <h2 id="sec-what-en">What Pulse is</h2>
+      <h2 id="sec-what-sv" class="hidden">Vad Pulse är</h2>
+
+      <p id="p-what-en">
+        Pulse is a decision-flow simulation engine focused on systems where cause and effect are separated by time.
+        It is not prediction, and it does not optimize for a “right answer”. Instead, it makes consequences visible.
+      </p>
+
+      <p id="p-what-sv" class="hidden">
+        Pulse är en beslutsflödes-motor för simulering av system där orsak och verkan skiljs åt av tid.
+        Det är inte prediktion, och det optimerar inte fram ett “rätt svar”. Istället synliggör det konsekvenser.
+      </p>
+
+      <div class="card">
+        <ul id="ul-what-en">
+          <li>Deterministic simulations</li>
+          <li>Delayed effects and “no-return” dynamics</li>
+          <li>Retrospective and “what-if” scenarios</li>
+          <li>Built for leadership and decision-makers</li>
+        </ul>
+
+        <ul id="ul-what-sv" class="hidden">
+          <li>Deterministiska simuleringar</li>
+          <li>Fördröjda effekter och “no-return”-dynamik</li>
+          <li>Retrospektiva och “what-if”-scenarier</li>
+          <li>Byggt för ledning och beslutsfattare</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- FOCUS -->
+    <section>
+      <h2 id="sec-focus-en">Current focus</h2>
+      <h2 id="sec-focus-sv" class="hidden">Nuvarande fokus</h2>
+
+      <div class="card">
+        <ul id="ul-focus-en">
+          <li>Public sector and infrastructure</li>
+          <li>Urban systems and capacity planning</li>
+          <li>Organizational decision analysis</li>
+        </ul>
+
+        <ul id="ul-focus-sv" class="hidden">
+          <li>Offentlig sektor och infrastruktur</li>
+          <li>Stadssystem och kapacitetsplanering</li>
+          <li>Organisatorisk beslutsanalys</li>
+        </ul>
+      </div>
+
+      <p id="p-focus-en" class="note">
+        We typically start with a retrospective case to establish shared ground and credibility.
+      </p>
+      <p id="p-focus-sv" class="note hidden">
+        Vi börjar oftast med ett retrospektivt case för att skapa gemensam grund och trovärdighet.
+      </p>
+    </section>
+
+    <!-- ENGAGEMENT -->
+    <section>
+      <h2 id="sec-engage-en">Typical engagement</h2>
+      <h2 id="sec-engage-sv" class="hidden">Typiskt upplägg</h2>
+
+      <div class="card">
+        <ol id="ol-engage-en">
+          <li>Retrospective scenario setup</li>
+          <li>Decision-flow simulation</li>
+          <li>Outcome analysis</li>
+          <li>Workshop and discussion</li>
+        </ol>
+
+        <ol id="ol-engage-sv" class="hidden">
+          <li>Setup av retrospektivt scenario</li>
+          <li>Beslutsflödes-simulering</li>
+          <li>Analys av utfall</li>
+          <li>Workshop och genomgång</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <div class="footer">
+      <div id="foot-en">
+        01 Systems AB<br/>
+        Registered in Sweden<br/>
+        Contact: <a href="mailto:christian@01systems.se">christian@01systems.se</a>
+      </div>
+
+      <div id="foot-sv" class="hidden">
+        01 Systems AB<br/>
+        Registrerat i Sverige<br/>
+        Kontakt: <a href="mailto:christian@01systems.se">christian@01systems.se</a>
+      </div>
+
+      <p id="foot-note-en" class="note">
+        This page is intentionally minimal — the primary context is shared in direct dialogue.
+      </p>
+      <p id="foot-note-sv" class="note hidden">
+        Den här sidan är medvetet minimal — huvuddelen av kontexten tas i direkt dialog.
+      </p>
+    </div>
+
+  </div>
+
+  <script>
+    (function(){
+      const idsEn = [
+        "h1-en","lead-en","sec-what-en","p-what-en","ul-what-en",
+        "sec-focus-en","ul-focus-en","p-focus-en",
+        "sec-engage-en","ol-engage-en",
+        "foot-en","foot-note-en"
+      ];
+      const idsSv = [
+        "h1-sv","lead-sv","sec-what-sv","p-what-sv","ul-what-sv",
+        "sec-focus-sv","ul-focus-sv","p-focus-sv",
+        "sec-engage-sv","ol-engage-sv",
+        "foot-sv","foot-note-sv"
+      ];
+
+      const btnEn = document.getElementById("btn-en");
+      const btnSv = document.getElementById("btn-sv");
+
+      function setLang(lang){
+        const show = (arr) => arr.forEach(id => document.getElementById(id).classList.remove("hidden"));
+        const hide = (arr) => arr.forEach(id => document.getElementById(id).classList.add("hidden"));
+
+        if(lang === "sv"){
+          hide(idsEn); show(idsSv);
+          btnEn.setAttribute("aria-pressed","false");
+          btnSv.setAttribute("aria-pressed","true");
+          document.documentElement.lang = "sv";
+          localStorage.setItem("lang","sv");
+        } else {
+          hide(idsSv); show(idsEn);
+          btnEn.setAttribute("aria-pressed","true");
+          btnSv.setAttribute("aria-pressed","false");
+          document.documentElement.lang = "en";
+          localStorage.setItem("lang","en");
+        }
+      }
+
+      btnEn.addEventListener("click", () => setLang("en"));
+      btnSv.addEventListener("click", () => setLang("sv"));
+
+      const saved = localStorage.getItem("lang");
+      setLang(saved === "sv" ? "sv" : "en");
+    })();
+  </script>
+</body>
+</html>
