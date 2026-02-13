@@ -1,19 +1,69 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { getSystemSnapshot } from "@/src/systemSnapshot/systemSnapshotStore";
+import { getSystemSnapshot, setSystemSnapshot } from "@/src/systemSnapshot/systemSnapshotStore";
 import { getLanguage, setLanguage } from "@/src/language/languageStore";
 import { t } from "@/src/language/translations";
+import { createSnapshot, downloadSnapshot } from "@/src/exportSnapshot/exportSnapshot";
+
+const STORAGE_KEY = "pulse_snapshot_history";
+
+function loadSnapshotHistory() {
+  if (typeof window === "undefined") return [];
+  const raw = localStorage.getItem(STORAGE_KEY);
+  return raw ? JSON.parse(raw) : [];
+}
+
+function saveSnapshotHistory(history: any[]) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+}
 
 export default function BevisV2Page() {
   const snapshot = getSystemSnapshot();
   const [lang, setLangState] = useState<"EN" | "SV">(getLanguage());
+  const [history, setHistory] = useState<any[]>([]);
+  const [selectedA, setSelectedA] = useState<any | null>(null);
+  const [selectedB, setSelectedB] = useState<any | null>(null);
   const translations = t();
+
+  useEffect(() => {
+    setHistory(loadSnapshotHistory());
+  }, []);
 
   const handleLanguageToggle = (newLang: "EN" | "SV") => {
     setLanguage(newLang);
     setLangState(newLang);
+  };
+
+  const handleExportSnapshot = () => {
+    const worldState = getSystemSnapshot();
+
+    if (!worldState) return;
+
+    const snapshotExport = createSnapshot(
+      worldState,
+      { source: "decision-flow" },
+      "decision-flow",
+      { outcomeSummary }
+    );
+
+    const history = loadSnapshotHistory();
+    history.unshift(snapshotExport);
+    saveSnapshotHistory(history);
+    setHistory(history);
+
+    downloadSnapshot(snapshotExport);
+  };
+
+  const handleLoadSnapshot = (item: any) => {
+    setSystemSnapshot(item.world_state);
+  };
+
+  const handleDeleteSnapshot = (id: string) => {
+    const updated = history.filter(h => h.snapshot_id !== id);
+    saveSnapshotHistory(updated);
+    setHistory(updated);
   };
 
   const getLoadStatus = () => {
@@ -41,20 +91,129 @@ export default function BevisV2Page() {
     return translations.bevis.preserved;
   };
 
-  const getObservedChanges = () => {
-    if (!snapshot) return [];
-    const changes = [];
-    if (Math.abs(snapshot.compare.load) > 0.1) {
-      changes.push(translations.bevis.loadDiffers);
+  const compare = snapshot?.compare;
+
+  let loadDirection: "increase" | "decrease" | "stable" = "stable";
+  let costDirection: "increase" | "decrease" | "stable" = "stable";
+
+  if (compare) {
+    if (compare.load > 0.1) loadDirection = "increase";
+    else if (compare.load < -0.1) loadDirection = "decrease";
+
+    if (compare.cost > 0.1) costDirection = "increase";
+    else if (compare.cost < -0.1) costDirection = "decrease";
+  }
+
+  const labels = lang === "SV"
+    ? {
+        load: "Belastningsförändring",
+        cost: "Kostnadsförändring",
+        interpretation: "Strukturell tolkning"
+      }
+    : {
+        load: "Load Shift",
+        cost: "Cost Shift",
+        interpretation: "Structural Interpretation"
+      };
+
+  const loadText = (() => {
+    if (loadDirection === "increase") {
+      return lang === "SV"
+        ? "Ökade jämfört med utgångsläget"
+        : "Increased relative to baseline";
     }
-    if (Math.abs(snapshot.compare.cost) > 0.1) {
-      changes.push(translations.bevis.recoveryDiffers);
+    if (loadDirection === "decrease") {
+      return lang === "SV"
+        ? "Minskade jämfört med utgångsläget"
+        : "Decreased relative to baseline";
     }
-    if (snapshot.consequences.length > 0) {
-      changes.push(translations.bevis.stateChanged);
+    return lang === "SV"
+      ? "Ingen signifikant avvikelse"
+      : "No significant deviation";
+  })();
+
+  const costText = (() => {
+    if (costDirection === "increase") {
+      return lang === "SV"
+        ? "Ökade över perioden"
+        : "Increased over period";
     }
-    return changes;
+    if (costDirection === "decrease") {
+      return lang === "SV"
+        ? "Minskade över perioden"
+        : "Decreased over period";
+    }
+    return lang === "SV"
+      ? "Ingen signifikant avvikelse"
+      : "No significant deviation";
+  })();
+
+  const interpretationText = (() => {
+    if (loadDirection === "decrease" && costDirection === "increase") {
+      return lang === "SV"
+        ? "Operativ stabilisering uppnådd genom ökad resursinsats."
+        : "Operational stabilization achieved through increased resource allocation.";
+    }
+
+    if (loadDirection === "increase" && costDirection === "increase") {
+      return lang === "SV"
+        ? "Systemet rörde sig mot en mer belastad och kostnadsintensiv struktur."
+        : "System moved toward a more load-intensive and cost-intensive structure.";
+    }
+
+    if (loadDirection === "increase" && costDirection !== "increase") {
+      return lang === "SV"
+        ? "Belastningen ökade utan proportionell kostnadsökning."
+        : "Load increased without proportional cost escalation.";
+    }
+
+    return lang === "SV"
+      ? "Strukturen förblev i huvudsak stabil."
+      : "Structural dynamics remained broadly stable.";
+  })();
+
+  const outcomeSummary = {
+    lang,
+    thresholds: { compareDelta: 0.1 },
+    directions: { load: loadDirection, cost: costDirection },
+    text: {
+      load: loadText,
+      cost: costText,
+      interpretation: interpretationText,
+    },
+    labels,
   };
+
+  let compareDeltaLoad: number | null = null;
+  let compareDeltaCost: number | null = null;
+
+  if (selectedA && selectedB) {
+    compareDeltaLoad =
+      selectedB.world_state.compare.load -
+      selectedA.world_state.compare.load;
+
+    compareDeltaCost =
+      selectedB.world_state.compare.cost -
+      selectedA.world_state.compare.cost;
+  }
+
+  let comparisonInterpretation: string | null = null;
+
+  if (compareDeltaLoad !== null && compareDeltaCost !== null) {
+    if (compareDeltaLoad < 0 && compareDeltaCost > 0) {
+      comparisonInterpretation =
+        "Scenario B reduces load but at higher cost compared to Scenario A.";
+    } else if (compareDeltaLoad > 0 && compareDeltaCost > 0) {
+      comparisonInterpretation =
+        "Scenario B increases both load and cost relative to Scenario A.";
+    } else if (compareDeltaLoad > 0 && compareDeltaCost <= 0) {
+      comparisonInterpretation =
+        "Scenario B increases load without proportional cost increase.";
+    } else {
+      comparisonInterpretation =
+        "Structural difference between scenarios is limited.";
+    }
+  }
 
   return (
     <div style={{
@@ -232,36 +391,37 @@ export default function BevisV2Page() {
               }}>
                 {translations.bevis.observedOutcome}
               </h2>
-              {(() => {
-                const fullText = translations.bevis.observedOutcomeText;
-                const lines = fullText.split('\n');
-                const firstSentence = lines[0];
-                const remainingText = lines.slice(1).join('\n');
-                return (
-                  <>
-                    <p style={{
-                      fontSize: "16px",
-                      fontWeight: 500,
-                      color: "#e6edf3",
-                      lineHeight: "1.6",
-                      margin: "0 0 16px 0"
-                    }}>
-                      {firstSentence}
-                    </p>
-                    {remainingText && (
-                      <p style={{
-                        fontSize: "13px",
-                        color: "#9ca3af",
-                        lineHeight: "1.6",
-                        margin: 0,
-                        whiteSpace: "pre-line"
-                      }}>
-                        {remainingText}
-                      </p>
-                    )}
-                  </>
-                );
-              })()}
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3, 1fr)",
+                gap: "24px",
+                fontSize: "13px"
+              }}>
+                <div>
+                  <div style={{ color: "#6b7280", fontSize: "11px", marginBottom: "4px" }}>
+                    {labels.load}
+                  </div>
+                  <div style={{ color: "#e6edf3" }}>
+                    {loadText}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ color: "#6b7280", fontSize: "11px", marginBottom: "4px" }}>
+                    {labels.cost}
+                  </div>
+                  <div style={{ color: "#e6edf3" }}>
+                    {costText}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ color: "#6b7280", fontSize: "11px", marginBottom: "4px" }}>
+                    {labels.interpretation}
+                  </div>
+                  <div style={{ color: "#e6edf3" }}>
+                    {interpretationText}
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Section 3 — System Status */}
@@ -482,7 +642,6 @@ export default function BevisV2Page() {
               </p>
             </div>
 
-            {/* Section 8 — Observed Change */}
             <div style={{
               marginBottom: "32px",
               padding: "24px",
@@ -494,21 +653,107 @@ export default function BevisV2Page() {
                 fontSize: "16px",
                 fontWeight: 500,
                 color: "#e6edf3",
-                margin: "0 0 12px 0"
+                margin: "0 0 16px 0"
               }}>
-                {translations.bevis.observedChange}
+                Decision History
               </h2>
-              <ul style={{
-                fontSize: "13px",
-                color: "#9ca3af",
-                lineHeight: "1.8",
-                margin: 0,
-                paddingLeft: "20px"
+
+              {history.length === 0 && (
+                <p style={{ color: "#6b7280", fontSize: "13px" }}>
+                  No saved snapshots.
+                </p>
+              )}
+
+              {history.map(item => (
+                <div
+                  key={item.snapshot_id}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "8px 0",
+                    borderBottom: "1px solid #2f333a"
+                  }}
+                >
+                  <div style={{ fontSize: "12px", color: "#9ca3af" }}>
+                    {new Date(item.snapshot_id).toLocaleString()}
+                  </div>
+
+                  <div style={{ fontSize: "12px", color: "#e6edf3" }}>
+                    Load: {item.metadata?.outcomeSummary?.directions?.load}
+                    {" | "}
+                    Cost: {item.metadata?.outcomeSummary?.directions?.cost}
+                  </div>
+
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <button onClick={() => handleLoadSnapshot(item)}>
+                      View
+                    </button>
+                    <button onClick={() => handleDeleteSnapshot(item.snapshot_id)}>
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{
+              marginBottom: "32px",
+              padding: "24px",
+              background: "#1a1a1a",
+              border: "1px solid #2f333a",
+              borderRadius: "8px"
+            }}>
+              <h2 style={{
+                fontSize: "16px",
+                fontWeight: 500,
+                color: "#e6edf3",
+                margin: "0 0 16px 0"
               }}>
-                {getObservedChanges().map((change, idx) => (
-                  <li key={idx}>{change}</li>
-                ))}
-              </ul>
+                Compare Snapshots
+              </h2>
+
+              <div style={{ display: "flex", gap: "16px", marginBottom: "16px" }}>
+                <select
+                  value={selectedA?.snapshot_id ?? ""}
+                  onChange={(e) =>
+                    setSelectedA(history.find(h => h.snapshot_id === e.target.value) || null)
+                  }
+                  style={{ flex: 1 }}
+                >
+                  <option value="">Select Snapshot A</option>
+                  {history.map(item => (
+                    <option key={item.snapshot_id} value={item.snapshot_id}>
+                      {new Date(item.snapshot_id).toLocaleString()}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  value={selectedB?.snapshot_id ?? ""}
+                  onChange={(e) =>
+                    setSelectedB(history.find(h => h.snapshot_id === e.target.value) || null)
+                  }
+                  style={{ flex: 1 }}
+                >
+                  <option value="">Select Snapshot B</option>
+                  {history.map(item => (
+                    <option key={item.snapshot_id} value={item.snapshot_id}>
+                      {new Date(item.snapshot_id).toLocaleString()}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {compareDeltaLoad !== null && compareDeltaCost !== null && (
+                <div style={{ fontSize: "13px", color: "#9ca3af", lineHeight: "1.6" }}>
+                  <p>Load Δ: {compareDeltaLoad.toFixed(3)}</p>
+                  <p>Cost Δ: {compareDeltaCost.toFixed(3)}</p>
+                  <p style={{ marginTop: "12px", color: "#e6edf3" }}>
+                    {comparisonInterpretation}
+                  </p>
+                </div>
+              )}
             </div>
 
           </>
@@ -564,6 +809,25 @@ export default function BevisV2Page() {
             {translations.bevis.viewExpertAnalysis}
           </Link>
         </div>
+
+        {snapshot && (
+          <button
+            type="button"
+            onClick={handleExportSnapshot}
+            style={{
+              marginTop: "24px",
+              padding: "8px 16px",
+              fontSize: "13px",
+              color: "#9ca3af",
+              background: "transparent",
+              border: "1px solid #2f333a",
+              borderRadius: "6px",
+              cursor: "pointer"
+            }}
+          >
+            Export Snapshot
+          </button>
+        )}
       </div>
     </div>
   );
