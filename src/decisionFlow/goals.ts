@@ -39,7 +39,7 @@ export function evaluateGoals(
   goals: Goal[]
 ): GoalResult {
   type StabilityState = "STABIL" | "ANSTRÄNGD" | "INSTABIL" | "OHÅLLBAR";
-  
+
   const statePriority: Record<StabilityState, number> = {
     STABIL: 1,
     ANSTRÄNGD: 2,
@@ -50,50 +50,50 @@ export function evaluateGoals(
   let worstState: StabilityState = "STABIL";
   let worstDetails: GoalWorst | undefined = undefined;
 
-  for (const point of timeline) {
-    for (const goal of goals) {
-      const value = point.metrics[goal.metric];
-      const threshold = goal.threshold;
+  const finalPoint = timeline[timeline.length - 1];
+  const metrics = finalPoint?.metrics ?? { load: 0, cost: 0 };
 
-      // Classify stability state based on value relative to threshold
-      let state: StabilityState;
-      
-      if (goal.operator === "<=") {
-        // For <= goals, lower is better
-        if (value <= threshold * 0.85) {
-          state = "STABIL";
-        } else if (value <= threshold) {
-          state = "ANSTRÄNGD";
-        } else if (value <= threshold * 1.15) {
-          state = "INSTABIL";
-        } else {
-          state = "OHÅLLBAR";
-        }
+  for (const goal of goals) {
+    const value = metrics[goal.metric as keyof typeof metrics];
+    const threshold = goal.threshold;
+
+    // Bands: margin/overrun levels. STABLE requires slack; 100% utilization is not stable.
+    let state: StabilityState;
+
+    if (goal.operator === "<=") {
+      // <= 1.00x STABIL, <= 1.07x ANSTRÄNGD, <= 1.18x INSTABIL, > 1.18x OHÅLLBAR
+      if (value <= threshold * 1.0) {
+        state = "STABIL";
+      } else if (value <= threshold * 1.07) {
+        state = "ANSTRÄNGD";
+      } else if (value <= threshold * 1.18) {
+        state = "INSTABIL";
       } else {
-        // For >= goals, higher is better (inverse logic)
-        if (value >= threshold * 1.15) {
-          state = "STABIL";
-        } else if (value >= threshold) {
-          state = "ANSTRÄNGD";
-        } else if (value >= threshold * 0.85) {
-          state = "INSTABIL";
-        } else {
-          state = "OHÅLLBAR";
-        }
+        state = "OHÅLLBAR";
       }
+    } else {
+      // >= goals: mirror symmetrically (threshold/1.07, threshold/1.18)
+      if (value >= threshold) {
+        state = "STABIL";
+      } else if (value >= threshold / 1.07) {
+        state = "ANSTRÄNGD";
+      } else if (value >= threshold / 1.18) {
+        state = "INSTABIL";
+      } else {
+        state = "OHÅLLBAR";
+      }
+    }
 
-      // Track worst state across all metrics and ticks
-      if (statePriority[state] > statePriority[worstState]) {
-        worstState = state;
-        // Only set worst details for INSTABIL and OHÅLLBAR
-        if (state === "INSTABIL" || state === "OHÅLLBAR") {
-          worstDetails = {
-            metric: goal.metric,
-            tick: point.tick,
-            value,
-            threshold,
-          };
-        }
+    // Track worst state across goals (final tick only)
+    if (statePriority[state] > statePriority[worstState]) {
+      worstState = state;
+      if (state === "INSTABIL" || state === "OHÅLLBAR") {
+        worstDetails = {
+          metric: goal.metric,
+          tick: finalPoint?.tick ?? 0,
+          value,
+          threshold,
+        };
       }
     }
   }
@@ -104,10 +104,10 @@ export function evaluateGoals(
   };
 }
 
-// STEP 3 — Define Pilot v5 goals
+// STEP 3 — Pilot v5 goals. Load has headroom: 0.92 leaves slack; 1.0 = 100% utilization is not stable.
 export const PILOT_V5_GOALS: Goal[] = [
-  { metric: "load", operator: "<=", threshold: 3 },
-  { metric: "cost", operator: "<=", threshold: 13 },
+  { metric: "load", operator: "<=", threshold: 0.92 },
+  { metric: "cost", operator: "<=", threshold: 12 },
 ];
 
 // STEP 4 — Default goal evaluation (presentation layer)

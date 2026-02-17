@@ -41,19 +41,22 @@ export default function BevisV2Page() {
 
     if (!worldState) return;
 
-    const snapshotExport = createSnapshot(
-      worldState,
-      { source: "decision-flow" },
-      "decision-flow",
-      { outcomeSummary }
-    );
+    const snapshotExport = (worldState as any).snapshotExport ?? worldState;
+
+    const itemToSave = {
+      snapshot_id: snapshotExport.meta?.snapshot_id ?? new Date().toISOString(),
+      scenario: "decision-flow",
+      inputs: snapshotExport.input ?? {},
+      world_state: snapshotExport,
+      metadata: { outcomeSummary }
+    };
 
     const history = loadSnapshotHistory();
-    history.unshift(snapshotExport);
+    history.unshift(itemToSave);
     saveSnapshotHistory(history);
     setHistory(history);
 
-    downloadSnapshot(snapshotExport);
+    downloadSnapshot(itemToSave);
   };
 
   const handleLoadSnapshot = (item: any) => {
@@ -90,6 +93,104 @@ export default function BevisV2Page() {
     if (delta < -0.5) return translations.bevis.enhanced;
     return translations.bevis.preserved;
   };
+
+  const structuralStatus =
+    (snapshot as any)?.goalStatus ??
+    (snapshot as any)?.snapshotExport?.output?.decisionSummary?.systemState?.goalStatus;
+
+  const trendDirection =
+    (snapshot as any)?.decisionSummary?.interpretation?.trend ??
+    (snapshot as any)?.snapshotExport?.output?.decisionSummary?.interpretation?.trend;
+
+  const goalWorst =
+    (snapshot as any)?.goalWorst ??
+    (snapshot as any)?.output?.decisionSummary?.systemState?.goalWorst;
+
+  const comparison =
+    (snapshot as any)?.decisionSummary?.comparison ??
+    (snapshot as any)?.output?.decisionSummary?.comparison ??
+    (snapshot as any)?.compare;
+
+  function mapStructuralStatus(status?: string) {
+    switch (status) {
+      case "STABIL":
+        return "Inom definierade mål";
+      case "ANSTRÄNGD":
+        return "Marginell överskridelse";
+      case "INSTABIL":
+        return "Signifikant avvikelse";
+      case "OHÅLLBAR":
+        return "Saknar återhämtningsutrymme";
+      default:
+        return "Okänd";
+    }
+  }
+
+  function mapTrendDirection(trend?: string) {
+    switch (trend) {
+      case "IMPROVING":
+        return "Rör sig mot måluppfyllelse.";
+      case "STABLE":
+        return "Ingen signifikant förändring över tid.";
+      case "DECLINING":
+        return "Rör sig bort från måluppfyllelse.";
+      default:
+        return "Okänd trend";
+    }
+  }
+
+  function getCombinationMessage(status?: string, trend?: string) {
+    if (status === "OHÅLLBAR") return "Nuvarande konfiguration saknar långsiktig hållbarhet.";
+    if (status === "STABIL" && trend === "DECLINING") return "Systemet är inom mål men rör sig mot gränsvärdet.";
+    if (status === "ANSTRÄNGD" && trend === "IMPROVING") return "Avvikelsen minskar över tid.";
+    if (status === "INSTABIL" && trend === "IMPROVING") return "Åtgärd ger effekt men måluppfyllelse är ännu inte återställd.";
+    if (status === "INSTABIL" && trend === "DECLINING") return "Avvikelsen ökar och kräver prioriterad åtgärd.";
+    if (status === "STABIL") return "Samtliga mål uppfylls. Operativ marginal finns.";
+    if (status === "ANSTRÄNGD") return "Ett eller flera mål överskrids inom toleransband.";
+    if (status === "INSTABIL") return "Avvikelsen kräver åtgärd för att återställa måluppfyllelse.";
+    return "Okänd";
+  }
+
+  function mapGoalStatus(status?: string) {
+    switch (status) {
+      case "STABIL":
+        return "STABIL";
+      case "ANSTRÄNGD":
+        return "ANSTRÄNGD";
+      case "INSTABIL":
+        return "INSTABIL";
+      case "OHÅLLBAR":
+        return "OHÅLLBAR";
+      default:
+        return "OKÄND";
+    }
+  }
+
+  function formatDelta(d: number | undefined): string {
+    if (d == null) return "—";
+    return d >= 0 ? `+${d.toFixed(2)}` : d.toFixed(2);
+  }
+
+  function getSummaryWithDriver(): string {
+    const statusLabel = mapStructuralStatus(structuralStatus);
+    const loadD = comparison?.loadChange ?? (comparison as Record<string, number>)?.load;
+    const costD = comparison?.costChange ?? (comparison as Record<string, number>)?.cost;
+    const marginD = comparison?.marginChange ?? (comparison as Record<string, number>)?.margin;
+    const loadStr = formatDelta(typeof loadD === "number" ? loadD : undefined);
+    const costStr = formatDelta(typeof costD === "number" ? costD : undefined);
+    const marginStr = formatDelta(typeof marginD === "number" ? marginD : undefined);
+
+    if (structuralStatus === "STABIL") {
+      return `Scenariot är inom definierade mål. Belastning: ${loadStr}, Kostnad: ${costStr}.`;
+    }
+    if (goalWorst?.metric === "cost") {
+      return `Scenariot innebär ökad kostnad (${costStr}) som driver status till '${statusLabel}'. Belastning: ${loadStr}, Avstånd till målvärde: ${marginStr}.`;
+    }
+    if (goalWorst?.metric === "load") {
+      return `Scenariot innebär ökad belastning (${loadStr}) som driver status till '${statusLabel}'. Kostnad: ${costStr}, Avstånd till målvärde: ${marginStr}.`;
+    }
+    return `Scenariot driver status till '${statusLabel}'. Belastning: ${loadStr}, Kostnad: ${costStr}, Avstånd till målvärde: ${marginStr}.`;
+  }
 
   const compare = snapshot?.compare;
 
@@ -184,36 +285,24 @@ export default function BevisV2Page() {
     labels,
   };
 
-  let compareDeltaLoad: number | null = null;
-  let compareDeltaCost: number | null = null;
+  const summaryA =
+    selectedA?.world_state?.output?.decisionSummary;
 
-  if (selectedA && selectedB) {
-    compareDeltaLoad =
-      selectedB.world_state.compare.load -
-      selectedA.world_state.compare.load;
+  const summaryB =
+    selectedB?.world_state?.output?.decisionSummary;
 
-    compareDeltaCost =
-      selectedB.world_state.compare.cost -
-      selectedA.world_state.compare.cost;
-  }
+  const goalStatusA =
+    (selectedA?.world_state as any)?.goalStatus ??
+    (selectedA?.world_state as any)?.output?.decisionSummary?.systemState?.goalStatus;
 
-  let comparisonInterpretation: string | null = null;
+  const goalStatusB =
+    (selectedB?.world_state as any)?.goalStatus ??
+    (selectedB?.world_state as any)?.output?.decisionSummary?.systemState?.goalStatus;
 
-  if (compareDeltaLoad !== null && compareDeltaCost !== null) {
-    if (compareDeltaLoad < 0 && compareDeltaCost > 0) {
-      comparisonInterpretation =
-        "Scenario B reduces load but at higher cost compared to Scenario A.";
-    } else if (compareDeltaLoad > 0 && compareDeltaCost > 0) {
-      comparisonInterpretation =
-        "Scenario B increases both load and cost relative to Scenario A.";
-    } else if (compareDeltaLoad > 0 && compareDeltaCost <= 0) {
-      comparisonInterpretation =
-        "Scenario B increases load without proportional cost increase.";
-    } else {
-      comparisonInterpretation =
-        "Structural difference between scenarios is limited.";
-    }
-  }
+  const marginDiff =
+    summaryA != null && summaryB != null
+      ? summaryB.comparison.marginChange - summaryA.comparison.marginChange
+      : null;
 
   return (
     <div style={{
@@ -375,7 +464,7 @@ export default function BevisV2Page() {
               </p>
             </div>
 
-            {/* Section 2 — Observed Outcome (Outcome Summary) */}
+            {/* Section 2 — Observed Outcome (decisionSummary, conclusion) */}
             <div style={{
               marginBottom: "48px",
               padding: "32px",
@@ -391,40 +480,81 @@ export default function BevisV2Page() {
               }}>
                 {translations.bevis.observedOutcome}
               </h2>
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(3, 1fr)",
-                gap: "24px",
-                fontSize: "13px"
-              }}>
-                <div>
-                  <div style={{ color: "#6b7280", fontSize: "11px", marginBottom: "4px" }}>
-                    {labels.load}
+
+              {/* Section 1: Scenarioförändring */}
+              <div style={{ marginBottom: "24px" }}>
+                <h3 style={{ fontSize: "14px", color: "#9ca3af", margin: "0 0 12px 0" }}>Scenarioförändring</h3>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", fontSize: "13px" }}>
+                  <div title="Procentuell differens mellan aktuell nivå och definierat mål.">
+                    <div style={{ color: "#6b7280", fontSize: "11px", marginBottom: "4px" }}>Avstånd till målvärde</div>
+                    <div style={{ color: "#e6edf3" }}>
+                      {(snapshot as any)?.decisionSummary?.comparison?.marginChange != null
+                        ? Number((snapshot as any).decisionSummary.comparison.marginChange).toFixed(2)
+                        : "—"}
+                    </div>
                   </div>
-                  <div style={{ color: "#e6edf3" }}>
-                    {loadText}
+                  <div title="Stabil drift förutsätter operativ marginal. 100% kapacitetsutnyttjande saknar återhämtningsutrymme.">
+                    <div style={{ color: "#6b7280", fontSize: "11px", marginBottom: "4px" }}>Belastning</div>
+                    <div style={{ color: "#e6edf3" }}>
+                      {(snapshot as any)?.decisionSummary?.comparison?.loadChange != null
+                        ? Number((snapshot as any).decisionSummary.comparison.loadChange).toFixed(2)
+                        : "—"}
+                    </div>
+                  </div>
+                  <div title="Toleransbanden representerar kontrollerbar respektive strukturell budgetavvikelse.">
+                    <div style={{ color: "#6b7280", fontSize: "11px", marginBottom: "4px" }}>Kostnad</div>
+                    <div style={{ color: "#e6edf3" }}>
+                      {(snapshot as any)?.decisionSummary?.comparison?.costChange != null
+                        ? Number((snapshot as any).decisionSummary.comparison.costChange).toFixed(2)
+                        : "—"}
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <div style={{ color: "#6b7280", fontSize: "11px", marginBottom: "4px" }}>
-                    {labels.cost}
+              </div>
+
+              {/* Section 2: Strukturell bedömning — structural status + trend direction */}
+              <div style={{ marginBottom: "24px" }}>
+                <h3 style={{ fontSize: "14px", color: "#9ca3af", margin: "0 0 12px 0" }}>Strukturell bedömning</h3>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", fontSize: "13px" }}>
+                  <div title="Procentuell differens mellan aktuell nivå och definierat mål.">
+                    <div style={{ color: "#6b7280", fontSize: "11px", marginBottom: "4px" }}>Avstånd till målvärde</div>
+                    <div style={{ color: "#e6edf3" }}>
+                      {(snapshot as any)?.final?.metrics?.margin != null
+                        ? Number((snapshot as any).final.metrics.margin).toFixed(2)
+                        : (snapshot as any)?.output?.final?.metrics?.margin != null
+                        ? Number((snapshot as any).output.final.metrics.margin).toFixed(2)
+                        : "—"}
+                    </div>
                   </div>
-                  <div style={{ color: "#e6edf3" }}>
-                    {costText}
+                  <div>
+                    <p style={{ fontSize: "12px", color: "#9ca3af", margin: "0 0 4px 0" }}>Strukturell status</p>
+                    <p style={{ fontSize: "18px", fontWeight: 600, color: "#e6edf3", margin: 0 }}>
+                      {mapStructuralStatus(structuralStatus)}
+                    </p>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: "12px", color: "#9ca3af", margin: "0 0 4px 0" }}>Tidsmässig utveckling</p>
+                    <p style={{ fontSize: "18px", fontWeight: 600, color: "#e6edf3", margin: 0 }}>
+                      {mapTrendDirection(trendDirection)}
+                    </p>
                   </div>
                 </div>
-                <div>
-                  <div style={{ color: "#6b7280", fontSize: "11px", marginBottom: "4px" }}>
-                    {labels.interpretation}
-                  </div>
-                  <div style={{ color: "#e6edf3" }}>
-                    {interpretationText}
-                  </div>
+              </div>
+
+              {/* Section 3: Sammanfattning — driver-aware summary when available */}
+              <div>
+                <h3 style={{ fontSize: "14px", color: "#9ca3af", margin: "0 0 12px 0" }}>Sammanfattning</h3>
+                <div style={{ fontSize: "13px", color: "#e6edf3", lineHeight: 1.6 }}>
+                  <p style={{ margin: 0 }}>
+                    {structuralStatus != null || comparison != null
+                      ? getSummaryWithDriver()
+                      : (snapshot as any)?.conclusion ?? (snapshot as any)?.output?.conclusion ?? "—"}
+                  </p>
                 </div>
               </div>
             </div>
 
-            {/* Section 3 — System Status */}
+            {/* Systembedömning — combination message from structural status + trend */}
             <div style={{
               marginBottom: "32px",
               padding: "24px",
@@ -436,69 +566,17 @@ export default function BevisV2Page() {
                 fontSize: "16px",
                 fontWeight: 500,
                 color: "#e6edf3",
-                margin: "0 0 16px 0"
+                margin: "0 0 12px 0"
               }}>
-                {translations.bevis.systemStatus}
+                Strukturell bedömning
               </h2>
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(3, 1fr)",
-                gap: "16px"
-              }}>
-                <div>
-                  <div style={{
-                    fontSize: "11px",
-                    color: "#6b7280",
-                    marginBottom: "4px"
-                  }}>
-                    {translations.bevis.load}
-                  </div>
-                  <div style={{
-                    fontSize: "13px",
-                    color: "#e6edf3"
-                  }}>
-                    {getLoadStatus()}
-                  </div>
-                </div>
-                <div>
-                  <div style={{
-                    fontSize: "11px",
-                    color: "#6b7280",
-                    marginBottom: "4px"
-                  }}>
-                    {translations.bevis.capacityMargin}
-                  </div>
-                  <div style={{
-                    fontSize: "13px",
-                    color: "#e6edf3"
-                  }}>
-                    {getCapacityMarginStatus()}
-                  </div>
-                </div>
-                <div>
-                  <div style={{
-                    fontSize: "11px",
-                    color: "#6b7280",
-                    marginBottom: "4px"
-                  }}>
-                    {translations.bevis.recovery}
-                  </div>
-                  <div style={{
-                    fontSize: "13px",
-                    color: "#e6edf3"
-                  }}>
-                    {getRecoveryStatus()}
-                  </div>
-                </div>
-              </div>
               <p style={{
                 fontSize: "13px",
-                color: "#9ca3af",
+                color: "#e6edf3",
                 lineHeight: "1.6",
-                margin: "16px 0 0 0",
-                whiteSpace: "pre-line"
+                margin: 0
               }}>
-                {translations.bevis.systemStatusDescription}
+                {getCombinationMessage(structuralStatus, trendDirection)}
               </p>
             </div>
 
@@ -745,13 +823,27 @@ export default function BevisV2Page() {
                 </select>
               </div>
 
-              {compareDeltaLoad !== null && compareDeltaCost !== null && (
-                <div style={{ fontSize: "13px", color: "#9ca3af", lineHeight: "1.6" }}>
-                  <p>Load Δ: {compareDeltaLoad.toFixed(3)}</p>
-                  <p>Cost Δ: {compareDeltaCost.toFixed(3)}</p>
-                  <p style={{ marginTop: "12px", color: "#e6edf3" }}>
-                    {comparisonInterpretation}
-                  </p>
+              {summaryA != null && summaryB != null && marginDiff != null && (
+                <div style={{ marginTop: "16px" }}>
+                  <h3 style={{
+                    fontSize: "14px",
+                    fontWeight: 500,
+                    color: "#e6edf3",
+                    margin: "0 0 12px 0"
+                  }}>
+                    Strategisk jämförelse (B − A)
+                  </h3>
+                  <div style={{ fontSize: "13px", color: "#e6edf3", lineHeight: "1.8" }}>
+                    <p style={{ margin: "0 0 4px 0" }} title="Procentuell differens mellan aktuell nivå och definierat mål.">
+                      Avstånd till målvärde Δ: {marginDiff.toFixed(2)}
+                    </p>
+                    <p style={{ margin: "0 0 4px 0" }}>
+                      Strukturell status: {mapStructuralStatus(goalStatusA)} → {mapStructuralStatus(goalStatusB)}
+                    </p>
+                    <p style={{ margin: 0 }}>
+                      Tidsmässig utveckling: {mapTrendDirection(summaryA.interpretation?.trend)} → {mapTrendDirection(summaryB.interpretation?.trend)}
+                    </p>
+                  </div>
                 </div>
               )}
             </div>

@@ -1,4 +1,6 @@
 import { DecisionFlowEngine } from "./engine";
+import { evaluateGoals, PILOT_V5_GOALS } from "./goals";
+import { METRIC_SEMANTICS } from "./modelSpec";
 
 // STEP 1 — Define policy multiplier
 function getPolicyMultiplier(policy: "conservative" | "balanced" | "aggressive"): number {
@@ -15,6 +17,27 @@ function getPolicyMultiplier(policy: "conservative" | "balanced" | "aggressive")
 // Demand multiplier helper
 function getDemandMultiplier(demandChange: number): number {
   return 1 + (demandChange / 100);
+}
+
+function buildConclusion(compareV2: any): string {
+  const marginDelta = compareV2.margin.delta;
+  const loadDelta = compareV2.load.delta;
+
+  const marginText =
+    marginDelta === 0
+      ? "ingen förändring i marginal"
+      : marginDelta > 0
+      ? `+${marginDelta.toFixed(2)} i marginal`
+      : `${marginDelta.toFixed(2)} i marginal`;
+
+  const loadText =
+    loadDelta === 0
+      ? "oförändrad belastning"
+      : loadDelta > 0
+      ? `+${loadDelta.toFixed(2)} i belastning`
+      : `${loadDelta.toFixed(2)} i belastning`;
+
+  return `Scenariot innebär ${marginText} och ${loadText}.`;
 }
 
 export type RunOptions = {
@@ -77,11 +100,149 @@ export function runDecisionFlow(options: RunOptions) {
 
   engine.run(options.steps ?? 3);
 
+  // Build timeline for goal evaluation
+  const baseline = engine.baselineSnapshot();
+  const final = engine.snapshot();
+  const consequences = engine.consequencesLog();
+
+  const timeline: Array<{
+    tick: number;
+    metrics: { load: number; cost: number };
+  }> = [];
+
+  timeline.push({
+    tick: baseline.time,
+    metrics: {
+      load: baseline.metrics.load,
+      cost: baseline.metrics.cost,
+    },
+  });
+
+  const consequencesByTime = new Map<number, { load?: number; cost?: number }>();
+
+  for (const c of consequences) {
+    if (!consequencesByTime.has(c.time)) {
+      consequencesByTime.set(c.time, {});
+    }
+    const tickData = consequencesByTime.get(c.time)!;
+    if (c.metric === "load") tickData.load = c.value;
+    if (c.metric === "cost") tickData.cost = c.value;
+  }
+
+  let lastLoad = baseline.metrics.load;
+  let lastCost = baseline.metrics.cost;
+
+  for (let tick = 1; tick <= final.time; tick++) {
+    const tickData = consequencesByTime.get(tick);
+    if (tickData) {
+      if (tickData.load !== undefined) lastLoad = tickData.load;
+      if (tickData.cost !== undefined) lastCost = tickData.cost;
+    }
+    timeline.push({
+      tick,
+      metrics: { load: lastLoad, cost: lastCost },
+    });
+  }
+
+  const goalResult = evaluateGoals(timeline, PILOT_V5_GOALS);
+
+  const compare = engine.compareToBaseline();
+
+  const compareV2 = {
+    margin: {
+      baseline: baseline.metrics.margin,
+      final: final.metrics.margin,
+      delta: compare.margin
+    },
+    load: {
+      baseline: baseline.metrics.load,
+      final: final.metrics.load,
+      delta: compare.load
+    },
+    cost: {
+      baseline: baseline.metrics.cost,
+      final: final.metrics.cost,
+      delta: compare.cost
+    }
+  };
+
+  const conclusion = buildConclusion(compareV2);
+
+  let trend: "IMPROVING" | "DECLINING" | "STABLE";
+
+  if (compareV2.margin.delta > 0) {
+    trend = "IMPROVING";
+  } else if (compareV2.margin.delta < 0) {
+    trend = "DECLINING";
+  } else {
+    trend = "STABLE";
+  }
+
+  const decisionSummary = {
+    comparison: {
+      marginChange: compareV2.margin.delta,
+      loadChange: compareV2.load.delta,
+      costChange: compareV2.cost.delta
+    },
+    systemState: {
+      goalStatus: goalResult.status,
+      goalWorst: goalResult.worst
+    },
+    interpretation: {
+      trend
+    }
+  };
+
+  const snapshotExport = {
+    meta: {
+      model_version: "v0.3",
+      scenario_type: "decision-flow",
+      deterministic: true,
+      generated_at: new Date().toISOString()
+    },
+    input: options,
+    output: {
+      baseline,
+      final,
+      compare,
+      compareV2,
+      conclusion,
+      decisionSummary,
+      debug: {
+        metricsSemantics: METRIC_SEMANTICS,
+        sample: {
+          load: final.metrics.load,
+          cost: final.metrics.cost,
+          margin: final.metrics.margin
+        },
+        compare,
+        steps: options.steps ?? 3,
+        warnings: [
+          ...(baseline.metrics.load < 0
+            ? ["SEMANTICS: baseline.load is negative; load should represent positive pressure."]
+            : []),
+          ...(final.metrics.load < 0
+            ? ["SEMANTICS: final.load is negative; load should represent positive pressure."]
+            : []),
+          ...(compare.load < 0
+            ? ["SEMANTICS: compare.load is negative; load should represent positive pressure."]
+            : [])
+        ]
+      }
+    }
+  };
+
   return {
-    baseline: engine.baselineSnapshot(),
-    final: engine.snapshot(),
-    compare: engine.compareToBaseline(),
-    consequences: engine.consequencesLog()
+    baseline,
+    final,
+    compare,
+    compareV2,
+    conclusion,
+    decisionSummary,
+    snapshotExport,
+    consequences: engine.consequencesLog(),
+    goalStatus: goalResult.status,
+    goalWorst: goalResult.worst
   };
 }
 

@@ -20,6 +20,8 @@ export class DecisionFlowEngine {
   constructor(initial: DecisionFlowState) {
     this.state = structuredClone(initial);
     this.baseline = structuredClone(initial);
+    this.state.metrics.margin = initial.metrics.load - initial.metrics.cost;
+    this.baseline.metrics.margin = initial.metrics.load - initial.metrics.cost;
   }
 
   applyLoad(load: DecisionPatch) {
@@ -45,6 +47,18 @@ export class DecisionFlowEngine {
           delta,
           value: currentValue
         });
+      }
+    }
+    this.state.metrics.margin =
+      this.state.metrics.load - this.state.metrics.cost;
+    this.validateMetrics();
+  }
+
+  private validateMetrics(): void {
+    for (const key of Object.keys(this.state.metrics)) {
+      const v = this.state.metrics[key];
+      if (typeof v !== "number" || Number.isNaN(v) || !Number.isFinite(v)) {
+        throw new Error(`Invalid metric: ${key}`);
       }
     }
   }

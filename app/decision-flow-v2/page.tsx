@@ -6,6 +6,39 @@ import { setSystemSnapshot } from "@/src/systemSnapshot/systemSnapshotStore";
 import { getLanguage, setLanguage } from "@/src/language/languageStore";
 import { t } from "@/src/language/translations";
 
+const RESPONSE_STRATEGY_UI: Record<string, Record<"EN" | "SV", { label: string; description: string }>> = {
+  protect: {
+    EN: {
+      label: "Stabilising action",
+      description: "Prioritises load reduction through capacity reallocation. Affects cost moderately.",
+    },
+    SV: {
+      label: "Stabiliserande åtgärd",
+      description: "Prioriterar belastningsreduktion genom kapacitetsomfördelning. Påverkar kostnad måttligt.",
+    },
+  },
+  balance: {
+    EN: {
+      label: "Load balancing",
+      description: "Adjusts capacity and resource use to keep load and cost within defined target bands."
+    },
+    SV: {
+      label: "Belastningsbalansering",
+      description: "Justerar kapacitet och resursanvändning för att hålla belastning och kostnad inom definierade målvärden."
+    }
+  },
+  push: {
+    EN: {
+      label: "Capacity utilisation",
+      description: "Maximises short-term output despite increased structural load and cost exposure.",
+    },
+    SV: {
+      label: "Kapacitetsutnyttjande",
+      description: "Maximerar kortsiktig output trots ökad strukturell belastning och kostnadsrisk.",
+    },
+  },
+};
+
 export default function DecisionFlowV2Page() {
   const router = useRouter();
   const [lang, setLangState] = useState<"EN" | "SV">(getLanguage());
@@ -277,10 +310,20 @@ export default function DecisionFlowV2Page() {
           }}
         >
           <option value="">{translations.decisionFlow.selectPlaceholder}</option>
-          <option value="protect">{translations.decisionFlow.responseProtect}</option>
-          <option value="balance">{translations.decisionFlow.responseBalance}</option>
-          <option value="push">{translations.decisionFlow.responsePush}</option>
+          <option value="protect">{RESPONSE_STRATEGY_UI.protect[lang].label}</option>
+          <option value="balance">{RESPONSE_STRATEGY_UI.balance[lang].label}</option>
+          <option value="push">{RESPONSE_STRATEGY_UI.push[lang].label}</option>
         </select>
+        {primaryResponseStrategy && RESPONSE_STRATEGY_UI[primaryResponseStrategy] && (
+          <p style={{
+            fontSize: "12px",
+            color: "#9ca3af",
+            lineHeight: 1.5,
+            margin: "8px 0 0 0"
+          }}>
+            {RESPONSE_STRATEGY_UI[primaryResponseStrategy][lang].description}
+          </p>
+        )}
       </div>
 
       {/* Section 4 — Commit */}
