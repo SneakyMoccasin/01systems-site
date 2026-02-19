@@ -178,6 +178,30 @@ export function runDecisionFlow(options: RunOptions) {
     trend = "STABLE";
   }
 
+  // Pulse Structural Margin v1.0 — per-tick margin from normalized load + cost
+  const wL = 0.5;
+  const wC = 0.5;
+  const maxLoad = Math.max(1, ...timeline.map(t => t.metrics.load));
+  const maxCost = Math.max(1, ...timeline.map(t => t.metrics.cost));
+  const structuralMarginByTick = timeline.map(t => {
+    const normalizedLoad = t.metrics.load / maxLoad;
+    const normalizedCost = t.metrics.cost / maxCost;
+    const structuralStrain = wL * normalizedLoad + wC * normalizedCost;
+    const structuralMargin = 1 - structuralStrain;
+    return Math.max(0, Math.min(1, structuralMargin));
+  });
+
+  const minMargin = Math.min(...structuralMarginByTick);
+
+  const goalStatus =
+    minMargin >= 0.6
+      ? "STABIL"
+      : minMargin >= 0.4
+      ? "ANSTRÄNGD"
+      : minMargin >= 0.2
+      ? "INSTABIL"
+      : "OHÅLLBAR";
+
   const decisionSummary = {
     comparison: {
       marginChange: compareV2.margin.delta,
@@ -185,7 +209,7 @@ export function runDecisionFlow(options: RunOptions) {
       costChange: compareV2.cost.delta
     },
     systemState: {
-      goalStatus: goalResult.status,
+      goalStatus,
       goalWorst: goalResult.worst
     },
     interpretation: {
@@ -208,6 +232,11 @@ export function runDecisionFlow(options: RunOptions) {
       compareV2,
       conclusion,
       decisionSummary,
+      timeSeries: {
+        load: timeline.map(t => t.metrics.load) as readonly number[],
+        cost: timeline.map(t => t.metrics.cost) as readonly number[],
+        margin: structuralMarginByTick as readonly number[],
+      },
       debug: {
         metricsSemantics: METRIC_SEMANTICS,
         sample: {
@@ -241,7 +270,7 @@ export function runDecisionFlow(options: RunOptions) {
     decisionSummary,
     snapshotExport,
     consequences: engine.consequencesLog(),
-    goalStatus: goalResult.status,
+    goalStatus,
     goalWorst: goalResult.worst
   };
 }

@@ -67,7 +67,7 @@ export default function DecisionFlowV2Page() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         policy,
-        steps: 3
+        steps: 10
       })
     });
 

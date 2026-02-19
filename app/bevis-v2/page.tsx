@@ -6,6 +6,8 @@ import { getSystemSnapshot, setSystemSnapshot } from "@/src/systemSnapshot/syste
 import { getLanguage, setLanguage } from "@/src/language/languageStore";
 import { t } from "@/src/language/translations";
 import { createSnapshot, downloadSnapshot } from "@/src/exportSnapshot/exportSnapshot";
+import { ScenarioGraph } from "@/src/components/ScenarioGraph";
+import { MarginGraph } from "@/src/components/MarginGraph";
 
 const STORAGE_KEY = "pulse_snapshot_history";
 
@@ -21,6 +23,11 @@ function saveSnapshotHistory(history: any[]) {
 
 export default function BevisV2Page() {
   const snapshot = getSystemSnapshot();
+  const normalizedOutput =
+    (snapshot as any)?.output ??
+    (snapshot as any)?.snapshotExport?.output ??
+    null;
+  const timeSeries = normalizedOutput?.timeSeries ?? null;
   const [lang, setLangState] = useState<"EN" | "SV">(getLanguage());
   const [history, setHistory] = useState<any[]>([]);
   const [selectedA, setSelectedA] = useState<any | null>(null);
@@ -553,6 +560,41 @@ export default function BevisV2Page() {
                 </div>
               </div>
             </div>
+
+            {timeSeries && (
+              <>
+                <div style={{ marginBottom: "24px" }}>
+                  <h3 style={{ fontSize: "14px", color: "#9ca3af", margin: "0 0 12px 0" }}>
+                    Systemets hållbarhet över tid
+                  </h3>
+                  <div style={{
+                    fontSize: "12px",
+                    color: "#9ca3af",
+                    marginBottom: "12px"
+                  }}>
+                    Grön linje visar hur mycket handlingsutrymme systemet har kvar över tid. Streckade linjer markerar kritiska nivåer.
+                  </div>
+                  <MarginGraph margin={timeSeries.margin ?? []} />
+                </div>
+
+                <div style={{ marginBottom: "48px" }}>
+                  <h3 style={{ fontSize: "14px", color: "#9ca3af", margin: "0 0 12px 0" }}>
+                    Påverkande faktorer
+                  </h3>
+                  <div style={{
+                    fontSize: "12px",
+                    color: "#9ca3af",
+                    marginBottom: "12px"
+                  }}>
+                    Visar hur kostnad och belastning utvecklas över perioden. Ingen gränsnivå visas här.
+                  </div>
+                  <ScenarioGraph
+                    load={timeSeries.load}
+                    cost={timeSeries.cost}
+                  />
+                </div>
+              </>
+            )}
 
             {/* Systembedömning — combination message from structural status + trend */}
             <div style={{
