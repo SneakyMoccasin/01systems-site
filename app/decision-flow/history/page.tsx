@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { runDecisionFlow } from "@/src/decisionFlow/run";
-import { evaluateGoals, PILOT_V5_GOALS } from "@/src/decisionFlow/goals";
+import { evaluateGoals } from "@/src/decisionFlow/goals";
 
 export default function DecisionFlowHistoryPage() {
   // STEP 1 — Read query parameters
@@ -28,56 +28,12 @@ export default function DecisionFlowHistoryPage() {
   // Run the simulation
   const result = runDecisionFlow({ policy, demandChange });
 
-  // Build timeline for goal evaluation
-  const timeline: Array<{
-    tick: number;
-    metrics: { load: number; cost: number };
-  }> = [];
-
-  // Start with baseline at tick 0
-  timeline.push({
-    tick: result.baseline.time,
-    metrics: {
-      load: result.baseline.metrics.load,
-      cost: result.baseline.metrics.cost,
-    },
-  });
-
-  // Group consequences by time and reconstruct full state per tick
-  const consequencesByTime = new Map<number, { load?: number; cost?: number }>();
-  for (const c of result.consequences) {
-    if (!consequencesByTime.has(c.time)) {
-      consequencesByTime.set(c.time, {});
-    }
-    const tickData = consequencesByTime.get(c.time)!;
-    if (c.metric === "load") {
-      tickData.load = c.value;
-    } else if (c.metric === "cost") {
-      tickData.cost = c.value;
-    }
-  }
-
-  // Build timeline from consequences, using previous values for missing metrics
-  let lastLoad = result.baseline.metrics.load;
-  let lastCost = result.baseline.metrics.cost;
-
-  for (let tick = 1; tick <= result.final.time; tick++) {
-    const tickData = consequencesByTime.get(tick);
-    if (tickData) {
-      if (tickData.load !== undefined) lastLoad = tickData.load;
-      if (tickData.cost !== undefined) lastCost = tickData.cost;
-    }
-    timeline.push({
-      tick,
-      metrics: {
-        load: lastLoad,
-        cost: lastCost,
-      },
-    });
-  }
-
-  // Evaluate goals
-  const goalResult = evaluateGoals(timeline, PILOT_V5_GOALS);
+  const marginSeries =
+    (result.snapshotExport?.output?.timeSeries?.margin as number[] | undefined) ?? [];
+  const baselineMinMargin = marginSeries[0] ?? 0;
+  const scenarioMinMargin =
+    marginSeries.length > 0 ? Math.min(...marginSeries) : 0;
+  const goalResult = evaluateGoals({ baselineMinMargin, scenarioMinMargin });
 
   // Combine result with goals
   const historicalResult = {
@@ -270,58 +226,65 @@ export default function DecisionFlowHistoryPage() {
           borderRadius: 8
         }}>
           <p style={{
-            fontSize: 16,
+            fontSize: "14px",
             fontWeight: 600,
-            color: historicalResult.goals.status === "STABIL" || historicalResult.goals.status === "ANSTRÄNGD" ? "#86efac" : "#fca5a5",
-            marginBottom: 12,
-            display: "flex",
-            alignItems: "center"
+            marginBottom: 8,
+            color: historicalResult.goalStatus === "STABIL" || historicalResult.goalStatus === "ANSTRÄNGD" ? "#86efac" : historicalResult.goalStatus === "INSTABIL" ? "#fcd34d" : "#fca5a5"
           }}>
-            Status: {historicalResult.goals.status}
-            {(() => {
-              const defaultGoalStatus =
-                historicalResult.goals.status === "STABIL" || historicalResult.goals.status === "ANSTRÄNGD"
-                  ? "OK"
-                  : "EJ_OK";
-              return (
-                <span
-                  style={{
-                    padding: "4px 8px",
-                    borderRadius: 4,
-                    fontSize: 12,
-                    fontWeight: 600,
-                    marginLeft: 8,
-                    background: defaultGoalStatus === "OK" ? "#dcfce7" : "#fee2e2",
-                    color: defaultGoalStatus === "OK" ? "#166534" : "#7f1d1d"
-                  }}
-                >
-                  {defaultGoalStatus === "OK" ? "OK" : "EJ OK"}
-                </span>
-              );
-            })()}
+            Status (absolut): {historicalResult.goalStatus ?? "—"}
           </p>
-          {historicalResult.goals.status === "STABIL" || historicalResult.goals.status === "ANSTRÄNGD" ? (
-            <p style={{ fontSize: 13, opacity: 0.9 }}>
-              {historicalResult.goals.status === "STABIL" 
-                ? "Systemet är stabilt och har marginal."
-                : "Systemet fungerar men utan marginal."}
+          {historicalResult.goals?.goalText != null && (
+            <>
+              {(() => {
+                const relStatus = historicalResult.goals.goalStatus;
+                const badge =
+                  relStatus === "improved"
+                    ? "Förbättring mot baseline"
+                    : relStatus === "no_deviation"
+                    ? "Ingen avvikelse mot baseline"
+                    : relStatus === "minor" || relStatus === "serious" || relStatus === "critical"
+                    ? "Avvikelse mot baseline"
+                    : null;
+                const evalColor =
+                  relStatus === "improved" || relStatus === "no_deviation"
+                    ? "#86efac"
+                    : relStatus === "minor"
+                    ? "#fcd34d"
+                    : "#fca5a5";
+                return (
+                  <>
+                    {badge && (
+                      <p style={{ fontSize: "11px", color: "#9ca3af", margin: "0 0 4px 0" }}>{badge}</p>
+                    )}
+                    <p style={{ fontSize: 13, opacity: 0.9, color: evalColor, margin: 0 }}>
+                      Bedömning (mot baseline): {historicalResult.goals.goalText}
+                    </p>
+                  </>
+                );
+              })()}
+            </>
+          )}
+          {historicalResult.goals.debug?.relativeDrop != null && (
+            <p style={{ fontSize: 12, color: "#9ca3af", marginTop: 8 }}>
+              Relativ försämring: {(historicalResult.goals.debug.relativeDrop * 100).toFixed(1)}%
             </p>
-          ) : historicalResult.goals.status === "INSTABIL" || historicalResult.goals.status === "OHÅLLBAR" ? (
-            <div style={{ fontSize: 13 }}>
-              <p style={{ marginBottom: 8 }}>
-                {historicalResult.goals.status === "INSTABIL"
-                  ? "Systemet överskrider gränsvärden och kräver åtgärd."
-                  : "Systemet är ohållbart och riskerar kollaps."}
-              </p>
-              {historicalResult.goals.worst && (
-                <>
-                  <p><strong>Brutet mått:</strong> {historicalResult.goals.worst.metric === "load" ? "belastning" : "kostnad"}</p>
-                  <p><strong>Värde:</strong> {historicalResult.goals.worst.value}</p>
-                  <p><strong>Gräns:</strong> {historicalResult.goals.worst.threshold}</p>
-                </>
-              )}
+          )}
+          {historicalResult.goals?.debug && (
+            <div style={{
+              marginTop: 12,
+              padding: "8px 10px",
+              fontSize: 12,
+              background: "rgba(255,255,255,0.05)",
+              borderRadius: 6,
+              fontFamily: "monospace",
+              opacity: 0.8
+            }}>
+              <div><strong>Goal Debug</strong></div>
+              <pre style={{ margin: 0 }}>
+                {JSON.stringify(historicalResult.goals.debug, null, 2)}
+              </pre>
             </div>
-          ) : null}
+          )}
         </div>
       </section>
     </main>

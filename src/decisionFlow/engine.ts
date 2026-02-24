@@ -20,16 +20,24 @@ export class DecisionFlowEngine {
   constructor(initial: DecisionFlowState) {
     this.state = structuredClone(initial);
     this.baseline = structuredClone(initial);
-    this.state.metrics.margin = initial.metrics.load - initial.metrics.cost;
-    this.baseline.metrics.margin = initial.metrics.load - initial.metrics.cost;
+    this.state.metrics.load = Math.max(0, this.state.metrics.load);
+    this.baseline.metrics.load = Math.max(0, this.baseline.metrics.load);
+    this.state.metrics.rawDelta = this.state.metrics.load - this.state.metrics.cost;
+    this.baseline.metrics.rawDelta = this.baseline.metrics.load - this.baseline.metrics.cost;
+  }
+
+  private clampMetrics(): void {
+    this.state.metrics.load = Math.max(0, this.state.metrics.load);
   }
 
   applyLoad(load: DecisionPatch) {
     load(this.state);
+    this.clampMetrics();
   }
 
   applyDecision(decision: DecisionPatch) {
     decision(this.state);
+    this.clampMetrics();
   }
 
   tick() {
@@ -49,7 +57,7 @@ export class DecisionFlowEngine {
         });
       }
     }
-    this.state.metrics.margin =
+    this.state.metrics.rawDelta =
       this.state.metrics.load - this.state.metrics.cost;
     this.validateMetrics();
   }

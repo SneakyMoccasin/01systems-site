@@ -61,18 +61,41 @@ export default function DecisionFlowV2Page() {
     };
 
     const policy = policyMap[primaryResponseStrategy] || "balanced";
+    const params: Record<string, unknown> = {
+      policy,
+      steps: 10,
+      systemLoadState,
+      externalPressureTrend,
+      primaryResponseStrategy,
+    };
+    if (process.env.NEXT_PUBLIC_CALIBRATE === "1") {
+      (params as Record<string, boolean>)._calibrate = true;
+    }
+
+    console.log("SIM_INPUTS", {
+      systemLoadState,
+      externalPressureTrend,
+      primaryResponseStrategy,
+      policy,
+      steps: 10
+    });
+    console.log("SIM_PARAMS (raw object sent to API)", params);
 
     const res = await fetch("/api/decision-flow", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        policy,
-        steps: 10
-      })
+      body: JSON.stringify(params)
     });
 
     const result = await res.json();
-    setSystemSnapshot(result);
+    setSystemSnapshot({
+      ...result,
+      _debugRunInputs: {
+        systemLoadState,
+        externalPressureTrend,
+        primaryResponseStrategy
+      }
+    });
     router.push("/bevis-v2");
   };
 

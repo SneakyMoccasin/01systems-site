@@ -1,5 +1,5 @@
 import { DecisionFlowEngine } from "./engine";
-import { evaluateGoals, PILOT_V5_GOALS } from "./goals";
+import { evaluateGoals } from "./goals";
 import { METRIC_SEMANTICS } from "./modelSpec";
 
 // STEP 1 — Define policy multiplier
@@ -20,15 +20,15 @@ function getDemandMultiplier(demandChange: number): number {
 }
 
 function buildConclusion(compareV2: any): string {
-  const marginDelta = compareV2.margin.delta;
+  const rawDeltaChange = compareV2.rawDelta.delta;
   const loadDelta = compareV2.load.delta;
 
-  const marginText =
-    marginDelta === 0
-      ? "ingen förändring i marginal"
-      : marginDelta > 0
-      ? `+${marginDelta.toFixed(2)} i marginal`
-      : `${marginDelta.toFixed(2)} i marginal`;
+  const rawDeltaText =
+    rawDeltaChange === 0
+      ? "ingen förändring i rätt delta"
+      : rawDeltaChange > 0
+      ? `+${rawDeltaChange.toFixed(2)} i rätt delta`
+      : `${rawDeltaChange.toFixed(2)} i rätt delta`;
 
   const loadText =
     loadDelta === 0
@@ -37,7 +37,7 @@ function buildConclusion(compareV2: any): string {
       ? `+${loadDelta.toFixed(2)} i belastning`
       : `${loadDelta.toFixed(2)} i belastning`;
 
-  return `Scenariot innebär ${marginText} och ${loadText}.`;
+  return `Scenariot innebär ${rawDeltaText} och ${loadText}.`;
 }
 
 export type RunOptions = {
@@ -52,55 +52,67 @@ export type RunOptions = {
     cost: number;
   };
   demandChange?: number;
+  systemCapacity?: {
+    maxLoad: number;
+    maxCost: number;
+  };
 };
 
 export function runDecisionFlow(options: RunOptions) {
+  const baselineLoad = options.baseline?.load ?? 0.8;
+  const baselineCost = options.baseline?.cost ?? 8;
+  const capacity = options.systemCapacity ?? {
+    maxLoad: Math.max(1, baselineLoad * 1.6),
+    maxCost: Math.max(1, baselineCost * 1.5),
+  };
+
   const engine = new DecisionFlowEngine({
     time: 0,
     metrics: {
-      load: options.baseline?.load ?? 0.8,
-      cost: options.baseline?.cost ?? 8
+      load: baselineLoad,
+      cost: baselineCost
     }
   });
 
-  // Load / Change
-  engine.applyLoad(state => {
-    // If externalChange is not provided at all, use calibrated defaults for demo
-    // If provided (even with undefined values), use provided values or 0
-    if (options.externalChange === undefined) {
-      state.metrics.load += 1.2;
-      state.metrics.cost += 1.0;
-    } else {
-      state.metrics.load += options.externalChange.load ?? 0;
-      state.metrics.cost += options.externalChange.cost ?? 0;
-    }
-  });
-
-  // Decision policy
   const policyMultiplier = getPolicyMultiplier(options.policy);
   const demandMultiplier = getDemandMultiplier(options.demandChange ?? 0);
   const finalMultiplier = policyMultiplier * demandMultiplier;
-  
-  const policyMap = {
-    balanced: (state: any) => {
-      state.metrics.load -= 0.4 * finalMultiplier;
-      state.metrics.cost += 0.8 * finalMultiplier;
-    },
-    aggressive: (state: any) => {
-      state.metrics.load -= 0.4 * finalMultiplier;
-      state.metrics.cost += 3.0 * finalMultiplier;
-    },
-    conservative: (state: any) => {
-      state.metrics.load -= 0.9 * finalMultiplier;
-      state.metrics.cost += 0.2 * finalMultiplier;
-    }
+  const steps = options.steps ?? 3;
+
+  // Temporal dynamics v0.1: per-tick pressure + gradual recovery (deterministic).
+  // External pressure applied every tick; policy response applied every tick with decay.
+  const externalLoad = options.externalChange?.load ?? 0;
+  const externalCost = options.externalChange?.cost ?? 0;
+  const loadDeltaBase: Record<string, number> = {
+    conservative: -0.05,
+    balanced: -0.02,
+    aggressive: 0.01,
   };
+  const costDeltaBase: Record<string, number> = {
+    conservative: 0.08,
+    balanced: 0.15,
+    aggressive: 0.30,
+  };
+  const lBase = loadDeltaBase[options.policy] ?? 0;
+  const cBase = costDeltaBase[options.policy] ?? 0;
 
-  engine.applyDecision(policyMap[options.policy]);
+  for (let tick = 1; tick <= steps; tick++) {
+    engine.applyLoad(state => {
+      state.metrics.load += externalLoad;
+      state.metrics.cost += externalCost;
+    });
+    const decay = Math.exp(-0.25 * (tick - 1));
+    engine.applyDecision(state => {
+      state.metrics.load += lBase * finalMultiplier * decay;
+      state.metrics.cost += cBase * finalMultiplier * decay;
+    });
+    engine.applyLoad(state => {
+      state.metrics.load = Math.max(0, state.metrics.load);
+    });
+    engine.run(1);
+  }
 
-  engine.run(options.steps ?? 3);
-
-  // Build timeline for goal evaluation
+  // Build timeline for goal evaluation (engine remains source of truth)
   const baseline = engine.baselineSnapshot();
   const final = engine.snapshot();
   const consequences = engine.consequencesLog();
@@ -144,15 +156,13 @@ export function runDecisionFlow(options: RunOptions) {
     });
   }
 
-  const goalResult = evaluateGoals(timeline, PILOT_V5_GOALS);
-
   const compare = engine.compareToBaseline();
 
   const compareV2 = {
-    margin: {
-      baseline: baseline.metrics.margin,
-      final: final.metrics.margin,
-      delta: compare.margin
+    rawDelta: {
+      baseline: baseline.metrics.rawDelta,
+      final: final.metrics.rawDelta,
+      delta: compare.rawDelta
     },
     load: {
       baseline: baseline.metrics.load,
@@ -170,22 +180,25 @@ export function runDecisionFlow(options: RunOptions) {
 
   let trend: "IMPROVING" | "DECLINING" | "STABLE";
 
-  if (compareV2.margin.delta > 0) {
+  if (compareV2.rawDelta.delta > 0) {
     trend = "IMPROVING";
-  } else if (compareV2.margin.delta < 0) {
+  } else if (compareV2.rawDelta.delta < 0) {
     trend = "DECLINING";
   } else {
     trend = "STABLE";
   }
 
-  // Pulse Structural Margin v1.0 — per-tick margin from normalized load + cost
+  // Pulse Structural Margin v1.0 — capacity-based normalization (load/cost vs fixed capacity)
+  function clamp01(x: number): number {
+    return Math.max(0, Math.min(1, x));
+  }
   const wL = 0.5;
   const wC = 0.5;
-  const maxLoad = Math.max(1, ...timeline.map(t => t.metrics.load));
-  const maxCost = Math.max(1, ...timeline.map(t => t.metrics.cost));
+  const maxLoadRef = Math.max(1, capacity.maxLoad);
+  const maxCostRef = Math.max(1, capacity.maxCost);
   const structuralMarginByTick = timeline.map(t => {
-    const normalizedLoad = t.metrics.load / maxLoad;
-    const normalizedCost = t.metrics.cost / maxCost;
+    const normalizedLoad = clamp01(t.metrics.load / maxLoadRef);
+    const normalizedCost = clamp01(t.metrics.cost / maxCostRef);
     const structuralStrain = wL * normalizedLoad + wC * normalizedCost;
     const structuralMargin = 1 - structuralStrain;
     return Math.max(0, Math.min(1, structuralMargin));
@@ -193,24 +206,41 @@ export function runDecisionFlow(options: RunOptions) {
 
   const minMargin = Math.min(...structuralMarginByTick);
 
+  // Goal status from post-start consequences only (exclude t=0 baseline)
+  const marginPost = structuralMarginByTick.length <= 1 ? [] : structuralMarginByTick.slice(1);
+  const minMarginPost = marginPost.length > 0 ? Math.min(...marginPost) : undefined;
+
   const goalStatus =
-    minMargin >= 0.6
+    marginPost.length === 0
+      ? (minMargin >= 0.6 ? "STABIL" : minMargin >= 0.4 ? "ANSTRÄNGD" : minMargin >= 0.2 ? "INSTABIL" : "OHÅLLBAR")
+      : (minMarginPost ?? 0) >= 0.6
       ? "STABIL"
-      : minMargin >= 0.4
+      : (minMarginPost ?? 0) >= 0.4
       ? "ANSTRÄNGD"
-      : minMargin >= 0.2
+      : (minMarginPost ?? 0) >= 0.2
       ? "INSTABIL"
       : "OHÅLLBAR";
 
+  const baselineMinMargin = structuralMarginByTick[0] ?? 0;
+  const scenarioMinMargin =
+    marginPost.length > 0 ? (minMarginPost ?? 0) : minMargin;
+  const goalResult = evaluateGoals({ baselineMinMargin, scenarioMinMargin });
+
   const decisionSummary = {
     comparison: {
-      marginChange: compareV2.margin.delta,
+      rawDeltaChange: compareV2.rawDelta.delta,
       loadChange: compareV2.load.delta,
       costChange: compareV2.cost.delta
     },
     systemState: {
       goalStatus,
-      goalWorst: goalResult.worst
+      goalWorst: undefined,
+      goalEvaluation: {
+        goalStatus: goalResult.goalStatus,
+        goalText: goalResult.goalText,
+        ...goalResult.debug,
+        capacity: { maxLoad: capacity.maxLoad, maxCost: capacity.maxCost },
+      },
     },
     interpretation: {
       trend
@@ -232,6 +262,7 @@ export function runDecisionFlow(options: RunOptions) {
       compareV2,
       conclusion,
       decisionSummary,
+      systemCapacity: capacity,
       timeSeries: {
         load: timeline.map(t => t.metrics.load) as readonly number[],
         cost: timeline.map(t => t.metrics.cost) as readonly number[],
@@ -242,10 +273,12 @@ export function runDecisionFlow(options: RunOptions) {
         sample: {
           load: final.metrics.load,
           cost: final.metrics.cost,
-          margin: final.metrics.margin
+          rawDelta: final.metrics.rawDelta
         },
         compare,
-        steps: options.steps ?? 3,
+        steps,
+        minMarginPost,
+        statusNote: "status computed from minMarginPost (t>=1) using thresholds only",
         warnings: [
           ...(baseline.metrics.load < 0
             ? ["SEMANTICS: baseline.load is negative; load should represent positive pressure."]
@@ -271,7 +304,8 @@ export function runDecisionFlow(options: RunOptions) {
     snapshotExport,
     consequences: engine.consequencesLog(),
     goalStatus,
-    goalWorst: goalResult.worst
+    goalWorst: undefined,
+    goalEvaluation: goalResult,
   };
 }
 

@@ -6,7 +6,6 @@ import { getSystemSnapshot, setSystemSnapshot } from "@/src/systemSnapshot/syste
 import { getLanguage, setLanguage } from "@/src/language/languageStore";
 import { t } from "@/src/language/translations";
 import { createSnapshot, downloadSnapshot } from "@/src/exportSnapshot/exportSnapshot";
-import { ScenarioGraph } from "@/src/components/ScenarioGraph";
 import { MarginGraph } from "@/src/components/MarginGraph";
 
 const STORAGE_KEY = "pulse_snapshot_history";
@@ -123,7 +122,7 @@ export default function BevisV2Page() {
       case "STABIL":
         return "Inom definierade mål";
       case "ANSTRÄNGD":
-        return "Marginell överskridelse";
+        return "Ansträngd";
       case "INSTABIL":
         return "Signifikant avvikelse";
       case "OHÅLLBAR":
@@ -147,13 +146,13 @@ export default function BevisV2Page() {
   }
 
   function getCombinationMessage(status?: string, trend?: string) {
-    if (status === "OHÅLLBAR") return "Nuvarande konfiguration saknar långsiktig hållbarhet.";
+    if (status === "OHÅLLBAR") return "Nuvarande konfiguration saknar långsiktig hållbarhet. Ökad kostnad och belastning driver erosion av handlingsutrymme.";
     if (status === "STABIL" && trend === "DECLINING") return "Systemet är inom mål men rör sig mot gränsvärdet.";
     if (status === "ANSTRÄNGD" && trend === "IMPROVING") return "Avvikelsen minskar över tid.";
     if (status === "INSTABIL" && trend === "IMPROVING") return "Åtgärd ger effekt men måluppfyllelse är ännu inte återställd.";
     if (status === "INSTABIL" && trend === "DECLINING") return "Avvikelsen ökar och kräver prioriterad åtgärd.";
     if (status === "STABIL") return "Samtliga mål uppfylls. Operativ marginal finns.";
-    if (status === "ANSTRÄNGD") return "Ett eller flera mål överskrids inom toleransband.";
+    if (status === "ANSTRÄNGD") return "Ett eller flera mål är i gränsområde.";
     if (status === "INSTABIL") return "Avvikelsen kräver åtgärd för att återställa måluppfyllelse.";
     return "Okänd";
   }
@@ -182,7 +181,7 @@ export default function BevisV2Page() {
     const statusLabel = mapStructuralStatus(structuralStatus);
     const loadD = comparison?.loadChange ?? (comparison as Record<string, number>)?.load;
     const costD = comparison?.costChange ?? (comparison as Record<string, number>)?.cost;
-    const marginD = comparison?.marginChange ?? (comparison as Record<string, number>)?.margin;
+    const marginD = comparison?.rawDeltaChange ?? (comparison as Record<string, number>)?.rawDelta;
     const loadStr = formatDelta(typeof loadD === "number" ? loadD : undefined);
     const costStr = formatDelta(typeof costD === "number" ? costD : undefined);
     const marginStr = formatDelta(typeof marginD === "number" ? marginD : undefined);
@@ -191,12 +190,12 @@ export default function BevisV2Page() {
       return `Scenariot är inom definierade mål. Belastning: ${loadStr}, Kostnad: ${costStr}.`;
     }
     if (goalWorst?.metric === "cost") {
-      return `Scenariot innebär ökad kostnad (${costStr}) som driver status till '${statusLabel}'. Belastning: ${loadStr}, Avstånd till målvärde: ${marginStr}.`;
+      return `Scenariot innebär ökad kostnad (${costStr}) som driver status till '${statusLabel}'. Belastning: ${loadStr}, Rätt delta: ${marginStr}.`;
     }
     if (goalWorst?.metric === "load") {
-      return `Scenariot innebär ökad belastning (${loadStr}) som driver status till '${statusLabel}'. Kostnad: ${costStr}, Avstånd till målvärde: ${marginStr}.`;
+      return `Scenariot innebär ökad belastning (${loadStr}) som driver status till '${statusLabel}'. Kostnad: ${costStr}, Rätt delta: ${marginStr}.`;
     }
-    return `Scenariot driver status till '${statusLabel}'. Belastning: ${loadStr}, Kostnad: ${costStr}, Avstånd till målvärde: ${marginStr}.`;
+    return `Scenariot driver status till '${statusLabel}'. Belastning: ${loadStr}, Kostnad: ${costStr}, Rätt delta: ${marginStr}.`;
   }
 
   const compare = snapshot?.compare;
@@ -308,7 +307,7 @@ export default function BevisV2Page() {
 
   const marginDiff =
     summaryA != null && summaryB != null
-      ? summaryB.comparison.marginChange - summaryA.comparison.marginChange
+      ? summaryB.comparison.rawDeltaChange - summaryA.comparison.rawDeltaChange
       : null;
 
   return (
@@ -488,15 +487,29 @@ export default function BevisV2Page() {
                 {translations.bevis.observedOutcome}
               </h2>
 
+              {(snapshot as any)?._debugRunInputs && (
+                <div style={{
+                  fontSize: "11px",
+                  color: "#6b7280",
+                  marginBottom: "12px",
+                  padding: "6px 8px",
+                  background: "#0e1117",
+                  borderRadius: "4px",
+                  border: "1px dashed #2f333a"
+                }}>
+                  DEBUG (remove later): loadState={(snapshot as any)._debugRunInputs.systemLoadState || "—"} | pressureTrend={(snapshot as any)._debugRunInputs.externalPressureTrend || "—"} | strategy={(snapshot as any)._debugRunInputs.primaryResponseStrategy || "—"}
+                </div>
+              )}
+
               {/* Section 1: Scenarioförändring */}
               <div style={{ marginBottom: "24px" }}>
                 <h3 style={{ fontSize: "14px", color: "#9ca3af", margin: "0 0 12px 0" }}>Scenarioförändring</h3>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", fontSize: "13px" }}>
-                  <div title="Procentuell differens mellan aktuell nivå och definierat mål.">
-                    <div style={{ color: "#6b7280", fontSize: "11px", marginBottom: "4px" }}>Avstånd till målvärde</div>
+                  <div title="Förändring i load minus cost (rätt delta).">
+                    <div style={{ color: "#6b7280", fontSize: "11px", marginBottom: "4px" }}>Rätt delta (förändring)</div>
                     <div style={{ color: "#e6edf3" }}>
-                      {(snapshot as any)?.decisionSummary?.comparison?.marginChange != null
-                        ? Number((snapshot as any).decisionSummary.comparison.marginChange).toFixed(2)
+                      {(snapshot as any)?.decisionSummary?.comparison?.rawDeltaChange != null
+                        ? Number((snapshot as any).decisionSummary.comparison.rawDeltaChange).toFixed(2)
                         : "—"}
                     </div>
                   </div>
@@ -519,25 +532,44 @@ export default function BevisV2Page() {
                 </div>
               </div>
 
+              {(() => {
+                const cap = (snapshot as any)?.snapshotExport?.output?.systemCapacity ?? (snapshot as any)?.output?.systemCapacity;
+                return cap ? (
+                  <p style={{ fontSize: "11px", color: "#6b7280", opacity: 0.8, margin: "0 0 16px 0" }}>
+                    Kapacitetstak: Load {Number(cap.maxLoad).toFixed(2)}, Cost {Number(cap.maxCost).toFixed(2)}
+                  </p>
+                ) : null;
+              })()}
+
               {/* Section 2: Strukturell bedömning — structural status + trend direction */}
               <div style={{ marginBottom: "24px" }}>
                 <h3 style={{ fontSize: "14px", color: "#9ca3af", margin: "0 0 12px 0" }}>Strukturell bedömning</h3>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", fontSize: "13px" }}>
-                  <div title="Procentuell differens mellan aktuell nivå och definierat mål.">
-                    <div style={{ color: "#6b7280", fontSize: "11px", marginBottom: "4px" }}>Avstånd till målvärde</div>
+                  <div title="Slutvärde load minus cost (rätt delta). Strukturell marginal kommer från timeSeries.margin.">
+                    <div style={{ color: "#6b7280", fontSize: "11px", marginBottom: "4px" }}>Rätt delta (slutvärde)</div>
                     <div style={{ color: "#e6edf3" }}>
-                      {(snapshot as any)?.final?.metrics?.margin != null
-                        ? Number((snapshot as any).final.metrics.margin).toFixed(2)
-                        : (snapshot as any)?.output?.final?.metrics?.margin != null
-                        ? Number((snapshot as any).output.final.metrics.margin).toFixed(2)
+                      {(snapshot as any)?.final?.metrics?.rawDelta != null
+                        ? Number((snapshot as any).final.metrics.rawDelta).toFixed(2)
+                        : (snapshot as any)?.output?.final?.metrics?.rawDelta != null
+                        ? Number((snapshot as any).output.final.metrics.rawDelta).toFixed(2)
                         : "—"}
                     </div>
                   </div>
                   <div>
-                    <p style={{ fontSize: "12px", color: "#9ca3af", margin: "0 0 4px 0" }}>Strukturell status</p>
-                    <p style={{ fontSize: "18px", fontWeight: 600, color: "#e6edf3", margin: 0 }}>
-                      {mapStructuralStatus(structuralStatus)}
+                    <p style={{ fontSize: "12px", color: "#9ca3af", margin: "0 0 4px 0" }}>Status (absolut)</p>
+                    <p style={{
+                      fontSize: "18px",
+                      fontWeight: 600,
+                      margin: 0,
+                      color: structuralStatus === "STABIL" || structuralStatus === "ANSTRÄNGD" ? "#86efac" : structuralStatus === "INSTABIL" ? "#fcd34d" : "#fca5a5"
+                    }}>
+                      {structuralStatus ?? "—"}
                     </p>
+                    {structuralStatus && (
+                      <p style={{ fontSize: "12px", color: "#9ca3af", margin: "4px 0 0 0" }}>
+                        {mapStructuralStatus(structuralStatus)}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <p style={{ fontSize: "12px", color: "#9ca3af", margin: "0 0 4px 0" }}>Tidsmässig utveckling</p>
@@ -557,6 +589,54 @@ export default function BevisV2Page() {
                       ? getSummaryWithDriver()
                       : (snapshot as any)?.conclusion ?? (snapshot as any)?.output?.conclusion ?? "—"}
                   </p>
+                  {(snapshot as any)?.goalEvaluation?.goalText != null && (
+                    <>
+                      {(() => {
+                        const ge = (snapshot as any).goalEvaluation;
+                        const relStatus = ge?.goalStatus;
+                        const badge =
+                          relStatus === "improved"
+                            ? "Förbättring mot baseline"
+                            : relStatus === "no_deviation"
+                            ? "Ingen avvikelse mot baseline"
+                            : relStatus === "minor" || relStatus === "serious" || relStatus === "critical"
+                            ? "Avvikelse mot baseline"
+                            : null;
+                        const evalColor =
+                          relStatus === "improved" || relStatus === "no_deviation"
+                            ? "#86efac"
+                            : relStatus === "minor"
+                            ? "#fcd34d"
+                            : "#fca5a5";
+                        return (
+                          <div style={{ marginTop: 12 }}>
+                            {badge && (
+                              <p style={{ fontSize: "11px", color: "#9ca3af", margin: "0 0 4px 0" }}>{badge}</p>
+                            )}
+                            <p style={{ margin: 0, color: evalColor }}>
+                              Bedömning (mot baseline): {ge.goalText}
+                            </p>
+                          </div>
+                        );
+                      })()}
+                    </>
+                  )}
+                  {(snapshot as any)?.goalEvaluation?.debug && (
+                    <div style={{
+                      marginTop: 12,
+                      padding: "8px 10px",
+                      fontSize: 12,
+                      background: "rgba(255,255,255,0.05)",
+                      borderRadius: 6,
+                      fontFamily: "monospace",
+                      opacity: 0.8
+                    }}>
+                      <div><strong>Goal Debug</strong></div>
+                      <pre style={{ margin: 0 }}>
+                        {JSON.stringify((snapshot as any).goalEvaluation.debug, null, 2)}
+                      </pre>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -572,8 +652,22 @@ export default function BevisV2Page() {
                     color: "#9ca3af",
                     marginBottom: "12px"
                   }}>
-                    Grön linje visar hur mycket handlingsutrymme systemet har kvar över tid. Streckade linjer markerar kritiska nivåer.
+                    Grön linje visar hur mycket handlingsutrymme systemet har kvar över tid. Streckade linjer markerar kritiska nivåer. Blå streckad linje = baseline (t=0).
                   </div>
+                  {(() => {
+                    const debug = (snapshot as any)?.goalEvaluation?.debug;
+                    const relativeChange = debug?.relativeChange;
+                    const relativeDrop = debug?.relativeDrop;
+                    const hasImprovement = typeof relativeChange === "number" && relativeChange > 0;
+                    const hasWorsening = typeof relativeDrop === "number" && relativeDrop > 0 && !hasImprovement;
+                    return (hasImprovement || hasWorsening) ? (
+                      <p style={{ fontSize: "12px", color: "#e6edf3", marginBottom: "12px" }}>
+                        {hasImprovement
+                          ? `Relativ förbättring: ${(relativeChange * 100).toFixed(0)}%`
+                          : `Relativ försämring: ${(relativeDrop * 100).toFixed(0)}%`}
+                      </p>
+                    ) : null;
+                  })()}
                   <MarginGraph margin={timeSeries.margin ?? []} />
                 </div>
 
@@ -581,17 +675,82 @@ export default function BevisV2Page() {
                   <h3 style={{ fontSize: "14px", color: "#9ca3af", margin: "0 0 12px 0" }}>
                     Påverkande faktorer
                   </h3>
-                  <div style={{
-                    fontSize: "12px",
-                    color: "#9ca3af",
-                    marginBottom: "12px"
-                  }}>
-                    Visar hur kostnad och belastning utvecklas över perioden. Ingen gränsnivå visas här.
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: "20px",
+                      marginTop: "12px",
+                    }}
+                  >
+                    {[
+                      {
+                        label: "Belastning",
+                        delta: comparison?.loadChange ?? (comparison as Record<string, number>)?.load,
+                        metric: "load" as const,
+                      },
+                      {
+                        label: "Kostnad",
+                        delta: comparison?.costChange ?? (comparison as Record<string, number>)?.cost,
+                        metric: "cost" as const,
+                      },
+                    ].map(({ label, delta, metric }) => {
+                      const num = typeof delta === "number" ? delta : 0;
+                      const isPositive = num > 0;
+                      const isNegative = num < 0;
+                      const arrowColor =
+                        metric === "cost"
+                          ? isPositive
+                            ? "#ef4444"
+                            : isNegative
+                              ? "#22c55e"
+                              : "#9ca3af"
+                          : isPositive
+                            ? "#eab308"
+                            : isNegative
+                              ? "#22c55e"
+                              : "#9ca3af";
+                      return (
+                        <div
+                          key={metric}
+                          style={{
+                            flex: "1 1 200px",
+                            minWidth: "180px",
+                            padding: "16px",
+                            background: "#1a1a1a",
+                            border: "1px solid #2f333a",
+                            borderRadius: "8px",
+                          }}
+                        >
+                          <div style={{ fontSize: "12px", color: "#9ca3af", marginBottom: "6px" }}>
+                            {label}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: "20px",
+                              fontWeight: 700,
+                              color: num !== 0 ? arrowColor : "#e6edf3",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "6px",
+                            }}
+                          >
+                            {num !== 0 && (
+                              <span style={{ fontSize: "18px", marginRight: "6px" }}>
+                                {num > 0 ? "▲" : "▼"}
+                              </span>
+                            )}
+                            <span>
+                              {num > 0 ? `+${num.toFixed(2)}` : num === 0 ? "0.00" : num.toFixed(2)}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: "11px", color: "#6b7280", marginTop: "4px" }}>
+                            {num > 0 ? "Trend: Ökande" : num < 0 ? "Trend: Minskande" : "Trend: Oförändrad"}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <ScenarioGraph
-                    load={timeSeries.load}
-                    cost={timeSeries.cost}
-                  />
                 </div>
               </>
             )}
@@ -876,8 +1035,8 @@ export default function BevisV2Page() {
                     Strategisk jämförelse (B − A)
                   </h3>
                   <div style={{ fontSize: "13px", color: "#e6edf3", lineHeight: "1.8" }}>
-                    <p style={{ margin: "0 0 4px 0" }} title="Procentuell differens mellan aktuell nivå och definierat mål.">
-                      Avstånd till målvärde Δ: {marginDiff.toFixed(2)}
+                    <p style={{ margin: "0 0 4px 0" }} title="Differens i rätt delta (load minus cost) mellan de två scenarierna.">
+                      Rätt delta Δ: {marginDiff.toFixed(2)}
                     </p>
                     <p style={{ margin: "0 0 4px 0" }}>
                       Strukturell status: {mapStructuralStatus(goalStatusA)} → {mapStructuralStatus(goalStatusB)}

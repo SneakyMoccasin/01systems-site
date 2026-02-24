@@ -6,7 +6,8 @@
 export const METRIC_SEMANTICS: Record<string, string> = {
   load: "System load or demand pressure relative to capacity.",
   cost: "Operational cost or resource expenditure.",
-  margin: "Load minus cost; headroom or buffer (deterministic)."
+  rawDelta: "Raw load minus cost (diagnostic only).",
+  margin: "Structural handlingsutrymme (normalized headroom, used for status)."
 };
 
 export const STABILITY_SPEC = {

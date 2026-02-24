@@ -1,12 +1,13 @@
 /**
  * Goal evaluation for Decision Flow / Pilot v5
- * 
+ *
  * This module provides read-only goal evaluation.
  * Goals do NOT affect simulation behavior.
  * Evaluation happens AFTER simulation runs.
+ * Classification is based on relative structural degradation vs baseline.
  */
 
-// STEP 1 — Goal types
+// STEP 1 — Goal types (retained for reference; relative-degradation evaluator does not use goals array)
 export type GoalMetric = "load" | "cost";
 
 export interface Goal {
@@ -27,84 +28,62 @@ export interface GoalResult {
   worst?: GoalWorst;
 }
 
-// STEP 2 — Implement evaluator
-export function evaluateGoals(
-  timeline: Array<{
-    tick: number;
-    metrics: {
-      load: number;
-      cost: number;
+// STEP 2 — Relative structural degradation evaluator (replaces timeline+goals evaluator)
+export function evaluateGoals({
+  baselineMinMargin,
+  scenarioMinMargin,
+}: {
+  baselineMinMargin: number;
+  scenarioMinMargin: number;
+}) {
+  if (baselineMinMargin <= 0) {
+    return {
+      goalStatus: "invalid",
+      goalText: "Baseline margin är ogiltig.",
+      debug: { baselineMinMargin, scenarioMinMargin },
     };
-  }>,
-  goals: Goal[]
-): GoalResult {
-  type StabilityState = "STABIL" | "ANSTRÄNGD" | "INSTABIL" | "OHÅLLBAR";
+  }
 
-  const statePriority: Record<StabilityState, number> = {
-    STABIL: 1,
-    ANSTRÄNGD: 2,
-    INSTABIL: 3,
-    OHÅLLBAR: 4,
-  };
+  const relativeDropRaw = (baselineMinMargin - scenarioMinMargin) / baselineMinMargin;
+  const relativeDrop = Math.max(0, relativeDropRaw);
+  const relativeChange = (scenarioMinMargin - baselineMinMargin) / baselineMinMargin;
 
-  let worstState: StabilityState = "STABIL";
-  let worstDetails: GoalWorst | undefined = undefined;
+  let goalStatus: string;
+  let goalText: string;
 
-  const finalPoint = timeline[timeline.length - 1];
-  const metrics = finalPoint?.metrics ?? { load: 0, cost: 0 };
-
-  for (const goal of goals) {
-    const value = metrics[goal.metric as keyof typeof metrics];
-    const threshold = goal.threshold;
-
-    // Bands: margin/overrun levels. STABLE requires slack; 100% utilization is not stable.
-    let state: StabilityState;
-
-    if (goal.operator === "<=") {
-      // <= 1.00x STABIL, <= 1.07x ANSTRÄNGD, <= 1.18x INSTABIL, > 1.18x OHÅLLBAR
-      if (value <= threshold * 1.0) {
-        state = "STABIL";
-      } else if (value <= threshold * 1.07) {
-        state = "ANSTRÄNGD";
-      } else if (value <= threshold * 1.18) {
-        state = "INSTABIL";
-      } else {
-        state = "OHÅLLBAR";
-      }
-    } else {
-      // >= goals: mirror symmetrically (threshold/1.07, threshold/1.18)
-      if (value >= threshold) {
-        state = "STABIL";
-      } else if (value >= threshold / 1.07) {
-        state = "ANSTRÄNGD";
-      } else if (value >= threshold / 1.18) {
-        state = "INSTABIL";
-      } else {
-        state = "OHÅLLBAR";
-      }
-    }
-
-    // Track worst state across goals (final tick only)
-    if (statePriority[state] > statePriority[worstState]) {
-      worstState = state;
-      if (state === "INSTABIL" || state === "OHÅLLBAR") {
-        worstDetails = {
-          metric: goal.metric,
-          tick: finalPoint?.tick ?? 0,
-          value,
-          threshold,
-        };
-      }
-    }
+  if (scenarioMinMargin > baselineMinMargin) {
+    goalStatus = "improved";
+    goalText = "Strukturell förbättring – handlingsutrymmet ökar jämfört med utgångsläget.";
+  } else if (relativeDrop < 0.03) {
+    goalStatus = "no_deviation";
+    goalText = "Ingen strukturell överskridelse.";
+  } else if (relativeDrop < 0.12) {
+    goalStatus = "minor";
+    goalText =
+      "Marginell överskridelse – systemet fungerar men handlingsutrymmet minskar.";
+  } else if (relativeDrop < 0.3) {
+    goalStatus = "serious";
+    goalText =
+      "Allvarlig överskridelse – systemets strukturella stabilitet försämras tydligt.";
+  } else {
+    goalStatus = "critical";
+    goalText =
+      "Kritisk överskridelse – systemet närmar sig strukturell instabilitet.";
   }
 
   return {
-    status: worstState,
-    worst: worstDetails,
+    goalStatus,
+    goalText,
+    debug: {
+      baselineMinMargin,
+      scenarioMinMargin,
+      relativeDrop,
+      relativeChange,
+    },
   };
 }
 
-// STEP 3 — Pilot v5 goals. Load has headroom: 0.92 leaves slack; 1.0 = 100% utilization is not stable.
+// STEP 3 — Pilot v5 goals (retained for reference; evaluateGoals now uses baselineMinMargin/scenarioMinMargin)
 export const PILOT_V5_GOALS: Goal[] = [
   { metric: "load", operator: "<=", threshold: 0.92 },
   { metric: "cost", operator: "<=", threshold: 12 },
