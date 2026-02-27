@@ -10,10 +10,16 @@ import {
   buildExecutiveConclusion,
 } from "@/src/pilotFastighet/compareHelpers";
 import { PILOT_CASES } from "@/src/pilotFastighet/pilotCases";
+import { calculateExecutiveSummary } from "@/src/pilotFastighet/analysis/calculateExecutiveSummary";
+import { SnapshotCompare } from "@/src/pilotFastighet/components/SnapshotCompare";
+import { UI_TEXT, type Language } from "@/src/pilotFastighet/uiText";
 
 const STORAGE_KEY_A = "pulse_pilot_fastighet_history_A";
 const STORAGE_KEY_B = "pulse_pilot_fastighet_history_B";
 const SNAPSHOT_LABELS_KEY = "pulse.snapshotLabels.v1";
+const EXEC_TIPPING_THRESHOLD = 0.9;
+const EXEC_SUSTAIN_THRESHOLD = 0.8;
+const EXEC_COLLAPSE_THRESHOLD = 0.6;
 
 function loadHistory(key: string) {
   if (typeof window === "undefined") return [];
@@ -101,6 +107,10 @@ export default function PilotFastighetPage() {
   const [isDirty, setIsDirty] = useState(false);
   const [selectedPilotCaseId, setSelectedPilotCaseId] = useState<string>("");
   const [isAutoScale, setIsAutoScale] = useState(false);
+  const [uiTheme, setUiTheme] = useState<"dark" | "light">("dark");
+  const [uiLanguage, setUiLanguage] = useState<Language>("sv");
+  const [executiveSummary, setExecutiveSummary] =
+    useState<ReturnType<typeof calculateExecutiveSummary> | null>(null);
 
   const engineARef = useRef<RealEstateEngine | null>(null);
   const engineBRef = useRef<RealEstateEngine | null>(null);
@@ -275,18 +285,93 @@ export default function PilotFastighetPage() {
     {} as Record<string, typeof REAL_ESTATE_IMPACT_CONTRACT>
   );
 
+  const baselineA = marginHistoryA.length > 0 ? marginHistoryA[0] : 0;
+  const finalA =
+    marginHistoryA.length > 0 ? marginHistoryA[marginHistoryA.length - 1] : 0;
+  const baselineB = marginHistoryB.length > 0 ? marginHistoryB[0] : 0;
+  const finalB =
+    marginHistoryB.length > 0 ? marginHistoryB[marginHistoryB.length - 1] : 0;
+  const structuralStatusA = "Baseline reference";
+
+  const THEME = {
+    dark: {
+      pageBg: "#0e1117",
+      panelBg: "#111827",
+      panelBorder: "#1F2937",
+      graphBg: "#0b0f14",
+      graphBorder: "#1f2937",
+      text: "#E5E7EB",
+      subtext: "#9CA3AF",
+      buttonBg: "#111827",
+      buttonBorder: "#374151",
+    },
+    light: {
+      pageBg: "#F9FAFB",
+      panelBg: "#FFFFFF",
+      panelBorder: "#E5E7EB",
+      graphBg: "#FFFFFF",
+      graphBorder: "#E5E7EB",
+      text: "#111827",
+      subtext: "#6B7280",
+      buttonBg: "#FFFFFF",
+      buttonBorder: "#D1D5DB",
+    },
+  } as const;
+
+  const theme = THEME[uiTheme];
+  const t = UI_TEXT[uiLanguage];
+
+  const mapStructuralStatusKey = (
+    status: string
+  ): keyof typeof UI_TEXT.sv.structuralStatus => {
+    if (status === "Strukturell kollaps") return "structural_collapse";
+    if (status === "Marginell överskridelse") return "marginal_exceedance";
+    if (status === "Fungerande men dömd") return "functioning_but_doomed";
+    return "stable";
+  };
+
+  const structuralStatusKey = executiveSummary
+    ? mapStructuralStatusKey(executiveSummary.structuralStatus)
+    : "stable";
+
   // ==================================================
   // 6️⃣ UI
   // ==================================================
 
   return (
-    <div style={{ padding: "32px", background: "#0e1117", color: "#e6edf3" }}>
-      <h1 style={{ fontSize: "22px", marginBottom: "16px" }}>
-        Real Estate Portfolio – Decision Impact Analysis
-      </h1>
+    <div
+      style={{
+        width: "100%",
+        maxWidth: "100%",
+        marginLeft: "0",
+        marginRight: "0",
+        paddingLeft: "24px",
+        paddingRight: "24px",
+      }}
+    >
+      <div style={{ padding: "32px", background: theme.pageBg, color: theme.text }}>
+        <h1 style={{ fontSize: "22px", marginBottom: "24px" }}>
+          Real Estate Portfolio – Decision Impact Analysis
+        </h1>
 
-      <div style={{ marginBottom: "16px", display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
-        <label style={{ fontSize: "13px", marginRight: "6px", color: "#9ca3af" }}>Pilot case</label>
+      <div
+        style={{
+          marginBottom: "16px",
+          display: "flex",
+          alignItems: "center",
+          gap: "12px",
+          flexWrap: "wrap",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            flexWrap: "wrap",
+          }}
+        >
+          <label style={{ fontSize: "13px", marginRight: "6px", color: theme.subtext }}>Case</label>
         <select
           value={selectedPilotCaseId}
           onChange={(e) => {
@@ -322,9 +407,6 @@ export default function PilotFastighetPage() {
           type="button"
           onClick={() => {
             setActiveScenario("A");
-            setMarginHistoryA([]);
-            setTippingMarginIndexA(null);
-            setIsDirty(true);
           }}
           style={{
             padding: "8px 16px",
@@ -341,9 +423,6 @@ export default function PilotFastighetPage() {
           type="button"
           onClick={() => {
             setActiveScenario("B");
-            setMarginHistoryB([]);
-            setTippingMarginIndexB(null);
-            setIsDirty(true);
           }}
           style={{
             padding: "8px 16px",
@@ -390,6 +469,7 @@ export default function PilotFastighetPage() {
           onClick={() => {
             resetAll();
             setIsDirty(false);
+            setExecutiveSummary(null);
             setIsRunning(true);
           }}
           style={{
@@ -406,7 +486,23 @@ export default function PilotFastighetPage() {
         <button
           type="button"
           disabled={!isRunning}
-          onClick={() => setIsRunning(false)}
+          onClick={() => {
+            setIsRunning(false);
+            if (marginHistoryA.length > 0 && marginHistoryB.length > 0) {
+              const summary = calculateExecutiveSummary({
+                marginSeriesA: marginHistoryA,
+                marginSeriesB: marginHistoryB,
+                tippingThreshold: EXEC_TIPPING_THRESHOLD,
+                sustainThreshold: EXEC_SUSTAIN_THRESHOLD,
+                collapseThreshold: EXEC_COLLAPSE_THRESHOLD,
+              });
+              setExecutiveSummary(summary);
+              console.log("Executive summary", summary);
+            } else {
+              setExecutiveSummary(null);
+              console.log("Executive summary", null);
+            }
+          }}
           style={{
             padding: "8px 16px",
             background: "#1a1a1a",
@@ -450,6 +546,46 @@ export default function PilotFastighetPage() {
         >
           {isAutoScale ? "Auto-scale: ON" : "Auto-scale: OFF"}
         </button>
+        </div>
+        <div
+          style={{
+            marginLeft: "auto",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setUiLanguage((l) => (l === "sv" ? "en" : "sv"))}
+            style={{
+              padding: "8px 16px",
+              background: theme.buttonBg,
+              border: `1px solid ${theme.buttonBorder}`,
+              borderRadius: "6px",
+              color: theme.text,
+              cursor: "pointer",
+            }}
+          >
+            {uiLanguage === "sv" ? "SV" : "EN"}
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              setUiTheme((t) => (t === "dark" ? "light" : "dark"))
+            }
+            style={{
+              padding: "8px 16px",
+              background: theme.buttonBg,
+              border: `1px solid ${theme.buttonBorder}`,
+              borderRadius: "6px",
+              color: theme.text,
+              cursor: "pointer",
+            }}
+          >
+            {uiTheme === "dark" ? "Theme: Dark" : "Theme: Light"}
+          </button>
+        </div>
       </div>
       {selectedPilotCaseId && PILOT_CASES.find((c) => c.id === selectedPilotCaseId) && (
         <div style={{ marginBottom: "12px", fontSize: "12px", color: "#9ca3af" }}>
@@ -470,7 +606,7 @@ export default function PilotFastighetPage() {
         <br />
         <strong>Δ (B−A):</strong> {(stateB.margin - stateA.margin).toFixed(3)}
         <br />
-        <strong>Step:</strong> {activeState.step}
+        Q{activeState.step}
         <br />
         <strong>Lifecycle:</strong>{" "}
         {activeState.registry.RefinancingConstraint.lifecycle}
@@ -481,8 +617,74 @@ export default function PilotFastighetPage() {
         <strong>Margin (active):</strong> {activeState.margin.toFixed(3)}
       </div>
 
-      <div style={{ marginBottom: "24px" }}>
-        <svg width={600} height={200} style={{ display: "block", background: "#0e1117", border: "1px solid #2f333a", borderRadius: "4px" }}>
+      <div
+        style={{
+          marginTop: "32px",
+          marginBottom: "12px",
+          padding: "12px 16px",
+          border: `1px solid ${theme.graphBorder}`,
+          borderRadius: "8px",
+          background: theme.graphBg,
+        }}
+      >
+        <div
+          style={{
+            fontSize: "12px",
+            color: "#9CA3AF",
+            display: "flex",
+            gap: "12px",
+            alignItems: "center",
+            flexWrap: "wrap",
+            marginBottom: "8px",
+          }}
+        >
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+            <span
+              style={{
+                width: "12px",
+                borderTop: "2px solid #3b82f6",
+              }}
+            />
+            {t.common.legend.scenarioA}
+          </span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+            <span
+              style={{
+                width: "12px",
+                borderTop: "2px solid #f97316",
+              }}
+            />
+            {t.common.legend.scenarioB}
+          </span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+            <span
+              style={{
+                width: "12px",
+                borderTop: "1.5px dashed #9CA3AF",
+              }}
+            />
+            {t.common.legend.sustain}
+          </span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+            <span
+              style={{
+                width: "12px",
+                borderTop: "1px dashed #4b5563",
+              }}
+            />
+            {t.common.legend.zeroLine}
+          </span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+            <span
+              style={{
+                width: "12px",
+                borderTop: "1px dashed #374151",
+              }}
+            />
+            {t.common.legend.grid}
+          </span>
+        </div>
+        <svg width={600} height={300} style={{ display: "block", background: "#0e1117", border: "1px solid #2f333a", borderRadius: "4px" }}>
           {(() => {
             const totalSteps = Math.max(marginHistoryA.length, marginHistoryB.length, 1);
             const scaleX = (i: number) => {
@@ -499,13 +701,51 @@ export default function PilotFastighetPage() {
               minY = dynamicMin - padding;
               maxY = dynamicMax + padding;
             }
+            const range = maxY - minY;
+            const gridLevels = 4;
             const scaleY = (margin: number) =>
               200 * (1 - (margin - minY) / (maxY - minY));
+            const textLabel = (value: number, y: number) => (
+              <text x={8} y={y - 6} fontSize="11" fill="#9CA3AF">
+                {value.toFixed(2)}
+              </text>
+            );
             const pointsA = marginHistoryA.map((m, i) => `${scaleX(i)},${scaleY(m)}`).join(" ");
             const pointsB = marginHistoryB.map((m, i) => `${scaleX(i)},${scaleY(m)}`).join(" ");
             const zeroBetween = minY <= 0 && maxY >= 0;
             return (
               <>
+                {Array.from({ length: gridLevels }).map((_, i) => {
+                  const value = minY + (range / (gridLevels - 1)) * i;
+                  const y = scaleY(value);
+
+                  return (
+                    <line
+                      key={`grid-${i}`}
+                      x1={0}
+                      x2={600}
+                      y1={y}
+                      y2={y}
+                      stroke="#374151"
+                      strokeDasharray="3 3"
+                      strokeWidth={1}
+                      opacity={0.7}
+                    />
+                  );
+                })}
+                <line
+                  x1={0}
+                  x2={600}
+                  y1={scaleY(EXEC_SUSTAIN_THRESHOLD)}
+                  y2={scaleY(EXEC_SUSTAIN_THRESHOLD)}
+                  stroke="#9CA3AF"
+                  strokeWidth={1.5}
+                  strokeDasharray="6 4"
+                  opacity={0.9}
+                />
+                {textLabel(maxY, scaleY(maxY))}
+                {textLabel(EXEC_SUSTAIN_THRESHOLD, scaleY(EXEC_SUSTAIN_THRESHOLD))}
+                {textLabel(minY, scaleY(minY))}
                 {zeroBetween && (
                   <line x1={0} y1={scaleY(0)} x2={600} y2={scaleY(0)} stroke="#4b5563" strokeWidth={1} strokeDasharray="4 2" />
                 )}
@@ -521,7 +761,331 @@ export default function PilotFastighetPage() {
             );
           })()}
         </svg>
+        {(() => {
+          const totalSteps = Math.max(marginHistoryA.length, marginHistoryB.length);
+          if (totalSteps <= 0) return null;
+          const approxMaxLabels = 6;
+          const labelInterval = Math.max(1, Math.ceil(totalSteps / approxMaxLabels));
+          const indices: number[] = [];
+          for (let i = 0; i < totalSteps; i++) {
+            if (i % labelInterval === 0) indices.push(i);
+          }
+          return (
+            <div
+              style={{
+                marginTop: "4px",
+                display: "flex",
+                justifyContent: "space-between",
+                fontSize: "13px",
+                color: "#9CA3AF",
+              }}
+            >
+              {indices.map((i) => (
+                <span key={i}>{`Q${i + 1}`}</span>
+              ))}
+            </div>
+          );
+        })()}
+        <div
+          style={{
+            textAlign: "center",
+            fontSize: "12px",
+            color: "#6B7280",
+            marginTop: "4px",
+            letterSpacing: "0.04em",
+          }}
+        >
+          Kvartal
+        </div>
       </div>
+
+      {!isRunning && executiveSummary && (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1.4fr 1fr",
+            gap: "24px",
+            marginTop: "32px",
+            alignItems: "stretch",
+          }}
+        >
+          <div>
+            <div
+              style={{
+                background: theme.panelBg,
+                border: `1px solid ${theme.panelBorder}`,
+                borderRadius: "6px",
+                padding: "20px",
+                marginBottom: 0,
+                boxShadow: "none",
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              {/* Grid */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(4, 1fr)",
+                  gap: "28px",
+                  marginBottom: "20px",
+                }}
+              >
+                {/* Block 1 – Systemstatus */}
+                <div>
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      letterSpacing: "0.08em",
+                      color: theme.subtext,
+                      marginBottom: "6px",
+                    }}
+                  >
+                    {t.sections.systemStatus}
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: "20px",
+                      fontWeight: 600,
+                      color:
+                        executiveSummary.structuralStatus === "Strukturell kollaps"
+                          ? "#B91C1C"
+                          : executiveSummary.structuralStatus ===
+                            "Marginell överskridelse"
+                          ? "#B45309"
+                          : executiveSummary.structuralStatus ===
+                            "Fungerande men dömd"
+                          ? "#92400E"
+                          : "#F3F4F6",
+                    }}
+                  >
+                    {t.structuralStatus[structuralStatusKey]}
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: "13px",
+                      color: theme.subtext,
+                      marginTop: "6px",
+                    }}
+                  >
+                    {t.common.compressionLabel}: {executiveSummary.compression.toFixed(2)} p.p.
+                  </div>
+                </div>
+
+                {/* Block 2 – Effekt av beslut */}
+                <div>
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      letterSpacing: "0.08em",
+                      color: theme.subtext,
+                      marginBottom: "6px",
+                    }}
+                  >
+                    {t.sections.effectOfDecision}
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: "24px",
+                      fontWeight: 600,
+                      color:
+                        executiveSummary.deltaMargin < 0
+                          ? "#B91C1C"
+                          : executiveSummary.deltaMargin > 0
+                          ? "#065F46"
+                          : "#F3F4F6",
+                    }}
+                  >
+                    {executiveSummary.deltaMargin.toFixed(2)} %
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: "13px",
+                      color: theme.subtext,
+                      marginTop: "6px",
+                    }}
+                  >
+                    {t.common.avgMarginChangeLabel}
+                  </div>
+                </div>
+
+                {/* Block 3 – Tipping-risk */}
+                <div>
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      letterSpacing: "0.08em",
+                      color: theme.subtext,
+                      marginBottom: "6px",
+                    }}
+                  >
+                    {t.sections.tippingRisk}
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: "20px",
+                      fontWeight: 600,
+                      color:
+                        executiveSummary.tippingRiskLevel === "Oåterkallelig"
+                          ? "#B91C1C"
+                          : executiveSummary.tippingRiskLevel === "Hög"
+                          ? "#B45309"
+                          : executiveSummary.tippingRiskLevel === "Måttlig"
+                          ? "#92400E"
+                          : "#10B981",
+                    }}
+                  >
+                    {executiveSummary.tippingRiskLevel}
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: "13px",
+                      color: "#9CA3AF",
+                      marginTop: "6px",
+                    }}
+                  >
+                    {executiveSummary.tippingStep
+                      ? <>{t.common.tippingWithin} {`Q${executiveSummary.tippingStep}`}</>
+                      : t.common.noTipping}
+                  </div>
+                </div>
+
+                {/* Block 4 – Kapacitet under tryck */}
+                <div>
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      letterSpacing: "0.08em",
+                      color: "#9CA3AF",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    {t.sections.capacityUnderPressure}
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: "20px",
+                      fontWeight: 600,
+                      color: theme.text,
+                    }}
+                  >
+                    {executiveSummary.compression.toFixed(2)} p.p.
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: "13px",
+                      color: theme.subtext,
+                      marginTop: "6px",
+                    }}
+                  >
+                    {t.common.bufferLossLabel}
+                  </div>
+                </div>
+              </div>
+
+              {/* Interpretation */}
+              <div
+                style={{
+                  borderTop: `1px solid ${theme.panelBorder}`,
+                  paddingTop: "20px",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    color: theme.subtext,
+                    marginBottom: "8px",
+                  }}
+                >
+                  {t.sections.strategicInterpretation}
+                </div>
+
+                <div
+                  style={{
+                    fontSize: "14px",
+                    lineHeight: 1.6,
+                    color: theme.text,
+                    maxWidth: "80ch",
+                  }}
+                >
+                  {(() => {
+                    const deltaSentence = t.common.deltaSentence(executiveSummary.deltaMargin);
+                    const interpretation =
+                      structuralStatusKey === "structural_collapse"
+                        ? t.common.interpretation.structural_collapse(deltaSentence)
+                        : structuralStatusKey === "marginal_exceedance"
+                        ? t.common.interpretation.marginal_exceedance(deltaSentence)
+                        : structuralStatusKey === "functioning_but_doomed"
+                        ? t.common.interpretation.functioning_but_doomed(deltaSentence)
+                        : t.common.interpretation.stable(deltaSentence);
+                    return interpretation;
+                  })()}
+                </div>
+              </div>
+
+              <div
+                style={{
+                  marginTop: "28px",
+                  paddingTop: "20px",
+                  borderTop: `1px solid ${theme.panelBorder}`,
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "12px",
+                    letterSpacing: "0.08em",
+                    color: theme.subtext,
+                    marginBottom: "8px",
+                  }}
+                >
+                  {t.sections.scenarioNarrative}
+                </div>
+
+                <div
+                  style={{
+                    fontSize: "14px",
+                    lineHeight: 1.6,
+                    color: theme.text,
+                  }}
+                >
+                  {(() => {
+                    const deltaStr = executiveSummary.deltaMargin.toFixed(2);
+                    const statusStr = t.structuralStatus[structuralStatusKey];
+                    const tippingQ = executiveSummary.tippingStep
+                      ? `Q${executiveSummary.tippingStep}`
+                      : "";
+                    return executiveSummary.tippingStep
+                      ? t.common.narrative.withTipping(deltaStr, statusStr, tippingQ)
+                      : t.common.narrative.noTipping(deltaStr, statusStr);
+                  })()}
+                </div>
+              </div>
+            </div>
+          </div>
+          <SnapshotCompare
+            baselineA={baselineA}
+            finalA={finalA}
+            baselineB={baselineB}
+            finalB={finalB}
+            structuralStatusA={structuralStatusA}
+            structuralStatusB={t.structuralStatus[structuralStatusKey]}
+            deltaMargin={executiveSummary.deltaMargin}
+            tippingStep={executiveSummary.tippingStep}
+            tippingLabel={t.common.tippingPrefix}
+            noTippingText={t.common.noTipping}
+          />
+        </div>
+      )}
 
       <div style={{ marginTop: "40px" }}>
         {Object.entries(groupedParameters).map(([groupName, params]) => (
@@ -840,7 +1404,7 @@ export default function PilotFastighetPage() {
       {snapA != null && snapB != null && (
         <div
           style={{
-            marginTop: "24px",
+            marginTop: "32px",
             padding: "16px",
             background: "#1a1a1a",
             border: "1px solid #2f333a",
@@ -910,6 +1474,7 @@ export default function PilotFastighetPage() {
               (3) Verify tags: Margin ↑/↓, Stability ↑/↓, Risk ↑ from lifecycle/tipping. */}
         </div>
       )}
+      </div>
     </div>
   );
 }
