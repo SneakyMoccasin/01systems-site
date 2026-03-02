@@ -7,16 +7,16 @@ export type ExecutiveSummaryInput = {
 };
 
 export type StructuralStatus =
-  | "Stabil"
-  | "Fungerande men dömd"
-  | "Marginell överskridelse"
-  | "Strukturell kollaps";
+  | "stable"
+  | "functioning_but_doomed"
+  | "marginal_exceedance"
+  | "structural_collapse";
 
 export type TippingRiskLevel =
-  | "Låg"
-  | "Måttlig"
-  | "Hög"
-  | "Oåterkallelig";
+  | "low"
+  | "moderate"
+  | "high"
+  | "irreversible";
 
 export type ExecutiveSummaryResult = {
   structuralStatus: StructuralStatus;
@@ -24,6 +24,7 @@ export type ExecutiveSummaryResult = {
   tippingStep: number | null;
   tippingRiskLevel: TippingRiskLevel;
   compression: number;
+  minimumMargin: number;
   interpretationText: string;
 };
 
@@ -74,10 +75,10 @@ export function calculateExecutiveSummary(
   }
 
   let tippingRiskLevel: TippingRiskLevel;
-  if (tippingStep == null) tippingRiskLevel = "Låg";
-  else if (tippingStep <= 4) tippingRiskLevel = "Oåterkallelig";
-  else if (tippingStep <= 8) tippingRiskLevel = "Hög";
-  else tippingRiskLevel = "Måttlig";
+  if (tippingStep == null) tippingRiskLevel = "low";
+  else if (tippingStep <= 4) tippingRiskLevel = "irreversible";
+  else if (tippingStep <= 8) tippingRiskLevel = "high";
+  else tippingRiskLevel = "moderate";
 
   const initialMargin = marginSeriesB[0] ?? 0;
   const minimumMargin = min(marginSeriesB);
@@ -88,58 +89,17 @@ export function calculateExecutiveSummary(
 
   let structuralStatus: StructuralStatus;
   if (lastMargin <= collapseThreshold) {
-    structuralStatus = "Strukturell kollaps";
+    structuralStatus = "structural_collapse";
   } else if (minimumMargin <= sustainThreshold) {
-    structuralStatus = "Marginell överskridelse";
+    structuralStatus = "marginal_exceedance";
   } else {
     const lookback = marginSeriesB.slice(-8);
     const slope = linearSlope(lookback);
     if (compression > 3 && slope < 0) {
-      structuralStatus = "Fungerande men dömd";
+      structuralStatus = "functioning_but_doomed";
     } else {
-      structuralStatus = "Stabil";
+      structuralStatus = "stable";
     }
-  }
-
-  let interpretationText = "";
-
-  if (structuralStatus === "Strukturell kollaps") {
-    interpretationText =
-      "Marginalerna ligger på eller under nivån för strukturell kollaps. Situationen kräver omedelbar omprövning av kapital- och riskprofil.";
-  } else if (structuralStatus === "Marginell överskridelse") {
-    interpretationText =
-      "Marginalerna understiger uthålliga nivåer vid flera tidpunkter. Portföljen är känslig för vidare påfrestningar.";
-  } else if (structuralStatus === "Fungerande men dömd") {
-    interpretationText =
-      "Systemet fungerar i nuläget men visar en tydlig nedåtgående trend i marginalerna över tid. Utan åtgärder förväntas försvagning inom planeringshorisonten.";
-  } else {
-    interpretationText =
-      "Marginalerna är stabila och ligger över definierade tröskelnivåer. Portföljen bedöms som robust under nuvarande antaganden.";
-  }
-
-  if (deltaMargin < 0) {
-    interpretationText +=
-      " Scenario B innebär en försämring av genomsnittlig marginal jämfört med scenario A.";
-  } else if (deltaMargin > 0) {
-    interpretationText +=
-      " Scenario B innebär en förbättring av genomsnittlig marginal jämfört med scenario A.";
-  } else {
-    interpretationText +=
-      " Genomsnittlig marginal är oförändrad mellan scenarierna.";
-  }
-
-  if (tippingRiskLevel === "Oåterkallelig") {
-    interpretationText +=
-      " Tippingpunkt nära horisonten indikerar en höggradigt oåterkallelig riskprofil.";
-  } else if (tippingRiskLevel === "Hög") {
-    interpretationText +=
-      " Tidig tippingpunkt ger hög risk för negativ spiral i marginalerna.";
-  } else if (tippingRiskLevel === "Måttlig") {
-    interpretationText +=
-      " Tippingpunkten ligger inom, men inte i början av horisonten, vilket indikerar måttlig risk.";
-  } else {
-    interpretationText +=
-      " Ingen tydlig tippingpunkt identifieras inom horisonten, vilket motsvarar låg risk.";
   }
 
   return {
@@ -148,7 +108,8 @@ export function calculateExecutiveSummary(
     tippingStep,
     tippingRiskLevel,
     compression,
-    interpretationText,
+    minimumMargin,
+    interpretationText: "",
   };
 }
 

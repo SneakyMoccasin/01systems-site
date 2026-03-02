@@ -65,6 +65,12 @@ export const UI_TEXT = {
         zeroLine: "0-line",
         grid: "Grid (reference)",
       },
+      tippingRiskLevel: {
+        low: "Låg",
+        moderate: "Måttlig",
+        high: "Hög",
+        irreversible: "Oåterkallelig",
+      },
     },
   },
 
@@ -131,6 +137,12 @@ export const UI_TEXT = {
         sustain: "Sustain threshold",
         zeroLine: "0-line",
         grid: "Grid (reference)",
+      },
+      tippingRiskLevel: {
+        low: "Low",
+        moderate: "Moderate",
+        high: "High",
+        irreversible: "Irreversible",
       },
     },
   },

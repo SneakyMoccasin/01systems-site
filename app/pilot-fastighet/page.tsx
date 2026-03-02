@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { getSystemSnapshot } from "@/src/systemSnapshot/systemSnapshotStore";
 import { RealEstateEngine } from "@/src/pilotFastighet/RealEstateEngine";
+import { createInitialConstraintRegistry } from "@/src/pilotFastighet/constraintState";
 import { REAL_ESTATE_IMPACT_CONTRACT } from "@/src/pilotFastighet/impactContract";
 import type { RiskLevel } from "@/src/pilotFastighet/impactContract";
 import {
@@ -12,6 +13,7 @@ import {
 import { PILOT_CASES } from "@/src/pilotFastighet/pilotCases";
 import { calculateExecutiveSummary } from "@/src/pilotFastighet/analysis/calculateExecutiveSummary";
 import { SnapshotCompare } from "@/src/pilotFastighet/components/SnapshotCompare";
+import { ExecutiveSummaryCard } from "@/app/pilot-fastighet/components/ExecutiveSummaryCard";
 import { UI_TEXT, type Language } from "@/src/pilotFastighet/uiText";
 
 const STORAGE_KEY_A = "pulse_pilot_fastighet_history_A";
@@ -20,6 +22,8 @@ const SNAPSHOT_LABELS_KEY = "pulse.snapshotLabels.v1";
 const EXEC_TIPPING_THRESHOLD = 0.9;
 const EXEC_SUSTAIN_THRESHOLD = 0.8;
 const EXEC_COLLAPSE_THRESHOLD = 0.6;
+const MIN_STEPS_BEFORE_STEADY = 5;
+const REQUIRED_STABLE_TICKS = 3;
 
 function loadHistory(key: string) {
   if (typeof window === "undefined") return [];
@@ -56,11 +60,14 @@ export default function PilotFastighetPage() {
 
   type FrozenSnapshot = {
     snapshotId: string;
-    scenarioId: "A" | "B";
-    label: string;
+    label?: string;
     createdAt: number;
-    riskState: Record<string, RiskLevel>;
     engineState: ReturnType<RealEstateEngine["getState"]>;
+    metadata: {
+      caseId: string | null;
+      scenario: "A" | "B";
+      modelVersion: string;
+    };
   };
 
   type Scenario = {
@@ -107,51 +114,98 @@ export default function PilotFastighetPage() {
   const [isDirty, setIsDirty] = useState(false);
   const [selectedPilotCaseId, setSelectedPilotCaseId] = useState<string>("");
   const [isAutoScale, setIsAutoScale] = useState(false);
+  const [freezeFlash, setFreezeFlash] = useState<"A" | "B" | null>(null);
   const [uiTheme, setUiTheme] = useState<"dark" | "light">("dark");
   const [uiLanguage, setUiLanguage] = useState<Language>("sv");
+  const [uiMode, setUiMode] = useState<"executive" | "expert">("executive");
   const [executiveSummary, setExecutiveSummary] =
     useState<ReturnType<typeof calculateExecutiveSummary> | null>(null);
+  const [steadyStateStep, setSteadyStateStep] = useState<number | null>(null);
 
   const engineARef = useRef<RealEstateEngine | null>(null);
   const engineBRef = useRef<RealEstateEngine | null>(null);
-
-  if (!engineARef.current) engineARef.current = new RealEstateEngine(riskStateA);
-  if (!engineBRef.current) engineBRef.current = new RealEstateEngine(riskStateB);
-
-  const engineA = engineARef.current;
-  const engineB = engineBRef.current;
+  const lastMarginARef = useRef<number | null>(null);
+  const lastMarginBRef = useRef<number | null>(null);
+  const stableCounterARef = useRef(0);
+  const stableCounterBRef = useRef(0);
 
   useEffect(() => {
     setHistoryA(loadHistory(STORAGE_KEY_A));
     setHistoryB(loadHistory(STORAGE_KEY_B));
   }, []);
 
-  useEffect(() => {
-    engineA.setRiskState(riskStateA);
-  }, [riskStateA]);
-
-  useEffect(() => {
-    engineB.setRiskState(riskStateB);
-  }, [riskStateB]);
-
   const [, setRenderTick] = useState(0);
 
-  function resetAll() {
-    engineA.reset();
-    engineB.reset();
+  function resetRunState() {
     setMarginHistoryA([]);
     setMarginHistoryB([]);
     setTippingMarginIndexA(null);
     setTippingMarginIndexB(null);
+    setExecutiveSummary(null);
+    setSteadyStateStep(null);
+
+    lastMarginARef.current = null;
+    lastMarginBRef.current = null;
+    stableCounterARef.current = 0;
+    stableCounterBRef.current = 0;
+  }
+
+  function startSimulation() {
+    setIsRunning(false);
+    resetRunState();
+    const snapshotA = { ...riskStateA };
+    const snapshotB = { ...riskStateB };
+    engineARef.current = new RealEstateEngine(snapshotA);
+    engineBRef.current = new RealEstateEngine(snapshotB);
+    setIsDirty(false);
+    setIsRunning(true);
   }
 
   useEffect(() => {
     if (!isRunning) return;
     const id = window.setInterval(() => {
+      if (!engineARef.current || !engineBRef.current) return;
+      const engineA = engineARef.current;
+      const engineB = engineBRef.current;
       engineA.stepForward();
       engineB.stepForward();
       const sA = engineA.getState();
       const sB = engineB.getState();
+
+      const epsilon = 1e-6;
+
+      if (sA.step > MIN_STEPS_BEFORE_STEADY) {
+        if (lastMarginARef.current !== null) {
+          const isStableA =
+            Math.abs(sA.margin - lastMarginARef.current) < epsilon;
+          if (isStableA) {
+            stableCounterARef.current += 1;
+          } else {
+            stableCounterARef.current = 0;
+          }
+          if (stableCounterARef.current >= REQUIRED_STABLE_TICKS) {
+            setSteadyStateStep(sA.step);
+          }
+        }
+      }
+      lastMarginARef.current = sA.margin;
+
+      if (sB.step > MIN_STEPS_BEFORE_STEADY) {
+        if (lastMarginBRef.current !== null) {
+          const isStableB =
+            Math.abs(sB.margin - lastMarginBRef.current) < epsilon;
+          if (isStableB) {
+            stableCounterBRef.current += 1;
+          } else {
+            stableCounterBRef.current = 0;
+          }
+          if (stableCounterBRef.current >= REQUIRED_STABLE_TICKS) {
+            setSteadyStateStep(sB.step);
+          }
+        }
+      }
+      lastMarginBRef.current = sB.margin;
+
       setMarginHistoryA((prev) => {
         const idx = prev.length;
         if (sA.registry?.RefinancingConstraint?.lifecycle === "ACTIVE") {
@@ -171,39 +225,75 @@ export default function PilotFastighetPage() {
     return () => window.clearInterval(id);
   }, [isRunning]);
 
-  const stateA = engineA.getState();
-  const stateB = engineB.getState();
+  function defaultEngineState(riskState: Record<string, RiskLevel>) {
+    return {
+      step: 1,
+      margin: 1,
+      riskState,
+      registry: createInitialConstraintRegistry(),
+    };
+  }
 
-  const activeState = activeScenario === "A" ? stateA : stateB;
+  const stateA = engineARef.current
+    ? engineARef.current.getState()
+    : defaultEngineState(riskStateA);
+  const stateB = engineBRef.current
+    ? engineBRef.current.getState()
+    : defaultEngineState(riskStateB);
+  const activeState =
+    activeScenario === "A" ? stateA : stateB;
+
+  const systemStatus = (() => {
+    if (!executiveSummary) return "STABLE";
+
+    const structural = executiveSummary.structuralStatus;
+
+    if (structural === "structural_collapse") return "COLLAPSED";
+    if (structural === "marginal_exceedance" || structural === "functioning_but_doomed") {
+      return "PRESSURED";
+    }
+    return "STABLE";
+  })();
+
   const activeRiskState = activeScenario === "A" ? riskStateA : riskStateB;
   const setActiveRiskState = activeScenario === "A" ? setRiskStateA : setRiskStateB;
 
   function freezeScenarioA() {
     const snap: FrozenSnapshot = {
       snapshotId: new Date().toISOString(),
-      scenarioId: "A",
       label: "Scenario A",
       createdAt: Date.now(),
-      riskState: { ...riskStateA },
       engineState: JSON.parse(JSON.stringify(stateA)),
+      metadata: {
+        caseId: selectedPilotCaseId ?? null,
+        scenario: "A",
+        modelVersion: "pilot-fastighet-v0.4",
+      },
     };
     const next = [snap, ...historyA];
     setHistoryA(next);
     saveHistory(STORAGE_KEY_A, next);
+    setFreezeFlash("A");
+    setTimeout(() => setFreezeFlash(null), 600);
   }
 
   function freezeScenarioB() {
     const snap: FrozenSnapshot = {
       snapshotId: new Date().toISOString(),
-      scenarioId: "B",
       label: "Scenario B",
       createdAt: Date.now(),
-      riskState: { ...riskStateB },
       engineState: JSON.parse(JSON.stringify(stateB)),
+      metadata: {
+        caseId: selectedPilotCaseId ?? null,
+        scenario: "B",
+        modelVersion: "pilot-fastighet-v0.4",
+      },
     };
     const next = [snap, ...historyB];
     setHistoryB(next);
     saveHistory(STORAGE_KEY_B, next);
+    setFreezeFlash("B");
+    setTimeout(() => setFreezeFlash(null), 600);
   }
 
   function deleteSnapshotA(snapshotId: string) {
@@ -321,18 +411,50 @@ export default function PilotFastighetPage() {
   const theme = THEME[uiTheme];
   const t = UI_TEXT[uiLanguage];
 
-  const mapStructuralStatusKey = (
-    status: string
-  ): keyof typeof UI_TEXT.sv.structuralStatus => {
-    if (status === "Strukturell kollaps") return "structural_collapse";
-    if (status === "Marginell överskridelse") return "marginal_exceedance";
-    if (status === "Fungerande men dömd") return "functioning_but_doomed";
-    return "stable";
-  };
-
   const structuralStatusKey = executiveSummary
-    ? mapStructuralStatusKey(executiveSummary.structuralStatus)
+    ? executiveSummary.structuralStatus
     : "stable";
+
+  const interpretation = executiveSummary
+    ? (() => {
+        const deltaSentence = t.common.deltaSentence(executiveSummary.deltaMargin);
+        return structuralStatusKey === "structural_collapse"
+          ? t.common.interpretation.structural_collapse(deltaSentence)
+          : structuralStatusKey === "marginal_exceedance"
+          ? t.common.interpretation.marginal_exceedance(deltaSentence)
+          : structuralStatusKey === "functioning_but_doomed"
+          ? t.common.interpretation.functioning_but_doomed(deltaSentence)
+          : t.common.interpretation.stable(deltaSentence);
+      })()
+    : "";
+
+  const narrativeText = executiveSummary
+    ? (() => {
+        const deltaStr = executiveSummary.deltaMargin.toFixed(2);
+        const statusStr = t.structuralStatus[structuralStatusKey];
+        const tippingQ = executiveSummary.tippingStep
+          ? `Q${executiveSummary.tippingStep}`
+          : "";
+        return executiveSummary.tippingStep
+          ? t.common.narrative.withTipping(deltaStr, statusStr, tippingQ)
+          : t.common.narrative.noTipping(deltaStr, statusStr);
+      })()
+    : "";
+
+  const expertMinimumMargin = executiveSummary?.minimumMargin ?? null;
+  const expertSteps = Math.max(marginHistoryA.length, marginHistoryB.length);
+  const expertTippingStep = executiveSummary?.tippingStep ?? null;
+
+  let sustainBreachStep: number | null = null;
+  let collapseBreachStep: number | null = null;
+  for (let i = 0; i < marginHistoryB.length; i++) {
+    if (sustainBreachStep == null && marginHistoryB[i] <= EXEC_SUSTAIN_THRESHOLD) {
+      sustainBreachStep = i + 1;
+    }
+    if (collapseBreachStep == null && marginHistoryB[i] <= EXEC_COLLAPSE_THRESHOLD) {
+      collapseBreachStep = i + 1;
+    }
+  }
 
   // ==================================================
   // 6️⃣ UI
@@ -380,10 +502,11 @@ export default function PilotFastighetPage() {
             if (id === "") return;
             const pilotCase = PILOT_CASES.find((c) => c.id === id);
             if (pilotCase) {
-              setRiskStateA(pilotCase.riskStateA);
-              setRiskStateB(pilotCase.riskStateB);
+              setRiskStateA({ ...pilotCase.riskStateA });
+              setRiskStateB({ ...pilotCase.riskStateB });
               setIsDirty(true);
               setIsRunning(false);
+              resetRunState();
             }
           }}
           style={{
@@ -407,6 +530,9 @@ export default function PilotFastighetPage() {
           type="button"
           onClick={() => {
             setActiveScenario("A");
+            setIsDirty(true);
+            setIsRunning(false);
+            resetRunState();
           }}
           style={{
             padding: "8px 16px",
@@ -423,6 +549,9 @@ export default function PilotFastighetPage() {
           type="button"
           onClick={() => {
             setActiveScenario("B");
+            setIsDirty(true);
+            setIsRunning(false);
+            resetRunState();
           }}
           style={{
             padding: "8px 16px",
@@ -447,7 +576,17 @@ export default function PilotFastighetPage() {
             cursor: "pointer",
           }}
         >
-          Freeze Scenario A
+          <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <span
+              style={{
+                opacity: freezeFlash === "A" ? 0.6 : 1,
+                transition: "opacity 0.2s ease",
+              }}
+            >
+              {freezeFlash === "A" ? "✓" : "✚"}
+            </span>
+            Freeze A
+          </span>
         </button>
         <button
           type="button"
@@ -461,17 +600,22 @@ export default function PilotFastighetPage() {
             cursor: "pointer",
           }}
         >
-          Freeze Scenario B
+          <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <span
+              style={{
+                opacity: freezeFlash === "B" ? 0.6 : 1,
+                transition: "opacity 0.2s ease",
+              }}
+            >
+              {freezeFlash === "B" ? "✓" : "✚"}
+            </span>
+            Freeze B
+          </span>
         </button>
         <button
           type="button"
           disabled={isRunning}
-          onClick={() => {
-            resetAll();
-            setIsDirty(false);
-            setExecutiveSummary(null);
-            setIsRunning(true);
-          }}
+          onClick={startSimulation}
           style={{
             padding: "8px 16px",
             background: "#1a1a1a",
@@ -517,9 +661,9 @@ export default function PilotFastighetPage() {
         <button
           type="button"
           onClick={() => {
-            resetAll();
-            setRiskStateA({ ...defaultRiskState });
-            setRiskStateB({ ...defaultRiskState });
+            setIsRunning(false);
+            resetRunState();
+            setIsDirty(true);
           }}
           style={{
             padding: "8px 16px",
@@ -585,6 +729,21 @@ export default function PilotFastighetPage() {
           >
             {uiTheme === "dark" ? "Theme: Dark" : "Theme: Light"}
           </button>
+          <button
+            type="button"
+            onClick={() => setUiMode((m) => (m === "executive" ? "expert" : "executive"))}
+            style={{
+              padding: "6px 12px",
+              fontSize: "12px",
+              background: theme.buttonBg,
+              border: `1px solid ${theme.buttonBorder}`,
+              borderRadius: "6px",
+              color: theme.text,
+              cursor: "pointer",
+            }}
+          >
+            {uiMode === "executive" ? "Executive Mode" : "Expert Mode"}
+          </button>
         </div>
       </div>
       {selectedPilotCaseId && PILOT_CASES.find((c) => c.id === selectedPilotCaseId) && (
@@ -599,22 +758,91 @@ export default function PilotFastighetPage() {
         </div>
       )}
 
-      <div style={{ marginBottom: "24px" }}>
-        <strong>Margin A:</strong> {stateA.margin.toFixed(3)}
-        <br />
-        <strong>Margin B:</strong> {stateB.margin.toFixed(3)}
-        <br />
-        <strong>Δ (B−A):</strong> {(stateB.margin - stateA.margin).toFixed(3)}
-        <br />
-        Q{activeState.step}
-        <br />
-        <strong>Lifecycle:</strong>{" "}
-        {activeState.registry.RefinancingConstraint.lifecycle}
-        <br />
-        <strong>Severity:</strong>{" "}
-        {activeState.registry.RefinancingConstraint.severityIndex.toFixed(4)}
-        <br />
-        <strong>Margin (active):</strong> {activeState.margin.toFixed(3)}
+      <div
+        style={{
+          marginBottom: "32px",
+          padding: "16px 20px",
+          background: "#111827",
+          border: "1px solid #1f2937",
+          borderRadius: "8px",
+        }}
+      >
+        {/* Top Row – Core Margins */}
+        <div style={{ display: "flex", gap: "24px", marginBottom: "12px", flexWrap: "wrap" }}>
+          <div>
+            <div style={{ fontSize: "12px", color: "#9CA3AF" }}>Margin A</div>
+            <div style={{ fontSize: "18px", fontWeight: 600 }}>
+              {stateA.margin.toFixed(5)}
+            </div>
+          </div>
+
+          <div>
+            <div style={{ fontSize: "12px", color: "#9CA3AF" }}>Margin B</div>
+            <div style={{ fontSize: "18px", fontWeight: 600 }}>
+              {stateB.margin.toFixed(5)}
+            </div>
+          </div>
+
+          <div>
+            <div style={{ fontSize: "12px", color: "#9CA3AF" }}>Δ (B−A)</div>
+            <div style={{ fontSize: "16px", fontWeight: 600 }}>
+              {(stateB.margin - stateA.margin).toFixed(5)}
+            </div>
+          </div>
+
+          <div>
+            <div style={{ fontSize: "12px", color: "#9CA3AF" }}>Quarter</div>
+            <div style={{ fontSize: "14px", fontWeight: 600, opacity: 0.8 }}>
+              Q{activeState.step}
+            </div>
+          </div>
+        </div>
+
+        {/* Status Row */}
+        <div style={{ display: "flex", gap: "24px", flexWrap: "wrap" }}>
+          <div>
+            <div style={{ fontSize: "12px", color: "#9CA3AF" }}>System Status</div>
+            <div
+              style={{
+                fontSize: "18px",
+                fontWeight: 600,
+                color:
+                  systemStatus === "COLLAPSED"
+                    ? "#ef4444"
+                    : systemStatus === "PRESSURED"
+                      ? "#f59e0b"
+                      : "#22c55e",
+              }}
+            >
+              {systemStatus}
+            </div>
+          </div>
+
+          <div>
+            <div style={{ fontSize: "12px", color: "#9CA3AF" }}>Capital Constraint</div>
+            <div
+              style={{
+                fontSize: "18px",
+                fontWeight: 600,
+                color:
+                  activeState.registry.RefinancingConstraint.lifecycle === "ACTIVE"
+                    ? "#ef4444"
+                    : "#22c55e",
+              }}
+            >
+              {activeState.registry.RefinancingConstraint.lifecycle === "ACTIVE"
+                ? "ACTIVE"
+                : "NONE"}
+            </div>
+          </div>
+
+          <div>
+            <div style={{ fontSize: "12px", color: "#9CA3AF" }}>Severity</div>
+            <div style={{ fontSize: "16px", fontWeight: 600 }}>
+              {activeState.registry.RefinancingConstraint.severityIndex.toFixed(4)}
+            </div>
+          </div>
+        </div>
       </div>
 
       <div
@@ -691,20 +919,30 @@ export default function PilotFastighetPage() {
               if (totalSteps <= 1) return 0;
               return (i / (totalSteps - 1)) * 600;
             };
-            let minY = 0;
-            let maxY = 1.5;
-            const marginHistoryActive = [...marginHistoryA, ...marginHistoryB];
-            if (isAutoScale && marginHistoryActive.length > 0) {
-              const dynamicMin = Math.min(...marginHistoryActive);
-              const dynamicMax = Math.max(...marginHistoryActive);
-              const padding = (dynamicMax - dynamicMin) * 0.1 || 0.1;
-              minY = dynamicMin - padding;
-              maxY = dynamicMax + padding;
-            }
-            const range = maxY - minY;
+
+            const allMargins = [...marginHistoryA, ...marginHistoryB];
+
+            const highestMargin =
+              allMargins.length > 0
+                ? Math.max(...allMargins)
+                : 1;
+
+            const lowestMargin =
+              allMargins.length > 0
+                ? Math.min(...allMargins)
+                : 0;
+
+            const yMax = Math.max(1.2, highestMargin);
+
+            const yMin = isAutoScale
+              ? lowestMargin - Math.abs(lowestMargin) * 0.1
+              : -1;
+
+            const range = yMax - yMin;
             const gridLevels = 4;
             const scaleY = (margin: number) =>
-              200 * (1 - (margin - minY) / (maxY - minY));
+              200 * (1 - (margin - yMin) / (yMax - yMin));
+            const zeroY = scaleY(0);
             const textLabel = (value: number, y: number) => (
               <text x={8} y={y - 6} fontSize="11" fill="#9CA3AF">
                 {value.toFixed(2)}
@@ -712,11 +950,20 @@ export default function PilotFastighetPage() {
             );
             const pointsA = marginHistoryA.map((m, i) => `${scaleX(i)},${scaleY(m)}`).join(" ");
             const pointsB = marginHistoryB.map((m, i) => `${scaleX(i)},${scaleY(m)}`).join(" ");
-            const zeroBetween = minY <= 0 && maxY >= 0;
+            const zeroBetween = yMin <= 0 && yMax >= 0;
             return (
               <>
+                {yMin < 0 && (
+                  <rect
+                    x={0}
+                    y={zeroY}
+                    width={400}
+                    height={200 - zeroY}
+                    fill="rgba(239, 68, 68, 0.08)"
+                  />
+                )}
                 {Array.from({ length: gridLevels }).map((_, i) => {
-                  const value = minY + (range / (gridLevels - 1)) * i;
+                  const value = yMin + (range / (gridLevels - 1)) * i;
                   const y = scaleY(value);
 
                   return (
@@ -743,9 +990,9 @@ export default function PilotFastighetPage() {
                   strokeDasharray="6 4"
                   opacity={0.9}
                 />
-                {textLabel(maxY, scaleY(maxY))}
+                {textLabel(yMax, scaleY(yMax))}
                 {textLabel(EXEC_SUSTAIN_THRESHOLD, scaleY(EXEC_SUSTAIN_THRESHOLD))}
-                {textLabel(minY, scaleY(minY))}
+                {textLabel(yMin, scaleY(yMin))}
                 {zeroBetween && (
                   <line x1={0} y1={scaleY(0)} x2={600} y2={scaleY(0)} stroke="#4b5563" strokeWidth={1} strokeDasharray="4 2" />
                 )}
@@ -810,267 +1057,14 @@ export default function PilotFastighetPage() {
           }}
         >
           <div>
-            <div
-              style={{
-                background: theme.panelBg,
-                border: `1px solid ${theme.panelBorder}`,
-                borderRadius: "6px",
-                padding: "20px",
-                marginBottom: 0,
-                boxShadow: "none",
-                height: "100%",
-                display: "flex",
-                flexDirection: "column",
-              }}
-            >
-              {/* Grid */}
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(4, 1fr)",
-                  gap: "28px",
-                  marginBottom: "20px",
-                }}
-              >
-                {/* Block 1 – Systemstatus */}
-                <div>
-                  <div
-                    style={{
-                      fontSize: "12px",
-                      letterSpacing: "0.08em",
-                      color: theme.subtext,
-                      marginBottom: "6px",
-                    }}
-                  >
-                    {t.sections.systemStatus}
-                  </div>
-
-                  <div
-                    style={{
-                      fontSize: "20px",
-                      fontWeight: 600,
-                      color:
-                        executiveSummary.structuralStatus === "Strukturell kollaps"
-                          ? "#B91C1C"
-                          : executiveSummary.structuralStatus ===
-                            "Marginell överskridelse"
-                          ? "#B45309"
-                          : executiveSummary.structuralStatus ===
-                            "Fungerande men dömd"
-                          ? "#92400E"
-                          : "#F3F4F6",
-                    }}
-                  >
-                    {t.structuralStatus[structuralStatusKey]}
-                  </div>
-
-                  <div
-                    style={{
-                      fontSize: "13px",
-                      color: theme.subtext,
-                      marginTop: "6px",
-                    }}
-                  >
-                    {t.common.compressionLabel}: {executiveSummary.compression.toFixed(2)} p.p.
-                  </div>
-                </div>
-
-                {/* Block 2 – Effekt av beslut */}
-                <div>
-                  <div
-                    style={{
-                      fontSize: "12px",
-                      letterSpacing: "0.08em",
-                      color: theme.subtext,
-                      marginBottom: "6px",
-                    }}
-                  >
-                    {t.sections.effectOfDecision}
-                  </div>
-
-                  <div
-                    style={{
-                      fontSize: "24px",
-                      fontWeight: 600,
-                      color:
-                        executiveSummary.deltaMargin < 0
-                          ? "#B91C1C"
-                          : executiveSummary.deltaMargin > 0
-                          ? "#065F46"
-                          : "#F3F4F6",
-                    }}
-                  >
-                    {executiveSummary.deltaMargin.toFixed(2)} %
-                  </div>
-
-                  <div
-                    style={{
-                      fontSize: "13px",
-                      color: theme.subtext,
-                      marginTop: "6px",
-                    }}
-                  >
-                    {t.common.avgMarginChangeLabel}
-                  </div>
-                </div>
-
-                {/* Block 3 – Tipping-risk */}
-                <div>
-                  <div
-                    style={{
-                      fontSize: "12px",
-                      letterSpacing: "0.08em",
-                      color: theme.subtext,
-                      marginBottom: "6px",
-                    }}
-                  >
-                    {t.sections.tippingRisk}
-                  </div>
-
-                  <div
-                    style={{
-                      fontSize: "20px",
-                      fontWeight: 600,
-                      color:
-                        executiveSummary.tippingRiskLevel === "Oåterkallelig"
-                          ? "#B91C1C"
-                          : executiveSummary.tippingRiskLevel === "Hög"
-                          ? "#B45309"
-                          : executiveSummary.tippingRiskLevel === "Måttlig"
-                          ? "#92400E"
-                          : "#10B981",
-                    }}
-                  >
-                    {executiveSummary.tippingRiskLevel}
-                  </div>
-
-                  <div
-                    style={{
-                      fontSize: "13px",
-                      color: "#9CA3AF",
-                      marginTop: "6px",
-                    }}
-                  >
-                    {executiveSummary.tippingStep
-                      ? <>{t.common.tippingWithin} {`Q${executiveSummary.tippingStep}`}</>
-                      : t.common.noTipping}
-                  </div>
-                </div>
-
-                {/* Block 4 – Kapacitet under tryck */}
-                <div>
-                  <div
-                    style={{
-                      fontSize: "12px",
-                      letterSpacing: "0.08em",
-                      color: "#9CA3AF",
-                      marginBottom: "6px",
-                    }}
-                  >
-                    {t.sections.capacityUnderPressure}
-                  </div>
-
-                  <div
-                    style={{
-                      fontSize: "20px",
-                      fontWeight: 600,
-                      color: theme.text,
-                    }}
-                  >
-                    {executiveSummary.compression.toFixed(2)} p.p.
-                  </div>
-
-                  <div
-                    style={{
-                      fontSize: "13px",
-                      color: theme.subtext,
-                      marginTop: "6px",
-                    }}
-                  >
-                    {t.common.bufferLossLabel}
-                  </div>
-                </div>
-              </div>
-
-              {/* Interpretation */}
-              <div
-                style={{
-                  borderTop: `1px solid ${theme.panelBorder}`,
-                  paddingTop: "20px",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: "14px",
-                    fontWeight: 600,
-                    color: theme.subtext,
-                    marginBottom: "8px",
-                  }}
-                >
-                  {t.sections.strategicInterpretation}
-                </div>
-
-                <div
-                  style={{
-                    fontSize: "14px",
-                    lineHeight: 1.6,
-                    color: theme.text,
-                    maxWidth: "80ch",
-                  }}
-                >
-                  {(() => {
-                    const deltaSentence = t.common.deltaSentence(executiveSummary.deltaMargin);
-                    const interpretation =
-                      structuralStatusKey === "structural_collapse"
-                        ? t.common.interpretation.structural_collapse(deltaSentence)
-                        : structuralStatusKey === "marginal_exceedance"
-                        ? t.common.interpretation.marginal_exceedance(deltaSentence)
-                        : structuralStatusKey === "functioning_but_doomed"
-                        ? t.common.interpretation.functioning_but_doomed(deltaSentence)
-                        : t.common.interpretation.stable(deltaSentence);
-                    return interpretation;
-                  })()}
-                </div>
-              </div>
-
-              <div
-                style={{
-                  marginTop: "28px",
-                  paddingTop: "20px",
-                  borderTop: `1px solid ${theme.panelBorder}`,
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: "12px",
-                    letterSpacing: "0.08em",
-                    color: theme.subtext,
-                    marginBottom: "8px",
-                  }}
-                >
-                  {t.sections.scenarioNarrative}
-                </div>
-
-                <div
-                  style={{
-                    fontSize: "14px",
-                    lineHeight: 1.6,
-                    color: theme.text,
-                  }}
-                >
-                  {(() => {
-                    const deltaStr = executiveSummary.deltaMargin.toFixed(2);
-                    const statusStr = t.structuralStatus[structuralStatusKey];
-                    const tippingQ = executiveSummary.tippingStep
-                      ? `Q${executiveSummary.tippingStep}`
-                      : "";
-                    return executiveSummary.tippingStep
-                      ? t.common.narrative.withTipping(deltaStr, statusStr, tippingQ)
-                      : t.common.narrative.noTipping(deltaStr, statusStr);
-                  })()}
-                </div>
-              </div>
-            </div>
+            <ExecutiveSummaryCard
+              executiveSummary={executiveSummary}
+              theme={theme}
+              t={t}
+              structuralStatusKey={structuralStatusKey}
+              interpretation={interpretation}
+              narrativeText={narrativeText}
+            />
           </div>
           <SnapshotCompare
             baselineA={baselineA}
@@ -1176,67 +1170,92 @@ export default function PilotFastighetPage() {
                     alignItems: "center",
                     marginBottom: "8px",
                     padding: "8px 0",
-                    borderBottom: "1px solid #2f333a",
+                    background: "#111827",
+                    border:
+                      selectedSnapA === s.snapshotId || selectedSnapB === s.snapshotId
+                        ? "1px solid #3b82f6"
+                        : "1px solid #1f2937",
+                    borderRadius: "4px",
+                    transition: "background 0.15s ease, border 0.15s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "#1f2937";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "#111827";
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: "6px", flex: 1, minWidth: 0 }}>
-                    {editingLabelId === s.snapshotId ? (
-                      <input
-                        type="text"
-                        value={editingLabelValue}
-                        onChange={(e) => setEditingLabelValue(e.target.value)}
-                        onBlur={() => saveLabel(s.snapshotId, editingLabelValue)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") saveLabel(s.snapshotId, editingLabelValue);
-                          if (e.key === "Escape") {
-                            setEditingLabelId(null);
-                            setEditingLabelValue("");
-                          }
-                        }}
-                        autoFocus
+                    <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
+                        {editingLabelId === s.snapshotId ? (
+                          <input
+                            type="text"
+                            value={editingLabelValue}
+                            onChange={(e) => setEditingLabelValue(e.target.value)}
+                            onBlur={() => saveLabel(s.snapshotId, editingLabelValue)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") saveLabel(s.snapshotId, editingLabelValue);
+                              if (e.key === "Escape") {
+                                setEditingLabelId(null);
+                                setEditingLabelValue("");
+                              }
+                            }}
+                            autoFocus
+                            style={{
+                              fontSize: "12px",
+                              color: "#e6edf3",
+                              background: "#0e1117",
+                              border: "1px solid #2f333a",
+                              borderRadius: "4px",
+                              padding: "4px 6px",
+                              width: "140px",
+                            }}
+                          />
+                        ) : (
+                          <>
+                            <span
+                              style={{ fontSize: "12px", color: "#9ca3af", cursor: "pointer" }}
+                              title="Double-click to rename"
+                              onDoubleClick={() => {
+                                setEditingLabelId(s.snapshotId);
+                                setEditingLabelValue(getDisplayLabel(s));
+                              }}
+                            >
+                              {getDisplayLabel(s)}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingLabelId(s.snapshotId);
+                                setEditingLabelValue(getDisplayLabel(s));
+                              }}
+                              style={{
+                                padding: "2px 4px",
+                                background: "transparent",
+                                border: "none",
+                                color: "#6b7280",
+                                cursor: "pointer",
+                                fontSize: "12px",
+                              }}
+                              title="Rename"
+                              aria-label="Rename snapshot"
+                            >
+                              ✎
+                            </button>
+                          </>
+                        )}
+                      </div>
+                      <div
                         style={{
-                          fontSize: "12px",
-                          color: "#e6edf3",
-                          background: "#0e1117",
-                          border: "1px solid #2f333a",
-                          borderRadius: "4px",
-                          padding: "4px 6px",
-                          width: "140px",
+                          fontSize: "11px",
+                          color: "#9CA3AF",
+                          marginTop: "4px",
                         }}
-                      />
-                    ) : (
-                      <>
-                        <span
-                          style={{ fontSize: "12px", color: "#9ca3af", cursor: "pointer" }}
-                          title="Double-click to rename"
-                          onDoubleClick={() => {
-                            setEditingLabelId(s.snapshotId);
-                            setEditingLabelValue(getDisplayLabel(s));
-                          }}
-                        >
-                          {getDisplayLabel(s)}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditingLabelId(s.snapshotId);
-                            setEditingLabelValue(getDisplayLabel(s));
-                          }}
-                          style={{
-                            padding: "2px 4px",
-                            background: "transparent",
-                            border: "none",
-                            color: "#6b7280",
-                            cursor: "pointer",
-                            fontSize: "12px",
-                          }}
-                          title="Rename"
-                          aria-label="Rename snapshot"
-                        >
-                          ✎
-                        </button>
-                      </>
-                    )}
+                      >
+                        {new Date(s.createdAt).toLocaleString()}
+                      </div>
+                    </div>
                   </div>
                   <div style={{ display: "flex", gap: "6px" }}>
                     <button
@@ -1300,67 +1319,92 @@ export default function PilotFastighetPage() {
                     alignItems: "center",
                     marginBottom: "8px",
                     padding: "8px 0",
-                    borderBottom: "1px solid #2f333a",
+                    background: "#111827",
+                    border:
+                      selectedSnapA === s.snapshotId || selectedSnapB === s.snapshotId
+                        ? "1px solid #3b82f6"
+                        : "1px solid #1f2937",
+                    borderRadius: "4px",
+                    transition: "background 0.15s ease, border 0.15s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "#1f2937";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "#111827";
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: "6px", flex: 1, minWidth: 0 }}>
-                    {editingLabelId === s.snapshotId ? (
-                      <input
-                        type="text"
-                        value={editingLabelValue}
-                        onChange={(e) => setEditingLabelValue(e.target.value)}
-                        onBlur={() => saveLabel(s.snapshotId, editingLabelValue)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") saveLabel(s.snapshotId, editingLabelValue);
-                          if (e.key === "Escape") {
-                            setEditingLabelId(null);
-                            setEditingLabelValue("");
-                          }
-                        }}
-                        autoFocus
+                    <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
+                        {editingLabelId === s.snapshotId ? (
+                          <input
+                            type="text"
+                            value={editingLabelValue}
+                            onChange={(e) => setEditingLabelValue(e.target.value)}
+                            onBlur={() => saveLabel(s.snapshotId, editingLabelValue)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") saveLabel(s.snapshotId, editingLabelValue);
+                              if (e.key === "Escape") {
+                                setEditingLabelId(null);
+                                setEditingLabelValue("");
+                              }
+                            }}
+                            autoFocus
+                            style={{
+                              fontSize: "12px",
+                              color: "#e6edf3",
+                              background: "#0e1117",
+                              border: "1px solid #2f333a",
+                              borderRadius: "4px",
+                              padding: "4px 6px",
+                              width: "140px",
+                            }}
+                          />
+                        ) : (
+                          <>
+                            <span
+                              style={{ fontSize: "12px", color: "#9ca3af", cursor: "pointer" }}
+                              title="Double-click to rename"
+                              onDoubleClick={() => {
+                                setEditingLabelId(s.snapshotId);
+                                setEditingLabelValue(getDisplayLabel(s));
+                              }}
+                            >
+                              {getDisplayLabel(s)}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingLabelId(s.snapshotId);
+                                setEditingLabelValue(getDisplayLabel(s));
+                              }}
+                              style={{
+                                padding: "2px 4px",
+                                background: "transparent",
+                                border: "none",
+                                color: "#6b7280",
+                                cursor: "pointer",
+                                fontSize: "12px",
+                              }}
+                              title="Rename"
+                              aria-label="Rename snapshot"
+                            >
+                              ✎
+                            </button>
+                          </>
+                        )}
+                      </div>
+                      <div
                         style={{
-                          fontSize: "12px",
-                          color: "#e6edf3",
-                          background: "#0e1117",
-                          border: "1px solid #2f333a",
-                          borderRadius: "4px",
-                          padding: "4px 6px",
-                          width: "140px",
+                          fontSize: "11px",
+                          color: "#9CA3AF",
+                          marginTop: "4px",
                         }}
-                      />
-                    ) : (
-                      <>
-                        <span
-                          style={{ fontSize: "12px", color: "#9ca3af", cursor: "pointer" }}
-                          title="Double-click to rename"
-                          onDoubleClick={() => {
-                            setEditingLabelId(s.snapshotId);
-                            setEditingLabelValue(getDisplayLabel(s));
-                          }}
-                        >
-                          {getDisplayLabel(s)}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditingLabelId(s.snapshotId);
-                            setEditingLabelValue(getDisplayLabel(s));
-                          }}
-                          style={{
-                            padding: "2px 4px",
-                            background: "transparent",
-                            border: "none",
-                            color: "#6b7280",
-                            cursor: "pointer",
-                            fontSize: "12px",
-                          }}
-                          title="Rename"
-                          aria-label="Rename snapshot"
-                        >
-                          ✎
-                        </button>
-                      </>
-                    )}
+                      >
+                        {new Date(s.createdAt).toLocaleString()}
+                      </div>
+                    </div>
                   </div>
                   <div style={{ display: "flex", gap: "6px" }}>
                     <button
@@ -1475,6 +1519,240 @@ export default function PilotFastighetPage() {
         </div>
       )}
       </div>
+
+      {uiMode === "expert" && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            right: 0,
+            width: "38%",
+            height: "100%",
+            background: "rgba(11, 15, 20, 0.92)",
+            zIndex: 1000,
+            padding: "24px",
+            color: "#E5E7EB",
+            borderLeft: "1px solid #1F2937",
+            overflowY: "auto",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              gap: "16px",
+              marginBottom: "28px",
+              paddingBottom: "20px",
+              borderBottom: "1px solid #1F2937",
+            }}
+          >
+            <div>
+              <h2 style={{ margin: 0, fontSize: "18px", fontWeight: 600, color: "#E5E7EB" }}>
+                Expert Mode
+              </h2>
+              <p style={{ margin: "6px 0 0", fontSize: "12px", color: "#9CA3AF" }}>
+                Structural inspection layer
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setUiMode("executive")}
+              aria-label="Close Expert Mode"
+              style={{
+                flexShrink: 0,
+                width: "32px",
+                height: "32px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: 0,
+                background: "#1F2937",
+                border: "1px solid #374151",
+                borderRadius: "6px",
+                color: "#9CA3AF",
+                fontSize: "16px",
+                cursor: "pointer",
+                lineHeight: 1,
+              }}
+            >
+              ×
+            </button>
+          </div>
+
+          <section style={{ marginBottom: "28px" }}>
+            <div
+              style={{
+                fontSize: "13px",
+                fontWeight: 500,
+                color: "#9CA3AF",
+                marginBottom: "12px",
+              }}
+            >
+              Structural Metrics
+            </div>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "8px",
+                fontSize: "12px",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "baseline",
+                  color: "#6B7280",
+                }}
+              >
+                <span>minimumMargin</span>
+                <span style={{ color: "#9CA3AF", fontVariantNumeric: "tabular-nums" }}>
+                  {expertMinimumMargin != null ? expertMinimumMargin.toFixed(4) : "—"}
+                </span>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "baseline",
+                  color: "#6B7280",
+                }}
+              >
+                <span>collapseThreshold</span>
+                <span style={{ color: "#9CA3AF", fontVariantNumeric: "tabular-nums" }}>
+                  {EXEC_COLLAPSE_THRESHOLD}
+                </span>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "baseline",
+                  color: "#6B7280",
+                }}
+              >
+                <span>sustainThreshold</span>
+                <span style={{ color: "#9CA3AF", fontVariantNumeric: "tabular-nums" }}>
+                  {EXEC_SUSTAIN_THRESHOLD}
+                </span>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "baseline",
+                  color: "#6B7280",
+                }}
+              >
+                <span>tippingStep</span>
+                <span style={{ color: "#9CA3AF", fontVariantNumeric: "tabular-nums" }}>
+                  {expertTippingStep != null ? expertTippingStep : "—"}
+                </span>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "baseline",
+                  color: "#6B7280",
+                }}
+              >
+                <span>steps</span>
+                <span style={{ color: "#9CA3AF", fontVariantNumeric: "tabular-nums" }}>
+                  {expertSteps}
+                </span>
+              </div>
+            </div>
+          </section>
+
+          <div style={{ height: "1px", background: "#1F2937", marginBottom: "28px" }} />
+
+          <section style={{ marginBottom: "28px" }}>
+            <div
+              style={{
+                fontSize: "13px",
+                fontWeight: 500,
+                color: "#9CA3AF",
+                marginBottom: "12px",
+              }}
+            >
+              Constraint View
+            </div>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "8px",
+                fontSize: "12px",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "baseline",
+                  color: "#6B7280",
+                }}
+              >
+                <span>Sustain breach</span>
+                <span style={{ color: "#9CA3AF", fontVariantNumeric: "tabular-nums" }}>
+                  {sustainBreachStep != null
+                    ? `Sustain threshold crossed at Q${sustainBreachStep}`
+                    : "Sustain threshold not crossed"}
+                </span>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "baseline",
+                  color: "#6B7280",
+                }}
+              >
+                <span>Collapse breach</span>
+                <span style={{ color: "#9CA3AF", fontVariantNumeric: "tabular-nums" }}>
+                  {collapseBreachStep != null
+                    ? `Collapse threshold crossed at Q${collapseBreachStep}`
+                    : "Collapse threshold not crossed"}
+                </span>
+              </div>
+              {steadyStateStep !== null && (
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "baseline",
+                    color: "#6B7280",
+                  }}
+                >
+                  <span>Steady state detected</span>
+                  <span style={{ color: "#9CA3AF", fontVariantNumeric: "tabular-nums" }}>
+                    System stabilized at Q{steadyStateStep}. No structural change detected for {REQUIRED_STABLE_TICKS} consecutive ticks (after minimum {MIN_STEPS_BEFORE_STEADY} steps).
+                  </span>
+                </div>
+              )}
+            </div>
+          </section>
+
+          <div style={{ height: "1px", background: "#1F2937", marginBottom: "28px" }} />
+
+          <section style={{ marginBottom: "0" }}>
+            <div
+              style={{
+                fontSize: "13px",
+                fontWeight: 500,
+                color: "#9CA3AF",
+                marginBottom: "10px",
+              }}
+            >
+              Scenario Metadata
+            </div>
+            <div style={{ fontSize: "13px", color: "#6B7280" }}>—</div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }

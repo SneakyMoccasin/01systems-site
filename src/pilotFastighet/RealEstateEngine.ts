@@ -67,11 +67,17 @@ export class RealEstateEngine {
 
     const adjustedCost = result.multipliersAfterConstraints.cost;
     const adjustedRecovery = result.multipliersAfterConstraints.recovery;
+    const adjustedLoad = result.multipliersAfterConstraints.load;
+
+    const loadImpact = Math.max(0, adjustedLoad - 1);
+
+    const erosion =
+      (adjustedCost - 1)
+      + (1 - adjustedRecovery)
+      + loadImpact * 0.5;
 
     const nextMargin =
-      this.baselineMargin -
-      (adjustedCost - 1) -
-      (1 - adjustedRecovery);
+      margin - erosion;
 
     this.state = {
       step: step + 1,

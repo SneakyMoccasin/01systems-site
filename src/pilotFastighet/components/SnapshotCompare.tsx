@@ -13,6 +13,22 @@ type Props = {
   noTippingText: string;
 };
 
+function getStatusColor(status: string): string {
+  const s = status.toLowerCase();
+  if (s.includes("kollaps") || s.includes("collapse")) return "#DC2626";
+  if (
+    s.includes("marginell") ||
+    s.includes("marginal") ||
+    s.includes("exceedance") ||
+    s.includes("dömd") ||
+    s.includes("doomed") ||
+    s.includes("pressad") ||
+    s.includes("stressed")
+  )
+    return "#D97706";
+  return "#059669";
+}
+
 export const SnapshotCompare: React.FC<Props> = ({
   baselineA,
   finalA,
@@ -29,7 +45,7 @@ export const SnapshotCompare: React.FC<Props> = ({
     <div
       style={{
         marginTop: "0",
-        padding: "20px",
+        padding: "24px",
         background: "#111827",
         border: "1px solid #1F2937",
         borderRadius: "6px",
@@ -41,9 +57,11 @@ export const SnapshotCompare: React.FC<Props> = ({
       <h3
         style={{
           marginBottom: "20px",
-          fontWeight: 500,
+          marginTop: 0,
+          fontWeight: 600,
+          fontSize: "15px",
+          letterSpacing: "0.02em",
           color: "#E5E7EB",
-          fontSize: "16px",
         }}
       >
         Snapshot Compare
@@ -53,102 +71,129 @@ export const SnapshotCompare: React.FC<Props> = ({
         style={{
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
-          gap: "40px",
+          gap: "32px",
           marginBottom: "24px",
         }}
       >
-        <div>
-          <strong
+        <div
+          style={{
+            padding: "16px",
+            background: "rgba(31, 41, 55, 0.4)",
+            borderRadius: "6px",
+            border: "1px solid #1F2937",
+          }}
+        >
+          <div
             style={{
-              display: "block",
-              marginBottom: "8px",
-              fontSize: "13px",
-              letterSpacing: "0.5px",
+              fontSize: "11px",
+              fontWeight: 600,
+              letterSpacing: "0.06em",
               color: "#9CA3AF",
+              marginBottom: "12px",
             }}
           >
             Scenario A
-          </strong>
-          <div
-            style={{ fontSize: "15px", color: "#F3F4F6", marginBottom: "4px" }}
-          >
-            Baseline: {baselineA.toFixed(2)}
           </div>
-          <div
-            style={{ fontSize: "15px", color: "#F3F4F6", marginBottom: "4px" }}
-          >
-            Final: {finalA.toFixed(2)}
+          <div style={{ fontSize: "12px", color: "#9CA3AF", marginBottom: "4px" }}>
+            Baseline
           </div>
-          <div
-            style={{
-              marginTop: "8px",
-              fontSize: "13px",
-              color: "#9CA3AF",
-            }}
-          >
-            Status: {structuralStatusA}
+          <div style={{ fontSize: "15px", fontWeight: 500, color: "#F3F4F6", marginBottom: "12px" }}>
+            {baselineA.toFixed(2)}
           </div>
+          <div style={{ fontSize: "12px", color: "#9CA3AF", marginBottom: "4px" }}>
+            Final
+          </div>
+          <div style={{ fontSize: "15px", fontWeight: 500, color: "#F3F4F6", marginBottom: "12px" }}>
+            {finalA.toFixed(2)}
+          </div>
+          <div style={{ fontSize: "12px", color: "#9CA3AF", marginBottom: "4px" }}>
+            Status
+          </div>
+          <div style={{ fontSize: "13px", color: "#9CA3AF" }}>{structuralStatusA}</div>
         </div>
 
-        <div>
-          <strong
+        <div
+          style={{
+            padding: "16px",
+            background: "rgba(31, 41, 55, 0.4)",
+            borderRadius: "6px",
+            border: "1px solid #1F2937",
+          }}
+        >
+          <div
             style={{
-              display: "block",
-              marginBottom: "8px",
-              fontSize: "13px",
-              letterSpacing: "0.5px",
+              fontSize: "11px",
+              fontWeight: 600,
+              letterSpacing: "0.06em",
               color: "#9CA3AF",
+              marginBottom: "12px",
             }}
           >
             Scenario B
-          </strong>
-          <div
-            style={{ fontSize: "15px", color: "#F3F4F6", marginBottom: "4px" }}
-          >
-            Baseline: {baselineB.toFixed(2)}
           </div>
-          <div
-            style={{ fontSize: "15px", color: "#F3F4F6", marginBottom: "4px" }}
-          >
-            Final: {finalB.toFixed(2)}
+          <div style={{ fontSize: "12px", color: "#9CA3AF", marginBottom: "4px" }}>
+            Baseline
           </div>
-          <div
-            style={{
-              marginTop: "8px",
-              fontSize: "13px",
-              color: structuralStatusB.includes("kollaps")
-                ? "#F87171"
-                : "#10B981",
-            }}
-          >
-            Status: {structuralStatusB}
+          <div style={{ fontSize: "15px", fontWeight: 500, color: "#F3F4F6", marginBottom: "12px" }}>
+            {baselineB.toFixed(2)}
+          </div>
+          <div style={{ fontSize: "12px", color: "#9CA3AF", marginBottom: "4px" }}>
+            Final
+          </div>
+          <div style={{ fontSize: "15px", fontWeight: 500, color: "#F3F4F6", marginBottom: "12px" }}>
+            {finalB.toFixed(2)}
+          </div>
+          <div style={{ fontSize: "12px", color: "#9CA3AF", marginBottom: "4px" }}>
+            Status
+          </div>
+          <div style={{ fontSize: "13px", fontWeight: 500, color: getStatusColor(structuralStatusB) }}>
+            {structuralStatusB}
           </div>
         </div>
       </div>
 
       <div
         style={{
-          marginTop: "20px",
-          paddingTop: "16px",
+          marginTop: "4px",
+          paddingTop: "20px",
           borderTop: "1px solid #1F2937",
+          display: "flex",
+          flexDirection: "column",
+          gap: "12px",
         }}
       >
         <div
           style={{
-            fontSize: "18px",
-            fontWeight: 500,
-            color: deltaMargin < 0 ? "#F87171" : "#10B981",
-            marginBottom: "8px",
+            padding: "12px 16px",
+            background: "rgba(31, 41, 55, 0.6)",
+            borderRadius: "6px",
+            borderLeft: "3px solid",
+            borderLeftColor: deltaMargin < 0 ? "#DC2626" : deltaMargin > 0 ? "#059669" : "#6B7280",
           }}
         >
-          Δ Margin: {deltaMargin.toFixed(2)} p.p.
+          <div style={{ fontSize: "11px", color: "#9CA3AF", marginBottom: "4px" }}>
+            Δ Margin
+          </div>
+          <div
+            style={{
+              fontSize: "18px",
+              fontWeight: 600,
+              color: deltaMargin < 0 ? "#DC2626" : deltaMargin > 0 ? "#059669" : "#9CA3AF",
+            }}
+          >
+            {deltaMargin >= 0 ? "+" : ""}
+            {deltaMargin.toFixed(2)} p.p.
+          </div>
         </div>
-        <div style={{ fontSize: "13px", color: "#9CA3AF" }}>
-          {tippingLabel}:{" "}
-          {tippingStep ? `Q${tippingStep}` : noTippingText}
+        <div>
+          <div style={{ fontSize: "11px", color: "#9CA3AF", marginBottom: "4px" }}>
+            {tippingLabel}
+          </div>
+          <div style={{ fontSize: "14px", color: "#E5E7EB" }}>
+            {tippingStep ? `Q${tippingStep}` : noTippingText}
+          </div>
         </div>
       </div>
     </div>
   );
 };
-
