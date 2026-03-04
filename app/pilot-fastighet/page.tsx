@@ -19,6 +19,10 @@ import { UI_TEXT, type Language } from "@/src/pilotFastighet/uiText";
 const STORAGE_KEY_A = "pulse_pilot_fastighet_history_A";
 const STORAGE_KEY_B = "pulse_pilot_fastighet_history_B";
 const SNAPSHOT_LABELS_KEY = "pulse.snapshotLabels.v1";
+
+const VISIBLE_PILOT_CASES = PILOT_CASES.filter(
+  (c) => c.id !== "neutral-baseline"
+);
 const EXEC_TIPPING_THRESHOLD = 0.9;
 const EXEC_SUSTAIN_THRESHOLD = 0.8;
 const EXEC_COLLAPSE_THRESHOLD = 0.6;
@@ -96,6 +100,8 @@ export default function PilotFastighetPage() {
   const [riskStateA, setRiskStateA] = useState<Record<string, RiskLevel>>({ ...defaultRiskState });
   const [riskStateB, setRiskStateB] = useState<Record<string, RiskLevel>>({ ...defaultRiskState });
   const [activeScenario, setActiveScenario] = useState<ScenarioId>("A");
+  const [showA, setShowA] = useState(true);
+  const [showB, setShowB] = useState(true);
 
   const [historyA, setHistoryA] = useState<FrozenSnapshot[]>([]);
   const [historyB, setHistoryB] = useState<FrozenSnapshot[]>([]);
@@ -317,14 +323,6 @@ export default function PilotFastighetPage() {
     snapA != null && snapB != null
       ? snapB.engineState.margin - snapA.engineState.margin
       : undefined;
-  const severityA =
-    snapA?.engineState?.registry?.RefinancingConstraint?.severityIndex ?? 0;
-  const severityB =
-    snapB?.engineState?.registry?.RefinancingConstraint?.severityIndex ?? 0;
-  const stabilityA = 1 - severityA;
-  const stabilityB = 1 - severityB;
-  const deltaStability =
-    snapA != null && snapB != null ? stabilityB - stabilityA : undefined;
   const lifecycleA =
     snapA?.engineState?.registry?.RefinancingConstraint?.lifecycle ?? undefined;
   const lifecycleB =
@@ -334,7 +332,6 @@ export default function PilotFastighetPage() {
     deltaMargin !== undefined
       ? buildExecutiveConclusion({
           deltaMargin,
-          deltaStability,
           lifecycleA,
           lifecycleB,
           tippingStepA,
@@ -542,7 +539,7 @@ export default function PilotFastighetPage() {
           }}
         >
           <option value="">Custom</option>
-          {PILOT_CASES.map((c) => (
+          {VISIBLE_PILOT_CASES.map((c) => (
             <option key={c.id} value={c.id}>
               {c.title}
             </option>
@@ -551,40 +548,53 @@ export default function PilotFastighetPage() {
         <button
           type="button"
           onClick={() => {
-            setActiveScenario("A");
-            setIsDirty(true);
-            setIsRunning(false);
-            resetRunState();
+            setShowA(true);
+            setShowB(false);
           }}
           style={{
             padding: "8px 16px",
-            background: activeScenario === "A" ? "#2f333a" : "#1a1a1a",
+            background: showA && !showB ? "#2f333a" : "#1a1a1a",
             border: "1px solid #2f333a",
             borderRadius: "6px",
             color: "#e6edf3",
             cursor: "pointer",
           }}
         >
-          Scenario A
+          A
         </button>
         <button
           type="button"
           onClick={() => {
-            setActiveScenario("B");
-            setIsDirty(true);
-            setIsRunning(false);
-            resetRunState();
+            setShowA(false);
+            setShowB(true);
           }}
           style={{
             padding: "8px 16px",
-            background: activeScenario === "B" ? "#2f333a" : "#1a1a1a",
+            background: showB && !showA ? "#2f333a" : "#1a1a1a",
             border: "1px solid #2f333a",
             borderRadius: "6px",
             color: "#e6edf3",
             cursor: "pointer",
           }}
         >
-          Scenario B
+          B
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setShowA(true);
+            setShowB(true);
+          }}
+          style={{
+            padding: "8px 16px",
+            background: showA && showB ? "#2f333a" : "#1a1a1a",
+            border: "1px solid #2f333a",
+            borderRadius: "6px",
+            color: "#e6edf3",
+            cursor: "pointer",
+          }}
+        >
+          A+B
         </button>
         <button
           type="button"
@@ -686,6 +696,27 @@ export default function PilotFastighetPage() {
             setIsRunning(false);
             resetRunState();
             setIsDirty(true);
+
+            const caseId = selectedPilotCaseId;
+
+            if (!caseId) {
+              // Custom: reset all risks to LOW
+              const lowRiskState = Object.keys(defaultRiskState).reduce(
+                (acc, key) => {
+                  acc[key] = "LOW";
+                  return acc;
+                },
+                {} as Record<string, RiskLevel>
+              );
+              setRiskStateA({ ...lowRiskState });
+              setRiskStateB({ ...lowRiskState });
+            } else {
+              const pilotCase = PILOT_CASES.find((c) => c.id === caseId);
+              if (pilotCase) {
+                setRiskStateA({ ...pilotCase.riskStateA });
+                setRiskStateB({ ...pilotCase.riskStateB });
+              }
+            }
           }}
           style={{
             padding: "8px 16px",
@@ -875,13 +906,6 @@ export default function PilotFastighetPage() {
                 : "NONE"}
             </div>
           </div>
-
-          <div>
-            <div style={{ fontSize: "12px", color: "#9CA3AF" }}>Severity</div>
-            <div style={{ fontSize: "16px", fontWeight: 600 }}>
-              {activeState.registry.RefinancingConstraint.severityIndex.toFixed(4)}
-            </div>
-          </div>
         </div>
       </div>
 
@@ -974,7 +998,8 @@ export default function PilotFastighetPage() {
             <span
               style={{
                 width: "12px",
-                borderTop: "1px dashed #4b5563",
+                borderTop: "2px solid",
+                borderTopColor: theme.graphBg === "#0b0f14" ? "#E5E7EB" : "#4B5563",
               }}
             />
             {t.common.legend.zeroLine}
@@ -1051,9 +1076,8 @@ export default function PilotFastighetPage() {
                       y1={y}
                       y2={y}
                       stroke="#374151"
-                      strokeDasharray="3 3"
                       strokeWidth={1}
-                      opacity={0.7}
+                      opacity={0.35}
                     />
                   );
                 })}
@@ -1063,22 +1087,29 @@ export default function PilotFastighetPage() {
                   y1={scaleY(EXEC_SUSTAIN_THRESHOLD)}
                   y2={scaleY(EXEC_SUSTAIN_THRESHOLD)}
                   stroke="#9CA3AF"
-                  strokeWidth={1.5}
+                  strokeWidth={1.25}
                   strokeDasharray="6 4"
-                  opacity={0.9}
+                  opacity={0.85}
                 />
                 {textLabel(yMax, scaleY(yMax))}
                 {textLabel(EXEC_SUSTAIN_THRESHOLD, scaleY(EXEC_SUSTAIN_THRESHOLD))}
                 {textLabel(yMin, scaleY(yMin))}
                 {zeroBetween && (
-                  <line x1={0} y1={scaleY(0)} x2={600} y2={scaleY(0)} stroke="#4b5563" strokeWidth={1} strokeDasharray="4 2" />
+                  <line
+                    x1={0}
+                    y1={scaleY(0)}
+                    x2={600}
+                    y2={scaleY(0)}
+                    stroke={theme.graphBg === "#0b0f14" ? "#E5E7EB" : "#4B5563"}
+                    strokeWidth={2}
+                  />
                 )}
-                {pointsA ? <polyline fill="none" stroke="#3b82f6" strokeWidth={1.5} points={pointsA} /> : null}
-                {pointsB ? <polyline fill="none" stroke="#f97316" strokeWidth={1.5} points={pointsB} /> : null}
-                {tippingMarginIndexA != null && marginHistoryA[tippingMarginIndexA] != null && (
+                {showA && pointsA ? <polyline fill="none" stroke="#3b82f6" strokeWidth={1.5} points={pointsA} /> : null}
+                {showB && pointsB ? <polyline fill="none" stroke="#f97316" strokeWidth={1.5} points={pointsB} /> : null}
+                {showA && tippingMarginIndexA != null && marginHistoryA[tippingMarginIndexA] != null && (
                   <circle cx={scaleX(tippingMarginIndexA)} cy={scaleY(marginHistoryA[tippingMarginIndexA])} r={4} fill="#3b82f6" />
                 )}
-                {tippingMarginIndexB != null && marginHistoryB[tippingMarginIndexB] != null && (
+                {showB && tippingMarginIndexB != null && marginHistoryB[tippingMarginIndexB] != null && (
                   <circle cx={scaleX(tippingMarginIndexB)} cy={scaleY(marginHistoryB[tippingMarginIndexB])} r={4} fill="#f97316" />
                 )}
                 {selectedQuarter != null &&
@@ -1157,6 +1188,8 @@ export default function PilotFastighetPage() {
               structuralStatusKey={structuralStatusKey}
               interpretation={interpretation}
               narrativeText={narrativeText}
+              tippingStepA={tippingStepA}
+              tippingStepB={tippingStepB}
             />
           </div>
           <SnapshotCompare
@@ -1575,8 +1608,8 @@ export default function PilotFastighetPage() {
             <strong>Δ Margin (B−A):</strong> {(snapB.engineState.margin - snapA.engineState.margin).toFixed(3)}
             <br />
             <strong>Tipping (ACTIVE):</strong>{" "}
-            {tippingStepA != null ? `A step ${tippingStepA}` : "A: never"} |{" "}
-            {tippingStepB != null ? `B step ${tippingStepB}` : "B: never"}
+            {tippingStepA != null ? `A: Q${tippingStepA}` : "A: never"} |{" "}
+            {tippingStepB != null ? `B: Q${tippingStepB}` : "B: never"}
             <br />
             {executiveConclusion != null && (
               <>
@@ -1596,13 +1629,9 @@ export default function PilotFastighetPage() {
                 <br />
                 <strong>Refinancing lifecycle B:</strong> {snapB.engineState.registry.RefinancingConstraint.lifecycle}
                 <br />
-                <strong>Severity A:</strong> {snapA.engineState.registry.RefinancingConstraint.severityIndex.toFixed(4)}
+                <strong>Q A:</strong> {snapA.engineState.step}
                 <br />
-                <strong>Severity B:</strong> {snapB.engineState.registry.RefinancingConstraint.severityIndex.toFixed(4)}
-                <br />
-                <strong>Step A:</strong> {snapA.engineState.step}
-                <br />
-                <strong>Step B:</strong> {snapB.engineState.step}
+                <strong>Q B:</strong> {snapB.engineState.step}
               </>
             )}
           </div>
@@ -1739,9 +1768,9 @@ export default function PilotFastighetPage() {
                   color: "#6B7280",
                 }}
               >
-                <span>tippingStep</span>
+                <span>Tipping (Q)</span>
                 <span style={{ color: "#9CA3AF", fontVariantNumeric: "tabular-nums" }}>
-                  {expertTippingStep != null ? expertTippingStep : "—"}
+                  {expertTippingStep != null ? `Q${expertTippingStep}` : "—"}
                 </span>
               </div>
               <div
@@ -1752,7 +1781,7 @@ export default function PilotFastighetPage() {
                   color: "#6B7280",
                 }}
               >
-                <span>steps</span>
+                <span>quarters</span>
                 <span style={{ color: "#9CA3AF", fontVariantNumeric: "tabular-nums" }}>
                   {expertSteps}
                 </span>
@@ -1831,7 +1860,7 @@ export default function PilotFastighetPage() {
                 >
                   <span>Steady state detected</span>
                   <span style={{ color: "#9CA3AF", fontVariantNumeric: "tabular-nums" }}>
-                    System stabilized at Q{steadyStateStep}. No structural change detected for {REQUIRED_STABLE_TICKS} consecutive ticks (after minimum {MIN_STEPS_BEFORE_STEADY} steps).
+                    System stabilized at Q{steadyStateStep}. No structural change detected for {REQUIRED_STABLE_TICKS} consecutive ticks (after minimum {MIN_STEPS_BEFORE_STEADY} quarters).
                   </span>
                 </div>
               )}

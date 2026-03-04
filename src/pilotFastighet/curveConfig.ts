@@ -91,10 +91,10 @@ export function resolveLogistic(
   amp: CurveAmplitudeConfig,
   step: number = 1
 ): number {
-  const severity = resolveLinear(level, amp);
+  const base = resolveLinear(level, amp);
   const k = 0.8;
   const x0 = 3;
-  return 1 + (severity - 1) / (1 + Math.exp(-k * (step - x0)));
+  return 1 + (base - 1) / (1 + Math.exp(-k * (step - x0)));
 }
 
 export function getImpactMultiplier(

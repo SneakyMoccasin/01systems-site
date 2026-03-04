@@ -27,7 +27,6 @@ export function findTippingIndex(historySnapshots: SnapshotWithLifecycle[]): num
 
 export type ExecutiveConclusionInput = {
   deltaMargin?: number;
-  deltaStability?: number;
   lifecycleA?: string;
   lifecycleB?: string;
   tippingStepA?: number | null;
@@ -50,7 +49,6 @@ export function buildExecutiveConclusion(
 ): ExecutiveConclusion {
   const {
     deltaMargin = 0,
-    deltaStability = 0,
     lifecycleA,
     lifecycleB,
     tippingStepA,
@@ -61,9 +59,6 @@ export function buildExecutiveConclusion(
 
   if (deltaMargin > 0) tags.push("Margin ↑");
   else if (deltaMargin < 0) tags.push("Margin ↓");
-
-  if (deltaStability > 0) tags.push("Stability ↑");
-  else if (deltaStability < 0) tags.push("Stability ↓");
 
   const aActive = lifecycleA === "ACTIVE";
   const bActive = lifecycleB === "ACTIVE";
@@ -79,11 +74,11 @@ export function buildExecutiveConclusion(
 
   let title: string;
   if (bStep != null && aStep != null && bStep < aStep) {
-    title = `Scenario B triggers ACTIVE earlier (step ${bStep} vs ${aStep}), trading margin/stability.`;
+    title = `Scenario B triggers ACTIVE earlier (Q${bStep} vs Q${aStep}), trading margin/stability.`;
   } else if (aStep != null && bStep == null) {
-    title = `Scenario B avoids ACTIVE while A triggers it (step ${aStep}).`;
+    title = `Scenario B avoids ACTIVE while A triggers it (Q${aStep}).`;
   } else if (aStep == null && bStep != null) {
-    title = `Scenario A avoids ACTIVE while B triggers it (step ${bStep}).`;
+    title = `Scenario A avoids ACTIVE while B triggers it (Q${bStep}).`;
   } else if (aStep == null && bStep == null) {
     title =
       "No ACTIVE tipping observed; compare margin/stability deltas.";

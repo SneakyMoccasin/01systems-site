@@ -18,6 +18,8 @@ type Props = {
   structuralStatusKey: keyof (typeof UI_TEXT)["sv"]["structuralStatus"];
   interpretation: string;
   narrativeText: string;
+  tippingStepA: number | null;
+  tippingStepB: number | null;
 };
 
 export function ExecutiveSummaryCard({
@@ -27,7 +29,34 @@ export function ExecutiveSummaryCard({
   structuralStatusKey,
   interpretation,
   narrativeText,
+  tippingStepA,
+  tippingStepB,
 }: Props) {
+  const marginDelta = executiveSummary.deltaMargin;
+  const marginDeltaText = `${marginDelta > 0 ? "+" : ""}${marginDelta.toFixed(
+    2
+  )} p.p.`;
+  const marginDeltaColor =
+    marginDelta < 0 ? "#B91C1C" : marginDelta > 0 ? "#16A34A" : theme.text;
+
+  let tippingLine: string | null = null;
+  if (tippingStepA != null && tippingStepB != null) {
+    if (tippingStepB < tippingStepA) {
+      tippingLine = `Earlier tipping: Q${tippingStepA} \u2192 Q${tippingStepB}`;
+    } else if (tippingStepB > tippingStepA) {
+      tippingLine = `Delayed tipping: Q${tippingStepA} \u2192 Q${tippingStepB}`;
+    } else {
+      tippingLine = `Tipping unchanged: Q${tippingStepA}`;
+    }
+  } else if (tippingStepA != null && tippingStepB == null) {
+    tippingLine = `Scenario B avoids tipping seen in A (Q${tippingStepA}).`;
+  } else if (tippingStepA == null && tippingStepB != null) {
+    tippingLine = `New tipping in Scenario B: Q${tippingStepB}.`;
+  }
+
+  const decisionImpactBackground =
+    theme.panelBg === "#111827" ? "#020617" : "#F3F4F6";
+
   return (
     <div
       style={{
@@ -85,6 +114,15 @@ export function ExecutiveSummaryCard({
             }}
           >
             {t.common.compressionLabel}: {executiveSummary.compression.toFixed(2)} p.p.
+          </div>
+          <div
+            style={{
+              fontSize: "11px",
+              color: "rgba(156,163,175,0.8)",
+              marginTop: "2px",
+            }}
+          >
+            Measures how tightly the capital buffer is compressed under stress over time.
           </div>
         </div>
 
@@ -196,6 +234,54 @@ export function ExecutiveSummaryCard({
             }}
           >
             {t.common.bufferLossLabel}
+          </div>
+        </div>
+      </div>
+
+      <div
+        style={{
+          marginTop: "12px",
+          padding: "10px 14px",
+          borderRadius: "4px",
+          background: decisionImpactBackground,
+          border: `1px solid ${theme.panelBorder}`,
+          borderLeftWidth: "3px",
+          borderLeftColor: "#4B5563",
+        }}
+      >
+        <div
+          style={{
+            fontSize: "11px",
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            color: theme.subtext,
+            marginBottom: "4px",
+          }}
+        >
+          Decision Impact
+        </div>
+        <div
+          style={{
+            fontSize: "13px",
+            lineHeight: 1.5,
+            color: theme.text,
+          }}
+        >
+          <div>
+            <span style={{ color: theme.subtext }}>Margin delta:&nbsp;</span>
+            <span style={{ fontWeight: 600, color: marginDeltaColor }}>
+              {marginDeltaText}
+            </span>
+          </div>
+          {(tippingStepA !== null || tippingStepB !== null) && tippingLine && (
+            <div>
+              <span style={{ color: theme.subtext }}>Tipping:&nbsp;</span>
+              <span>{tippingLine}</span>
+            </div>
+          )}
+          <div>
+            <span style={{ color: theme.subtext }}>Scenario B:&nbsp;</span>
+            <span>{t.structuralStatus[structuralStatusKey]}</span>
           </div>
         </div>
       </div>

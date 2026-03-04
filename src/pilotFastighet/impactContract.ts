@@ -43,12 +43,6 @@ export type SystemEvent =
       step: number;
       reason: string;
       trigger: RefinancingTriggerSnapshot;
-    }
-  | {
-      type: "RefinancingConstraintEscalation";
-      step: number;
-      severityIndex: number;
-      reason: string;
     };
 
 export const REAL_ESTATE_IMPACT_CONTRACT: ParameterSpec[] = [
