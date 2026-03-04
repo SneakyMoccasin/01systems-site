@@ -47,7 +47,12 @@ export const PARAMETER_CURVE_CONFIG: Record<string, ParameterCurveConfig> = {
   },
   refinancingRisk: {
     curve: "LOGISTIC",
-    amplitude: { base: 1.0, low: 0.95, high: 1.4, severe: 1.8 },
+    amplitude: {
+      base: 1.0,
+      low: 0.97,
+      high: 1.18,
+      severe: 1.35,
+    },
   },
   marketVolatilityRisk: {
     curve: "LINEAR",

@@ -74,14 +74,26 @@ export class RealEstateEngine {
     const erosion =
       (adjustedCost - 1)
       + (1 - adjustedRecovery)
-      + loadImpact * 0.5;
+      + loadImpact * 0.25;
+
+    const pullToBaseline = (this.baselineMargin - margin) * 0.12;
 
     const nextMargin =
-      margin - erosion;
+      margin - erosion + pullToBaseline;
+
+    const clampedNextMargin = Math.max(-2, Math.min(3, nextMargin));
+
+    console.log({
+      step,
+      margin,
+      erosion,
+      pullToBaseline,
+      nextMargin,
+    });
 
     this.state = {
       step: step + 1,
-      margin: nextMargin,
+      margin: clampedNextMargin,
       registry: result.updatedRegistry,
       riskState,
     };

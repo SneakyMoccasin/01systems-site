@@ -15,6 +15,7 @@ export const UI_TEXT = {
       stable: "Stabil",
       functioning_but_doomed: "Fungerande men dömd",
       marginal_exceedance: "Marginell överskridelse",
+      structural_breakdown: "Strukturell erosion",
       structural_collapse: "Strukturell kollaps",
     },
 
@@ -88,6 +89,7 @@ export const UI_TEXT = {
       stable: "Stable",
       functioning_but_doomed: "Functioning but doomed",
       marginal_exceedance: "Marginal exceedance",
+      structural_breakdown: "Structural breakdown",
       structural_collapse: "Structural collapse",
     },
 

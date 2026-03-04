@@ -31,6 +31,21 @@ export function simulateConstraintsStep(
     input.step
   );
 
+  console.log("BASE", {
+    step: input.step,
+    load: baseMultipliers.load,
+    cost: baseMultipliers.cost,
+    recovery: baseMultipliers.recovery,
+    sensitivity: baseMultipliers.sensitivity,
+  });
+
+  // DIAGNOSTIC: bypass all constraint effects (revert after verification)
+  return {
+    multipliersBeforeConstraints: baseMultipliers,
+    multipliersAfterConstraints: baseMultipliers,
+    updatedRegistry: input.registry,
+  };
+
   const refinancingResult = evaluateRefinancingConstraint({
     margin: input.margin,
     baselineMargin: input.baselineMargin,
@@ -59,9 +74,16 @@ export function simulateConstraintsStep(
     updatedRegistry
   );
 
+  const multipliersAfterConstraints = {
+    ...constrainedMultipliers,
+    cost: Math.max(0.85, Math.min(1.6, constrainedMultipliers.cost)),
+    recovery: Math.max(0.85, Math.min(1.2, constrainedMultipliers.recovery)),
+    load: Math.max(0.85, Math.min(2.2, constrainedMultipliers.load)),
+  };
+
   return {
     multipliersBeforeConstraints: baseMultipliers,
-    multipliersAfterConstraints: constrainedMultipliers,
+    multipliersAfterConstraints,
     updatedRegistry,
   };
 }

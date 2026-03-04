@@ -24,6 +24,7 @@ const EXEC_SUSTAIN_THRESHOLD = 0.8;
 const EXEC_COLLAPSE_THRESHOLD = 0.6;
 const MIN_STEPS_BEFORE_STEADY = 5;
 const REQUIRED_STABLE_TICKS = 3;
+const ANALYSIS_HORIZON = 16;
 
 function loadHistory(key: string) {
   if (typeof window === "undefined") return [];
@@ -121,6 +122,10 @@ export default function PilotFastighetPage() {
   const [executiveSummary, setExecutiveSummary] =
     useState<ReturnType<typeof calculateExecutiveSummary> | null>(null);
   const [steadyStateStep, setSteadyStateStep] = useState<number | null>(null);
+  const [selectedQuarter, setSelectedQuarter] = useState<number | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const isDraggingRef = useRef(false);
+  const svgRef = useRef<SVGSVGElement | null>(null);
 
   const engineARef = useRef<RealEstateEngine | null>(null);
   const engineBRef = useRef<RealEstateEngine | null>(null);
@@ -242,18 +247,6 @@ export default function PilotFastighetPage() {
     : defaultEngineState(riskStateB);
   const activeState =
     activeScenario === "A" ? stateA : stateB;
-
-  const systemStatus = (() => {
-    if (!executiveSummary) return "STABLE";
-
-    const structural = executiveSummary.structuralStatus;
-
-    if (structural === "structural_collapse") return "COLLAPSED";
-    if (structural === "marginal_exceedance" || structural === "functioning_but_doomed") {
-      return "PRESSURED";
-    }
-    return "STABLE";
-  })();
 
   const activeRiskState = activeScenario === "A" ? riskStateA : riskStateB;
   const setActiveRiskState = activeScenario === "A" ? setRiskStateA : setRiskStateB;
@@ -381,7 +374,9 @@ export default function PilotFastighetPage() {
   const baselineB = marginHistoryB.length > 0 ? marginHistoryB[0] : 0;
   const finalB =
     marginHistoryB.length > 0 ? marginHistoryB[marginHistoryB.length - 1] : 0;
-  const structuralStatusA = "Baseline reference";
+  const structuralStatusA = executiveSummary
+    ? executiveSummary.structuralStatusA
+    : "stable";
 
   const THEME = {
     dark: {
@@ -411,8 +406,33 @@ export default function PilotFastighetPage() {
   const theme = THEME[uiTheme];
   const t = UI_TEXT[uiLanguage];
 
+  const systemStatus = (() => {
+    if (!executiveSummary) return "IDLE";
+
+    const structuralB = executiveSummary.structuralStatusB;
+
+    if (structuralB === "structural_collapse") return "COLLAPSED";
+    if (structuralB === "structural_breakdown" || structuralB === "functioning_but_doomed") {
+      return "PRESSURED";
+    }
+    return "STABLE";
+  })();
+
+  const systemStatusLabel =
+    executiveSummary
+      ? `Scenario B: ${
+          t.structuralStatus[
+            executiveSummary.structuralStatusB ?? "stable"
+          ]
+        }`
+      : "IDLE";
+
+  const systemStatusMinLine = executiveSummary
+    ? `Min A: ${executiveSummary.minimumMarginA.toFixed(2)} | Min B: ${executiveSummary.minimumMarginB.toFixed(2)}`
+    : null;
+
   const structuralStatusKey = executiveSummary
-    ? executiveSummary.structuralStatus
+    ? executiveSummary.structuralStatusB
     : "stable";
 
   const interpretation = executiveSummary
@@ -420,6 +440,8 @@ export default function PilotFastighetPage() {
         const deltaSentence = t.common.deltaSentence(executiveSummary.deltaMargin);
         return structuralStatusKey === "structural_collapse"
           ? t.common.interpretation.structural_collapse(deltaSentence)
+          : structuralStatusKey === "structural_breakdown"
+          ? t.common.interpretation.marginal_exceedance(deltaSentence)
           : structuralStatusKey === "marginal_exceedance"
           ? t.common.interpretation.marginal_exceedance(deltaSentence)
           : structuralStatusKey === "functioning_but_doomed"
@@ -811,11 +833,29 @@ export default function PilotFastighetPage() {
                     ? "#ef4444"
                     : systemStatus === "PRESSURED"
                       ? "#f59e0b"
-                      : "#22c55e",
+                      : systemStatus === "IDLE"
+                        ? "#9CA3AF"
+                        : "#22c55e",
               }}
             >
-              {systemStatus}
+              {systemStatusLabel}
             </div>
+            {executiveSummary && (
+              <div style={{ fontSize: "13px", marginTop: "6px" }}>
+                <span style={{ color: executiveSummary?.structuralStatusA === "stable" ? "#22c55e" : "#f97316", fontWeight: 600 }}>
+                  Baseline (A): {t.structuralStatus[executiveSummary?.structuralStatusA ?? "stable"]}
+                </span>
+                {"  |  "}
+                <span style={{ color: executiveSummary?.structuralStatusB === "structural_collapse" ? "#ef4444" : executiveSummary?.structuralStatusB === "structural_breakdown" ? "#f97316" : "#9CA3AF", fontWeight: 600 }}>
+                  Decision (B): {t.structuralStatus[executiveSummary?.structuralStatusB ?? "stable"]}
+                </span>
+              </div>
+            )}
+            {systemStatusMinLine != null && (
+              <div style={{ fontSize: "12px", color: "#9CA3AF", marginTop: "4px" }}>
+                {systemStatusMinLine}
+              </div>
+            )}
           </div>
 
           <div>
@@ -853,6 +893,43 @@ export default function PilotFastighetPage() {
           border: `1px solid ${theme.graphBorder}`,
           borderRadius: "8px",
           background: theme.graphBg,
+          position: "relative",
+          cursor: isDragging ? "grabbing" : "grab",
+        }}
+        onMouseDown={(e) => {
+          isDraggingRef.current = true;
+          setIsDragging(true);
+          const rect = svgRef.current?.getBoundingClientRect();
+          if (!rect) return;
+          const clickX = e.clientX - rect.left;
+          const width = rect.width;
+          const raw = (clickX / width) * marginHistoryA.length;
+          const q = Math.min(
+            marginHistoryA.length,
+            Math.max(1, Math.round(raw))
+          );
+          setSelectedQuarter(q);
+        }}
+        onMouseMove={(e) => {
+          if (!isDraggingRef.current) return;
+          const rect = svgRef.current?.getBoundingClientRect();
+          if (!rect) return;
+          const clickX = e.clientX - rect.left;
+          const width = rect.width;
+          const raw = (clickX / width) * marginHistoryA.length;
+          const q = Math.min(
+            marginHistoryA.length,
+            Math.max(1, Math.round(raw))
+          );
+          setSelectedQuarter(q);
+        }}
+        onMouseUp={() => {
+          isDraggingRef.current = false;
+          setIsDragging(false);
+        }}
+        onMouseLeave={() => {
+          isDraggingRef.current = false;
+          setIsDragging(false);
         }}
       >
         <div
@@ -912,7 +989,7 @@ export default function PilotFastighetPage() {
             {t.common.legend.grid}
           </span>
         </div>
-        <svg width={600} height={300} style={{ display: "block", background: "#0e1117", border: "1px solid #2f333a", borderRadius: "4px" }}>
+        <svg ref={svgRef} width={600} height={300} style={{ display: "block", background: "#0e1117", border: "1px solid #2f333a", borderRadius: "4px" }}>
           {(() => {
             const totalSteps = Math.max(marginHistoryA.length, marginHistoryB.length, 1);
             const scaleX = (i: number) => {
@@ -1004,6 +1081,17 @@ export default function PilotFastighetPage() {
                 {tippingMarginIndexB != null && marginHistoryB[tippingMarginIndexB] != null && (
                   <circle cx={scaleX(tippingMarginIndexB)} cy={scaleY(marginHistoryB[tippingMarginIndexB])} r={4} fill="#f97316" />
                 )}
+                {selectedQuarter != null &&
+                  marginHistoryA.length > 0 && (
+                    <line
+                      x1={scaleX(selectedQuarter - 0.5)}
+                      x2={scaleX(selectedQuarter - 0.5)}
+                      y1={0}
+                      y2={300}
+                      stroke="#60A5FA"
+                      strokeWidth={2}
+                    />
+                  )}
               </>
             );
           })()}
@@ -1044,6 +1132,11 @@ export default function PilotFastighetPage() {
         >
           Kvartal
         </div>
+        {selectedQuarter != null && (
+          <div style={{ fontSize: "12px", color: "#9CA3AF", marginTop: "8px" }}>
+            Q{selectedQuarter} — Margin A: {marginHistoryA[selectedQuarter - 1]?.toFixed(2) ?? "—"} | Margin B: {marginHistoryB[selectedQuarter - 1]?.toFixed(2) ?? "—"}
+          </div>
+        )}
       </div>
 
       {!isRunning && executiveSummary && (
@@ -1071,7 +1164,7 @@ export default function PilotFastighetPage() {
             finalA={finalA}
             baselineB={baselineB}
             finalB={finalB}
-            structuralStatusA={structuralStatusA}
+            structuralStatusA={t.structuralStatus[structuralStatusA]}
             structuralStatusB={t.structuralStatus[structuralStatusKey]}
             deltaMargin={executiveSummary.deltaMargin}
             tippingStep={executiveSummary.tippingStep}
@@ -1702,6 +1795,15 @@ export default function PilotFastighetPage() {
                     ? `Sustain threshold crossed at Q${sustainBreachStep}`
                     : "Sustain threshold not crossed"}
                 </span>
+              </div>
+              <div
+                style={{
+                  fontSize: "11px",
+                  color: "rgba(156,163,175,0.8)",
+                  marginTop: "2px",
+                }}
+              >
+                Minimum structural capital buffer required for long-term stability.
               </div>
               <div
                 style={{
