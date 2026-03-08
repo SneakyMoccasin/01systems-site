@@ -514,8 +514,8 @@ export default function PixiStage() {
       if (!gfx) continue;
       
       // APPLY TRANSFORM TO PIXI GRAPHICS
-      gfx.x = ent.transform.x;
-      gfx.y = ent.transform.y;
+      gfx.x = ent.transform?.x ?? 0;
+      gfx.y = ent.transform?.y ?? 0;
     }
 
   }, []);
@@ -1409,8 +1409,8 @@ export default function PixiStage() {
               ent.transform.y = Math.max(40, Math.min(app.screen.height - 40, ent.transform.y));
             }
           }
-          entityContainer.x = ent.transform?.x ?? ent.x ?? entityContainer.x;
-          entityContainer.y = ent.transform?.y ?? ent.y ?? entityContainer.y;
+          entityContainer.x = ent.transform?.x ?? entityContainer.x;
+          entityContainer.y = ent.transform?.y ?? entityContainer.y;
         }
 
         // Enable drag & drop
@@ -1572,8 +1572,8 @@ export default function PixiStage() {
           // Non-units are frozen in place
           if (ent.type === "unit" || (ent as any).category === "unit") {
             if (ent.transform) {
-              gfx.x = ent.transform.x;
-              gfx.y = ent.transform.y;
+              gfx.x = ent.transform?.x ?? 0;
+              gfx.y = ent.transform?.y ?? 0;
             }
           } else {
             // Non-units must follow transform exactly
@@ -1647,7 +1647,9 @@ export default function PixiStage() {
                 }
               }
             }
-            worldRef.current.applyFormation(mode, target);
+            if (mode !== "none") {
+              worldRef.current.applyFormation(mode, target);
+            }
             return; // stop further processing
           }
         }

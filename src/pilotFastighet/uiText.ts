@@ -39,9 +39,9 @@ export const UI_TEXT = {
       tippingPrefix: "Tipping",
       narrative: {
         withTipping: (delta: string, status: string, tippingQ: string) =>
-          `Om Scenario B implementeras innebär det en genomsnittlig marginalförändring på ${delta} p.p. jämfört med Scenario A. Systemets strukturella status klassificeras som "${status}". Tipping inträffar vid ${tippingQ}, vilket indikerar en förhöjd riskprofil inom horisonten.`,
+          `Om Alternative implementeras innebär det en genomsnittlig marginalförändring på ${delta} p.p. jämfört med Current. Systemets strukturella status klassificeras som "${status}". Tipping inträffar vid ${tippingQ}, vilket indikerar en förhöjd riskprofil inom horisonten.`,
         noTipping: (delta: string, status: string) =>
-          `Om Scenario B implementeras innebär det en genomsnittlig marginalförändring på ${delta} p.p. jämfört med Scenario A. Systemets strukturella status klassificeras som "${status}". Ingen tipping identifieras inom horisonten, vilket indikerar en mer robust utveckling under antagandena.`,
+          `Om Proposed implementeras innebär det en genomsnittlig marginalförändring på ${delta} p.p. jämfört med Current. Systemets strukturella status klassificeras som "${status}". Ingen tipping identifieras inom horisonten, vilket indikerar en mer robust utveckling under antagandena.`,
       },
       interpretation: {
         stable: (delta: string) =>
@@ -55,13 +55,13 @@ export const UI_TEXT = {
       },
       deltaSentence: (delta: number) =>
         delta < 0
-          ? "Scenario B innebär en försämring av genomsnittlig marginal jämfört med Scenario A."
+          ? "Alternative innebär en försämring av genomsnittlig marginal jämfört med Current."
           : delta > 0
-          ? "Scenario B innebär en förbättring av genomsnittlig marginal jämfört med Scenario A."
-          : "Genomsnittlig marginal är oförändrad mellan scenarierna.",
+          ? "Alternative innebär en förbättring av genomsnittlig marginal jämfört med Current."
+          : "Genomsnittlig marginal är oförändrad mellan Current och Alternative.",
       legend: {
-        scenarioA: "Scenario A (Baseline)",
-        scenarioB: "Scenario B (Decision)",
+        scenarioA: "Current Strategy",
+        scenarioB: "Alternative Strategy",
         sustain: "Sustain threshold",
         zeroLine: "0-line",
         grid: "Grid (reference)",
@@ -113,9 +113,9 @@ export const UI_TEXT = {
       tippingPrefix: "Tipping",
       narrative: {
         withTipping: (delta: string, status: string, tippingQ: string) =>
-          `If Scenario B is implemented, the average margin changes by ${delta} p.p. compared to Scenario A. The system's structural status is classified as "${status}". Tipping occurs at ${tippingQ}, indicating elevated risk within the horizon.`,
+          `If Alternative is implemented, the average margin changes by ${delta} p.p. compared to Current. The system's structural status is classified as "${status}". Tipping occurs at ${tippingQ}, indicating elevated risk within the horizon.`,
         noTipping: (delta: string, status: string) =>
-          `If Scenario B is implemented, the average margin changes by ${delta} p.p. compared to Scenario A. The system's structural status is classified as "${status}". No tipping is identified within the horizon, indicating a more robust trajectory under the assumptions.`,
+          `If Alternative is implemented, the average margin changes by ${delta} p.p. compared to Current. The system's structural status is classified as "${status}". No tipping is identified within the horizon, indicating a more robust trajectory under the assumptions.`,
       },
       interpretation: {
         stable: (delta: string) =>
@@ -129,13 +129,13 @@ export const UI_TEXT = {
       },
       deltaSentence: (delta: number) =>
         delta < 0
-          ? "Scenario B reduces the average margin compared to Scenario A."
+          ? "Alternative reduces the average margin compared to Current."
           : delta > 0
-          ? "Scenario B improves the average margin compared to Scenario A."
-          : "Average margin is unchanged between scenarios.",
+          ? "Alternative improves the average margin compared to Current."
+          : "Average margin is unchanged between Current and Alternative.",
       legend: {
-        scenarioA: "Scenario A (Baseline)",
-        scenarioB: "Scenario B (Decision)",
+        scenarioA: "Current Strategy",
+        scenarioB: "Alternative Strategy",
         sustain: "Sustain threshold",
         zeroLine: "0-line",
         grid: "Grid (reference)",

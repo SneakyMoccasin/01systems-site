@@ -92,16 +92,16 @@ export const SnapshotCompare: React.FC<Props> = ({
               marginBottom: "12px",
             }}
           >
-            Scenario A
+            Current Strategy
           </div>
           <div style={{ fontSize: "12px", color: "#9CA3AF", marginBottom: "4px" }}>
-            Baseline
+            Start
           </div>
           <div style={{ fontSize: "15px", fontWeight: 500, color: "#F3F4F6", marginBottom: "12px" }}>
             {baselineA.toFixed(2)}
           </div>
           <div style={{ fontSize: "12px", color: "#9CA3AF", marginBottom: "4px" }}>
-            Final
+            End
           </div>
           <div style={{ fontSize: "15px", fontWeight: 500, color: "#F3F4F6", marginBottom: "12px" }}>
             {finalA.toFixed(2)}
@@ -129,16 +129,16 @@ export const SnapshotCompare: React.FC<Props> = ({
               marginBottom: "12px",
             }}
           >
-            Scenario B
+            Alternative Strategy
           </div>
           <div style={{ fontSize: "12px", color: "#9CA3AF", marginBottom: "4px" }}>
-            Baseline
+            Start
           </div>
           <div style={{ fontSize: "15px", fontWeight: 500, color: "#F3F4F6", marginBottom: "12px" }}>
             {baselineB.toFixed(2)}
           </div>
           <div style={{ fontSize: "12px", color: "#9CA3AF", marginBottom: "4px" }}>
-            Final
+            End
           </div>
           <div style={{ fontSize: "15px", fontWeight: 500, color: "#F3F4F6", marginBottom: "12px" }}>
             {finalB.toFixed(2)}

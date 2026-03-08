@@ -49,9 +49,9 @@ export function ExecutiveSummaryCard({
       tippingLine = `Tipping unchanged: Q${tippingStepA}`;
     }
   } else if (tippingStepA != null && tippingStepB == null) {
-    tippingLine = `Scenario B avoids tipping seen in A (Q${tippingStepA}).`;
+    tippingLine = `Alternative avoids tipping seen in Current (Q${tippingStepA}).`;
   } else if (tippingStepA == null && tippingStepB != null) {
-    tippingLine = `New tipping in Scenario B: Q${tippingStepB}.`;
+    tippingLine = `New tipping in Alternative: Q${tippingStepB}.`;
   }
 
   const decisionImpactBackground =
@@ -74,91 +74,39 @@ export function ExecutiveSummaryCard({
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
+          gridTemplateColumns: "repeat(3, 1fr)",
           gap: "28px",
-          marginBottom: "20px",
+          marginBottom: "28px",
         }}
       >
         <div>
           <div
             style={{
-              fontSize: "12px",
-              letterSpacing: "0.08em",
-              color: theme.subtext,
-              marginBottom: "6px",
-            }}
-          >
-            {t.sections.systemStatus}
-          </div>
-          <div
-            style={{
-              fontSize: "20px",
+              fontSize: "28px",
               fontWeight: 600,
-              color:
-                structuralStatusKey === "structural_collapse"
-                  ? "#B91C1C"
-                  : structuralStatusKey === "marginal_exceedance"
-                  ? "#B45309"
-                  : structuralStatusKey === "functioning_but_doomed"
-                  ? "#92400E"
-                  : "#F3F4F6",
-            }}
-          >
-            {t.structuralStatus[structuralStatusKey]}
-          </div>
-          <div
-            style={{
-              fontSize: "13px",
-              color: theme.subtext,
-              marginTop: "6px",
-            }}
-          >
-            {t.common.compressionLabel}: {executiveSummary.compression.toFixed(2)} p.p.
-          </div>
-          <div
-            style={{
-              fontSize: "11px",
-              color: "rgba(156,163,175,0.8)",
-              marginTop: "2px",
-            }}
-          >
-            Measures how tightly the capital buffer is compressed under stress over time.
-          </div>
-        </div>
-
-        <div>
-          <div
-            style={{
-              fontSize: "12px",
-              letterSpacing: "0.08em",
-              color: theme.subtext,
-              marginBottom: "6px",
-            }}
-          >
-            {t.sections.effectOfDecision}
-          </div>
-          <div
-            style={{
-              fontSize: "24px",
-              fontWeight: 600,
+              lineHeight: 1,
               color:
                 executiveSummary.deltaMargin < 0
-                  ? "#B91C1C"
+                  ? "#ef4444"
                   : executiveSummary.deltaMargin > 0
-                  ? "#065F46"
+                  ? "#22c55e"
                   : "#F3F4F6",
             }}
           >
-            {executiveSummary.deltaMargin.toFixed(2)} %
+            {executiveSummary.deltaMargin < 0 && "▼ "}
+            {executiveSummary.deltaMargin > 0 && "▲ "}
+            {executiveSummary.deltaMargin > 0 ? "+" : ""}
+            {executiveSummary.deltaMargin.toFixed(2)} p.p.
           </div>
           <div
             style={{
-              fontSize: "13px",
+              fontSize: "12px",
+              opacity: 0.7,
               color: theme.subtext,
               marginTop: "6px",
             }}
           >
-            {t.common.avgMarginChangeLabel}
+            Decision impact
           </div>
         </div>
 
@@ -280,7 +228,7 @@ export function ExecutiveSummaryCard({
             </div>
           )}
           <div>
-            <span style={{ color: theme.subtext }}>Scenario B:&nbsp;</span>
+            <span style={{ color: theme.subtext }}>Alternative:&nbsp;</span>
             <span>{t.structuralStatus[structuralStatusKey]}</span>
           </div>
         </div>
@@ -290,6 +238,8 @@ export function ExecutiveSummaryCard({
         style={{
           borderTop: `1px solid ${theme.panelBorder}`,
           paddingTop: "20px",
+          marginTop: "20px",
+          marginBottom: "24px",
         }}
       >
         <div
@@ -311,34 +261,6 @@ export function ExecutiveSummaryCard({
           }}
         >
           {interpretation}
-        </div>
-      </div>
-
-      <div
-        style={{
-          marginTop: "28px",
-          paddingTop: "20px",
-          borderTop: `1px solid ${theme.panelBorder}`,
-        }}
-      >
-        <div
-          style={{
-            fontSize: "12px",
-            letterSpacing: "0.08em",
-            color: theme.subtext,
-            marginBottom: "8px",
-          }}
-        >
-          {t.sections.scenarioNarrative}
-        </div>
-        <div
-          style={{
-            fontSize: "14px",
-            lineHeight: 1.6,
-            color: theme.text,
-          }}
-        >
-          {narrativeText}
         </div>
       </div>
     </div>

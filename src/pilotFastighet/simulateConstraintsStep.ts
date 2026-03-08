@@ -36,9 +36,28 @@ export function simulateConstraintsStep(
     sensitivity: baseMultipliers.sensitivity,
   });
 
+  const updatedRegistry = { ...input.registry };
+
+  const rawThreshold = (input.riskState as Record<string, unknown>).sustainThreshold;
+  const sustainThreshold =
+    typeof rawThreshold === "number" ? rawThreshold : 0.8;
+
+  if (
+    input.margin != null &&
+    input.margin < sustainThreshold &&
+    updatedRegistry.RefinancingConstraint.lifecycle !== "ACTIVE"
+  ) {
+    updatedRegistry.RefinancingConstraint = {
+      ...updatedRegistry.RefinancingConstraint,
+      lifecycle: "ACTIVE",
+      activatedAtStep: input.step,
+      lastUpdatedStep: input.step,
+    };
+  }
+
   return {
     multipliersBeforeConstraints: baseMultipliers,
     multipliersAfterConstraints: baseMultipliers,
-    updatedRegistry: input.registry,
+    updatedRegistry,
   };
 }

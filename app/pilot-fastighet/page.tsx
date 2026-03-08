@@ -129,6 +129,7 @@ export default function PilotFastighetPage() {
     useState<ReturnType<typeof calculateExecutiveSummary> | null>(null);
   const [steadyStateStep, setSteadyStateStep] = useState<number | null>(null);
   const [selectedQuarter, setSelectedQuarter] = useState<number | null>(null);
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const isDraggingRef = useRef(false);
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -260,7 +261,7 @@ export default function PilotFastighetPage() {
   function freezeScenarioA() {
     const snap: FrozenSnapshot = {
       snapshotId: new Date().toISOString(),
-      label: "Scenario A",
+      label: "Current Strategy",
       createdAt: Date.now(),
       engineState: JSON.parse(JSON.stringify(stateA)),
       metadata: {
@@ -279,7 +280,7 @@ export default function PilotFastighetPage() {
   function freezeScenarioB() {
     const snap: FrozenSnapshot = {
       snapshotId: new Date().toISOString(),
-      label: "Scenario B",
+      label: "Alternative Strategy",
       createdAt: Date.now(),
       engineState: JSON.parse(JSON.stringify(stateB)),
       metadata: {
@@ -417,7 +418,7 @@ export default function PilotFastighetPage() {
 
   const systemStatusLabel =
     executiveSummary
-      ? `Scenario B: ${
+      ? `Alternative Strategy: ${
           t.structuralStatus[
             executiveSummary.structuralStatusB ?? "stable"
           ]
@@ -425,7 +426,7 @@ export default function PilotFastighetPage() {
       : "IDLE";
 
   const systemStatusMinLine = executiveSummary
-    ? `Min A: ${executiveSummary.minimumMarginA.toFixed(2)} | Min B: ${executiveSummary.minimumMarginB.toFixed(2)}`
+    ? `Min Current: ${executiveSummary.minimumMarginA.toFixed(2)} | Min Alternative: ${executiveSummary.minimumMarginB.toFixed(2)}`
     : null;
 
   const structuralStatusKey = executiveSummary
@@ -560,7 +561,7 @@ export default function PilotFastighetPage() {
             cursor: "pointer",
           }}
         >
-          A
+          Current
         </button>
         <button
           type="button"
@@ -577,7 +578,7 @@ export default function PilotFastighetPage() {
             cursor: "pointer",
           }}
         >
-          B
+          Alternative
         </button>
         <button
           type="button"
@@ -594,7 +595,7 @@ export default function PilotFastighetPage() {
             cursor: "pointer",
           }}
         >
-          A+B
+          Both
         </button>
         <button
           type="button"
@@ -617,7 +618,7 @@ export default function PilotFastighetPage() {
             >
               {freezeFlash === "A" ? "✓" : "✚"}
             </span>
-            Freeze A
+            Freeze Current
           </span>
         </button>
         <button
@@ -641,7 +642,7 @@ export default function PilotFastighetPage() {
             >
               {freezeFlash === "B" ? "✓" : "✚"}
             </span>
-            Freeze B
+            Freeze Alternative
           </span>
         </button>
         <button
@@ -671,6 +672,7 @@ export default function PilotFastighetPage() {
                 tippingThreshold: EXEC_TIPPING_THRESHOLD,
                 sustainThreshold: EXEC_SUSTAIN_THRESHOLD,
                 collapseThreshold: EXEC_COLLAPSE_THRESHOLD,
+                tippingStepB: tippingMarginIndexB != null ? tippingMarginIndexB + 1 : null,
               });
               setExecutiveSummary(summary);
               console.log("Executive summary", summary);
@@ -813,113 +815,121 @@ export default function PilotFastighetPage() {
 
       <div
         style={{
-          marginBottom: "32px",
-          padding: "16px 20px",
-          background: "#111827",
-          border: "1px solid #1f2937",
-          borderRadius: "8px",
+          marginTop: "24px",
+          display: "grid",
+          gridTemplateColumns: "420px 1fr",
+          gap: "24px",
+          alignItems: "start",
         }}
       >
-        {/* Top Row – Core Margins */}
-        <div style={{ display: "flex", gap: "24px", marginBottom: "12px", flexWrap: "wrap" }}>
-          <div>
-            <div style={{ fontSize: "12px", color: "#9CA3AF" }}>Margin A</div>
-            <div style={{ fontSize: "18px", fontWeight: 600 }}>
-              {stateA.margin.toFixed(5)}
-            </div>
-          </div>
-
-          <div>
-            <div style={{ fontSize: "12px", color: "#9CA3AF" }}>Margin B</div>
-            <div style={{ fontSize: "18px", fontWeight: 600 }}>
-              {stateB.margin.toFixed(5)}
-            </div>
-          </div>
-
-          <div>
-            <div style={{ fontSize: "12px", color: "#9CA3AF" }}>Δ (B−A)</div>
-            <div style={{ fontSize: "16px", fontWeight: 600 }}>
-              {(stateB.margin - stateA.margin).toFixed(5)}
-            </div>
-          </div>
-
-          <div>
-            <div style={{ fontSize: "12px", color: "#9CA3AF" }}>Quarter</div>
-            <div style={{ fontSize: "14px", fontWeight: 600, opacity: 0.8 }}>
-              Q{activeState.step}
-            </div>
+        <div style={{ position: "sticky", top: "16px" }}>
+          <div style={{ marginBottom: "24px" }}>
+            {Object.entries(groupedParameters).map(([groupName, params]) => (
+              <div
+                key={groupName}
+                style={{
+                  marginBottom: "24px",
+                  padding: "16px",
+                  background: "#1a1a1a",
+                  border: "1px solid #2f333a",
+                  borderRadius: "8px",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    marginBottom: "12px",
+                    color: "#9ca3af",
+                  }}
+                >
+                  {groupName}
+                </div>
+                {params.map((param) => (
+                  <div
+                    key={param.key}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: "10px",
+                    }}
+                  >
+                    <span style={{ fontSize: "13px" }}>{param.label}</span>
+                    <select
+                      value={activeRiskState[param.key]}
+                      onChange={(e) => {
+                        setIsDirty(true);
+                        setActiveRiskState({
+                          ...activeRiskState,
+                          [param.key]: e.target.value as RiskLevel,
+                        });
+                      }}
+                      style={{
+                        background: "#0e1117",
+                        color: "#e6edf3",
+                        border: "1px solid #2f333a",
+                        borderRadius: "6px",
+                        padding: "4px 8px",
+                      }}
+                    >
+                      <option value="LOW">LOW</option>
+                      <option value="MODERATE">MODERATE</option>
+                      <option value="HIGH">HIGH</option>
+                      <option value="SEVERE">SEVERE</option>
+                    </select>
+                  </div>
+                ))}
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Status Row */}
-        <div style={{ display: "flex", gap: "24px", flexWrap: "wrap" }}>
-          <div>
-            <div style={{ fontSize: "12px", color: "#9CA3AF" }}>System Status</div>
-            <div
-              style={{
-                fontSize: "18px",
-                fontWeight: 600,
-                color:
-                  systemStatus === "COLLAPSED"
-                    ? "#ef4444"
-                    : systemStatus === "PRESSURED"
-                      ? "#f59e0b"
-                      : systemStatus === "IDLE"
-                        ? "#9CA3AF"
-                        : "#22c55e",
-              }}
-            >
-              {systemStatusLabel}
-            </div>
-            {executiveSummary && (
-              <div style={{ fontSize: "13px", marginTop: "6px" }}>
-                <span style={{ color: executiveSummary?.structuralStatusA === "stable" ? "#22c55e" : "#f97316", fontWeight: 600 }}>
-                  Baseline (A): {t.structuralStatus[executiveSummary?.structuralStatusA ?? "stable"]}
-                </span>
-                {"  |  "}
-                <span style={{ color: executiveSummary?.structuralStatusB === "structural_collapse" ? "#ef4444" : executiveSummary?.structuralStatusB === "structural_breakdown" ? "#f97316" : "#9CA3AF", fontWeight: 600 }}>
-                  Decision (B): {t.structuralStatus[executiveSummary?.structuralStatusB ?? "stable"]}
-                </span>
+        <div>
+          {/* Impact panel – margins above graph */}
+          <div
+            style={{
+              marginBottom: "24px",
+              padding: "16px 20px",
+              background: "#111827",
+              border: "1px solid #1f2937",
+              borderRadius: "8px",
+            }}
+          >
+            <div style={{ display: "flex", gap: "24px", flexWrap: "wrap" }}>
+              <div>
+                <div style={{ fontSize: "12px", color: "#9CA3AF" }}>Current Strategy margin</div>
+                <div style={{ fontSize: "18px", fontWeight: 600 }}>
+                  {stateA.margin.toFixed(5)}
+                </div>
               </div>
-            )}
-            {systemStatusMinLine != null && (
-              <div style={{ fontSize: "12px", color: "#9CA3AF", marginTop: "4px" }}>
-                {systemStatusMinLine}
+              <div>
+                <div style={{ fontSize: "12px", color: "#9CA3AF" }}>Alternative Strategy margin</div>
+                <div style={{ fontSize: "18px", fontWeight: 600 }}>
+                  {stateB.margin.toFixed(5)}
+                </div>
               </div>
-            )}
-          </div>
-
-          <div>
-            <div style={{ fontSize: "12px", color: "#9CA3AF" }}>Capital Constraint</div>
-            <div
-              style={{
-                fontSize: "18px",
-                fontWeight: 600,
-                color:
-                  activeState.registry.RefinancingConstraint.lifecycle === "ACTIVE"
-                    ? "#ef4444"
-                    : "#22c55e",
-              }}
-            >
-              {activeState.registry.RefinancingConstraint.lifecycle === "ACTIVE"
-                ? "ACTIVE"
-                : "NONE"}
+              <div>
+                <div style={{ fontSize: "12px", color: "#9CA3AF" }}>Δ Impact</div>
+                <div style={{ fontSize: "16px", fontWeight: 600 }}>
+                  {(stateB.margin - stateA.margin).toFixed(5)}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      <div
-        style={{
-          marginTop: "32px",
-          marginBottom: "12px",
-          padding: "12px 16px",
-          border: `1px solid ${theme.graphBorder}`,
-          borderRadius: "8px",
-          background: theme.graphBg,
-          position: "relative",
-          cursor: isDragging ? "grabbing" : "grab",
-        }}
+          {/* Margin trajectory graph */}
+          <div
+            style={{
+              marginBottom: "12px",
+              padding: "12px 16px",
+              width: "100%",
+              border: `1px solid ${theme.graphBorder}`,
+              borderRadius: "8px",
+              background: theme.graphBg,
+              position: "relative",
+              cursor: isDragging ? "grabbing" : "grab",
+            }}
         onMouseDown={(e) => {
           isDraggingRef.current = true;
           setIsDragging(true);
@@ -971,7 +981,7 @@ export default function PilotFastighetPage() {
             <span
               style={{
                 width: "12px",
-                borderTop: "2px solid #3b82f6",
+                borderTop: "2px solid #2563eb",
               }}
             />
             {t.common.legend.scenarioA}
@@ -980,7 +990,7 @@ export default function PilotFastighetPage() {
             <span
               style={{
                 width: "12px",
-                borderTop: "2px solid #f97316",
+                borderTop: "2px dashed #2563eb",
               }}
             />
             {t.common.legend.scenarioB}
@@ -1014,56 +1024,97 @@ export default function PilotFastighetPage() {
             {t.common.legend.grid}
           </span>
         </div>
-        <svg ref={svgRef} width={600} height={300} style={{ display: "block", background: "#0e1117", border: "1px solid #2f333a", borderRadius: "4px" }}>
+        <svg
+          ref={svgRef}
+          viewBox="0 0 600 300"
+          preserveAspectRatio="none"
+          width="100%"
+          height={480}
+          style={{ display: "block", background: "#ffffff", border: "1px solid #e5e7eb", borderRadius: "4px", minHeight: 480 }}
+          onMouseMove={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const LEFT_PADDING = 55;
+            const graphWidth = 600 - LEFT_PADDING - 10;
+            const viewBoxX = (e.clientX - rect.left) / rect.width * 600;
+            const x = viewBoxX - LEFT_PADDING;
+            const quarterWidth =
+              graphWidth / Math.max(marginHistoryA.length - 1, 1);
+            const clampedX = Math.max(0, Math.min(x, graphWidth));
+            const index = Math.round(clampedX / quarterWidth);
+            if (index >= 0 && index < marginHistoryA.length) {
+              setHoverIndex(index);
+            } else {
+              setHoverIndex(null);
+            }
+          }}
+          onMouseLeave={() => setHoverIndex(null)}
+        >
           {(() => {
+            const startMargin = marginHistoryA.length > 0 ? marginHistoryA[0] : 1;
+            const LEFT_PADDING = 55;
             const totalSteps = Math.max(marginHistoryA.length, marginHistoryB.length, 1);
-            const scaleX = (i: number) => {
-              if (totalSteps <= 1) return 0;
-              return (i / (totalSteps - 1)) * 600;
+            const graphWidth = 600 - LEFT_PADDING - 10;
+            const scaleX = (index: number) => {
+              if (totalSteps <= 1) return LEFT_PADDING;
+              return LEFT_PADDING + (index / (totalSteps - 1)) * graphWidth;
             };
 
-            const allMargins = [...marginHistoryA, ...marginHistoryB];
+            const displayMarginB =
+              marginHistoryA.length > 0 && marginHistoryB.length > 0
+                ? [marginHistoryA[0], ...marginHistoryB.slice(1)]
+                : marginHistoryB;
 
-            const highestMargin =
+            const allMargins = [...marginHistoryA, ...displayMarginB];
+
+            const dataMax =
               allMargins.length > 0
                 ? Math.max(...allMargins)
                 : 1;
 
-            const lowestMargin =
+            const dataMin =
               allMargins.length > 0
                 ? Math.min(...allMargins)
                 : 0;
 
-            const yMax = Math.max(1.2, highestMargin);
-
-            const yMin = isAutoScale
-              ? lowestMargin - Math.abs(lowestMargin) * 0.1
-              : -1;
+            const padding = 0.1;
+            let yMax: number;
+            let yMin: number;
+            if (isAutoScale) {
+              yMax = dataMax + padding;
+              yMin = dataMin - padding;
+            } else {
+              yMax = 1.2;
+              yMin = -1.0;
+            }
 
             const range = yMax - yMin;
+            const TOP_PADDING = 12;
+            const BOTTOM_PADDING = 8;
             const gridLevels = 4;
-            const scaleY = (margin: number) =>
-              200 * (1 - (margin - yMin) / (yMax - yMin));
-            const zeroY = scaleY(0);
-            const textLabel = (value: number, y: number) => (
-              <text x={8} y={y - 6} fontSize="11" fill="#9CA3AF">
-                {value.toFixed(2)}
-              </text>
-            );
+            const scaleY = (value: number) =>
+              TOP_PADDING +
+              ((yMax - value) / (yMax - yMin)) * (300 - TOP_PADDING - BOTTOM_PADDING);
             const pointsA = marginHistoryA.map((m, i) => `${scaleX(i)},${scaleY(m)}`).join(" ");
-            const pointsB = marginHistoryB.map((m, i) => `${scaleX(i)},${scaleY(m)}`).join(" ");
+            const pointsB = displayMarginB.map((m, i) => `${scaleX(i)},${scaleY(m)}`).join(" ");
             const zeroBetween = yMin <= 0 && yMax >= 0;
+            const numYTicks = 9;
+            const yTickValues = Array.from({ length: numYTicks }, (_, i) =>
+              yMin + (range / (numYTicks - 1)) * i
+            );
+
+            const tippingIndex = tippingMarginIndexB ?? null;
+            const tippingMargin =
+              tippingIndex !== null && marginHistoryB[tippingIndex] !== undefined
+                ? marginHistoryB[tippingIndex]
+                : null;
+            const tippingY =
+              tippingMargin !== null ? scaleY(tippingMargin) : null;
+
             return (
               <>
-                {yMin < 0 && (
-                  <rect
-                    x={0}
-                    y={zeroY}
-                    width={400}
-                    height={200 - zeroY}
-                    fill="rgba(239, 68, 68, 0.08)"
-                  />
-                )}
+                <rect x={0} y={0} width={600} height={300} fill="white" />
+                {/* Y-axis line */}
+                <line x1={LEFT_PADDING} y1={0} x2={LEFT_PADDING} y2={300} stroke="#9ca3af" strokeWidth={1} />
                 {Array.from({ length: gridLevels }).map((_, i) => {
                   const value = yMin + (range / (gridLevels - 1)) * i;
                   const y = scaleY(value);
@@ -1071,18 +1122,18 @@ export default function PilotFastighetPage() {
                   return (
                     <line
                       key={`grid-${i}`}
-                      x1={0}
+                      x1={LEFT_PADDING}
                       x2={600}
                       y1={y}
                       y2={y}
-                      stroke="#374151"
+                      stroke="#94a3b8"
                       strokeWidth={1}
-                      opacity={0.35}
+                      strokeOpacity={0.18}
                     />
                   );
                 })}
                 <line
-                  x1={0}
+                  x1={LEFT_PADDING}
                   x2={600}
                   y1={scaleY(EXEC_SUSTAIN_THRESHOLD)}
                   y2={scaleY(EXEC_SUSTAIN_THRESHOLD)}
@@ -1091,12 +1142,22 @@ export default function PilotFastighetPage() {
                   strokeDasharray="6 4"
                   opacity={0.85}
                 />
-                {textLabel(yMax, scaleY(yMax))}
-                {textLabel(EXEC_SUSTAIN_THRESHOLD, scaleY(EXEC_SUSTAIN_THRESHOLD))}
-                {textLabel(yMin, scaleY(yMin))}
+                {yTickValues.map((value, i) => (
+                  <text
+                    key={`ytick-${i}`}
+                    x={LEFT_PADDING - 8}
+                    y={scaleY(value)}
+                    textAnchor="end"
+                    dominantBaseline="middle"
+                    fontSize="11"
+                    fill="#6b7280"
+                  >
+                    {value.toFixed(2)}
+                  </text>
+                ))}
                 {zeroBetween && (
                   <line
-                    x1={0}
+                    x1={LEFT_PADDING}
                     y1={scaleY(0)}
                     x2={600}
                     y2={scaleY(0)}
@@ -1104,25 +1165,118 @@ export default function PilotFastighetPage() {
                     strokeWidth={2}
                   />
                 )}
-                {showA && pointsA ? <polyline fill="none" stroke="#3b82f6" strokeWidth={1.5} points={pointsA} /> : null}
-                {showB && pointsB ? <polyline fill="none" stroke="#f97316" strokeWidth={1.5} points={pointsB} /> : null}
+                {tippingIndex !== null && tippingY !== null && (
+                  <rect
+                    x={scaleX(tippingIndex)}
+                    y={tippingY}
+                    width={scaleX(tippingIndex + 2) - scaleX(tippingIndex)}
+                    height={300 - tippingY}
+                    fill="#f97316"
+                    opacity={0.11}
+                  />
+                )}
+                {tippingIndex !== null && tippingY !== null && (
+                  <text
+                    x={scaleX(tippingIndex + 1)}
+                    y={tippingY + (300 - tippingY) / 2}
+                    fill="#ea580c"
+                    fontSize="12"
+                    fontWeight={500}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    opacity={0.9}
+                  >
+                    Tipping risk
+                  </text>
+                )}
+                {hoverIndex !== null && (
+                  <line
+                    x1={scaleX(hoverIndex)}
+                    x2={scaleX(hoverIndex)}
+                    y1={0}
+                    y2={300}
+                    stroke="#9ca3af"
+                    strokeDasharray="4 4"
+                    strokeOpacity={0.6}
+                  />
+                )}
+                {hoverIndex !== null && marginHistoryA[hoverIndex] !== undefined && (
+                  <circle
+                    cx={scaleX(hoverIndex)}
+                    cy={scaleY(marginHistoryA[hoverIndex])}
+                    r={4}
+                    fill="#2563eb"
+                    stroke="white"
+                    strokeWidth={1.5}
+                  />
+                )}
+                {hoverIndex !== null && marginHistoryB[hoverIndex] !== undefined && (
+                  <circle
+                    cx={scaleX(hoverIndex)}
+                    cy={scaleY(marginHistoryB[hoverIndex])}
+                    r={4}
+                    fill="#2563eb"
+                    stroke="white"
+                    strokeWidth={1.5}
+                  />
+                )}
+                {hoverIndex !== null && marginHistoryA[hoverIndex] !== undefined && (
+                  <g>
+                    <rect
+                      x={scaleX(hoverIndex) - 60}
+                      y={20}
+                      width={120}
+                      height={50}
+                      fill="#111"
+                      stroke="#333"
+                      rx={6}
+                    />
+                    <text
+                      x={scaleX(hoverIndex)}
+                      y={36}
+                      fill="white"
+                      fontSize="11"
+                      textAnchor="middle"
+                    >
+                      {`Q${hoverIndex + 1}`}
+                    </text>
+                    <text
+                      x={scaleX(hoverIndex)}
+                      y={50}
+                      fill="#2563eb"
+                      fontSize="11"
+                      textAnchor="middle"
+                    >
+                      {`Current: ${marginHistoryA[hoverIndex].toFixed(2)}`}
+                    </text>
+                    {marginHistoryB[hoverIndex] !== undefined && (
+                      <text
+                        x={scaleX(hoverIndex)}
+                        y={64}
+                        fill="#2563eb"
+                        fontSize="11"
+                        textAnchor="middle"
+                      >
+                        {`Alternative: ${marginHistoryB[hoverIndex].toFixed(2)}`}
+                      </text>
+                    )}
+                  </g>
+                )}
+                {marginHistoryA.length > 0 && (
+                  <circle
+                    cx={scaleX(0)}
+                    cy={scaleY(marginHistoryA[0])}
+                    r={4}
+                    fill="white"
+                    stroke="#2563eb"
+                    strokeWidth={2}
+                  />
+                )}
+                {showA && pointsA ? <polyline fill="none" stroke="#2563eb" strokeWidth={2} points={pointsA} /> : null}
+                {showB && pointsB ? <polyline fill="none" stroke="#2563eb" strokeWidth={2} strokeDasharray="6 4" points={pointsB} /> : null}
                 {showA && tippingMarginIndexA != null && marginHistoryA[tippingMarginIndexA] != null && (
                   <circle cx={scaleX(tippingMarginIndexA)} cy={scaleY(marginHistoryA[tippingMarginIndexA])} r={4} fill="#3b82f6" />
                 )}
-                {showB && tippingMarginIndexB != null && marginHistoryB[tippingMarginIndexB] != null && (
-                  <circle cx={scaleX(tippingMarginIndexB)} cy={scaleY(marginHistoryB[tippingMarginIndexB])} r={4} fill="#f97316" />
-                )}
-                {selectedQuarter != null &&
-                  marginHistoryA.length > 0 && (
-                    <line
-                      x1={scaleX(selectedQuarter - 0.5)}
-                      x2={scaleX(selectedQuarter - 0.5)}
-                      y1={0}
-                      y2={300}
-                      stroke="#60A5FA"
-                      strokeWidth={2}
-                    />
-                  )}
               </>
             );
           })()}
@@ -1130,6 +1284,12 @@ export default function PilotFastighetPage() {
         {(() => {
           const totalSteps = Math.max(marginHistoryA.length, marginHistoryB.length);
           if (totalSteps <= 0) return null;
+          const LEFT_PADDING = 55;
+          const graphWidth = 600 - LEFT_PADDING - 10;
+          const scaleX = (index: number) => {
+            if (totalSteps <= 1) return LEFT_PADDING;
+            return LEFT_PADDING + (index / (totalSteps - 1)) * graphWidth;
+          };
           const approxMaxLabels = 6;
           const labelInterval = Math.max(1, Math.ceil(totalSteps / approxMaxLabels));
           const indices: number[] = [];
@@ -1139,15 +1299,24 @@ export default function PilotFastighetPage() {
           return (
             <div
               style={{
+                position: "relative",
+                height: "18px",
                 marginTop: "4px",
-                display: "flex",
-                justifyContent: "space-between",
                 fontSize: "13px",
                 color: "#9CA3AF",
               }}
             >
               {indices.map((i) => (
-                <span key={i}>{`Q${i + 1}`}</span>
+                <span
+                  key={i}
+                  style={{
+                    position: "absolute",
+                    left: `${(scaleX(i) / 600) * 100}%`,
+                    transform: "translateX(-50%)",
+                  }}
+                >
+                  {`Q${i + 1}`}
+                </span>
               ))}
             </div>
           );
@@ -1165,9 +1334,68 @@ export default function PilotFastighetPage() {
         </div>
         {selectedQuarter != null && (
           <div style={{ fontSize: "12px", color: "#9CA3AF", marginTop: "8px" }}>
-            Q{selectedQuarter} — Margin A: {marginHistoryA[selectedQuarter - 1]?.toFixed(2) ?? "—"} | Margin B: {marginHistoryB[selectedQuarter - 1]?.toFixed(2) ?? "—"}
+            Q{selectedQuarter} — Current: {marginHistoryA[selectedQuarter - 1]?.toFixed(2) ?? "—"} | Alternative: {marginHistoryB[selectedQuarter - 1]?.toFixed(2) ?? "—"}
           </div>
         )}
+      </div>
+
+      {/* System Status panel – below graph */}
+      <div
+        style={{
+          marginTop: "24px",
+          marginBottom: "32px",
+          padding: "16px 20px",
+          background: "#111827",
+          border: "1px solid #1f2937",
+          borderRadius: "8px",
+        }}
+      >
+        <div style={{ fontSize: "12px", color: "#9CA3AF", marginBottom: "8px" }}>System Status</div>
+        {executiveSummary && (
+          <>
+            <div style={{ fontSize: "13px", lineHeight: 1.6, marginTop: "6px" }}>
+              <span style={{ color: "#9CA3AF" }}>Current: </span>
+              <span style={{ color: executiveSummary.structuralStatusA === "stable" ? "#22c55e" : "#f97316", fontWeight: 600 }}>
+                {t.structuralStatus[executiveSummary.structuralStatusA ?? "stable"]}
+              </span>
+            </div>
+            <div style={{ fontSize: "13px", lineHeight: 1.6, marginTop: "6px" }}>
+              <span style={{ color: "#9CA3AF" }}>Alternative: </span>
+              <span style={{ color: executiveSummary.structuralStatusB === "structural_collapse" ? "#ef4444" : executiveSummary.structuralStatusB === "structural_breakdown" ? "#f97316" : "#9CA3AF", fontWeight: 600 }}>
+                {t.structuralStatus[executiveSummary.structuralStatusB ?? "stable"]}
+              </span>
+            </div>
+            <div style={{ fontSize: "12px", color: "#9CA3AF", lineHeight: 1.6, marginTop: "6px" }}>
+              Lowest margin (Current): {executiveSummary.minimumMarginA.toFixed(2)}
+            </div>
+            <div style={{ fontSize: "12px", color: "#9CA3AF", lineHeight: 1.6, marginTop: "6px" }}>
+              Lowest margin (Alternative): {executiveSummary.minimumMarginB.toFixed(2)}
+            </div>
+            <div style={{ fontSize: "12px", color: "#9CA3AF", lineHeight: 1.6, marginTop: "6px" }}>
+              Buffer compression: {executiveSummary.compression.toFixed(2)} p.p.
+            </div>
+          </>
+        )}
+        {!executiveSummary && (
+          <div style={{ fontSize: "13px", color: "#9CA3AF" }}>—</div>
+        )}
+        <div style={{ marginTop: "16px", paddingTop: "16px", borderTop: "1px solid #1f2937" }}>
+          <div style={{ fontSize: "12px", color: "#9CA3AF" }}>Capital Constraint</div>
+          <div
+            style={{
+              fontSize: "18px",
+              fontWeight: 600,
+              color:
+                activeState.registry.RefinancingConstraint.lifecycle === "ACTIVE"
+                  ? "#ef4444"
+                  : "#22c55e",
+            }}
+          >
+            {activeState.registry.RefinancingConstraint.lifecycle === "ACTIVE"
+              ? "ACTIVE"
+              : "NONE"}
+          </div>
+        </div>
       </div>
 
       {!isRunning && executiveSummary && (
@@ -1176,7 +1404,7 @@ export default function PilotFastighetPage() {
             display: "grid",
             gridTemplateColumns: "1.4fr 1fr",
             gap: "24px",
-            marginTop: "32px",
+            marginTop: "28px",
             alignItems: "stretch",
           }}
         >
@@ -1207,69 +1435,6 @@ export default function PilotFastighetPage() {
         </div>
       )}
 
-      <div style={{ marginTop: "40px" }}>
-        {Object.entries(groupedParameters).map(([groupName, params]) => (
-          <div
-            key={groupName}
-            style={{
-              marginBottom: "24px",
-              padding: "16px",
-              background: "#1a1a1a",
-              border: "1px solid #2f333a",
-              borderRadius: "8px",
-            }}
-          >
-            <div
-              style={{
-                fontSize: "14px",
-                fontWeight: 600,
-                marginBottom: "12px",
-                color: "#9ca3af",
-              }}
-            >
-              {groupName}
-            </div>
-
-            {params.map((param) => (
-              <div
-                key={param.key}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: "10px",
-                }}
-              >
-                <span style={{ fontSize: "13px" }}>{param.label}</span>
-
-                <select
-                  value={activeRiskState[param.key]}
-                  onChange={(e) => {
-                    setIsDirty(true);
-                    setActiveRiskState({
-                      ...activeRiskState,
-                      [param.key]: e.target.value as RiskLevel,
-                    });
-                  }}
-                  style={{
-                    background: "#0e1117",
-                    color: "#e6edf3",
-                    border: "1px solid #2f333a",
-                    borderRadius: "6px",
-                    padding: "4px 8px",
-                  }}
-                >
-                  <option value="LOW">LOW</option>
-                  <option value="MODERATE">MODERATE</option>
-                  <option value="HIGH">HIGH</option>
-                  <option value="SEVERE">SEVERE</option>
-                </select>
-              </div>
-            ))}
-          </div>
-        ))}
-      </div>
-
       <div style={{ marginTop: "32px", display: "flex", gap: "24px", flexWrap: "wrap" }}>
         <div
           style={{
@@ -1281,7 +1446,7 @@ export default function PilotFastighetPage() {
           }}
         >
           <div style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px", color: "#9ca3af" }}>
-            Frozen Snapshots — Scenario A
+            Frozen Snapshots — Current Strategy
           </div>
           {historyA.length === 0 ? (
             <div style={{ fontSize: "13px", color: "#6b7280" }}>No snapshots yet.</div>
@@ -1430,7 +1595,7 @@ export default function PilotFastighetPage() {
           }}
         >
           <div style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px", color: "#9ca3af" }}>
-            Frozen Snapshots — Scenario B
+            Frozen Snapshots — Alternative Strategy
           </div>
           {historyB.length === 0 ? (
             <div style={{ fontSize: "13px", color: "#6b7280" }}>No snapshots yet.</div>
@@ -1582,7 +1747,7 @@ export default function PilotFastighetPage() {
           }}
         >
           <div style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px", color: "#9ca3af" }}>
-            Compare Frozen Snapshots (B − A)
+            Compare Frozen Snapshots (Alternative − Current)
           </div>
           <button
             type="button"
@@ -1601,15 +1766,15 @@ export default function PilotFastighetPage() {
             {showTechnicalDetails ? "Hide technical details" : "Show technical details"}
           </button>
           <div style={{ fontSize: "13px", lineHeight: "1.8" }}>
-            <strong>Margin A:</strong> {snapA.engineState.margin.toFixed(3)}
+            <strong>Current Strategy:</strong> {snapA.engineState.margin.toFixed(3)}
             <br />
-            <strong>Margin B:</strong> {snapB.engineState.margin.toFixed(3)}
+            <strong>Alternative Strategy:</strong> {snapB.engineState.margin.toFixed(3)}
             <br />
-            <strong>Δ Margin (B−A):</strong> {(snapB.engineState.margin - snapA.engineState.margin).toFixed(3)}
+            <strong>Margin impact:</strong> {(snapB.engineState.margin - snapA.engineState.margin).toFixed(3)}
             <br />
             <strong>Tipping (ACTIVE):</strong>{" "}
-            {tippingStepA != null ? `A: Q${tippingStepA}` : "A: never"} |{" "}
-            {tippingStepB != null ? `B: Q${tippingStepB}` : "B: never"}
+            {tippingStepA != null ? `Current: Q${tippingStepA}` : "Current: never"} |{" "}
+            {tippingStepB != null ? `Alternative: Q${tippingStepB}` : "Alternative: never"}
             <br />
             {executiveConclusion != null && (
               <>
@@ -1625,21 +1790,22 @@ export default function PilotFastighetPage() {
             )}
             {showTechnicalDetails && (
               <>
-                <strong>Refinancing lifecycle A:</strong> {snapA.engineState.registry.RefinancingConstraint.lifecycle}
+                <strong>Refinancing lifecycle (Current):</strong> {snapA.engineState.registry.RefinancingConstraint.lifecycle}
                 <br />
-                <strong>Refinancing lifecycle B:</strong> {snapB.engineState.registry.RefinancingConstraint.lifecycle}
+                <strong>Refinancing lifecycle (Alternative):</strong> {snapB.engineState.registry.RefinancingConstraint.lifecycle}
                 <br />
-                <strong>Q A:</strong> {snapA.engineState.step}
+                <strong>Q (Current):</strong> {snapA.engineState.step}
                 <br />
-                <strong>Q B:</strong> {snapB.engineState.step}
+                <strong>Q (Alternative):</strong> {snapB.engineState.step}
               </>
             )}
           </div>
           {/* Self-check cases: (1) A tips at step 3, B at step 1 → conclusion B triggers earlier, tag Risk ↑.
               (2) B never tips → "B avoids ACTIVE while A triggers it" or "No ACTIVE tipping" if A also never.
-              (3) Verify tags: Margin ↑/↓, Stability ↑/↓, Risk ↑ from lifecycle/tipping. */}
+              (3) Verify tags: Margin up/down, Stability up/down, Risk ↑ from lifecycle/tipping. */}
         </div>
       )}
+        </div>
       </div>
 
       {uiMode === "expert" && (
@@ -1884,6 +2050,7 @@ export default function PilotFastighetPage() {
           </section>
         </div>
       )}
+      </div>
     </div>
   );
 }

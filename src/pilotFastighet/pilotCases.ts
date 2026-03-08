@@ -26,7 +26,7 @@ const BASE_RISK_STATE: RiskState = {
 };
 
 const make = (base: RiskState, overrides: Partial<RiskState>): RiskState =>
-  ({ ...base, ...overrides });
+  ({ ...base, ...overrides } as RiskState);
 
 export const PILOT_CASES: PilotCase[] = [
   {

@@ -811,6 +811,11 @@ export default function DecisionFlowPage() {
       ? selectedAtFinalTime.cost - baselineAtFinalTime.cost
       : 0;
 
+  // Derive summary from existing data (UI-only, no engine changes)
+  const loadRecovery = Math.abs(data.compare.load) < 0.01;
+  const costRecovery = Math.abs(data.compare.cost) < 0.01;
+  const hasRecovery = loadRecovery && costRecovery;
+
   // STEP 4 — Pulse Premium classification (behind feature flag)
   // Truth Rule 1.1: render only when all conditions are clearly satisfied using existing signals.
   const shouldRenderPremiumClassification =
@@ -818,11 +823,6 @@ export default function DecisionFlowPage() {
     selectedScenarioStatus === "Fungerar nu, kollaps inträffar senare" &&
     selectedScenarioCollapseTime !== null &&
     hasRecovery === false;
-
-  // Derive summary from existing data (UI-only, no engine changes)
-  const loadRecovery = Math.abs(data.compare.load) < 0.01;
-  const costRecovery = Math.abs(data.compare.cost) < 0.01;
-  const hasRecovery = loadRecovery && costRecovery;
 
   // System state: check how long load stays above baseline
   const loadConsequences = data.consequences.filter((c: any) => c.metric === "load" && c.delta > 0);

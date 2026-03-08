@@ -74,11 +74,11 @@ export function buildExecutiveConclusion(
 
   let title: string;
   if (bStep != null && aStep != null && bStep < aStep) {
-    title = `Scenario B triggers ACTIVE earlier (Q${bStep} vs Q${aStep}), trading margin/stability.`;
+    title = `Alternative Strategy triggers ACTIVE earlier (Q${bStep} vs Q${aStep}), trading margin/stability.`;
   } else if (aStep != null && bStep == null) {
-    title = `Scenario B avoids ACTIVE while A triggers it (Q${aStep}).`;
+    title = `Alternative Strategy avoids ACTIVE while Current triggers it (Q${aStep}).`;
   } else if (aStep == null && bStep != null) {
-    title = `Scenario A avoids ACTIVE while B triggers it (Q${bStep}).`;
+    title = `Current Strategy avoids ACTIVE while Alternative triggers it (Q${bStep}).`;
   } else if (aStep == null && bStep == null) {
     title =
       "No ACTIVE tipping observed; compare margin/stability deltas.";

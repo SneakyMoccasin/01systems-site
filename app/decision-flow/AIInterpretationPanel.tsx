@@ -63,7 +63,7 @@ interface AIInterpretationPanelProps {
   data: AIInterpretation;
 }
 
-export default function AIInterpretationPanel({ data }: AIInterpretationPanelProps): JSX.Element {
+export default function AIInterpretationPanel({ data }: AIInterpretationPanelProps): React.ReactElement {
   return (
     <div className="ai-interpretation-panel">
       <style>{`

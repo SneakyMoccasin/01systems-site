@@ -186,7 +186,7 @@ interface AIInterpretationExplanationProps {
   data: AIInterpretation;
 }
 
-export default function AIInterpretationExplanation({ data }: AIInterpretationExplanationProps): JSX.Element {
+export default function AIInterpretationExplanation({ data }: AIInterpretationExplanationProps): React.ReactElement {
   const getSystemStateExplanation = (): string => {
     const state = data.summary.overallSystemState;
     if (state === "stable") {

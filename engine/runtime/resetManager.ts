@@ -108,7 +108,7 @@ export function resetEngine(app: Application) {
 
   const survivors: any[] = [];
   for (const child of app.stage.children) {
-    if (toPreserve.has(child.name)) {
+    if (child.name != null && toPreserve.has(child.name)) {
       survivors.push(child);
       continue;
     }

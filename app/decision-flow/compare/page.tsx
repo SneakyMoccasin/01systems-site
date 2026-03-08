@@ -1,13 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { runDecisionFlow } from "@/src/decisionFlow/run";
 import { evaluateGoals } from "@/src/decisionFlow/goals";
 
-export default function DecisionFlowComparePage() {
-  // Read parameters from URL
+function ComparePageContent() {
   const searchParams = useSearchParams();
   const policy = (searchParams.get("policy") as "conservative" | "balanced" | "aggressive") ?? "balanced";
   const demandChange = Number(searchParams.get("demandChange")) || 0;
@@ -417,6 +416,14 @@ export default function DecisionFlowComparePage() {
         {renderColumn(right, right.policyLabel + " strategi")}
       </div>
     </main>
+  );
+}
+
+export default function DecisionFlowComparePage() {
+  return (
+    <Suspense fallback={null}>
+      <ComparePageContent />
+    </Suspense>
   );
 }
 

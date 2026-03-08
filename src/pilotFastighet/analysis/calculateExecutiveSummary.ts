@@ -1,9 +1,11 @@
 export type ExecutiveSummaryInput = {
   marginSeriesA: number[];
   marginSeriesB: number[];
-  tippingThreshold: number;
+  tippingThreshold?: number;
   sustainThreshold: number;
   collapseThreshold: number;
+  /** Lifecycle-based tipping quarter (1-indexed). Single source of truth from engine. */
+  tippingStepB?: number | null;
 };
 
 export type StructuralStatus =
@@ -87,9 +89,9 @@ export function calculateExecutiveSummary(
   const {
     marginSeriesA,
     marginSeriesB,
-    tippingThreshold,
     sustainThreshold,
     collapseThreshold,
+    tippingStepB,
   } = input;
 
   const ANALYSIS_HORIZON = 16;
@@ -105,13 +107,8 @@ export function calculateExecutiveSummary(
   const avgB = average(limitedB);
   const deltaMargin = avgB - avgA;
 
-  let tippingStep: number | null = null;
-  for (let i = 0; i < limitedB.length; i++) {
-    if (limitedB[i] <= tippingThreshold) {
-      tippingStep = i + 1; // 1-indexed, Q1 = 1
-      break;
-    }
-  }
+  // Use lifecycle-based tipping (same as graph). tippingStepB is 1-indexed quarter.
+  const tippingStep = tippingStepB ?? null;
 
   let tippingRiskLevel: TippingRiskLevel;
   if (tippingStep == null) tippingRiskLevel = "low";
