@@ -190,7 +190,7 @@ export const SnapshotCompare: React.FC<Props> = ({
             {tippingLabel}
           </div>
           <div style={{ fontSize: "14px", color: "#E5E7EB" }}>
-            {tippingStep ? `Q${tippingStep}` : noTippingText}
+            {tippingStep ? "Tipping risk" : noTippingText}
           </div>
         </div>
       </div>

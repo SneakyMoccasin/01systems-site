@@ -49,9 +49,9 @@ export function ExecutiveSummaryCard({
       tippingLine = `Tipping unchanged: Q${tippingStepA}`;
     }
   } else if (tippingStepA != null && tippingStepB == null) {
-    tippingLine = `Alternative avoids tipping seen in Current (Q${tippingStepA}).`;
+    tippingLine = `Scenario B avoids tipping seen in Scenario A (Q${tippingStepA}).`;
   } else if (tippingStepA == null && tippingStepB != null) {
-    tippingLine = `New tipping in Alternative: Q${tippingStepB}.`;
+    tippingLine = `New tipping in Scenario B: Q${tippingStepB}.`;
   }
 
   const decisionImpactBackground =
@@ -144,13 +144,13 @@ export function ExecutiveSummaryCard({
               marginTop: "6px",
             }}
           >
-            {executiveSummary.tippingStep
-              ? (
-                  <>
-                    {t.common.tippingWithin} {`Q${executiveSummary.tippingStep}`}
-                  </>
-                )
-              : t.common.noTipping}
+            {executiveSummary.tippingStep != null
+              ? (() => {
+                  const start = executiveSummary.tippingStep;
+                  const end = executiveSummary.tippingStep + 1;
+                  return t.common.tippingRiskWindow(start, end);
+                })()
+              : "—"}
           </div>
         </div>
 
@@ -206,7 +206,7 @@ export function ExecutiveSummaryCard({
             marginBottom: "4px",
           }}
         >
-          Decision Impact
+          {t.common.decisionImpact}
         </div>
         <div
           style={{
@@ -221,14 +221,17 @@ export function ExecutiveSummaryCard({
               {marginDeltaText}
             </span>
           </div>
-          {(tippingStepA !== null || tippingStepB !== null) && tippingLine && (
+          {(tippingStepA !== null || tippingStepB !== null) && (
             <div>
-              <span style={{ color: theme.subtext }}>Tipping:&nbsp;</span>
-              <span>{tippingLine}</span>
+              <span style={{ color: theme.subtext }}>
+                {executiveSummary.tippingStep != null
+                  ? t.common.tippingRiskPeriodAround(executiveSummary.tippingStep)
+                  : t.common.tippingRiskPeriod}
+              </span>
             </div>
           )}
           <div>
-            <span style={{ color: theme.subtext }}>Alternative:&nbsp;</span>
+            <span style={{ color: theme.subtext }}>Scenario B:&nbsp;</span>
             <span>{t.structuralStatus[structuralStatusKey]}</span>
           </div>
         </div>

@@ -47,3 +47,7 @@ yarn-debug.log*
 pnpm-debug.log*
 
 lrt
+
+# --- TypeScript incremental build cache ---
+*.tsbuildinfo
+.vercel

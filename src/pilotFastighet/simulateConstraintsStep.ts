@@ -55,9 +55,35 @@ export function simulateConstraintsStep(
     };
   }
 
+  // Apply constraint effects to multipliers.
+  let multipliersAfterConstraints = { ...baseMultipliers };
+
+  if (updatedRegistry.RefinancingConstraint.lifecycle === "ACTIVE") {
+    multipliersAfterConstraints = {
+      ...multipliersAfterConstraints,
+      cost: multipliersAfterConstraints.cost * 1.15,      // +15% cost
+      recovery: multipliersAfterConstraints.recovery * 0.8, // -20% recovery
+    };
+  }
+
+  if (updatedRegistry.LiquidityConstraint.lifecycle === "ACTIVE") {
+    multipliersAfterConstraints = {
+      ...multipliersAfterConstraints,
+      cost: multipliersAfterConstraints.cost * 1.1,   // +10% cost
+      load: multipliersAfterConstraints.load * 1.05,  // +5% load
+    };
+  }
+
+  if (updatedRegistry.CovenantConstraint.lifecycle === "ACTIVE") {
+    multipliersAfterConstraints = {
+      ...multipliersAfterConstraints,
+      recovery: multipliersAfterConstraints.recovery * 0.6, // -40% recovery
+    };
+  }
+
   return {
     multipliersBeforeConstraints: baseMultipliers,
-    multipliersAfterConstraints: baseMultipliers,
+    multipliersAfterConstraints,
     updatedRegistry,
   };
 }

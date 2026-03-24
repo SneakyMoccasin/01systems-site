@@ -26,6 +26,12 @@ export function computeDimensionMultipliers(
 
     const multiplier = getImpactMultiplier(param.key, level, step);
 
+    console.log("[PULSE DEBUG] multiplier", {
+      key: param.key,
+      level,
+      multiplier,
+    });
+
     for (const impact of param.impacts) {
       if (impact.dimension === "load") {
         load *= multiplier;

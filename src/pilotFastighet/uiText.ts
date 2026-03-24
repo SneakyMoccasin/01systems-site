@@ -37,6 +37,10 @@ export const UI_TEXT = {
       tippingWithin: "Tipping:",
       noTipping: "Ingen tipping inom horisonten",
       tippingPrefix: "Tipping",
+      tippingRiskPeriod: "Tipping risk period",
+      tippingRiskPeriodAround: (q: number) => `Riskperiod runt Q${q}`,
+      tippingRiskWindow: (start: number, end: number) =>
+        `Riskperiod: Q${start}–Q${end}`,
       narrative: {
         withTipping: (delta: string, status: string, tippingQ: string) =>
           `Om Alternative implementeras innebär det en genomsnittlig marginalförändring på ${delta} p.p. jämfört med Current. Systemets strukturella status klassificeras som "${status}". Tipping inträffar vid ${tippingQ}, vilket indikerar en förhöjd riskprofil inom horisonten.`,
@@ -60,8 +64,8 @@ export const UI_TEXT = {
           ? "Alternative innebär en förbättring av genomsnittlig marginal jämfört med Current."
           : "Genomsnittlig marginal är oförändrad mellan Current och Alternative.",
       legend: {
-        scenarioA: "Current Strategy",
-        scenarioB: "Alternative Strategy",
+        scenarioA: "Scenario A",
+        scenarioB: "Scenario B",
         sustain: "Sustain threshold",
         zeroLine: "0-line",
         grid: "Grid (reference)",
@@ -72,6 +76,7 @@ export const UI_TEXT = {
         high: "Hög",
         irreversible: "Oåterkallelig",
       },
+      decisionImpact: "Beslutspåverkan",
     },
   },
 
@@ -111,6 +116,10 @@ export const UI_TEXT = {
       tippingWithin: "Tipping:",
       noTipping: "No tipping within horizon",
       tippingPrefix: "Tipping",
+      tippingRiskPeriod: "Tipping risk period",
+      tippingRiskPeriodAround: (q: number) => `Risk period around Q${q}`,
+      tippingRiskWindow: (start: number, end: number) =>
+        `Risk period: Q${start}–Q${end}`,
       narrative: {
         withTipping: (delta: string, status: string, tippingQ: string) =>
           `If Alternative is implemented, the average margin changes by ${delta} p.p. compared to Current. The system's structural status is classified as "${status}". Tipping occurs at ${tippingQ}, indicating elevated risk within the horizon.`,
@@ -134,8 +143,8 @@ export const UI_TEXT = {
           ? "Alternative improves the average margin compared to Current."
           : "Average margin is unchanged between Current and Alternative.",
       legend: {
-        scenarioA: "Current Strategy",
-        scenarioB: "Alternative Strategy",
+        scenarioA: "Scenario A",
+        scenarioB: "Scenario B",
         sustain: "Sustain threshold",
         zeroLine: "0-line",
         grid: "Grid (reference)",
@@ -146,6 +155,41 @@ export const UI_TEXT = {
         high: "High",
         irreversible: "Irreversible",
       },
+      decisionImpact: "Decision Impact",
     },
   },
 } as const;
+
+export const EVENT_TRANSLATIONS = {
+  "Maintenance deferred": {
+    sv: "Uppskjutet underhåll",
+    en: "Maintenance deferred",
+  },
+  "Capital constraint activated": {
+    sv: "Kapitalbegränsning aktiverad",
+    en: "Capital constraint activated",
+  },
+  "Energy shock": {
+    sv: "Energichock",
+    en: "Energy shock",
+  },
+  "Refinance squeeze": {
+    sv: "Refinansieringspress",
+    en: "Refinance squeeze",
+  },
+};
+
+export const CASE_TRANSLATIONS = {
+  "Refinancing squeeze": {
+    sv: "Refinansieringspress",
+    en: "Refinancing squeeze",
+  },
+  "Maintenance deferral": {
+    sv: "Uppskjutet underhåll",
+    en: "Maintenance deferral",
+  },
+  "Energy shock + operations": {
+    sv: "Energichock + driftstress",
+    en: "Energy shock + operations",
+  },
+};

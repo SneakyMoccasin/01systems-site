@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import { getSystemSnapshot } from "@/src/systemSnapshot/systemSnapshotStore";
-import { RealEstateEngine } from "@/src/pilotFastighet/RealEstateEngine";
+import { RealEstateEngine, type RiskState } from "@/src/pilotFastighet/RealEstateEngine";
+import type { CascadeEvent } from "@/src/pilotFastighet/riskPropagation";
 import { createInitialConstraintRegistry } from "@/src/pilotFastighet/constraintState";
-import { REAL_ESTATE_IMPACT_CONTRACT } from "@/src/pilotFastighet/impactContract";
-import type { RiskLevel } from "@/src/pilotFastighet/impactContract";
+import type { RiskLevel, ParameterSpec } from "@/src/pilotFastighet/impactContract";
+import { getImpactContract } from "@/src/pilotFastighet/getImpactContract";
 import {
   findTippingIndex,
   buildExecutiveConclusion,
@@ -14,7 +15,30 @@ import { PILOT_CASES } from "@/src/pilotFastighet/pilotCases";
 import { calculateExecutiveSummary } from "@/src/pilotFastighet/analysis/calculateExecutiveSummary";
 import { SnapshotCompare } from "@/src/pilotFastighet/components/SnapshotCompare";
 import { ExecutiveSummaryCard } from "@/app/pilot-fastighet/components/ExecutiveSummaryCard";
-import { UI_TEXT, type Language } from "@/src/pilotFastighet/uiText";
+import AIInterpretationPanel from "./components/AIInterpretationPanel";
+import PromptDock from "./components/PromptDock";
+import ScenarioPromptDock from "./components/ScenarioPromptDock";
+import ScenarioLibrary from "./components/ScenarioLibrary";
+import ScenarioInterpretationPanel from "./components/ScenarioInterpretationPanel";
+import WhyPanel from "./components/WhyPanel";
+import ScenarioOutcomePanel from "./components/ScenarioOutcomePanel";
+import SystemDriversPanel from "./components/SystemDriversPanel";
+import DecisionExplanationPanel from "./components/DecisionExplanationPanel";
+import ScenarioPreviewPanel from "./components/ScenarioPreviewPanel";
+import AIInspectorPanel from "./components/AIInspectorPanel";
+import MarginGraph, {
+  MarginGraphLegendRow,
+  type MarginGraphSelectMonthPayload,
+} from "./components/MarginGraph";
+import { UI_TEXT, type Language, CASE_TRANSLATIONS, EVENT_TRANSLATIONS } from "@/src/pilotFastighet/uiText";
+import { pulseLanguage, activeDomain, setActiveDomain, type DomainKey } from "@/src/i18n/pulseLanguage";
+import { type ScenarioChange } from "@/lib/scenarioParser";
+import { parsePreviewScenarioImpact } from "@/src/pilotFastighet/previewScenarioImpact";
+import { getScenarioLibrary } from "@/src/pilotFastighet/scenarioLibrary";
+import {
+  defaultRiskState,
+  getRiskStateAfterPreset,
+} from "@/src/pilotFastighet/presetRiskMapping";
 
 const STORAGE_KEY_A = "pulse_pilot_fastighet_history_A";
 const STORAGE_KEY_B = "pulse_pilot_fastighet_history_B";
@@ -29,6 +53,11 @@ const EXEC_COLLAPSE_THRESHOLD = 0.6;
 const MIN_STEPS_BEFORE_STEADY = 5;
 const REQUIRED_STABLE_TICKS = 3;
 const ANALYSIS_HORIZON = 16;
+const domainTitles = {
+  realEstate: "Real Estate Portfolio",
+  municipal: "Municipal System",
+  consulting: "Decision Environment",
+};
 
 function loadHistory(key: string) {
   if (typeof window === "undefined") return [];
@@ -61,7 +90,7 @@ function saveSnapshotLabels(labels: Record<string, string>) {
 }
 
 export default function PilotFastighetPage() {
-  type ScenarioId = "A" | "B";
+  type ScenarioId = "A" | "B" | "BOTH";
 
   type FrozenSnapshot = {
     snapshotId: string;
@@ -82,29 +111,22 @@ export default function PilotFastighetPage() {
     riskState: Record<string, RiskLevel>;
   };
 
-  const defaultRiskState = {
-    demandRisk: "MODERATE",
-    pricingPowerRisk: "MODERATE",
-    tenantStabilityRisk: "MODERATE",
-    maintenanceIntensityRisk: "MODERATE",
-    operationalEfficiencyRisk: "MODERATE",
-    energyExposureRisk: "MODERATE",
-    interestRateExposureRisk: "MODERATE",
-    leverageLevelRisk: "MODERATE",
-    refinancingRisk: "MODERATE",
-    marketVolatilityRisk: "MODERATE",
-    regulatoryPressureRisk: "MODERATE",
-    capitalCommitmentRigidityRisk: "MODERATE",
-  } as const satisfies Record<string, RiskLevel>;
-
-  const [riskStateA, setRiskStateA] = useState<Record<string, RiskLevel>>({ ...defaultRiskState });
-  const [riskStateB, setRiskStateB] = useState<Record<string, RiskLevel>>({ ...defaultRiskState });
+  const [riskStateBaseline, setRiskStateBaseline] = useState<
+    Record<string, RiskLevel>
+  >(() => structuredClone(defaultRiskState));
+  const [riskStateA, setRiskStateA] = useState<RiskState>(() =>
+    structuredClone(defaultRiskState)
+  );
+  const [riskStateB, setRiskStateB] = useState<RiskState>(() =>
+    structuredClone(defaultRiskState)
+  );
   const [activeScenario, setActiveScenario] = useState<ScenarioId>("A");
   const [showA, setShowA] = useState(true);
   const [showB, setShowB] = useState(true);
 
   const [historyA, setHistoryA] = useState<FrozenSnapshot[]>([]);
   const [historyB, setHistoryB] = useState<FrozenSnapshot[]>([]);
+  const [historyBaseline, setHistoryBaseline] = useState<FrozenSnapshot[]>([]);
   const [selectedSnapA, setSelectedSnapA] = useState<string>("");
   const [selectedSnapB, setSelectedSnapB] = useState<string>("");
   const [snapshotLabels, setSnapshotLabels] = useState<Record<string, string>>(
@@ -115,6 +137,7 @@ export default function PilotFastighetPage() {
   const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
   const [marginHistoryA, setMarginHistoryA] = useState<number[]>([]);
   const [marginHistoryB, setMarginHistoryB] = useState<number[]>([]);
+  const [marginHistoryBaseline, setMarginHistoryBaseline] = useState<number[]>([]);
   const [tippingMarginIndexA, setTippingMarginIndexA] = useState<number | null>(null);
   const [tippingMarginIndexB, setTippingMarginIndexB] = useState<number | null>(null);
   const [isRunning, setIsRunning] = useState(false);
@@ -125,17 +148,52 @@ export default function PilotFastighetPage() {
   const [uiTheme, setUiTheme] = useState<"dark" | "light">("dark");
   const [uiLanguage, setUiLanguage] = useState<Language>("sv");
   const [uiMode, setUiMode] = useState<"executive" | "expert">("executive");
+
+  // NOTE: Cascades/escalation are computed by RealEstateEngine during ticks.
+  // We intentionally avoid running propagateRisks in the UI layer.
   const [executiveSummary, setExecutiveSummary] =
     useState<ReturnType<typeof calculateExecutiveSummary> | null>(null);
   const [steadyStateStep, setSteadyStateStep] = useState<number | null>(null);
   const [selectedQuarter, setSelectedQuarter] = useState<number | null>(null);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+  const [selectedMonthData, setSelectedMonthData] =
+    useState<MarginGraphSelectMonthPayload | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const isDraggingRef = useRef(false);
   const svgRef = useRef<SVGSVGElement | null>(null);
 
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const [previewChangesA, setPreviewChangesA] = useState<ScenarioChange[]>([]);
+  const [previewChangesB, setPreviewChangesB] = useState<ScenarioChange[]>([]);
+  const [previewScenarioTextA, setPreviewScenarioTextA] = useState<string | undefined>(undefined);
+  const [previewScenarioTextB, setPreviewScenarioTextB] = useState<string | undefined>(undefined);
+  const [scenarioHistory, setScenarioHistory] = useState<string[]>([]);
+  const [scenarioPromptA, setScenarioPromptA] = useState("");
+  const [scenarioPromptB, setScenarioPromptB] = useState("");
+  const [parsedScenarioEffectsA, setParsedScenarioEffectsA] = useState<
+    ScenarioChange[]
+  >([]);
+  const [parsedScenarioEffectsB, setParsedScenarioEffectsB] = useState<
+    ScenarioChange[]
+  >([]);
+  const [simulationHorizon, setSimulationHorizon] = useState(36);
+  const [customHorizon, setCustomHorizon] = useState<number | null>(null);
+  const [showHelp, setShowHelp] = useState(false);
+  const [hasSimulationCompleted, setHasSimulationCompleted] = useState(false);
+  const [simulationSource, setSimulationSource] = useState<
+    "case" | "scenario" | "prompt" | "manual" | null
+  >(null);
+  const [cascadeEventsA, setCascadeEventsA] = useState<CascadeEvent[]>([]);
+  const [cascadeEventsB, setCascadeEventsB] = useState<CascadeEvent[]>([]);
+  const [domain, setDomain] = useState<DomainKey>(activeDomain);
+  const [scenarioTarget, setScenarioTarget] = useState<"A" | "B">("A");
+
   const engineARef = useRef<RealEstateEngine | null>(null);
   const engineBRef = useRef<RealEstateEngine | null>(null);
+  const engineBaselineRef = useRef<RealEstateEngine | null>(null);
+  const intervalRef = useRef<number | null>(null);
+  const marginHistoryARef = useRef<number[]>([]);
+  const marginHistoryBRef = useRef<number[]>([]);
   const lastMarginARef = useRef<number | null>(null);
   const lastMarginBRef = useRef<number | null>(null);
   const stableCounterARef = useRef(0);
@@ -146,15 +204,196 @@ export default function PilotFastighetPage() {
     setHistoryB(loadHistory(STORAGE_KEY_B));
   }, []);
 
-  const [, setRenderTick] = useState(0);
+  const handleScenarioSubmit = (textA: string, textB: string) => {
+    console.log("SIMULATE CLICKED");
+    console.log("Scenario A preview:", previewScenarioTextA);
+    console.log("Scenario B preview:", previewScenarioTextB);
+    console.log("Scenario A prompt:", scenarioPromptA);
+    console.log("Scenario B prompt:", scenarioPromptB);
+
+    const currentRiskStateA = {
+      "Interest Rate Exposure": riskStateA.interestRateExposureRisk,
+      "Energy Exposure": riskStateA.energyExposureRisk,
+      "Tenant Stability": riskStateA.tenantStabilityRisk,
+      "Maintenance Intensity": riskStateA.maintenanceIntensityRisk,
+      "Refinancing Risk": riskStateA.refinancingRisk,
+      "Demand Risk": riskStateA.demandRisk,
+      "Pricing Power Risk": riskStateA.pricingPowerRisk,
+      "Operational Efficiency Risk": riskStateA.operationalEfficiencyRisk,
+      "Market Volatility Risk": riskStateA.marketVolatilityRisk,
+      "Regulatory Pressure Risk": riskStateA.regulatoryPressureRisk,
+      "Capital Commitment Rigidity Risk": riskStateA.capitalCommitmentRigidityRisk,
+      "Leverage Level Risk": riskStateA.leverageLevelRisk,
+    };
+    const currentRiskStateB = {
+      "Interest Rate Exposure": riskStateB.interestRateExposureRisk,
+      "Energy Exposure": riskStateB.energyExposureRisk,
+      "Tenant Stability": riskStateB.tenantStabilityRisk,
+      "Maintenance Intensity": riskStateB.maintenanceIntensityRisk,
+      "Refinancing Risk": riskStateB.refinancingRisk,
+      "Demand Risk": riskStateB.demandRisk,
+      "Pricing Power Risk": riskStateB.pricingPowerRisk,
+      "Operational Efficiency Risk": riskStateB.operationalEfficiencyRisk,
+      "Market Volatility Risk": riskStateB.marketVolatilityRisk,
+      "Regulatory Pressure Risk": riskStateB.regulatoryPressureRisk,
+      "Capital Commitment Rigidity Risk": riskStateB.capitalCommitmentRigidityRisk,
+      "Leverage Level Risk": riskStateB.leverageLevelRisk,
+    };
+
+    console.log("Parsing scenarios...");
+    const scenarios = getScenarioLibrary(uiLanguage);
+    const selectedScenarioA = scenarios.find(
+      (s) => s.prompt.trim() === textA.trim()
+    ) as (typeof scenarios)[number] & {
+      impact?: Record<string, RiskLevel>;
+    };
+    const selectedScenarioB = scenarios.find(
+      (s) => s.prompt.trim() === textB.trim()
+    ) as (typeof scenarios)[number] & {
+      impact?: Record<string, RiskLevel>;
+    };
+    const changesA = selectedScenarioA?.impact
+      ? Object.entries(selectedScenarioA.impact)
+          .map(([key, to]) => {
+            const parameter =
+              key === "capitalCommitmentRigidity"
+                ? "Capital Commitment Rigidity Risk"
+                : key === "maintenanceIntensity"
+                  ? "Maintenance Intensity"
+                  : key === "operationalEfficiency"
+                    ? "Operational Efficiency Risk"
+                    : key === "refinancingRisk"
+                      ? "Refinancing Risk"
+                      : null;
+            if (!parameter) return null;
+            const from = currentRiskStateA[parameter as keyof typeof currentRiskStateA];
+            if (!from || from === to) return null;
+            return { parameter, from, to };
+          })
+          .filter((c): c is ScenarioChange => c !== null)
+      : parsePreviewScenarioImpact(textA, currentRiskStateA);
+    const changesB = selectedScenarioB?.impact
+      ? Object.entries(selectedScenarioB.impact)
+          .map(([key, to]) => {
+            const parameter =
+              key === "capitalCommitmentRigidity"
+                ? "Capital Commitment Rigidity Risk"
+                : key === "maintenanceIntensity"
+                  ? "Maintenance Intensity"
+                  : key === "operationalEfficiency"
+                    ? "Operational Efficiency Risk"
+                    : key === "refinancingRisk"
+                      ? "Refinancing Risk"
+                      : null;
+            if (!parameter) return null;
+            const from = currentRiskStateB[parameter as keyof typeof currentRiskStateB];
+            if (!from || from === to) return null;
+            return { parameter, from, to };
+          })
+          .filter((c): c is ScenarioChange => c !== null)
+      : parsePreviewScenarioImpact(textB, currentRiskStateB);
+
+    console.log("[PULSE DEBUG] handleScenarioSubmit", {
+      textA,
+      textB,
+      changesA,
+      changesB,
+    });
+
+    setParsedScenarioEffectsA(changesA);
+    setParsedScenarioEffectsB(changesB);
+    setPreviewChangesA(changesA);
+    setPreviewChangesB(changesB);
+    setPreviewScenarioTextA(textA || undefined);
+    setPreviewScenarioTextB(textB || undefined);
+    setScenarioHistory((prev) => {
+      const entry = [textA, textB].filter(Boolean).join(" | ") || textA || textB;
+      const next = [entry, ...prev.filter((s) => s !== entry)];
+      return next.slice(0, 5);
+    });
+    setPreviewVisible(true);
+  };
+
+  const keyMap: Record<string, string> = {
+    "Interest Rate Exposure": "interestRateExposureRisk",
+    "Energy Exposure": "energyExposureRisk",
+    "Tenant Stability": "tenantStabilityRisk",
+    "Maintenance Intensity": "maintenanceIntensityRisk",
+    "Refinancing Risk": "refinancingRisk",
+    "Demand Risk": "demandRisk",
+    "Pricing Power Risk": "pricingPowerRisk",
+    "Operational Efficiency Risk": "operationalEfficiencyRisk",
+    "Market Volatility Risk": "marketVolatilityRisk",
+    "Regulatory Pressure Risk": "regulatoryPressureRisk",
+    "Capital Commitment Rigidity Risk": "capitalCommitmentRigidityRisk",
+    "Leverage Level Risk": "leverageLevelRisk",
+  };
+
+  function applyChangesToState(
+    prev: Record<string, RiskLevel>,
+    changes: ScenarioChange[]
+  ): Record<string, RiskLevel> {
+    const next = { ...prev };
+    for (const change of changes) {
+      const key = keyMap[change.parameter];
+      if (key) {
+        (next as Record<string, RiskLevel>)[key] = change.to;
+      }
+    }
+    return next;
+  }
+
+  function applyScenarioChanges(
+    changesA: ScenarioChange[],
+    changesB: ScenarioChange[]
+  ) {
+    console.log("[PULSE DEBUG] applyScenarioChanges:before", {
+      changesA,
+      changesB,
+      riskStateA,
+      riskStateB,
+    });
+
+    const nextA =
+      Object.keys(changesA).length > 0
+        ? applyChangesToState(
+            riskStateA as Record<string, RiskLevel>,
+            changesA
+          )
+        : riskStateA;
+    const nextB =
+      Object.keys(changesB).length > 0
+        ? applyChangesToState(
+            riskStateB as Record<string, RiskLevel>,
+            changesB
+          )
+        : riskStateB;
+
+    // Apply scenario changes to input risk states.
+    // Escalation, propagation, and cascade events are computed inside RealEstateEngine.
+    const target = scenarioTarget;
+
+    if (target === "A") {
+      console.log("setRiskStateA called with:", nextA as RiskState);
+      setRiskStateA(nextA as RiskState);
+    }
+
+    if (target === "B") {
+      setRiskStateB(nextB as RiskState);
+    }
+  }
 
   function resetRunState() {
     setMarginHistoryA([]);
     setMarginHistoryB([]);
+    setMarginHistoryBaseline([]);
+    setHistoryBaseline([]);
     setTippingMarginIndexA(null);
     setTippingMarginIndexB(null);
     setExecutiveSummary(null);
     setSteadyStateStep(null);
+    setCascadeEventsA([]);
+    setCascadeEventsB([]);
 
     lastMarginARef.current = null;
     lastMarginBRef.current = null;
@@ -162,27 +401,98 @@ export default function PilotFastighetPage() {
     stableCounterBRef.current = 0;
   }
 
-  function startSimulation() {
+  function startSimulation(
+    source: "scenario" | "manual",
+    riskOverrideA?: RiskState,
+    riskOverrideB?: RiskState
+  ) {
+    const effectiveRiskStateA = riskOverrideA ?? riskStateA;
+    const effectiveRiskStateB = riskOverrideB ?? riskStateB;
+    console.log("[PULSE DEBUG] startSimulation:effectiveRiskStates", {
+      effectiveRiskStateA,
+      effectiveRiskStateB,
+    });
+
+    console.log("[PULSE DEBUG] startSimulation:before", {
+      source,
+      riskStateA: effectiveRiskStateA,
+      riskStateB: effectiveRiskStateB,
+      isRunning,
+    });
+    setSimulationSource(source);
+    setHasSimulationCompleted(false);
     setIsRunning(false);
     resetRunState();
-    const snapshotA = { ...riskStateA };
-    const snapshotB = { ...riskStateB };
+
+    // RealEstateEngine is the single source of truth for escalation, propagation,
+    // and cascade event generation. The UI passes the initial risk state only.
+    const snapshotA = { ...effectiveRiskStateA };
+    const snapshotB = { ...effectiveRiskStateB };
+    const snapshotBaseline = { ...riskStateBaseline };
+    marginHistoryARef.current = [];
+    marginHistoryBRef.current = [];
     engineARef.current = new RealEstateEngine(snapshotA);
     engineBRef.current = new RealEstateEngine(snapshotB);
+    engineBaselineRef.current = new RealEstateEngine(snapshotBaseline);
     setIsDirty(false);
     setIsRunning(true);
-  }
 
-  useEffect(() => {
-    if (!isRunning) return;
-    const id = window.setInterval(() => {
+    if (intervalRef.current) {
+      window.clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
+    intervalRef.current = window.setInterval(() => {
       if (!engineARef.current || !engineBRef.current) return;
       const engineA = engineARef.current;
       const engineB = engineBRef.current;
+      const engineBaseline = engineBaselineRef.current;
+
       engineA.stepForward();
       engineB.stepForward();
+      if (engineBaseline) engineBaseline.stepForward();
+
       const sA = engineA.getState();
       const sB = engineB.getState();
+      const sBaseline = engineBaseline?.getState();
+
+      marginHistoryARef.current.push(sA.margin);
+      marginHistoryBRef.current.push(sB.margin);
+      if (sA.step <= 3 || sB.step <= 3) {
+        console.log("[PULSE DEBUG] startSimulation:first3ticks", {
+          stepA: sA.step,
+          stepB: sB.step,
+          sA_margin: sA.margin,
+          sB_margin: sB.margin,
+          marginHistoryARef: marginHistoryARef.current,
+          marginHistoryBRef: marginHistoryBRef.current,
+        });
+      }
+
+      // Keep the UI in sync with the engine (single source of truth).
+      console.log("setRiskStateA called with:", sA.riskState as RiskState);
+      setRiskStateA(sA.riskState as RiskState);
+      setRiskStateB(sB.riskState as RiskState);
+      if (Array.isArray((sA as any).cascadeEvents)) {
+        setCascadeEventsA((sA as any).cascadeEvents);
+      }
+      if (Array.isArray((sB as any).cascadeEvents)) {
+        setCascadeEventsB((sB as any).cascadeEvents);
+      }
+
+      if (sA.step > simulationHorizon && sB.step > simulationHorizon) {
+        if (engineBaselineRef.current) engineBaselineRef.current = null;
+
+        if (intervalRef.current) {
+          window.clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+
+
+        setHasSimulationCompleted(true);
+        setIsRunning(false);
+        return;
+      }
 
       const epsilon = 1e-6;
 
@@ -225,6 +535,7 @@ export default function PilotFastighetPage() {
         }
         return [...prev, sA.margin];
       });
+
       setMarginHistoryB((prev) => {
         const idx = prev.length;
         if (sB.registry?.RefinancingConstraint?.lifecycle === "ACTIVE") {
@@ -232,17 +543,49 @@ export default function PilotFastighetPage() {
         }
         return [...prev, sB.margin];
       });
-      setRenderTick((t) => t + 1);
-    }, 350);
-    return () => window.clearInterval(id);
+
+      if (sBaseline != null) {
+        setMarginHistoryBaseline((prev) => [...prev, sBaseline.margin]);
+      }
+    }, 500);
+
+    console.log("[PULSE TRACE] Simulation started", {
+      source: simulationSource,
+      riskStateA: snapshotA,
+      riskStateB: snapshotB,
+      simulationHorizon,
+    });
+    console.log("[PULSE DEBUG] startSimulation:after", {
+      riskStateA: snapshotA,
+      riskStateB: snapshotB,
+      isRunning: true,
+    });
+  }
+
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        window.clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, []);
+
+  // If the user stops the simulation, ensure the running interval is cleared.
+  useEffect(() => {
+    if (!isRunning && intervalRef.current) {
+      window.clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
   }, [isRunning]);
 
   function defaultEngineState(riskState: Record<string, RiskLevel>) {
     return {
-      step: 1,
+      step: 0,
       margin: 1,
       riskState,
       registry: createInitialConstraintRegistry(),
+      cascadeEvents: [] as CascadeEvent[],
     };
   }
 
@@ -255,13 +598,15 @@ export default function PilotFastighetPage() {
   const activeState =
     activeScenario === "A" ? stateA : stateB;
 
-  const activeRiskState = activeScenario === "A" ? riskStateA : riskStateB;
-  const setActiveRiskState = activeScenario === "A" ? setRiskStateA : setRiskStateB;
+  const activeRiskState =
+    scenarioTarget === "A" ? riskStateA : riskStateB;
+
+  const isEditableScenario = activeScenario === "A" || activeScenario === "B";
 
   function freezeScenarioA() {
     const snap: FrozenSnapshot = {
       snapshotId: new Date().toISOString(),
-      label: "Current Strategy",
+      label: "Scenario A",
       createdAt: Date.now(),
       engineState: JSON.parse(JSON.stringify(stateA)),
       metadata: {
@@ -280,7 +625,7 @@ export default function PilotFastighetPage() {
   function freezeScenarioB() {
     const snap: FrozenSnapshot = {
       snapshotId: new Date().toISOString(),
-      label: "Alternative Strategy",
+      label: "Scenario B",
       createdAt: Date.now(),
       engineState: JSON.parse(JSON.stringify(stateB)),
       metadata: {
@@ -355,7 +700,8 @@ export default function PilotFastighetPage() {
     setEditingLabelValue("");
   }
 
-  const groupedParameters = REAL_ESTATE_IMPACT_CONTRACT.reduce(
+  const impactContract = getImpactContract(domain) as ParameterSpec[];
+  const groupedParameters = impactContract.reduce(
     (acc, param) => {
       if (!acc[param.group]) {
         acc[param.group] = [];
@@ -363,7 +709,7 @@ export default function PilotFastighetPage() {
       acc[param.group].push(param);
       return acc;
     },
-    {} as Record<string, typeof REAL_ESTATE_IMPACT_CONTRACT>
+    {} as Record<string, ParameterSpec[]>
   );
 
   const baselineA = marginHistoryA.length > 0 ? marginHistoryA[0] : 0;
@@ -403,31 +749,64 @@ export default function PilotFastighetPage() {
 
   const theme = THEME[uiTheme];
   const t = UI_TEXT[uiLanguage];
+  const pt = pulseLanguage[uiLanguage];
 
-  const systemStatus = (() => {
-    if (!executiveSummary) return "IDLE";
+  const currentMarginA =
+    marginHistoryA.length > 0
+      ? marginHistoryA[marginHistoryA.length - 1]
+      : null;
 
-    const structuralB = executiveSummary.structuralStatusB;
+  const currentMarginB =
+    marginHistoryB.length > 0
+      ? marginHistoryB[marginHistoryB.length - 1]
+      : null;
 
-    if (structuralB === "structural_collapse") return "COLLAPSED";
-    if (structuralB === "structural_breakdown" || structuralB === "functioning_but_doomed") {
-      return "PRESSURED";
+  const showBaselineOnly = marginHistoryB.length === 0;
+
+  function getSystemStatus(margin: number | null): string {
+    if (margin == null) return "IDLE";
+    if (margin >= 1.0) return "ROBUST";
+    if (margin >= EXEC_SUSTAIN_THRESHOLD) return "SUSTAINABLE";
+    if (margin >= EXEC_COLLAPSE_THRESHOLD) return "STRUCTURAL_EROSION";
+    return "FAILURE";
+  }
+
+  function getSystemStatusLabel(status: string): string {
+    switch (status) {
+      case "ROBUST":
+        return pt.robust;
+      case "SUSTAINABLE":
+        return pt.sustainable;
+      case "STRUCTURAL_EROSION":
+        return pt.structuralErosion;
+      case "FAILURE":
+        return pt.collapseZone;
+      default:
+        return "IDLE";
     }
-    return "STABLE";
-  })();
+  }
 
-  const systemStatusLabel =
-    executiveSummary
-      ? `Alternative Strategy: ${
-          t.structuralStatus[
-            executiveSummary.structuralStatusB ?? "stable"
-          ]
-        }`
-      : "IDLE";
+  function getSystemStatusColor(status: string): string {
+    switch (status) {
+      case "ROBUST":
+        return "#22c55e";
+      case "SUSTAINABLE":
+        return "#2563eb";
+      case "STRUCTURAL_EROSION":
+        return "#f97316";
+      case "FAILURE":
+        return "#ef4444";
+      default:
+        return "#9CA3AF";
+    }
+  }
 
-  const systemStatusMinLine = executiveSummary
-    ? `Min Current: ${executiveSummary.minimumMarginA.toFixed(2)} | Min Alternative: ${executiveSummary.minimumMarginB.toFixed(2)}`
-    : null;
+  const currentStatusA = getSystemStatus(currentMarginA);
+  const currentStatusB = getSystemStatus(currentMarginB);
+  const labelA = getSystemStatusLabel(currentStatusA);
+  const labelB = getSystemStatusLabel(currentStatusB);
+  const colorA = getSystemStatusColor(currentStatusA);
+  const colorB = getSystemStatusColor(currentStatusB);
 
   const structuralStatusKey = executiveSummary
     ? executiveSummary.structuralStatusB
@@ -453,7 +832,7 @@ export default function PilotFastighetPage() {
         const deltaStr = executiveSummary.deltaMargin.toFixed(2);
         const statusStr = t.structuralStatus[structuralStatusKey];
         const tippingQ = executiveSummary.tippingStep
-          ? `Q${executiveSummary.tippingStep}`
+          ? `M${executiveSummary.tippingStep}`
           : "";
         return executiveSummary.tippingStep
           ? t.common.narrative.withTipping(deltaStr, statusStr, tippingQ)
@@ -465,6 +844,28 @@ export default function PilotFastighetPage() {
   const expertSteps = Math.max(marginHistoryA.length, marginHistoryB.length);
   const expertTippingStep = executiveSummary?.tippingStep ?? null;
 
+  const primaryDriver = cascadeEventsA.length > 0 ? cascadeEventsA[0].sourceRisk : null;
+  const cascadeEvents =
+    cascadeEventsB.length > 0 ? cascadeEventsB : cascadeEventsA;
+
+  const driverLabels = (pt as any).driverLabels ?? {};
+  const riskLabels = (pt as any).riskLabels ?? {};
+  const getRiskLabel = (key: string) =>
+    driverLabels[key] ??
+    riskLabels[key] ??
+    EVENT_TRANSLATIONS[key as keyof typeof EVENT_TRANSLATIONS]?.[uiLanguage] ??
+    key;
+
+  const cascadeDepth = cascadeEventsA.length;
+  const systemPressure =
+    cascadeDepth <= 1
+      ? "LOW"
+      : cascadeDepth <= 3
+      ? "MODERATE"
+      : cascadeDepth <= 5
+      ? "HIGH"
+      : "SYSTEMIC";
+
   let sustainBreachStep: number | null = null;
   let collapseBreachStep: number | null = null;
   for (let i = 0; i < marginHistoryB.length; i++) {
@@ -475,6 +876,127 @@ export default function PilotFastighetPage() {
       collapseBreachStep = i + 1;
     }
   }
+
+  let estimatedTimeToBreachA: number | null = null;
+  if (marginHistoryA.length >= 4) {
+    const n = marginHistoryA.length;
+    const m0 = marginHistoryA[n - 4];
+    const m3 = marginHistoryA[n - 1];
+    const avgRate = (m3 - m0) / 3;
+    if (avgRate < -1e-6 && m3 > EXEC_SUSTAIN_THRESHOLD) {
+      const remaining = (m3 - EXEC_SUSTAIN_THRESHOLD) / -avgRate;
+      estimatedTimeToBreachA = Math.max(0, Math.round(remaining));
+    }
+  }
+
+  let estimatedTimeToBreachB: number | null = null;
+  if (marginHistoryB.length >= 4) {
+    const n = marginHistoryB.length;
+    const m0 = marginHistoryB[n - 4];
+    const m3 = marginHistoryB[n - 1];
+    const avgRate = (m3 - m0) / 3;
+    if (avgRate < -1e-6 && m3 > EXEC_SUSTAIN_THRESHOLD) {
+      const remaining = (m3 - EXEC_SUSTAIN_THRESHOLD) / -avgRate;
+      estimatedTimeToBreachB = Math.max(0, Math.round(remaining));
+    }
+  }
+
+  let estimatedTimeToBreach: number | null = estimatedTimeToBreachB;
+
+  let breachDifference: number | null = null;
+  if (
+    estimatedTimeToBreachA !== null &&
+    estimatedTimeToBreachB !== null
+  ) {
+    breachDifference = estimatedTimeToBreachB - estimatedTimeToBreachA;
+  }
+
+  const marginTrend: "declining" | "stable" | "improving" =
+    marginHistoryB.length >= 2
+      ? (() => {
+          const start = marginHistoryB[0];
+          const end = marginHistoryB[marginHistoryB.length - 1];
+          const delta = end - start;
+          if (delta < -1e-3) return "declining";
+          if (delta > 1e-3) return "improving";
+          return "stable";
+        })()
+      : "stable";
+
+  const cascadeDelaySteps =
+    cascadeEventsA.length > 0 ? (cascadeEventsA[0].delaySteps ?? 1) : 1;
+
+  const decisionFlowEvents: { id: string; time: string; text: string }[] = [];
+  const scenarioEventsForFlow =
+    Math.max(marginHistoryA.length, marginHistoryB.length) > 0
+      ? [
+          {
+            quarter: 1,
+            type: "Maintenance deferred",
+          },
+          {
+            quarter:
+              tippingMarginIndexB != null ? tippingMarginIndexB + 1 : 0,
+            type: "Capital constraint activated",
+          },
+        ].filter(
+          (e) =>
+            e.quarter > 0 &&
+            e.quarter <= Math.max(
+              marginHistoryA.length,
+              marginHistoryB.length
+            )
+        )
+      : [];
+
+  for (const e of scenarioEventsForFlow) {
+    const label =
+      EVENT_TRANSLATIONS[e.type as keyof typeof EVENT_TRANSLATIONS]?.[
+        uiLanguage
+      ] ?? e.type;
+    decisionFlowEvents.push({
+      id: `scenario-${e.quarter}-${e.type}`,
+      time: `M${e.quarter}`,
+      text: label,
+    });
+  }
+
+  if (tippingMarginIndexB != null) {
+    decisionFlowEvents.push({
+      id: "tipping",
+      time: `M${tippingMarginIndexB + 1}`,
+      text:
+        uiLanguage === "sv"
+          ? "Strukturell tippingpunkt detekterad"
+          : "Structural tipping point detected",
+    });
+  }
+
+  // Add cascade events to the decision flow (delayed after decision)
+  const decisionTimeForCascade = 1; // scenario/decision at Q1
+  const allCascadeEvents = [...cascadeEventsA, ...cascadeEventsB];
+  if (allCascadeEvents.length > 0) {
+    const seenPairs = new Set<string>();
+    for (const e of allCascadeEvents) {
+      const pairKey = `${e.sourceRisk}->${e.targetRisk}`;
+      if (seenPairs.has(pairKey)) continue;
+      seenPairs.add(pairKey);
+
+      const delaySteps = e.delaySteps ?? 1;
+      const cascadeTime = decisionTimeForCascade + delaySteps;
+      decisionFlowEvents.push({
+        id: `cascade-${pairKey}`,
+        time: `M${cascadeTime}`,
+        text: `${getRiskLabel(e.sourceRisk)} → ${getRiskLabel(e.targetRisk)}`,
+      });
+    }
+  }
+
+  const sortedDecisionFlowEvents = [...decisionFlowEvents].sort((a, b) => {
+    const ta = parseInt(a.time.replace(/^Q/, ""), 10) || 0;
+    const tb = parseInt(b.time.replace(/^Q/, ""), 10) || 0;
+    return ta - tb;
+  });
 
   // ==================================================
   // 6️⃣ UI
@@ -493,13 +1015,69 @@ export default function PilotFastighetPage() {
     >
       <div style={{ padding: "32px", background: theme.pageBg, color: theme.text }}>
         <h1 style={{ fontSize: "22px", marginBottom: "24px" }}>
-          Real Estate Portfolio – Decision Impact Analysis
+          {domainTitles[domain]} — Decision Impact Simulation
         </h1>
 
       <div
         style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: "8px",
+          marginBottom: "8px",
+          flexWrap: "wrap",
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setUiLanguage((l) => (l === "sv" ? "en" : "sv"))}
+          style={{
+            padding: "6px 12px",
+            borderRadius: "6px",
+            border: "1px solid #374151",
+            background: "#111827",
+            color: "#E5E7EB",
+            fontSize: "12px",
+            cursor: "pointer",
+          }}
+        >
+          {uiLanguage === "sv" ? "SV" : "EN"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setUiTheme((t) => (t === "dark" ? "light" : "dark"))}
+          style={{
+            padding: "6px 12px",
+            borderRadius: "6px",
+            border: "1px solid #374151",
+            background: "#111827",
+            color: "#E5E7EB",
+            fontSize: "12px",
+            cursor: "pointer",
+          }}
+        >
+          {uiTheme === "dark" ? "Theme: Dark" : "Theme: Light"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowHelp((v) => !v)}
+          style={{
+            padding: "6px 12px",
+            borderRadius: "6px",
+            border: "1px solid #374151",
+            background: "#111827",
+            color: "#E5E7EB",
+            fontSize: "12px",
+            cursor: "pointer",
+          }}
+        >
+          Help
+        </button>
+      </div>
+      <div
+        style={{
           marginBottom: "16px",
           display: "flex",
+          justifyContent: "space-between",
           alignItems: "center",
           gap: "12px",
           flexWrap: "wrap",
@@ -514,293 +1092,361 @@ export default function PilotFastighetPage() {
           }}
         >
           <label style={{ fontSize: "13px", marginRight: "6px", color: theme.subtext }}>Case</label>
-        <select
-          value={selectedPilotCaseId}
-          onChange={(e) => {
-            const id = e.target.value;
-            setSelectedPilotCaseId(id);
-            if (id === "") return;
-            const pilotCase = PILOT_CASES.find((c) => c.id === id);
-            if (pilotCase) {
-              setRiskStateA({ ...pilotCase.riskStateA });
-              setRiskStateB({ ...pilotCase.riskStateB });
-              setIsDirty(true);
+          <select
+            value={selectedPilotCaseId}
+            onChange={(e) => {
+              const id = e.target.value;
+              setSelectedPilotCaseId(id);
+              setSimulationSource("case");
+              if (id === "") return;
+              const pilotCase = PILOT_CASES.find((c) => c.id === id);
+              if (pilotCase) {
+                console.log("[PULSE DEBUG] caseChange", {
+                  caseId: id,
+                  riskStateABefore: riskStateA,
+                  riskStateBBefore: riskStateB,
+                  nextRiskStateA: pilotCase.riskStateA,
+                  nextRiskStateB: pilotCase.riskStateB,
+                });
+                console.log(
+                  "setRiskStateA called with:",
+                  structuredClone(pilotCase.riskStateA)
+                );
+                setRiskStateA(structuredClone(pilotCase.riskStateA));
+                setRiskStateB(structuredClone(pilotCase.riskStateB));
+                setIsDirty(true);
+                console.log("[PULSE DEBUG] isRunning:caseChange -> false", {
+                  previous: isRunning,
+                  reason: "caseChange",
+                });
+                setHasSimulationCompleted(false);
+                setIsRunning(false);
+                resetRunState();
+              }
+            }}
+            style={{
+              background: "#0e1117",
+              color: "#e6edf3",
+              border: "1px solid #2f333a",
+              borderRadius: "6px",
+              padding: "6px 10px",
+              fontSize: "13px",
+              marginRight: "16px",
+            }}
+          >
+            <option value="">Custom</option>
+            {VISIBLE_PILOT_CASES.map((c) => (
+              <option key={c.id} value={c.id}>
+                {CASE_TRANSLATIONS[c.title as keyof typeof CASE_TRANSLATIONS]?.[uiLanguage] ?? c.title}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className={activeScenario === "A" ? "active-button" : ""}
+            onClick={() => {
+              setShowA(true);
+              setShowB(false);
+              setActiveScenario("A");
+            }}
+            style={{
+              padding: "8px 16px",
+              background: showA && !showB ? "#2f333a" : "#1a1a1a",
+              border: "1px solid #2f333a",
+              borderRadius: "6px",
+              color: "#e6edf3",
+              cursor: "pointer",
+            }}
+          >
+            Scenario A
+          </button>
+          <button
+            type="button"
+            className={activeScenario === "B" ? "active-button" : ""}
+            onClick={() => {
+              setShowA(false);
+              setShowB(true);
+              setActiveScenario("B");
+            }}
+            style={{
+              padding: "8px 16px",
+              background: showB && !showA ? "#2f333a" : "#1a1a1a",
+              border: "1px solid #2f333a",
+              borderRadius: "6px",
+              color: "#e6edf3",
+              cursor: "pointer",
+            }}
+          >
+            Scenario B
+          </button>
+          <button
+            type="button"
+            className={activeScenario === "BOTH" ? "active-button" : ""}
+            onClick={() => {
+              setShowA(true);
+              setShowB(true);
+              setActiveScenario("BOTH");
+            }}
+            style={{
+              padding: "8px 16px",
+              background: showA && showB ? "#2f333a" : "#1a1a1a",
+              border: "1px solid #2f333a",
+              borderRadius: "6px",
+              color: "#e6edf3",
+              cursor: "pointer",
+            }}
+          >
+            {pulseLanguage[uiLanguage].both}
+          </button>
+          <button
+            type="button"
+            onClick={freezeScenarioA}
+            style={{
+              padding: "8px 16px",
+              background: "#1a1a1a",
+              border: "1px solid #2f333a",
+              borderRadius: "6px",
+              color: "#e6edf3",
+              cursor: "pointer",
+            }}
+          >
+            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <span
+                style={{
+                  opacity: freezeFlash === "A" ? 0.6 : 1,
+                  transition: "opacity 0.2s ease",
+                }}
+              >
+                {freezeFlash === "A" ? "✓" : "✚"}
+              </span>
+              Freeze Scenario A
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={freezeScenarioB}
+            style={{
+              padding: "8px 16px",
+              background: "#1a1a1a",
+              border: "1px solid #2f333a",
+              borderRadius: "6px",
+              color: "#e6edf3",
+              cursor: "pointer",
+            }}
+          >
+            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <span
+                style={{
+                  opacity: freezeFlash === "B" ? 0.6 : 1,
+                  transition: "opacity 0.2s ease",
+                }}
+              >
+                {freezeFlash === "B" ? "✓" : "✚"}
+              </span>
+              Freeze Scenario B
+            </span>
+          </button>
+          <button
+            type="button"
+            disabled={isRunning}
+            onClick={() => {
+              startSimulation("manual", riskStateA, riskStateB);
+            }}
+            style={{
+              padding: "8px 16px",
+              background: "#1a1a1a",
+              border: "1px solid #2f333a",
+              borderRadius: "6px",
+              color: "#e6edf3",
+              cursor: isRunning ? "not-allowed" : "pointer",
+            }}
+          >
+            Start
+          </button>
+          <button
+            type="button"
+            disabled={!isRunning}
+            onClick={() => {
+              if (intervalRef.current) {
+                window.clearInterval(intervalRef.current);
+                intervalRef.current = null;
+              }
+              console.log("[PULSE DEBUG] stopClick", {
+                riskStateA,
+                riskStateB,
+                isRunningBefore: isRunning,
+              });
+              setHasSimulationCompleted(true);
+              setIsRunning(false);
+              if (marginHistoryA.length > 0 && marginHistoryB.length > 0) {
+                const summary = calculateExecutiveSummary({
+                  marginSeriesA: marginHistoryA,
+                  marginSeriesB: marginHistoryB,
+                  tippingThreshold: EXEC_TIPPING_THRESHOLD,
+                  sustainThreshold: EXEC_SUSTAIN_THRESHOLD,
+                  collapseThreshold: EXEC_COLLAPSE_THRESHOLD,
+                  tippingStepB: tippingMarginIndexB != null ? tippingMarginIndexB + 1 : null,
+                });
+                setExecutiveSummary(summary);
+                console.log("Executive summary", summary);
+              } else {
+                setExecutiveSummary(null);
+                console.log("Executive summary", null);
+              }
+              console.log("[PULSE DEBUG] stopClick:after", {
+                riskStateA,
+                riskStateB,
+                isRunningAfter: false,
+              });
+            }}
+            style={{
+              padding: "8px 16px",
+              background: "#1a1a1a",
+              border: "1px solid #2f333a",
+              borderRadius: "6px",
+              color: "#e6edf3",
+              cursor: !isRunning ? "not-allowed" : "pointer",
+            }}
+          >
+            Stop
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              console.log("[PULSE DEBUG] resetClick:before", {
+                riskStateA,
+                riskStateB,
+                isRunning,
+              });
+              setHasSimulationCompleted(false);
               setIsRunning(false);
               resetRunState();
-            }
-          }}
-          style={{
-            background: "#0e1117",
-            color: "#e6edf3",
-            border: "1px solid #2f333a",
-            borderRadius: "6px",
-            padding: "6px 10px",
-            fontSize: "13px",
-            marginRight: "16px",
-          }}
-        >
-          <option value="">Custom</option>
-          {VISIBLE_PILOT_CASES.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.title}
-            </option>
-          ))}
-        </select>
-        <button
-          type="button"
-          onClick={() => {
-            setShowA(true);
-            setShowB(false);
-          }}
-          style={{
-            padding: "8px 16px",
-            background: showA && !showB ? "#2f333a" : "#1a1a1a",
-            border: "1px solid #2f333a",
-            borderRadius: "6px",
-            color: "#e6edf3",
-            cursor: "pointer",
-          }}
-        >
-          Current
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setShowA(false);
-            setShowB(true);
-          }}
-          style={{
-            padding: "8px 16px",
-            background: showB && !showA ? "#2f333a" : "#1a1a1a",
-            border: "1px solid #2f333a",
-            borderRadius: "6px",
-            color: "#e6edf3",
-            cursor: "pointer",
-          }}
-        >
-          Alternative
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setShowA(true);
-            setShowB(true);
-          }}
-          style={{
-            padding: "8px 16px",
-            background: showA && showB ? "#2f333a" : "#1a1a1a",
-            border: "1px solid #2f333a",
-            borderRadius: "6px",
-            color: "#e6edf3",
-            cursor: "pointer",
-          }}
-        >
-          Both
-        </button>
-        <button
-          type="button"
-          onClick={freezeScenarioA}
-          style={{
-            padding: "8px 16px",
-            background: "#1a1a1a",
-            border: "1px solid #2f333a",
-            borderRadius: "6px",
-            color: "#e6edf3",
-            cursor: "pointer",
-          }}
-        >
-          <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <span
-              style={{
-                opacity: freezeFlash === "A" ? 0.6 : 1,
-                transition: "opacity 0.2s ease",
-              }}
-            >
-              {freezeFlash === "A" ? "✓" : "✚"}
-            </span>
-            Freeze Current
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={freezeScenarioB}
-          style={{
-            padding: "8px 16px",
-            background: "#1a1a1a",
-            border: "1px solid #2f333a",
-            borderRadius: "6px",
-            color: "#e6edf3",
-            cursor: "pointer",
-          }}
-        >
-          <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <span
-              style={{
-                opacity: freezeFlash === "B" ? 0.6 : 1,
-                transition: "opacity 0.2s ease",
-              }}
-            >
-              {freezeFlash === "B" ? "✓" : "✚"}
-            </span>
-            Freeze Alternative
-          </span>
-        </button>
-        <button
-          type="button"
-          disabled={isRunning}
-          onClick={startSimulation}
-          style={{
-            padding: "8px 16px",
-            background: "#1a1a1a",
-            border: "1px solid #2f333a",
-            borderRadius: "6px",
-            color: "#e6edf3",
-            cursor: isRunning ? "not-allowed" : "pointer",
-          }}
-        >
-          Start
-        </button>
-        <button
-          type="button"
-          disabled={!isRunning}
-          onClick={() => {
-            setIsRunning(false);
-            if (marginHistoryA.length > 0 && marginHistoryB.length > 0) {
-              const summary = calculateExecutiveSummary({
-                marginSeriesA: marginHistoryA,
-                marginSeriesB: marginHistoryB,
-                tippingThreshold: EXEC_TIPPING_THRESHOLD,
-                sustainThreshold: EXEC_SUSTAIN_THRESHOLD,
-                collapseThreshold: EXEC_COLLAPSE_THRESHOLD,
-                tippingStepB: tippingMarginIndexB != null ? tippingMarginIndexB + 1 : null,
-              });
-              setExecutiveSummary(summary);
-              console.log("Executive summary", summary);
-            } else {
-              setExecutiveSummary(null);
-              console.log("Executive summary", null);
-            }
-          }}
-          style={{
-            padding: "8px 16px",
-            background: "#1a1a1a",
-            border: "1px solid #2f333a",
-            borderRadius: "6px",
-            color: "#e6edf3",
-            cursor: !isRunning ? "not-allowed" : "pointer",
-          }}
-        >
-          Stop
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setIsRunning(false);
-            resetRunState();
-            setIsDirty(true);
+              setIsDirty(true);
 
-            const caseId = selectedPilotCaseId;
+              const caseId = selectedPilotCaseId;
 
-            if (!caseId) {
-              // Custom: reset all risks to LOW
-              const lowRiskState = Object.keys(defaultRiskState).reduce(
-                (acc, key) => {
-                  acc[key] = "LOW";
-                  return acc;
-                },
-                {} as Record<string, RiskLevel>
-              );
-              setRiskStateA({ ...lowRiskState });
-              setRiskStateB({ ...lowRiskState });
-            } else {
-              const pilotCase = PILOT_CASES.find((c) => c.id === caseId);
-              if (pilotCase) {
-                setRiskStateA({ ...pilotCase.riskStateA });
-                setRiskStateB({ ...pilotCase.riskStateB });
+              if (!caseId) {
+                // Reset to engine baseline (all MODERATE), matching initial load
+                console.log("[PULSE DEBUG] resetClick:toBaseline", {
+                  nextRiskStateA: defaultRiskState,
+                  nextRiskStateB: defaultRiskState,
+                });
+                console.log(
+                  "setRiskStateA called with:",
+                  structuredClone(defaultRiskState)
+                );
+                setRiskStateA(structuredClone(defaultRiskState));
+                setRiskStateB(structuredClone(defaultRiskState));
+              } else {
+                const pilotCase = PILOT_CASES.find((c) => c.id === caseId);
+                if (pilotCase) {
+                  console.log("[PULSE DEBUG] resetClick:toCaseDefaults", {
+                    caseId,
+                    nextRiskStateA: pilotCase.riskStateA,
+                    nextRiskStateB: pilotCase.riskStateB,
+                  });
+                  console.log(
+                    "setRiskStateA called with:",
+                    structuredClone(pilotCase.riskStateA)
+                  );
+                  setRiskStateA(structuredClone(pilotCase.riskStateA));
+                  setRiskStateB(structuredClone(pilotCase.riskStateB));
+                }
               }
-            }
-          }}
-          style={{
-            padding: "8px 16px",
-            background: "#1a1a1a",
-            border: "1px solid #2f333a",
-            borderRadius: "6px",
-            color: "#e6edf3",
-            cursor: "pointer",
-          }}
-        >
-          Reset
-        </button>
+              setScenarioPromptA("");
+              setScenarioPromptB("");
+            }}
+            style={{
+              padding: "8px 16px",
+              background: "#1a1a1a",
+              border: "1px solid #2f333a",
+              borderRadius: "6px",
+              color: "#e6edf3",
+              cursor: "pointer",
+            }}
+          >
+            {pulseLanguage[uiLanguage].reset}
+          </button>
+          <button
+            type="button"
+            className={isAutoScale ? "active-button" : ""}
+            onClick={() => setIsAutoScale((v) => !v)}
+            style={{
+              padding: "8px 16px",
+              background: "#1a1a1a",
+              border: "1px solid #2f333a",
+              borderRadius: "6px",
+              color: "#e6edf3",
+              cursor: "pointer",
+            }}
+          >
+            {isAutoScale ? pulseLanguage[uiLanguage].autoScaleOn : pulseLanguage[uiLanguage].autoScaleOff}
+          </button>
+        </div>
         <button
           type="button"
-          onClick={() => setIsAutoScale((v) => !v)}
+          onClick={() => setUiMode((m) => (m === "executive" ? "expert" : "executive"))}
           style={{
-            padding: "8px 16px",
-            background: "#1a1a1a",
-            border: "1px solid #2f333a",
+            padding: "6px 12px",
+            fontSize: "12px",
+            background: theme.buttonBg,
+            border: `1px solid ${theme.buttonBorder}`,
             borderRadius: "6px",
-            color: "#e6edf3",
+            color: theme.text,
             cursor: "pointer",
           }}
         >
-          {isAutoScale ? "Auto-scale: ON" : "Auto-scale: OFF"}
+          {uiMode === "executive" ? "Executive Mode" : "Expert Mode"}
         </button>
-        </div>
+      </div>
+      {showHelp && (
         <div
           style={{
-            marginLeft: "auto",
-            display: "flex",
-            alignItems: "center",
-            gap: "12px",
+            marginBottom: "12px",
+            padding: "18px 20px",
+            borderRadius: "8px",
+            background: "#0f172a",
+            border: "1px solid #374151",
+            fontSize: "13px",
+            lineHeight: "1.65",
+            color: "#E5E7EB",
           }}
         >
-          <button
-            type="button"
-            onClick={() => setUiLanguage((l) => (l === "sv" ? "en" : "sv"))}
-            style={{
-              padding: "8px 16px",
-              background: theme.buttonBg,
-              border: `1px solid ${theme.buttonBorder}`,
-              borderRadius: "6px",
-              color: theme.text,
-              cursor: "pointer",
-            }}
-          >
-            {uiLanguage === "sv" ? "SV" : "EN"}
-          </button>
-          <button
-            type="button"
-            onClick={() =>
-              setUiTheme((t) => (t === "dark" ? "light" : "dark"))
-            }
-            style={{
-              padding: "8px 16px",
-              background: theme.buttonBg,
-              border: `1px solid ${theme.buttonBorder}`,
-              borderRadius: "6px",
-              color: theme.text,
-              cursor: "pointer",
-            }}
-          >
-            {uiTheme === "dark" ? "Theme: Dark" : "Theme: Light"}
-          </button>
-          <button
-            type="button"
-            onClick={() => setUiMode((m) => (m === "executive" ? "expert" : "executive"))}
-            style={{
-              padding: "6px 12px",
-              fontSize: "12px",
-              background: theme.buttonBg,
-              border: `1px solid ${theme.buttonBorder}`,
-              borderRadius: "6px",
-              color: theme.text,
-              cursor: "pointer",
-            }}
-          >
-            {uiMode === "executive" ? "Executive Mode" : "Expert Mode"}
-          </button>
+          <b>Pulse – Help</b>
+
+          <div style={{ marginTop: "8px", marginBottom: "8px" }}>
+            1. Justera risknivåer till vänster eller skriv ett scenario i promptfältet.
+          </div>
+
+          <div style={{ marginBottom: "8px" }}>
+            2. Klicka <b>Start</b> för att simulera systemets utveckling över tid.
+          </div>
+
+          <div style={{ marginBottom: "10px", marginTop: "6px" }}>
+            3. Grafen visar hur marginalen utvecklas för nuvarande och alternativ strategi.
+          </div>
+
+          <div style={{ marginBottom: "10px", marginTop: "6px" }}>
+            4. Zonerna visar systemets tillstånd:
+            <br />
+            Robust → stabil utveckling
+            <br />
+            Hållbar → inom säker nivå
+            <br />
+            Erosion → strukturell försvagning
+            <br />
+            Kollaps → systemet bryter samman
+          </div>
+
+          <div style={{ marginBottom: "8px" }}>
+            5. <b>Freeze</b> sparar ett snapshot så scenarier kan jämföras.
+          </div>
+
+          <div>
+            6. Simulation Horizon (12M / 36M / 60M) styr hur långt simuleringen körs.
+          </div>
         </div>
-      </div>
+      )}
       {selectedPilotCaseId && PILOT_CASES.find((c) => c.id === selectedPilotCaseId) && (
         <div style={{ marginBottom: "12px", fontSize: "12px", color: "#9ca3af" }}>
           {PILOT_CASES.find((c) => c.id === selectedPilotCaseId)?.oneLiner}
@@ -855,15 +1501,39 @@ export default function PilotFastighetPage() {
                       marginBottom: "10px",
                     }}
                   >
-                    <span style={{ fontSize: "13px" }}>{param.label}</span>
+                    <span style={{ fontSize: "13px" }}>
+                      {pulseLanguage[uiLanguage].riskLabels[param.key] ?? param.label}
+                    </span>
                     <select
                       value={activeRiskState[param.key]}
+                      disabled={!isEditableScenario}
                       onChange={(e) => {
-                        setIsDirty(true);
-                        setActiveRiskState({
-                          ...activeRiskState,
-                          [param.key]: e.target.value as RiskLevel,
+                        console.log("[PULSE DEBUG] driverChange", {
+                          scenario: activeScenario,
+                          parameter: param.key,
+                          previousValue: activeRiskState[param.key],
+                          nextValue: e.target.value,
+                          riskStateA,
+                          riskStateB,
                         });
+                        setIsDirty(true);
+                        const parameter = param.key;
+                        const nextValue = e.target.value as RiskLevel;
+                        if (activeScenario === "A") {
+                          setRiskStateA((prev) => {
+                            const nextState = {
+                              ...prev,
+                              [parameter]: nextValue,
+                            };
+                            console.log("setRiskStateA called with:", nextState);
+                            return nextState;
+                          });
+                        } else if (activeScenario === "B") {
+                          setRiskStateB((prev) => ({
+                            ...prev,
+                            [parameter]: nextValue,
+                          }));
+                        }
                       }}
                       style={{
                         background: "#0e1117",
@@ -896,24 +1566,37 @@ export default function PilotFastighetPage() {
               borderRadius: "8px",
             }}
           >
-            <div style={{ display: "flex", gap: "24px", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: "24px", flexWrap: "wrap", alignItems: "flex-end" }}>
               <div>
-                <div style={{ fontSize: "12px", color: "#9CA3AF" }}>Current Strategy margin</div>
+                <div style={{ fontSize: "12px", color: "#9CA3AF" }}>Nuvarande strategi – marginal</div>
                 <div style={{ fontSize: "18px", fontWeight: 600 }}>
                   {stateA.margin.toFixed(5)}
                 </div>
               </div>
               <div>
-                <div style={{ fontSize: "12px", color: "#9CA3AF" }}>Alternative Strategy margin</div>
+                <div style={{ fontSize: "12px", color: "#9CA3AF" }}>Alternativ strategi – marginal</div>
                 <div style={{ fontSize: "18px", fontWeight: 600 }}>
                   {stateB.margin.toFixed(5)}
                 </div>
               </div>
               <div>
-                <div style={{ fontSize: "12px", color: "#9CA3AF" }}>Δ Impact</div>
+                <div style={{ fontSize: "12px", color: "#9CA3AF" }}>Skillnad</div>
                 <div style={{ fontSize: "16px", fontWeight: 600 }}>
                   {(stateB.margin - stateA.margin).toFixed(5)}
                 </div>
+              </div>
+              <div
+                style={{
+                  marginLeft: "auto",
+                  fontSize: "12px",
+                  color: "#9CA3AF",
+                  fontWeight: 500,
+                  textAlign: "right",
+                }}
+              >
+                {uiLanguage === "sv"
+                  ? `Simulerad period: M1 → M${(stateA.step ?? 0) + 1}`
+                  : `Simulated period: M1 → M${(stateA.step ?? 0) + 1}`}
               </div>
             </div>
           </div>
@@ -966,375 +1649,402 @@ export default function PilotFastighetPage() {
           setIsDragging(false);
         }}
       >
-        <div
-          style={{
-            fontSize: "12px",
-            color: "#9CA3AF",
-            display: "flex",
-            gap: "12px",
-            alignItems: "center",
-            flexWrap: "wrap",
-            marginBottom: "8px",
-          }}
-        >
-          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-            <span
-              style={{
-                width: "12px",
-                borderTop: "2px solid #2563eb",
-              }}
-            />
-            {t.common.legend.scenarioA}
-          </span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-            <span
-              style={{
-                width: "12px",
-                borderTop: "2px dashed #2563eb",
-              }}
-            />
-            {t.common.legend.scenarioB}
-          </span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-            <span
-              style={{
-                width: "12px",
-                borderTop: "1.5px dashed #9CA3AF",
-              }}
-            />
-            {t.common.legend.sustain}
-          </span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-            <span
-              style={{
-                width: "12px",
-                borderTop: "2px solid",
-                borderTopColor: theme.graphBg === "#0b0f14" ? "#E5E7EB" : "#4B5563",
-              }}
-            />
-            {t.common.legend.zeroLine}
-          </span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-            <span
-              style={{
-                width: "12px",
-                borderTop: "1px dashed #374151",
-              }}
-            />
-            {t.common.legend.grid}
-          </span>
-        </div>
-        <svg
-          ref={svgRef}
-          viewBox="0 0 600 300"
-          preserveAspectRatio="none"
-          width="100%"
-          height={480}
-          style={{ display: "block", background: "#ffffff", border: "1px solid #e5e7eb", borderRadius: "4px", minHeight: 480 }}
-          onMouseMove={(e) => {
-            const rect = e.currentTarget.getBoundingClientRect();
-            const LEFT_PADDING = 55;
-            const graphWidth = 600 - LEFT_PADDING - 10;
-            const viewBoxX = (e.clientX - rect.left) / rect.width * 600;
-            const x = viewBoxX - LEFT_PADDING;
-            const quarterWidth =
-              graphWidth / Math.max(marginHistoryA.length - 1, 1);
-            const clampedX = Math.max(0, Math.min(x, graphWidth));
-            const index = Math.round(clampedX / quarterWidth);
-            if (index >= 0 && index < marginHistoryA.length) {
-              setHoverIndex(index);
-            } else {
-              setHoverIndex(null);
-            }
-          }}
-          onMouseLeave={() => setHoverIndex(null)}
-        >
-          {(() => {
-            const startMargin = marginHistoryA.length > 0 ? marginHistoryA[0] : 1;
-            const LEFT_PADDING = 55;
-            const totalSteps = Math.max(marginHistoryA.length, marginHistoryB.length, 1);
-            const graphWidth = 600 - LEFT_PADDING - 10;
-            const scaleX = (index: number) => {
-              if (totalSteps <= 1) return LEFT_PADDING;
-              return LEFT_PADDING + (index / (totalSteps - 1)) * graphWidth;
-            };
-
-            const displayMarginB =
-              marginHistoryA.length > 0 && marginHistoryB.length > 0
-                ? [marginHistoryA[0], ...marginHistoryB.slice(1)]
-                : marginHistoryB;
-
-            const allMargins = [...marginHistoryA, ...displayMarginB];
-
-            const dataMax =
-              allMargins.length > 0
-                ? Math.max(...allMargins)
-                : 1;
-
-            const dataMin =
-              allMargins.length > 0
-                ? Math.min(...allMargins)
-                : 0;
-
-            const padding = 0.1;
-            let yMax: number;
-            let yMin: number;
-            if (isAutoScale) {
-              yMax = dataMax + padding;
-              yMin = dataMin - padding;
-            } else {
-              yMax = 1.2;
-              yMin = -1.0;
-            }
-
-            const range = yMax - yMin;
-            const TOP_PADDING = 12;
-            const BOTTOM_PADDING = 8;
-            const gridLevels = 4;
-            const scaleY = (value: number) =>
-              TOP_PADDING +
-              ((yMax - value) / (yMax - yMin)) * (300 - TOP_PADDING - BOTTOM_PADDING);
-            const pointsA = marginHistoryA.map((m, i) => `${scaleX(i)},${scaleY(m)}`).join(" ");
-            const pointsB = displayMarginB.map((m, i) => `${scaleX(i)},${scaleY(m)}`).join(" ");
-            const zeroBetween = yMin <= 0 && yMax >= 0;
-            const numYTicks = 9;
-            const yTickValues = Array.from({ length: numYTicks }, (_, i) =>
-              yMin + (range / (numYTicks - 1)) * i
-            );
-
-            const tippingIndex = tippingMarginIndexB ?? null;
-            const tippingMargin =
-              tippingIndex !== null && marginHistoryB[tippingIndex] !== undefined
-                ? marginHistoryB[tippingIndex]
-                : null;
-            const tippingY =
-              tippingMargin !== null ? scaleY(tippingMargin) : null;
-
-            return (
-              <>
-                <rect x={0} y={0} width={600} height={300} fill="white" />
-                {/* Y-axis line */}
-                <line x1={LEFT_PADDING} y1={0} x2={LEFT_PADDING} y2={300} stroke="#9ca3af" strokeWidth={1} />
-                {Array.from({ length: gridLevels }).map((_, i) => {
-                  const value = yMin + (range / (gridLevels - 1)) * i;
-                  const y = scaleY(value);
-
-                  return (
-                    <line
-                      key={`grid-${i}`}
-                      x1={LEFT_PADDING}
-                      x2={600}
-                      y1={y}
-                      y2={y}
-                      stroke="#94a3b8"
-                      strokeWidth={1}
-                      strokeOpacity={0.18}
-                    />
-                  );
-                })}
-                <line
-                  x1={LEFT_PADDING}
-                  x2={600}
-                  y1={scaleY(EXEC_SUSTAIN_THRESHOLD)}
-                  y2={scaleY(EXEC_SUSTAIN_THRESHOLD)}
-                  stroke="#9CA3AF"
-                  strokeWidth={1.25}
-                  strokeDasharray="6 4"
-                  opacity={0.85}
-                />
-                {yTickValues.map((value, i) => (
-                  <text
-                    key={`ytick-${i}`}
-                    x={LEFT_PADDING - 8}
-                    y={scaleY(value)}
-                    textAnchor="end"
-                    dominantBaseline="middle"
-                    fontSize="11"
-                    fill="#6b7280"
-                  >
-                    {value.toFixed(2)}
-                  </text>
-                ))}
-                {zeroBetween && (
-                  <line
-                    x1={LEFT_PADDING}
-                    y1={scaleY(0)}
-                    x2={600}
-                    y2={scaleY(0)}
-                    stroke={theme.graphBg === "#0b0f14" ? "#E5E7EB" : "#4B5563"}
-                    strokeWidth={2}
-                  />
-                )}
-                {tippingIndex !== null && tippingY !== null && (
-                  <rect
-                    x={scaleX(tippingIndex)}
-                    y={tippingY}
-                    width={scaleX(tippingIndex + 2) - scaleX(tippingIndex)}
-                    height={300 - tippingY}
-                    fill="#f97316"
-                    opacity={0.11}
-                  />
-                )}
-                {tippingIndex !== null && tippingY !== null && (
-                  <text
-                    x={scaleX(tippingIndex + 1)}
-                    y={tippingY + (300 - tippingY) / 2}
-                    fill="#ea580c"
-                    fontSize="12"
-                    fontWeight={500}
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    opacity={0.9}
-                  >
-                    Tipping risk
-                  </text>
-                )}
-                {hoverIndex !== null && (
-                  <line
-                    x1={scaleX(hoverIndex)}
-                    x2={scaleX(hoverIndex)}
-                    y1={0}
-                    y2={300}
-                    stroke="#9ca3af"
-                    strokeDasharray="4 4"
-                    strokeOpacity={0.6}
-                  />
-                )}
-                {hoverIndex !== null && marginHistoryA[hoverIndex] !== undefined && (
-                  <circle
-                    cx={scaleX(hoverIndex)}
-                    cy={scaleY(marginHistoryA[hoverIndex])}
-                    r={4}
-                    fill="#2563eb"
-                    stroke="white"
-                    strokeWidth={1.5}
-                  />
-                )}
-                {hoverIndex !== null && marginHistoryB[hoverIndex] !== undefined && (
-                  <circle
-                    cx={scaleX(hoverIndex)}
-                    cy={scaleY(marginHistoryB[hoverIndex])}
-                    r={4}
-                    fill="#2563eb"
-                    stroke="white"
-                    strokeWidth={1.5}
-                  />
-                )}
-                {hoverIndex !== null && marginHistoryA[hoverIndex] !== undefined && (
-                  <g>
-                    <rect
-                      x={scaleX(hoverIndex) - 60}
-                      y={20}
-                      width={120}
-                      height={50}
-                      fill="#111"
-                      stroke="#333"
-                      rx={6}
-                    />
-                    <text
-                      x={scaleX(hoverIndex)}
-                      y={36}
-                      fill="white"
-                      fontSize="11"
-                      textAnchor="middle"
-                    >
-                      {`Q${hoverIndex + 1}`}
-                    </text>
-                    <text
-                      x={scaleX(hoverIndex)}
-                      y={50}
-                      fill="#2563eb"
-                      fontSize="11"
-                      textAnchor="middle"
-                    >
-                      {`Current: ${marginHistoryA[hoverIndex].toFixed(2)}`}
-                    </text>
-                    {marginHistoryB[hoverIndex] !== undefined && (
-                      <text
-                        x={scaleX(hoverIndex)}
-                        y={64}
-                        fill="#2563eb"
-                        fontSize="11"
-                        textAnchor="middle"
-                      >
-                        {`Alternative: ${marginHistoryB[hoverIndex].toFixed(2)}`}
-                      </text>
-                    )}
-                  </g>
-                )}
-                {marginHistoryA.length > 0 && (
-                  <circle
-                    cx={scaleX(0)}
-                    cy={scaleY(marginHistoryA[0])}
-                    r={4}
-                    fill="white"
-                    stroke="#2563eb"
-                    strokeWidth={2}
-                  />
-                )}
-                {showA && pointsA ? <polyline fill="none" stroke="#2563eb" strokeWidth={2} points={pointsA} /> : null}
-                {showB && pointsB ? <polyline fill="none" stroke="#2563eb" strokeWidth={2} strokeDasharray="6 4" points={pointsB} /> : null}
-                {showA && tippingMarginIndexA != null && marginHistoryA[tippingMarginIndexA] != null && (
-                  <circle cx={scaleX(tippingMarginIndexA)} cy={scaleY(marginHistoryA[tippingMarginIndexA])} r={4} fill="#3b82f6" />
-                )}
-              </>
-            );
-          })()}
-        </svg>
-        {(() => {
-          const totalSteps = Math.max(marginHistoryA.length, marginHistoryB.length);
-          if (totalSteps <= 0) return null;
-          const LEFT_PADDING = 55;
-          const graphWidth = 600 - LEFT_PADDING - 10;
-          const scaleX = (index: number) => {
-            if (totalSteps <= 1) return LEFT_PADDING;
-            return LEFT_PADDING + (index / (totalSteps - 1)) * graphWidth;
-          };
-          const approxMaxLabels = 6;
-          const labelInterval = Math.max(1, Math.ceil(totalSteps / approxMaxLabels));
-          const indices: number[] = [];
-          for (let i = 0; i < totalSteps; i++) {
-            if (i % labelInterval === 0) indices.push(i);
-          }
-          return (
+        <MarginGraphLegendRow uiLanguage={uiLanguage} />
+        {breachDifference !== null && (
+          <div
+            style={{
+              fontSize: "13px",
+              color: "#374151",
+              marginBottom: "6px",
+              fontWeight: 500,
+            }}
+          >
+            {breachDifference <= 0
+              ? pulseLanguage[uiLanguage].scenarioBDoesNotDelayBreach
+              : (typeof pulseLanguage[uiLanguage].scenarioBDelaysBreachBy === "function"
+                  ? pulseLanguage[uiLanguage].scenarioBDelaysBreachBy(breachDifference)
+                  : String(pulseLanguage[uiLanguage].scenarioBDelaysBreachBy))}
+          </div>
+        )}
+        <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+          <div style={{ flex: 2, minWidth: 0 }}>
             <div
               style={{
-                position: "relative",
-                height: "18px",
-                marginTop: "4px",
-                fontSize: "13px",
-                color: "#9CA3AF",
+                width: "100%",
+                overflowX: "auto",
+                overflowY: "hidden",
               }}
             >
-              {indices.map((i) => (
-                <span
-                  key={i}
-                  style={{
-                    position: "absolute",
-                    left: `${(scaleX(i) / 600) * 100}%`,
-                    transform: "translateX(-50%)",
-                  }}
-                >
-                  {`Q${i + 1}`}
-                </span>
-              ))}
+              <div style={{ minWidth: 720 }}>
+                {isDirty && (
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "#b45309",
+                      marginBottom: 6,
+                      fontWeight: 500,
+                    }}
+                  >
+                    {uiLanguage === "sv"
+                      ? "Simuleringen behöver uppdateras — tryck Start"
+                      : "Simulation needs update — press Start to rerun"}
+                  </div>
+                )}
+                <MarginGraph
+                  marginHistoryA={marginHistoryA}
+                  marginHistoryB={marginHistoryB}
+                  displayMarginB={
+                    marginHistoryA.length > 0 && marginHistoryB.length > 0
+                      ? [marginHistoryA[0], ...marginHistoryB.slice(1)]
+                      : marginHistoryB
+                  }
+                  tippingMarginIndexA={tippingMarginIndexA}
+                  tippingMarginIndexB={tippingMarginIndexB}
+                  hoverIndex={hoverIndex}
+                  showA={showA}
+                  showBaselineOnly={showBaselineOnly}
+                  showB={showB && marginHistoryB.length > 0}
+                  isAutoScale={isAutoScale}
+                  simulationHorizon={simulationHorizon}
+                  theme={theme}
+                  uiLanguage={uiLanguage}
+                  svgRef={svgRef}
+                  setHoverIndex={setHoverIndex}
+                  cascadeEventsA={cascadeEventsA}
+                  cascadeEventsB={cascadeEventsB}
+                  onSelectMonth={setSelectedMonthData}
+                  selectedMonthIndex={selectedMonthData?.monthIndex}
+                />
+              </div>
             </div>
-          );
-        })()}
-        <div
+          </div>
+          <div
+            style={{
+              flex: 1,
+              background: "#111827",
+              borderRadius: 8,
+              padding: 12,
+              minWidth: 260,
+            }}
+          >
+            <AIInspectorPanel
+              language={uiLanguage}
+              caseName={
+                PILOT_CASES.find((c) => c.id === selectedPilotCaseId)?.title ?? ""
+              }
+              tippingQuarter={
+                tippingMarginIndexB != null ? tippingMarginIndexB + 1 : null
+              }
+              currentMargin={finalA}
+              alternativeMargin={finalB}
+              marginImpact={finalB - finalA}
+              cascadeEvents={cascadeEvents}
+              cascadeEventsA={cascadeEventsA}
+              cascadeEventsB={cascadeEventsB}
+              seriesLengthA={marginHistoryA.length}
+              seriesLengthB={marginHistoryB.length}
+              simulationHorizon={simulationHorizon}
+              primaryDriver={primaryDriver}
+              systemPressure={systemPressure}
+              constraintBreakQuarter={estimatedTimeToBreach}
+              structuralStatus={t.structuralStatus[structuralStatusKey]}
+              selectedMonthIndex={selectedMonthData?.monthIndex ?? null}
+              selectedMarginValueA={selectedMonthData?.marginA ?? null}
+              selectedMarginValueB={selectedMonthData?.marginB ?? null}
+            />
+          </div>
+        </div>
+        {selectedMonthData && (
+          <div
+            style={{
+              marginTop: 10,
+              padding: 10,
+              borderRadius: 6,
+              background: "#0f172a",
+              border: "1px solid #1e293b",
+              fontSize: 13,
+              display: "flex",
+              gap: 18,
+            }}
+          >
+            <div>
+              Month:
+              <strong>
+                {" "}
+                M{selectedMonthData.monthIndex + 1}
+              </strong>
+            </div>
+
+            <div>
+              Scenario A:
+              <strong>
+                {" "}
+                {selectedMonthData.marginA.toFixed(1)}%
+              </strong>
+            </div>
+
+            <div>
+              Scenario B:
+              <strong>
+                {" "}
+                {selectedMonthData.marginB.toFixed(1)}%
+              </strong>
+            </div>
+
+            <div>
+              Difference:
+              <strong>
+                {" "}
+                {selectedMonthData.difference.toFixed(1)}%
+              </strong>
+            </div>
+          </div>
+        )}
+        <div style={{ height: 8 }} />
+        <div style={{ marginBottom: 12 }}>
+          <div
+            style={{
+              fontSize: 11,
+              color: "#9CA3AF",
+              marginBottom: 4,
+            }}
+          >
+            Simulation horizon
+          </div>
+
+          {[12, 36, 60].map((q) => (
+            <button
+              key={q}
+              type="button"
+              onClick={() => {
+                setSimulationHorizon(q);
+                setCustomHorizon(null);
+              }}
+              style={{
+                marginRight: 6,
+                padding: "4px 10px",
+                fontSize: 11,
+                border: "1px solid #374151",
+                background: simulationHorizon === q && customHorizon == null ? "#1F2937" : "#111827",
+                color: "#E5E7EB",
+                borderRadius: 4,
+                cursor: "pointer",
+              }}
+            >
+              {q}M
+            </button>
+          ))}
+          <span style={{ marginLeft: 8, fontSize: 11, color: "#9CA3AF" }}>Custom horizon</span>
+          <input
+            type="number"
+            min={1}
+            max={120}
+            placeholder="Custom Q"
+            value={customHorizon ?? ""}
+            style={{
+              width: "80px",
+              marginLeft: "8px",
+              padding: "4px 6px",
+              border: "1px solid #374151",
+              borderRadius: "4px",
+              background: "#111827",
+              color: "#e5e7eb",
+              fontSize: "12px",
+            }}
+            onChange={(e) => {
+              const raw = e.target.value.trim();
+              if (raw === "") {
+                setCustomHorizon(null);
+                return;
+              }
+              const v = parseInt(raw, 10);
+              if (!isNaN(v) && v >= 1 && v <= 120) {
+                setCustomHorizon(v);
+                setSimulationHorizon(v);
+              }
+            }}
+          />
+        </div>
+        <select
+          value={domain}
+          onChange={(e) => {
+            const newDomain = e.target.value as DomainKey;
+            setDomain(newDomain);
+            setActiveDomain(newDomain);
+          }}
           style={{
-            textAlign: "center",
-            fontSize: "12px",
-            color: "#6B7280",
-            marginTop: "4px",
-            letterSpacing: "0.04em",
+            marginBottom: "10px",
+            padding: "6px",
+            borderRadius: "4px",
           }}
         >
-          Kvartal
-        </div>
+          <option value="realEstate">Real Estate</option>
+          <option value="municipal">Municipal</option>
+          <option value="consulting">Consulting</option>
+        </select>
+        <ScenarioLibrary
+          language={uiLanguage}
+          scenarioTarget={scenarioTarget}
+          onScenarioTargetChange={(target) => {
+            setScenarioTarget(target);
+            setActiveScenario(target);
+          }}
+          onSelectScenario={(presetId) => {
+            const preset = getScenarioLibrary(uiLanguage).find((p) => p.id === presetId);
+            const prompt = preset?.prompt ?? "";
+            const nextPresetState = getRiskStateAfterPreset(presetId) as RiskState;
+
+            if (scenarioTarget === "A") {
+              console.log("setRiskStateA called with:", nextPresetState);
+              setRiskStateA(nextPresetState);
+              setScenarioPromptA(prompt);
+            }
+            if (scenarioTarget === "B") {
+              setRiskStateB(nextPresetState);
+              setScenarioPromptB(prompt);
+            }
+
+            setIsDirty(true);
+            console.log("Applying preset:", presetId);
+            console.log("Scenario target:", scenarioTarget);
+            console.log("Preset mapping result:", getRiskStateAfterPreset(presetId));
+            if (presetId === "interest-shock") {
+              console.log("[PULSE DEBUG] interest-shock:onSelectScenario", {
+                scenarioTarget,
+                riskStateA,
+                riskStateB,
+              });
+            }
+          }}
+        />
+        <ScenarioPromptDock
+          language={uiLanguage}
+          onScenarioSubmit={handleScenarioSubmit}
+          scenarioHistory={scenarioHistory}
+          onSimulationSourceChange={(source) => setSimulationSource(source)}
+          scenarioPromptA={scenarioPromptA}
+          scenarioPromptB={scenarioPromptB}
+          onScenarioPromptAChange={setScenarioPromptA}
+          onScenarioPromptBChange={setScenarioPromptB}
+        />
+        <ScenarioInterpretationPanel
+          parsedScenarioEffectsA={parsedScenarioEffectsA}
+          parsedScenarioEffectsB={parsedScenarioEffectsB}
+          scenarioTextA={previewScenarioTextA}
+          scenarioTextB={previewScenarioTextB}
+          language={uiLanguage}
+        />
+        <SystemDriversPanel
+          primaryDriver={primaryDriver ?? undefined}
+          systemPressure={systemPressure}
+          marginTrend={marginTrend}
+          cascadeEventsA={cascadeEventsA}
+          cascadeEventsB={cascadeEventsB}
+          estimatedTimeToBreach={estimatedTimeToBreach}
+          language={uiLanguage}
+        />
+        <DecisionExplanationPanel
+          primaryDriver={primaryDriver ?? undefined}
+          systemPressure={systemPressure}
+          marginTrend={marginTrend}
+          cascadeEventsA={cascadeEventsA}
+          cascadeEventsB={cascadeEventsB}
+          estimatedTimeToBreach={estimatedTimeToBreach}
+          language={uiLanguage}
+        />
+        <ScenarioOutcomePanel
+          breachA={tippingMarginIndexA != null ? tippingMarginIndexA + 1 : null}
+          breachB={tippingMarginIndexB != null ? tippingMarginIndexB + 1 : null}
+          finalMarginA={finalA}
+          finalMarginB={finalB}
+          breachDifference={breachDifference}
+          language={uiLanguage}
+        />
+        <ScenarioPreviewPanel
+          visible={previewVisible}
+          changesA={previewChangesA}
+          changesB={previewChangesB}
+          scenarioTextA={previewScenarioTextA}
+          scenarioTextB={previewScenarioTextB}
+          language={uiLanguage}
+          onApply={() => {
+            const nextA =
+              previewChangesA.length > 0
+                ? applyChangesToState(
+                    riskStateA as Record<string, RiskLevel>,
+                    previewChangesA
+                  )
+                : riskStateA;
+            const nextB =
+              previewChangesB.length > 0
+                ? applyChangesToState(
+                    riskStateB as Record<string, RiskLevel>,
+                    previewChangesB
+                  )
+                : riskStateB;
+
+            applyScenarioChanges(previewChangesA, previewChangesB);
+            startSimulation("manual", nextA as RiskState, nextB as RiskState);
+            setPreviewVisible(false);
+          }}
+          onCancel={() => {
+            setPreviewVisible(false);
+          }}
+        />
+        <WhyPanel
+          primaryDriver={primaryDriver}
+          cascadeEventsA={cascadeEventsA}
+          cascadeEventsB={cascadeEventsB}
+          marginImpact={finalB - finalA}
+          breachDifference={breachDifference}
+          language={uiLanguage}
+          getRiskLabel={getRiskLabel}
+        />
+        <AIInterpretationPanel
+          language={uiLanguage}
+          tippingQuarter={
+            tippingMarginIndexB != null ? tippingMarginIndexB + 1 : null
+          }
+          caseName={
+            PILOT_CASES.find((c) => c.id === selectedPilotCaseId)?.title ?? ""
+          }
+          events={[
+            { quarter: 1, type: "Maintenance deferred" },
+            {
+              quarter:
+                tippingMarginIndexB != null
+                  ? tippingMarginIndexB + 1
+                  : 0,
+              type: "Capital constraint activated",
+            },
+          ].filter((e) => e.quarter > 0)}
+          simulationCompleted={hasSimulationCompleted}
+          currentMargin={finalA}
+          alternativeMargin={finalB}
+          marginImpact={finalB - finalA}
+          cascadeEventsA={cascadeEventsA}
+          cascadeEventsB={cascadeEventsB}
+          primaryDriver={primaryDriver}
+          systemPressure={systemPressure}
+          estimatedTimeToBreach={estimatedTimeToBreach}
+          decisionFlowEvents={sortedDecisionFlowEvents}
+          marginTrend={marginTrend}
+          cascadeDelay={cascadeDelaySteps}
+        />
+        <PromptDock
+          language={uiLanguage}
+          cascadeEventsA={cascadeEventsA}
+          cascadeEventsB={cascadeEventsB}
+          cascadeDelay={cascadeDelaySteps}
+          primaryDriver={primaryDriver}
+          systemPressure={systemPressure}
+          estimatedTimeToBreach={estimatedTimeToBreach}
+          marginTrend={marginTrend}
+          decisionFlowEvents={sortedDecisionFlowEvents}
+        />
         {selectedQuarter != null && (
           <div style={{ fontSize: "12px", color: "#9CA3AF", marginTop: "8px" }}>
-            Q{selectedQuarter} — Current: {marginHistoryA[selectedQuarter - 1]?.toFixed(2) ?? "—"} | Alternative: {marginHistoryB[selectedQuarter - 1]?.toFixed(2) ?? "—"}
+            M{selectedQuarter} — Scenario A: {marginHistoryA[selectedQuarter - 1]?.toFixed(2) ?? "—"} | Scenario B: {marginHistoryB[selectedQuarter - 1]?.toFixed(2) ?? "—"}
           </div>
         )}
       </div>
@@ -1343,44 +2053,36 @@ export default function PilotFastighetPage() {
       <div
         style={{
           marginTop: "24px",
-          marginBottom: "32px",
+          marginBottom: "16px",
           padding: "16px 20px",
           background: "#111827",
           border: "1px solid #1f2937",
           borderRadius: "8px",
         }}
       >
-        <div style={{ fontSize: "12px", color: "#9CA3AF", marginBottom: "8px" }}>System Status</div>
-        {executiveSummary && (
-          <>
-            <div style={{ fontSize: "13px", lineHeight: 1.6, marginTop: "6px" }}>
-              <span style={{ color: "#9CA3AF" }}>Current: </span>
-              <span style={{ color: executiveSummary.structuralStatusA === "stable" ? "#22c55e" : "#f97316", fontWeight: 600 }}>
-                {t.structuralStatus[executiveSummary.structuralStatusA ?? "stable"]}
-              </span>
-            </div>
-            <div style={{ fontSize: "13px", lineHeight: 1.6, marginTop: "6px" }}>
-              <span style={{ color: "#9CA3AF" }}>Alternative: </span>
-              <span style={{ color: executiveSummary.structuralStatusB === "structural_collapse" ? "#ef4444" : executiveSummary.structuralStatusB === "structural_breakdown" ? "#f97316" : "#9CA3AF", fontWeight: 600 }}>
-                {t.structuralStatus[executiveSummary.structuralStatusB ?? "stable"]}
-              </span>
-            </div>
-            <div style={{ fontSize: "12px", color: "#9CA3AF", lineHeight: 1.6, marginTop: "6px" }}>
-              Lowest margin (Current): {executiveSummary.minimumMarginA.toFixed(2)}
-            </div>
-            <div style={{ fontSize: "12px", color: "#9CA3AF", lineHeight: 1.6, marginTop: "6px" }}>
-              Lowest margin (Alternative): {executiveSummary.minimumMarginB.toFixed(2)}
-            </div>
-            <div style={{ fontSize: "12px", color: "#9CA3AF", lineHeight: 1.6, marginTop: "6px" }}>
-              Buffer compression: {executiveSummary.compression.toFixed(2)} p.p.
-            </div>
-          </>
-        )}
-        {!executiveSummary && (
-          <div style={{ fontSize: "13px", color: "#9CA3AF" }}>—</div>
-        )}
+        <div style={{ fontSize: "12px", color: "#9CA3AF", marginBottom: "8px" }}>{pt.systemStatus}</div>
+        <div style={{ fontSize: "13px", lineHeight: 1.6 }}>
+          <span style={{ color: "#9CA3AF" }}>{pulseLanguage[uiLanguage].scenarioAStatus} </span>
+          <span style={{ color: colorA, fontWeight: 600 }}>
+            {labelA}
+          </span>
+        </div>
+        <div style={{ fontSize: "12px", color: "#9CA3AF", lineHeight: 1.6, marginTop: "4px" }}>
+          {pulseLanguage[uiLanguage].scenarioAMargin} {currentMarginA != null ? currentMarginA.toFixed(2) : "—"}
+        </div>
+        <div style={{ fontSize: "13px", lineHeight: 1.6, marginTop: "8px" }}>
+          <span style={{ color: "#9CA3AF" }}>{pulseLanguage[uiLanguage].scenarioBStatus} </span>
+          <span style={{ color: colorB, fontWeight: 600 }}>
+            {labelB}
+          </span>
+        </div>
+        <div style={{ fontSize: "12px", color: "#9CA3AF", lineHeight: 1.6, marginTop: "4px" }}>
+          {pulseLanguage[uiLanguage].scenarioBMargin} {currentMarginB != null ? currentMarginB.toFixed(2) : "—"}
+        </div>
         <div style={{ marginTop: "16px", paddingTop: "16px", borderTop: "1px solid #1f2937" }}>
-          <div style={{ fontSize: "12px", color: "#9CA3AF" }}>Capital Constraint</div>
+          <div style={{ fontSize: "12px", color: "#9CA3AF" }}>
+            {(pt as any).capitalConstraint ?? "Capital constraint"}
+          </div>
           <div
             style={{
               fontSize: "18px",
@@ -1392,10 +2094,71 @@ export default function PilotFastighetPage() {
             }}
           >
             {activeState.registry.RefinancingConstraint.lifecycle === "ACTIVE"
-              ? "ACTIVE"
-              : "NONE"}
+              ? ((pt as any).active ?? "ACTIVE")
+              : ((pt as any).inactive ?? "INACTIVE")}
           </div>
         </div>
+      </div>
+
+      {/* System Cascade panel – shows first 6 cascade events */}
+      <div
+        style={{
+          marginTop: "12px",
+          marginBottom: "16px",
+          padding: "12px 16px",
+          background: "#0b1120",
+          border: "1px solid #1f2937",
+          borderRadius: "8px",
+        }}
+      >
+        <div style={{ fontSize: "12px", color: "#9CA3AF", marginBottom: "4px" }}>
+          {pt.primaryDriver}: {primaryDriver ? getRiskLabel(primaryDriver) : "—"}
+        </div>
+        <div style={{ fontSize: "12px", color: "#9CA3AF", marginBottom: "6px" }}>
+          {pt.cascade}
+        </div>
+        {cascadeEventsA.length === 0 && cascadeEventsB.length === 0 ? (
+          <div style={{ fontSize: "12px", color: "#6B7280" }}>—</div>
+        ) : (
+          <ul
+            style={{
+              listStyle: "none",
+              padding: 0,
+              margin: 0,
+              fontSize: "12px",
+              color: "#E5E7EB",
+            }}
+          >
+            {cascadeEventsA.slice(0, 6).map((e, idx) => (
+              <li key={`a-${idx}`} style={{ marginBottom: "2px" }}>
+                A: {getRiskLabel(e.sourceRisk)} → {getRiskLabel(e.targetRisk)} ({e.level})
+              </li>
+            ))}
+            {cascadeEventsB.slice(0, 6).map((e, idx) => (
+              <li key={`b-${idx}`} style={{ marginBottom: "2px" }}>
+                B: {getRiskLabel(e.sourceRisk)} → {getRiskLabel(e.targetRisk)} ({e.level})
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* System Pressure classification */}
+      <div
+        style={{
+          marginTop: "4px",
+          marginBottom: "32px",
+          fontSize: "12px",
+          color: "#9CA3AF",
+        }}
+      >
+        <span>{pt.systemPressure}: </span>
+        <span style={{ fontWeight: 600 }}>{systemPressure}</span>
+        <br />
+        <span>{pt.estimatedStructuralBreach} </span>
+        <span style={{ fontWeight: 600 }}>
+          {estimatedTimeToBreach != null ? `~${estimatedTimeToBreach} steps` : "—"}
+        </span>
       </div>
 
       {!isRunning && executiveSummary && (
@@ -1446,7 +2209,7 @@ export default function PilotFastighetPage() {
           }}
         >
           <div style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px", color: "#9ca3af" }}>
-            Frozen Snapshots — Current Strategy
+            Frozen Snapshots — Scenario A
           </div>
           {historyA.length === 0 ? (
             <div style={{ fontSize: "13px", color: "#6b7280" }}>No snapshots yet.</div>
@@ -1595,7 +2358,7 @@ export default function PilotFastighetPage() {
           }}
         >
           <div style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px", color: "#9ca3af" }}>
-            Frozen Snapshots — Alternative Strategy
+            Frozen Snapshots — Scenario B
           </div>
           {historyB.length === 0 ? (
             <div style={{ fontSize: "13px", color: "#6b7280" }}>No snapshots yet.</div>
@@ -1747,7 +2510,7 @@ export default function PilotFastighetPage() {
           }}
         >
           <div style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px", color: "#9ca3af" }}>
-            Compare Frozen Snapshots (Alternative − Current)
+            Compare Frozen Snapshots (Scenario B − Scenario A)
           </div>
           <button
             type="button"
@@ -1766,15 +2529,15 @@ export default function PilotFastighetPage() {
             {showTechnicalDetails ? "Hide technical details" : "Show technical details"}
           </button>
           <div style={{ fontSize: "13px", lineHeight: "1.8" }}>
-            <strong>Current Strategy:</strong> {snapA.engineState.margin.toFixed(3)}
+            <strong>Scenario A:</strong> {snapA.engineState.margin.toFixed(3)}
             <br />
-            <strong>Alternative Strategy:</strong> {snapB.engineState.margin.toFixed(3)}
+            <strong>Scenario B:</strong> {snapB.engineState.margin.toFixed(3)}
             <br />
             <strong>Margin impact:</strong> {(snapB.engineState.margin - snapA.engineState.margin).toFixed(3)}
             <br />
             <strong>Tipping (ACTIVE):</strong>{" "}
-            {tippingStepA != null ? `Current: Q${tippingStepA}` : "Current: never"} |{" "}
-            {tippingStepB != null ? `Alternative: Q${tippingStepB}` : "Alternative: never"}
+{tippingStepA != null ? `Scenario A: Q${tippingStepA}` : "Scenario A: never"} |{" "}
+              {tippingStepB != null ? `Scenario B: Q${tippingStepB}` : "Scenario B: never"}
             <br />
             {executiveConclusion != null && (
               <>
@@ -1790,13 +2553,13 @@ export default function PilotFastighetPage() {
             )}
             {showTechnicalDetails && (
               <>
-                <strong>Refinancing lifecycle (Current):</strong> {snapA.engineState.registry.RefinancingConstraint.lifecycle}
+                <strong>Refinancing lifecycle (Scenario A):</strong> {snapA.engineState.registry.RefinancingConstraint.lifecycle}
                 <br />
-                <strong>Refinancing lifecycle (Alternative):</strong> {snapB.engineState.registry.RefinancingConstraint.lifecycle}
+                <strong>Refinancing lifecycle (Scenario B):</strong> {snapB.engineState.registry.RefinancingConstraint.lifecycle}
                 <br />
-                <strong>Q (Current):</strong> {snapA.engineState.step}
+                <strong>Q (Scenario A):</strong> {snapA.engineState.step}
                 <br />
-                <strong>Q (Alternative):</strong> {snapB.engineState.step}
+                <strong>Q (Scenario B):</strong> {snapB.engineState.step}
               </>
             )}
           </div>
@@ -1936,7 +2699,7 @@ export default function PilotFastighetPage() {
               >
                 <span>Tipping (Q)</span>
                 <span style={{ color: "#9CA3AF", fontVariantNumeric: "tabular-nums" }}>
-                  {expertTippingStep != null ? `Q${expertTippingStep}` : "—"}
+                  {expertTippingStep != null ? `M${expertTippingStep}` : "—"}
                 </span>
               </div>
               <div
@@ -2026,7 +2789,7 @@ export default function PilotFastighetPage() {
                 >
                   <span>Steady state detected</span>
                   <span style={{ color: "#9CA3AF", fontVariantNumeric: "tabular-nums" }}>
-                    System stabilized at Q{steadyStateStep}. No structural change detected for {REQUIRED_STABLE_TICKS} consecutive ticks (after minimum {MIN_STEPS_BEFORE_STEADY} quarters).
+                    System stabilized at M{steadyStateStep}. No structural change detected for {REQUIRED_STABLE_TICKS} consecutive ticks (after minimum {MIN_STEPS_BEFORE_STEADY} quarters).
                   </span>
                 </div>
               )}
@@ -2051,6 +2814,12 @@ export default function PilotFastighetPage() {
         </div>
       )}
       </div>
+      <style jsx>{`
+        .active-button {
+          background-color: #3b82f6 !important;
+          color: white !important;
+        }
+      `}</style>
     </div>
   );
 }

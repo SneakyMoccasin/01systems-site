@@ -1,0 +1,505 @@
+export const domainDrivers = {
+  realEstate: {
+    tenantStability: "Tenant stability",
+    energyCost: "Energy cost",
+    financingCost: "Financing cost",
+    maintenanceBacklog: "Maintenance backlog",
+  },
+  municipal: {
+    tenantStability: "Service capacity",
+    energyCost: "Infrastructure load",
+    financingCost: "Budget pressure",
+    maintenanceBacklog: "Maintenance backlog",
+  },
+  consulting: {
+    tenantStability: "Project stability",
+    energyCost: "Resource strain",
+    financingCost: "Budget exposure",
+    maintenanceBacklog: "Delivery backlog",
+  },
+} as const;
+
+export type DomainKey = keyof typeof domainDrivers;
+
+let activeDomainValue: DomainKey = "realEstate";
+
+export const activeDomain = activeDomainValue;
+
+export function setActiveDomain(domain: DomainKey): void {
+  activeDomainValue = domain;
+}
+
+export function getDomainLabel(key: string): string {
+  const domain = domainDrivers[activeDomainValue];
+  return (domain as Record<string, string>)?.[key] ?? key;
+}
+
+export const pulseLanguage = {
+  en: {
+    executiveQuestion: "Executive Question",
+    ask: "Ask",
+    executiveSummary: "Executive Summary",
+    structuralAnalysis: "Structural Analysis",
+    cascadeDynamics: "Cascade Dynamics",
+    forwardOutlook: "Forward Outlook",
+    systemPressure: "System Pressure",
+    structuralBreach: "Structural Breach",
+    primaryDriver: "Primary Driver",
+    cascade: "Cascade",
+    marginTrend: "Margin Trend",
+    robust: "Robust",
+    sustainable: "Sustainable",
+    structuralErosion: "Structural erosion",
+    collapseZone: "Collapse zone",
+    erosion: "Structural erosion",
+    collapse: "Collapse",
+    tippingRisk: "Tipping risk",
+    systemStatus: "System Status",
+    decisionFlow: "Decision Flow",
+    aiInterpretation: "AI Interpretation",
+    aiSummary: "Summary",
+    aiStructuralAnalysis: "Structural analysis",
+    aiCascadeDynamics: "Cascade dynamics",
+    aiOutlook: "Outlook",
+    compact: "Compact",
+    detailed: "Detailed",
+    compactDetailedLabel: "Compact / Detailed:",
+    aiAnalysing: "AI analysing simulation...",
+    askPlaceholder: "Ask a question about the system...",
+    answering: "Answering...",
+    noResponse: "No response.",
+    unableToAnswer: "Unable to get an answer.",
+    estimatedStructuralBreach: "Estimated Structural Breach:",
+    customScenarioTitle: "Custom Scenario",
+    customScenarioHelper: "Describe your own scenario (e.g. energy prices increase sharply).",
+    scenarioInterpretationTitle: "Scenario Interpretation",
+    detectedDrivers: "Detected drivers",
+    noDriversDetected: "No structural drivers detected.",
+    driverLabels: {
+      tenantStability: "Tenant stability",
+      energyCost: "Energy cost",
+      financingCost: "Financing cost",
+      maintenanceBacklog: "Maintenance backlog",
+      capitalCommitmentRigidityRisk: "Capital commitment rigidity",
+      maintenanceIntensityRisk: "Maintenance intensity",
+      tenantStabilityRisk: "Tenant stability",
+      demandRisk: "Demand",
+      interestRateExposureRisk: "Interest-rate exposure",
+      refinancingRisk: "Refinancing risk",
+      leverageLevelRisk: "Leverage level",
+      operationalEfficiencyRisk: "Operational efficiency",
+    } as Record<string, string>,
+    riskLabels: {
+      interestRateExposureRisk: "Interest rate exposure",
+      refinancingRisk: "Refinancing risk",
+      leverageLevelRisk: "Leverage level",
+      capitalCommitmentRigidityRisk: "Capital commitment rigidity",
+      maintenanceIntensityRisk: "Maintenance pressure",
+      operationalEfficiencyRisk: "Operational efficiency",
+      pricingPowerRisk: "Pricing power",
+      marketVolatilityRisk: "Market volatility",
+      regulatoryPressureRisk: "Regulatory pressure",
+      tenantStabilityRisk: "Tenant stability",
+      demandRisk: "Demand risk",
+      energyExposureRisk: "Energy cost exposure",
+    } as Record<string, string>,
+    domainLabels: {
+      interestRateExposureRisk: "Interest rate exposure",
+      refinancingRisk: "Refinancing risk",
+      leverageLevelRisk: "Leverage level",
+      capitalCommitmentRigidityRisk: "Capital commitment rigidity",
+      maintenanceIntensityRisk: "Maintenance pressure",
+      tenantStabilityRisk: "Tenant stability",
+      demandRisk: "Demand risk",
+      energyExposureRisk: "Energy cost exposure",
+    } as Record<string, string>,
+    scenarioLabels: {
+      "interest-shock": "Interest Rate Shock",
+      "energy-spike": "Energy Cost Spike",
+      "tenant-loss": "Tenant Loss",
+      "maintenance-backlog": "Maintenance Backlog",
+      "refinancing-shock": "Refinancing Shock",
+      "active-maintenance-strategy": "Active maintenance strategy",
+      parallelInvestmentStarts: "Parallel investment starts",
+      delayedIntervention: "Delayed intervention",
+      limitedExecutionCapacity: "Limited execution capacity",
+    } as Record<string, string>,
+    scenarioDescriptions: {
+      "interest-shock": "Sharp increase in financing costs.",
+      "energy-spike": "Operating costs increase due to energy prices.",
+      "tenant-loss": "Large tenant leaves the property.",
+      "maintenance-backlog": "Maintenance is deferred to reduce short term cost.",
+      "refinancing-shock":
+        "Interest rate pressure triggers refinancing stress which cascades through capital rigidity, maintenance pressure and tenant stability.",
+      "active-maintenance-strategy":
+        "Targeted maintenance investments reduce operational pressure, improve tenant stability and restore structural flexibility.",
+      parallelInvestmentStarts:
+        "Several investment initiatives start in parallel and increase near-term coordination pressure.",
+      delayedIntervention:
+        "Interventions are postponed, allowing structural pressure to build before response.",
+      limitedExecutionCapacity:
+        "Execution bandwidth is constrained, reducing implementation speed and follow-through.",
+    } as Record<string, string>,
+    scenarioPrompts: {
+      "interest-shock": `
+Interest rate exposure increases to HIGH.
+This increases refinancing risk.
+Refinancing pressure increases leverage level risk.
+Higher leverage increases capital commitment rigidity.
+Capital rigidity increases maintenance pressure.
+Maintenance pressure reduces tenant stability.
+Tenant instability reduces demand.
+`,
+      "energy-spike": "Operating costs increase due to rising energy prices.",
+      "tenant-loss": "A major tenant leaves causing demand reduction.",
+      "maintenance-backlog": "Maintenance is deferred causing gradual property degradation.",
+      "refinancing-shock": `
+Interest rate exposure increases to HIGH.
+This creates refinancing risk.
+Refinancing pressure increases capital commitment rigidity.
+Capital rigidity increases maintenance pressure.
+Maintenance pressure reduces tenant stability.
+Tenant instability reduces demand.
+`,
+      "active-maintenance-strategy": `
+Maintenance intensity risk decreases significantly.
+Tenant stability risk decreases.
+Capital commitment rigidity risk decreases.
+Demand risk decreases.
+`,
+      parallelInvestmentStarts: `
+Multiple investment programs are launched in parallel.
+Coordination pressure increases.
+Execution complexity increases before benefits are realized.
+`,
+      delayedIntervention: `
+Intervention decisions are delayed.
+Structural pressure accumulates before action is taken.
+System response starts later than planned.
+`,
+      limitedExecutionCapacity: `
+Execution capacity is constrained.
+Operational follow-through is slower.
+Improvements are implemented gradually with higher delivery friction.
+`,
+    } as Record<string, string>,
+    graphLegend: {
+      strategyA: "Current strategy",
+      strategyB: "Alternative strategy",
+      markerBaseline: "Baseline",
+      markerSelected: "Selected point",
+      markerConstraint: "Constraint active",
+      markerTipping: "Tipping point",
+      robust: "Robust",
+      sustainable: "Sustainable",
+      erosion: "Erosion",
+      collapse: "Collapse",
+    } as Record<string, string>,
+    systemDrivers: "System Drivers",
+    cascadeStatus: "Cascade",
+    estimatedBreach: "Estimated breach",
+    cascadeDetected: "Detected",
+    cascadeNone: "None",
+    estimatedBreachNotEstimated: "Not estimated",
+    marginTrendDeclining: "Declining",
+    marginTrendStable: "Stable",
+    marginTrendImproving: "Improving",
+    decisionExplanation: "Decision Explanation",
+    driverChange: "Driver change",
+    cascadePropagation: "Cascade propagation",
+    pressureResponse: "System pressure",
+    aiInspector: "AI Inspector",
+    events: "Events",
+    impact: "Impact",
+    caseLabel: "Case:",
+    tippingRiskPeriodLabel: "Tipping risk period",
+    margins: "Margins",
+    scenarioPreview: "Scenario preview",
+    proposedChanges: "Proposed changes",
+    runSimulation: "Run simulation",
+    cancel: "Cancel",
+    baseline: "Baseline",
+    reset: "Reset",
+    scenarioLibrary: "Try a scenario",
+    applyTo: "Apply scenario to:",
+    currentStrategy: "Current strategy",
+    alternativeStrategy: "Alternative strategy",
+    noRecognizedScenarioFactors: "No recognized scenario factors.",
+    scenarioAChanges: "Scenario A changes",
+    scenarioBChanges: "Scenario B changes",
+    decisionTimeline: "Decision timeline",
+    action: "Action",
+    riskDecision: "Risk decision",
+    systemEvent: "System event",
+    noDecisionEvents: "No decision events",
+    systemInterpretationHelper: "Summarized system explanation based on the simulation.",
+    riskBegins: "Risk begins",
+    scenarioOutcomeTitle: "Scenario Outcome",
+    noBreachInHorizon: "No breach in horizon",
+    structuralBreach: "Structural breach",
+    finalMargin: "Final margin",
+    resultLabel: "Result",
+    marginImprovementLabel: "Margin improvement",
+    scenarioBDelaysCollapse: (n: number) =>
+      `Scenario B delays collapse by ${n} quarter${n !== 1 ? "s" : ""}.`,
+    previewImpact: "Analyze scenario",
+    previewImpactHelper: "Applies the scenario and analyzes how the system evolves over time.",
+    recentScenarios: "Recent scenarios",
+    autoScaleOn: "Auto-scale: ON",
+    autoScaleOff: "Auto-scale: OFF",
+    viewChangeFromBaseline: "Change from baseline",
+    viewSystemLevel: "System level",
+    both: "Both",
+    scenarioAStatus: "Scenario A status:",
+    scenarioBStatus: "Scenario B status:",
+    scenarioAMargin: "Scenario A margin:",
+    scenarioBMargin: "Scenario B margin:",
+    scenarioBDoesNotDelayBreach: "Scenario B does not delay structural breach.",
+    scenarioBDelaysBreachBy: (n: number) =>
+      `Scenario B delays structural breach by ${n} quarter${n !== 1 ? "s" : ""}.`,
+    whyPanelTitle: "Why Scenario B performs differently",
+    scenarioBSlowsDecline: (x: string) => `Scenario B slows margin decline by ${x}`,
+    scenarioBDelaysBreachWhy: (n: number) =>
+      `Scenario B delays structural breach by ${n} quarter${n !== 1 ? "s" : ""}.`,
+    systemImpactLabel: "System impact",
+    outcomeLabel: "Outcome",
+    capitalConstraint: "Capital constraint",
+    active: "ACTIVE",
+    inactive: "INACTIVE",
+  },
+  sv: {
+    executiveQuestion: "Fråga till systemet",
+    ask: "Fråga",
+    executiveSummary: "Sammanfattning",
+    structuralAnalysis: "Strukturell analys",
+    cascadeDynamics: "Kaskaddynamik",
+    forwardOutlook: "Framåtblick",
+    systemPressure: "Systemtryck",
+    structuralBreach: "Strukturellt brott",
+    primaryDriver: "Primär drivare",
+    cascade: "Kaskad",
+    marginTrend: "Marginaltrend",
+    robust: "Robust",
+    sustainable: "Hållbar",
+    structuralErosion: "Strukturell erosion",
+    collapseZone: "Kollapszon",
+    erosion: "Erosion",
+    collapse: "Kollaps",
+    tippingRisk: "Tipping risk",
+    systemStatus: "Systemstatus",
+    decisionFlow: "Beslutsflöde",
+    aiInterpretation: "AI-tolkning",
+    aiSummary: "Sammanfattning",
+    aiStructuralAnalysis: "Strukturell analys",
+    aiCascadeDynamics: "Kaskaddynamik",
+    aiOutlook: "Framtidsblick",
+    compact: "Kort",
+    detailed: "Detaljerad",
+    compactDetailedLabel: "Kort / Detaljerad:",
+    aiAnalysing: "AI analyserar simulering...",
+    askPlaceholder: "Ställ en fråga om systemet...",
+    answering: "Svarar...",
+    noResponse: "Inget svar.",
+    unableToAnswer: "Kunde inte få svar.",
+    estimatedStructuralBreach: "Uppskattat strukturellt brott:",
+    customScenarioTitle: "Eget scenario",
+    customScenarioHelper: "Beskriv ett eget scenario (t.ex. energipriser stiger kraftigt).",
+    scenarioInterpretationTitle: "Scenario tolkning",
+    detectedDrivers: "Identifierade drivare",
+    noDriversDetected: "Inga strukturella drivare identifierade.",
+    driverLabels: {
+      tenantStability: "Hyresgäststabilitet",
+      energyCost: "Energikostnad",
+      financingCost: "Finansieringskostnad",
+      maintenanceBacklog: "Underhållsskuld",
+      capitalCommitmentRigidityRisk: "Kapitalbindning",
+      maintenanceIntensityRisk: "Underhållstryck",
+      tenantStabilityRisk: "Hyresgäststabilitet",
+      demandRisk: "Efterfrågan",
+      interestRateExposureRisk: "Ränteexponering",
+      refinancingRisk: "Refinansieringsrisk",
+      leverageLevelRisk: "Belåningsnivå",
+      operationalEfficiencyRisk: "Drifteffektivitet",
+    } as Record<string, string>,
+    riskLabels: {
+      interestRateExposureRisk: "Ränteexponering",
+      refinancingRisk: "Refinansieringsrisk",
+      leverageLevelRisk: "Belåningsnivå",
+      capitalCommitmentRigidityRisk: "Kapitalbindning",
+      maintenanceIntensityRisk: "Underhållstryck",
+      operationalEfficiencyRisk: "Drifteffektivitet",
+      pricingPowerRisk: "Prissättningskraft",
+      marketVolatilityRisk: "Marknadsvolatilitet",
+      regulatoryPressureRisk: "Regulatoriskt tryck",
+      tenantStabilityRisk: "Hyresgäststabilitet",
+      demandRisk: "Efterfrågerisk",
+      energyExposureRisk: "Energikostnadsexponering",
+    } as Record<string, string>,
+    domainLabels: {
+      interestRateExposureRisk: "Ränteexponering",
+      refinancingRisk: "Refinansieringsrisk",
+      leverageLevelRisk: "Belåningsnivå",
+      capitalCommitmentRigidityRisk: "Kapitalbindning",
+      maintenanceIntensityRisk: "Underhållstryck",
+      tenantStabilityRisk: "Hyresgäststabilitet",
+      demandRisk: "Efterfrågerisk",
+      energyExposureRisk: "Energikostnadsexponering",
+    } as Record<string, string>,
+    scenarioLabels: {
+      "interest-shock": "Räntechock",
+      "energy-spike": "Energikostnadsspike",
+      "tenant-loss": "Hyresgästbortfall",
+      "maintenance-backlog": "Uppskjutet underhåll",
+      "refinancing-shock": "Refinansieringschock",
+      "active-maintenance-strategy": "Aktiv underhållsstrategi",
+      parallelInvestmentStarts: "Parallella investeringsstarter",
+      delayedIntervention: "Fördröjd intervention",
+      limitedExecutionCapacity: "Begränsad genomförandekapacitet",
+    } as Record<string, string>,
+    scenarioDescriptions: {
+      "interest-shock": "Kraftig ökning av finansieringskostnader.",
+      "energy-spike": "Driftskostnader ökar på grund av energipriser.",
+      "tenant-loss": "Stor hyresgäst lämnar objektet.",
+      "maintenance-backlog": "Underhåll skjuts upp för att sänka kortsiktig kostnad.",
+      "refinancing-shock":
+        "Räntepress skapar refinansieringsstress som sprider sig via kapitalbindning, underhållstryck och hyresgäststabilitet.",
+      "active-maintenance-strategy":
+        "Riktade underhållsinvesteringar minskar operativt tryck, förbättrar hyresgäststabilitet och återställer strukturell flexibilitet.",
+      parallelInvestmentStarts:
+        "Flera investeringsinitiativ startar parallellt och ökar samordningstrycket på kort sikt.",
+      delayedIntervention:
+        "Interventioner skjuts upp, vilket gör att strukturellt tryck byggs upp innan respons.",
+      limitedExecutionCapacity:
+        "Genomförandekapaciteten är begränsad och minskar implementeringstakten.",
+    } as Record<string, string>,
+    scenarioPrompts: {
+      "interest-shock": `
+Ränteexponeringen ökar till HÖG.
+Detta ökar refinansieringsrisken.
+Refinansieringstryck ökar risken i belåningsnivån.
+Högre belåning ökar kapitalbindningsrisken.
+Kapitalbindning ökar underhållstrycket.
+Underhållstryck minskar hyresgäststabiliteten.
+Hyresgästinstabilitet minskar efterfrågan.
+`,
+      "energy-spike": "Driftskostnader ökar på grund av stigande energipriser.",
+      "tenant-loss": "En större hyresgäst lämnar och orsakar minskad efterfrågan.",
+      "maintenance-backlog":
+        "Underhåll skjuts upp vilket orsakar gradvis fastighetsförsämring.",
+      "refinancing-shock": `
+Ränteexponeringen ökar till HÖG.
+Detta skapar refinansieringsrisk.
+Refinansieringstryck ökar kapitalbindningsrisken.
+Kapitalbindning ökar underhållstrycket.
+Underhållstryck minskar hyresgäststabiliteten.
+Hyresgästinstabilitet minskar efterfrågan.
+`,
+      "active-maintenance-strategy": `
+Underhållsintensitetsrisken minskar betydligt.
+Hyresgäststabilitetsrisken minskar.
+Kapitalbindningsrisken minskar.
+Efterfrågerisken minskar.
+`,
+      parallelInvestmentStarts: `
+Flera investeringsprogram startar samtidigt.
+Samordningstrycket ökar.
+Genomförandekomplexiteten ökar innan effekterna realiseras.
+`,
+      delayedIntervention: `
+Interventionsbeslut fördröjs.
+Strukturellt tryck byggs upp innan åtgärd.
+Systemresponsen startar senare än planerat.
+`,
+      limitedExecutionCapacity: `
+Genomförandekapaciteten är begränsad.
+Operativ uppföljning går långsammare.
+Förbättringar införs gradvis med högre leveransfriktion.
+`,
+    } as Record<string, string>,
+    graphLegend: {
+      strategyA: "Nuvarande strategi",
+      strategyB: "Alternativ strategi",
+      markerBaseline: "Baslinje",
+      markerSelected: "Vald tidpunkt",
+      markerConstraint: "Begränsning aktiveras",
+      markerTipping: "Tippingpunkt",
+      robust: "Robust",
+      sustainable: "Hållbar",
+      erosion: "Erosion",
+      collapse: "Kollaps",
+    } as Record<string, string>,
+    systemDrivers: "Systemdrivare",
+    cascadeStatus: "Kaskad",
+    estimatedBreach: "Uppskattat brott",
+    cascadeDetected: "Detekterad",
+    cascadeNone: "Ingen",
+    estimatedBreachNotEstimated: "Ej uppskattat",
+    marginTrendDeclining: "Nedåtgående",
+    marginTrendStable: "Stabil",
+    marginTrendImproving: "Uppåtgående",
+    decisionExplanation: "Beslutsförklaring",
+    driverChange: "Drivarförändring",
+    cascadePropagation: "Kaskadspridning",
+    pressureResponse: "Systemtryck",
+    aiInspector: "AI-inspektör",
+    events: "Händelser",
+    impact: "Påverkan",
+    caseLabel: "Fall:",
+    tippingRiskPeriodLabel: "Tipping risk period",
+    margins: "Marginaler",
+    scenarioPreview: "Scenariovisning",
+    proposedChanges: "Föreslagna förändringar",
+    runSimulation: "Kör simulering",
+    cancel: "Avbryt",
+    baseline: "Baslinje",
+    reset: "Återställ",
+    scenarioLibrary: "Testa ett scenario",
+    applyTo: "Applicera scenario på:",
+    currentStrategy: "Nuvarande strategi",
+    alternativeStrategy: "Alternativ strategi",
+    noRecognizedScenarioFactors: "Inga identifierade scenariofaktorer.",
+    scenarioAChanges: "Scenario A – förändringar",
+    scenarioBChanges: "Scenario B – förändringar",
+    decisionTimeline: "Beslutstidslinje",
+    action: "Åtgärd",
+    riskDecision: "Riskbeslut",
+    systemEvent: "Systemhändelse",
+    noDecisionEvents: "Inga besluthändelser",
+    systemInterpretationHelper: "Sammanfattad systemförklaring baserad på simuleringen.",
+    riskBegins: "Risk börjar",
+    scenarioOutcomeTitle: "Scenarioresultat",
+    noBreachInHorizon: "Inget brott inom horisonten",
+    structuralBreach: "Strukturellt brott",
+    finalMargin: "Slutmarginal",
+    resultLabel: "Resultat",
+    marginImprovementLabel: "Marginalförbättring",
+    scenarioBDelaysCollapse: (n: number) =>
+      `Scenario B fördröjer kollaps med ${n} kvartal.`,
+    previewImpact: "Analysera scenario",
+    previewImpactHelper: "Applicerar scenariot och analyserar hur systemet reagerar över tid.",
+    recentScenarios: "Senaste scenarier",
+    autoScaleOn: "Autoskalning: PÅ",
+    autoScaleOff: "Autoskalning: AV",
+    viewChangeFromBaseline: "Förändring från nuläge",
+    viewSystemLevel: "Systemnivå",
+    both: "Båda",
+    scenarioAStatus: "Scenario A status:",
+    scenarioBStatus: "Scenario B status:",
+    scenarioAMargin: "Scenario A marginal:",
+    scenarioBMargin: "Scenario B marginal:",
+    scenarioBDoesNotDelayBreach: "Scenario B fördröjer inte strukturellt brott.",
+    scenarioBDelaysBreachBy: (n: number) =>
+      `Scenario B fördröjer strukturellt brott med ${n} kvartal.`,
+    whyPanelTitle: "Varför Scenario B skiljer sig från Scenario A",
+    scenarioBSlowsDecline: (x: string) => `Scenario B saktar marginalförlust med ${x}`,
+    scenarioBDelaysBreachWhy: (n: number) =>
+      `Scenario B försenar strukturellt brott med ${n} kvartal.`,
+    systemImpactLabel: "Systempåverkan",
+    outcomeLabel: "Utfall",
+    capitalConstraint: "Kapitalbegränsning",
+    active: "AKTIV",
+    inactive: "INAKTIV",
+  },
+} as const;
+
+export type PulseLanguageKey = keyof (typeof pulseLanguage)["en"];

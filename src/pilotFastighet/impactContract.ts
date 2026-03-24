@@ -48,19 +48,19 @@ export type SystemEvent =
 export const REAL_ESTATE_IMPACT_CONTRACT: ParameterSpec[] = [
   {
     key: "demandRisk",
-    label: "Demand Strength (risk)",
+    label: "Efterfrågan (risk)",
     group: "Income Dynamics",
     impacts: [{ dimension: "load", direction: "increase", curve: "LINEAR" }],
   },
   {
     key: "pricingPowerRisk",
-    label: "Pricing Power (risk)",
+    label: "Prissättningskraft (risk)",
     group: "Income Dynamics",
     impacts: [{ dimension: "load", direction: "increase", curve: "LINEAR" }],
   },
   {
     key: "tenantStabilityRisk",
-    label: "Tenant Stability (risk)",
+    label: "Hyresgästers stabilitet (risk)",
     group: "Income Dynamics",
     impacts: [
       { dimension: "load", direction: "increase", curve: "LINEAR" },
@@ -69,13 +69,13 @@ export const REAL_ESTATE_IMPACT_CONTRACT: ParameterSpec[] = [
   },
   {
     key: "maintenanceIntensityRisk",
-    label: "Maintenance Intensity (risk)",
+    label: "Underhållsnivå (risk)",
     group: "Operations",
     impacts: [{ dimension: "recovery", direction: "decrease", curve: "LINEAR" }],
   },
   {
     key: "operationalEfficiencyRisk",
-    label: "Operational Efficiency (risk)",
+    label: "Drifteffektivitet (risk)",
     group: "Operations",
     impacts: [
       { dimension: "cost", direction: "increase", curve: "LINEAR" },
@@ -84,19 +84,19 @@ export const REAL_ESTATE_IMPACT_CONTRACT: ParameterSpec[] = [
   },
   {
     key: "energyExposureRisk",
-    label: "Energy Exposure (risk)",
+    label: "Energiexponering (risk)",
     group: "Operations",
     impacts: [{ dimension: "cost", direction: "increase", curve: "LINEAR" }],
   },
   {
     key: "interestRateExposureRisk",
-    label: "Interest Rate Exposure (risk)",
+    label: "Ränteexponering (risk)",
     group: "Capital & Financing",
     impacts: [{ dimension: "cost", direction: "increase", curve: "EXPONENTIAL" }],
   },
   {
     key: "leverageLevelRisk",
-    label: "Leverage Level (risk)",
+    label: "Belåningsgrad (risk)",
     group: "Capital & Financing",
     impacts: [
       { dimension: "cost", direction: "increase", curve: "EXPONENTIAL" },
@@ -105,25 +105,25 @@ export const REAL_ESTATE_IMPACT_CONTRACT: ParameterSpec[] = [
   },
   {
     key: "refinancingRisk",
-    label: "Refinancing Risk (risk)",
+    label: "Refinansieringsrisk (risk)",
     group: "Capital & Financing",
     impacts: [{ dimension: "cost", direction: "increase", curve: "LOGISTIC" }],
   },
   {
     key: "marketVolatilityRisk",
-    label: "Market Volatility (risk)",
+    label: "Marknadsvolatilitet (risk)",
     group: "External Pressure",
     impacts: [{ dimension: "load", direction: "increase", curve: "LINEAR" }],
   },
   {
     key: "regulatoryPressureRisk",
-    label: "Regulatory Pressure (risk)",
+    label: "Regulatoriskt tryck (risk)",
     group: "External Pressure",
     impacts: [{ dimension: "cost", direction: "increase", curve: "LINEAR" }],
   },
   {
     key: "capitalCommitmentRigidityRisk",
-    label: "Capital Commitment Rigidity (risk)",
+    label: "Kapitalbindning (risk)",
     group: "External Pressure",
     impacts: [{ dimension: "recovery", direction: "decrease", curve: "LINEAR" }],
   },
