@@ -375,11 +375,11 @@ export default function PilotFastighetPage() {
 
     if (target === "A") {
       console.log("setRiskStateA called with:", nextA as RiskState);
-      setRiskStateA(nextA as RiskState);
+      setRiskStateA(structuredClone(nextA as RiskState));
     }
 
     if (target === "B") {
-      setRiskStateB(nextB as RiskState);
+      setRiskStateB(structuredClone(nextB as RiskState));
     }
   }
 
@@ -471,8 +471,8 @@ export default function PilotFastighetPage() {
 
       // Keep the UI in sync with the engine (single source of truth).
       console.log("setRiskStateA called with:", sA.riskState as RiskState);
-      setRiskStateA(sA.riskState as RiskState);
-      setRiskStateB(sB.riskState as RiskState);
+      setRiskStateA(structuredClone(sA.riskState as RiskState));
+      setRiskStateB(structuredClone(sB.riskState as RiskState));
       if (Array.isArray((sA as any).cascadeEvents)) {
         setCascadeEventsA((sA as any).cascadeEvents);
       }
@@ -599,7 +599,7 @@ export default function PilotFastighetPage() {
     activeScenario === "A" ? stateA : stateB;
 
   const activeRiskState =
-    scenarioTarget === "A" ? riskStateA : riskStateB;
+    activeScenario === "B" ? riskStateB : riskStateA;
 
   const isEditableScenario = activeScenario === "A" || activeScenario === "B";
 
@@ -1887,7 +1887,6 @@ export default function PilotFastighetPage() {
           scenarioTarget={scenarioTarget}
           onScenarioTargetChange={(target) => {
             setScenarioTarget(target);
-            setActiveScenario(target);
           }}
           onSelectScenario={(presetId) => {
             const preset = getScenarioLibrary(uiLanguage).find((p) => p.id === presetId);
@@ -1896,11 +1895,11 @@ export default function PilotFastighetPage() {
 
             if (scenarioTarget === "A") {
               console.log("setRiskStateA called with:", nextPresetState);
-              setRiskStateA(nextPresetState);
+              setRiskStateA(structuredClone(nextPresetState));
               setScenarioPromptA(prompt);
             }
             if (scenarioTarget === "B") {
-              setRiskStateB(nextPresetState);
+              setRiskStateB(structuredClone(nextPresetState));
               setScenarioPromptB(prompt);
             }
 
