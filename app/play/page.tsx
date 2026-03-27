@@ -71,7 +71,9 @@ export default function PlayPage() {
               zIndex: 10000,
             }}
           >
+            {false && (
             <PromptDock />
+          )}
           </div>
 
           {/* Engine Status Indicator */}

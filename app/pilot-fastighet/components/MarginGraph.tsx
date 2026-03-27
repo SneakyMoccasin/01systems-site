@@ -28,7 +28,6 @@ export interface MarginGraphProps {
   /** When true, no Scenario B series yet — show baseline-focused legend and A start styling. */
   showBaselineOnly?: boolean;
   showB: boolean;
-  isAutoScale: boolean;
   simulationHorizon?: number;
   theme: MarginGraphTheme;
   uiLanguage: "sv" | "en";
@@ -38,6 +37,7 @@ export interface MarginGraphProps {
   cascadeEventsB?: CascadeEvent[];
   onSelectMonth?: (payload: MarginGraphSelectMonthPayload) => void;
   selectedMonthIndex?: number;
+  graphTitle?: string;
 }
 
 type CascadeMarker = { index: number; type: string };
@@ -53,7 +53,6 @@ function MarginGraph(props: MarginGraphProps) {
     showA,
     showBaselineOnly = false,
     showB,
-    isAutoScale: _isAutoScale,
     simulationHorizon,
     theme,
     uiLanguage,
@@ -63,6 +62,7 @@ function MarginGraph(props: MarginGraphProps) {
     cascadeEventsB = [],
     onSelectMonth,
     selectedMonthIndex,
+    graphTitle,
   } = props;
   const [viewMode, setViewMode] = React.useState<"delta" | "absolute">("delta");
   const [hoveredViewMode, setHoveredViewMode] = React.useState<"delta" | "absolute" | null>(null);
@@ -82,13 +82,13 @@ function MarginGraph(props: MarginGraphProps) {
       ? "Baslinje = nuläge"
       : "Baseline = current system state";
 
-  const comparisonLegend = showBaselineOnly
+  const comparisonLegend = graphTitle ?? (showBaselineOnly
     ? uiLanguage === "sv"
       ? "Baslinje vs strategi A"
       : "Baseline vs Scenario A"
     : uiLanguage === "sv"
       ? "Strategi A vs strategi B"
-      : "Scenario A vs Scenario B";
+      : "Scenario A vs Scenario B");
 
   const baselineA = marginHistoryA[0] ?? 0;
   const baselineB = marginHistoryB[0] ?? 0;
@@ -1018,6 +1018,11 @@ function MarginGraph(props: MarginGraphProps) {
 export function MarginGraphLegendRow({ uiLanguage }: { uiLanguage: "sv" | "en" }) {
   const pt = pulseLanguage[uiLanguage];
   const gl = pt.graphLegend;
+  const scenarioALabel = uiLanguage === "sv" ? "Scenario A" : "Scenario A";
+  const scenarioBLabel = uiLanguage === "sv" ? "Scenario B" : "Scenario B";
+  const baselineLabel = uiLanguage === "sv" ? "Baslinje (nuläge)" : "Baseline (current state)";
+  const decisionPointLabel = uiLanguage === "sv" ? "Vald tidpunkt" : "Decision point";
+  const tippingPointLabel = uiLanguage === "sv" ? "Tippingpunkt" : "Tipping point";
   const labelStyle = { fontSize: "11px", color: "#9CA3AF" } as const;
   const rowStyle = {
     fontSize: "12px",
@@ -1033,51 +1038,29 @@ export function MarginGraphLegendRow({ uiLanguage }: { uiLanguage: "sv" | "en" }
     <div style={rowStyle}>
       <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
         <span style={{ width: "10px", height: "2px", background: "#3B82F6" }} />
-        <span style={labelStyle}>{gl.strategyA}</span>
+        <span style={labelStyle}>{scenarioALabel}</span>
       </span>
       <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
         <span style={{ width: "10px", height: "2px", background: "#F59E0B" }} />
-        <span style={labelStyle}>{gl.strategyB}</span>
+        <span style={labelStyle}>{scenarioBLabel}</span>
       </span>
       <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
         <svg width={14} height={14} viewBox="0 0 14 14" aria-hidden style={{ display: "block" }}>
           <circle cx={7} cy={7} r={4} fill="white" stroke="#9ca3af" strokeWidth={1} />
         </svg>
-        <span style={labelStyle}>{gl.markerBaseline}</span>
+        <span style={labelStyle}>{baselineLabel}</span>
       </span>
       <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
         <svg width={14} height={14} viewBox="0 0 14 14" aria-hidden style={{ display: "block" }}>
           <polygon points="7,1 1,13 13,13" fill="#2563eb" />
         </svg>
-        <span style={labelStyle}>{gl.markerSelected}</span>
-      </span>
-      <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-        <svg width={14} height={14} viewBox="0 0 14 14" aria-hidden style={{ display: "block" }}>
-          <rect x={2} y={2} width={10} height={10} fill="#f97316" />
-        </svg>
-        <span style={labelStyle}>{gl.markerConstraint}</span>
+        <span style={labelStyle}>{decisionPointLabel}</span>
       </span>
       <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
         <svg width={14} height={14} viewBox="0 0 14 14" aria-hidden style={{ display: "block" }}>
           <polygon points="7,1 1,7 7,13 13,7" fill="#3b82f6" />
         </svg>
-        <span style={labelStyle}>{gl.markerTipping}</span>
-      </span>
-      <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-        <span style={{ width: "10px", height: "2px", background: "#22c55e" }} />
-        <span style={labelStyle}>{gl.robust}</span>
-      </span>
-      <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-        <span style={{ width: "10px", height: "2px", background: "#2563eb" }} />
-        <span style={labelStyle}>{gl.sustainable}</span>
-      </span>
-      <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-        <span style={{ width: "10px", height: "2px", background: "#f97316" }} />
-        <span style={labelStyle}>{gl.erosion}</span>
-      </span>
-      <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-        <span style={{ width: "10px", height: "2px", background: "#ef4444" }} />
-        <span style={labelStyle}>{gl.collapse}</span>
+        <span style={labelStyle}>{tippingPointLabel}</span>
       </span>
     </div>
   );

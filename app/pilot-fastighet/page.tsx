@@ -143,7 +143,6 @@ export default function PilotFastighetPage() {
   const [isRunning, setIsRunning] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [selectedPilotCaseId, setSelectedPilotCaseId] = useState<string>("");
-  const [isAutoScale, setIsAutoScale] = useState(false);
   const [freezeFlash, setFreezeFlash] = useState<"A" | "B" | null>(null);
   const [uiTheme, setUiTheme] = useState<"dark" | "light">("dark");
   const [uiLanguage, setUiLanguage] = useState<Language>("sv");
@@ -293,13 +292,6 @@ export default function PilotFastighetPage() {
           .filter((c): c is ScenarioChange => c !== null)
       : parsePreviewScenarioImpact(textB, currentRiskStateB);
 
-    console.log("[PULSE DEBUG] handleScenarioSubmit", {
-      textA,
-      textB,
-      changesA,
-      changesB,
-    });
-
     setParsedScenarioEffectsA(changesA);
     setParsedScenarioEffectsB(changesB);
     setPreviewChangesA(changesA);
@@ -347,13 +339,6 @@ export default function PilotFastighetPage() {
     changesA: ScenarioChange[],
     changesB: ScenarioChange[]
   ) {
-    console.log("[PULSE DEBUG] applyScenarioChanges:before", {
-      changesA,
-      changesB,
-      riskStateA,
-      riskStateB,
-    });
-
     const nextA =
       Object.keys(changesA).length > 0
         ? applyChangesToState(
@@ -374,7 +359,6 @@ export default function PilotFastighetPage() {
     const target = scenarioTarget;
 
     if (target === "A") {
-      console.log("setRiskStateA called with:", nextA as RiskState);
       setRiskStateA(structuredClone(nextA as RiskState));
     }
 
@@ -408,17 +392,6 @@ export default function PilotFastighetPage() {
   ) {
     const effectiveRiskStateA = riskOverrideA ?? riskStateA;
     const effectiveRiskStateB = riskOverrideB ?? riskStateB;
-    console.log("[PULSE DEBUG] startSimulation:effectiveRiskStates", {
-      effectiveRiskStateA,
-      effectiveRiskStateB,
-    });
-
-    console.log("[PULSE DEBUG] startSimulation:before", {
-      source,
-      riskStateA: effectiveRiskStateA,
-      riskStateB: effectiveRiskStateB,
-      isRunning,
-    });
     setSimulationSource(source);
     setHasSimulationCompleted(false);
     setIsRunning(false);
@@ -459,18 +432,9 @@ export default function PilotFastighetPage() {
       marginHistoryARef.current.push(sA.margin);
       marginHistoryBRef.current.push(sB.margin);
       if (sA.step <= 3 || sB.step <= 3) {
-        console.log("[PULSE DEBUG] startSimulation:first3ticks", {
-          stepA: sA.step,
-          stepB: sB.step,
-          sA_margin: sA.margin,
-          sB_margin: sB.margin,
-          marginHistoryARef: marginHistoryARef.current,
-          marginHistoryBRef: marginHistoryBRef.current,
-        });
       }
 
       // Keep the UI in sync with the engine (single source of truth).
-      console.log("setRiskStateA called with:", sA.riskState as RiskState);
       setRiskStateA(structuredClone(sA.riskState as RiskState));
       setRiskStateB(structuredClone(sB.riskState as RiskState));
       if (Array.isArray((sA as any).cascadeEvents)) {
@@ -554,11 +518,6 @@ export default function PilotFastighetPage() {
       riskStateA: snapshotA,
       riskStateB: snapshotB,
       simulationHorizon,
-    });
-    console.log("[PULSE DEBUG] startSimulation:after", {
-      riskStateA: snapshotA,
-      riskStateB: snapshotB,
-      isRunning: true,
     });
   }
 
@@ -762,6 +721,18 @@ export default function PilotFastighetPage() {
       : null;
 
   const showBaselineOnly = marginHistoryB.length === 0;
+  const pilotCase =
+    selectedPilotCaseId !== ""
+      ? PILOT_CASES.find((c) => c.id === selectedPilotCaseId) ?? null
+      : null;
+  const caseAName: string | null = null;
+  const caseBName: string | null = pilotCase?.title ?? null;
+  const graphTitle =
+    caseAName && caseBName
+      ? `${caseAName} vs ${caseBName}`
+      : caseBName
+      ? `Baseline vs ${caseBName}`
+      : "Strategi A vs Strategi B";
 
   function getSystemStatus(margin: number | null): string {
     if (margin == null) return "IDLE";
@@ -1101,24 +1072,9 @@ export default function PilotFastighetPage() {
               if (id === "") return;
               const pilotCase = PILOT_CASES.find((c) => c.id === id);
               if (pilotCase) {
-                console.log("[PULSE DEBUG] caseChange", {
-                  caseId: id,
-                  riskStateABefore: riskStateA,
-                  riskStateBBefore: riskStateB,
-                  nextRiskStateA: pilotCase.riskStateA,
-                  nextRiskStateB: pilotCase.riskStateB,
-                });
-                console.log(
-                  "setRiskStateA called with:",
-                  structuredClone(pilotCase.riskStateA)
-                );
                 setRiskStateA(structuredClone(pilotCase.riskStateA));
                 setRiskStateB(structuredClone(pilotCase.riskStateB));
                 setIsDirty(true);
-                console.log("[PULSE DEBUG] isRunning:caseChange -> false", {
-                  previous: isRunning,
-                  reason: "caseChange",
-                });
                 setHasSimulationCompleted(false);
                 setIsRunning(false);
                 resetRunState();
@@ -1271,11 +1227,6 @@ export default function PilotFastighetPage() {
                 window.clearInterval(intervalRef.current);
                 intervalRef.current = null;
               }
-              console.log("[PULSE DEBUG] stopClick", {
-                riskStateA,
-                riskStateB,
-                isRunningBefore: isRunning,
-              });
               setHasSimulationCompleted(true);
               setIsRunning(false);
               if (marginHistoryA.length > 0 && marginHistoryB.length > 0) {
@@ -1293,11 +1244,6 @@ export default function PilotFastighetPage() {
                 setExecutiveSummary(null);
                 console.log("Executive summary", null);
               }
-              console.log("[PULSE DEBUG] stopClick:after", {
-                riskStateA,
-                riskStateB,
-                isRunningAfter: false,
-              });
             }}
             style={{
               padding: "8px 16px",
@@ -1313,11 +1259,6 @@ export default function PilotFastighetPage() {
           <button
             type="button"
             onClick={() => {
-              console.log("[PULSE DEBUG] resetClick:before", {
-                riskStateA,
-                riskStateB,
-                isRunning,
-              });
               setHasSimulationCompleted(false);
               setIsRunning(false);
               resetRunState();
@@ -1327,28 +1268,11 @@ export default function PilotFastighetPage() {
 
               if (!caseId) {
                 // Reset to engine baseline (all MODERATE), matching initial load
-                console.log("[PULSE DEBUG] resetClick:toBaseline", {
-                  nextRiskStateA: defaultRiskState,
-                  nextRiskStateB: defaultRiskState,
-                });
-                console.log(
-                  "setRiskStateA called with:",
-                  structuredClone(defaultRiskState)
-                );
                 setRiskStateA(structuredClone(defaultRiskState));
                 setRiskStateB(structuredClone(defaultRiskState));
               } else {
                 const pilotCase = PILOT_CASES.find((c) => c.id === caseId);
                 if (pilotCase) {
-                  console.log("[PULSE DEBUG] resetClick:toCaseDefaults", {
-                    caseId,
-                    nextRiskStateA: pilotCase.riskStateA,
-                    nextRiskStateB: pilotCase.riskStateB,
-                  });
-                  console.log(
-                    "setRiskStateA called with:",
-                    structuredClone(pilotCase.riskStateA)
-                  );
                   setRiskStateA(structuredClone(pilotCase.riskStateA));
                   setRiskStateB(structuredClone(pilotCase.riskStateB));
                 }
@@ -1366,21 +1290,6 @@ export default function PilotFastighetPage() {
             }}
           >
             {pulseLanguage[uiLanguage].reset}
-          </button>
-          <button
-            type="button"
-            className={isAutoScale ? "active-button" : ""}
-            onClick={() => setIsAutoScale((v) => !v)}
-            style={{
-              padding: "8px 16px",
-              background: "#1a1a1a",
-              border: "1px solid #2f333a",
-              borderRadius: "6px",
-              color: "#e6edf3",
-              cursor: "pointer",
-            }}
-          >
-            {isAutoScale ? pulseLanguage[uiLanguage].autoScaleOn : pulseLanguage[uiLanguage].autoScaleOff}
           </button>
         </div>
         <button
@@ -1508,14 +1417,6 @@ export default function PilotFastighetPage() {
                       value={activeRiskState[param.key]}
                       disabled={!isEditableScenario}
                       onChange={(e) => {
-                        console.log("[PULSE DEBUG] driverChange", {
-                          scenario: activeScenario,
-                          parameter: param.key,
-                          previousValue: activeRiskState[param.key],
-                          nextValue: e.target.value,
-                          riskStateA,
-                          riskStateB,
-                        });
                         setIsDirty(true);
                         const parameter = param.key;
                         const nextValue = e.target.value as RiskLevel;
@@ -1525,7 +1426,6 @@ export default function PilotFastighetPage() {
                               ...prev,
                               [parameter]: nextValue,
                             };
-                            console.log("setRiskStateA called with:", nextState);
                             return nextState;
                           });
                         } else if (activeScenario === "B") {
@@ -1704,7 +1604,6 @@ export default function PilotFastighetPage() {
                   showA={showA}
                   showBaselineOnly={showBaselineOnly}
                   showB={showB && marginHistoryB.length > 0}
-                  isAutoScale={isAutoScale}
                   simulationHorizon={simulationHorizon}
                   theme={theme}
                   uiLanguage={uiLanguage}
@@ -1714,6 +1613,7 @@ export default function PilotFastighetPage() {
                   cascadeEventsB={cascadeEventsB}
                   onSelectMonth={setSelectedMonthData}
                   selectedMonthIndex={selectedMonthData?.monthIndex}
+                  graphTitle={graphTitle}
                 />
               </div>
             </div>
@@ -1894,7 +1794,6 @@ export default function PilotFastighetPage() {
             const nextPresetState = getRiskStateAfterPreset(presetId) as RiskState;
 
             if (scenarioTarget === "A") {
-              console.log("setRiskStateA called with:", nextPresetState);
               setRiskStateA(structuredClone(nextPresetState));
               setScenarioPromptA(prompt);
             }
@@ -1904,15 +1803,7 @@ export default function PilotFastighetPage() {
             }
 
             setIsDirty(true);
-            console.log("Applying preset:", presetId);
-            console.log("Scenario target:", scenarioTarget);
-            console.log("Preset mapping result:", getRiskStateAfterPreset(presetId));
             if (presetId === "interest-shock") {
-              console.log("[PULSE DEBUG] interest-shock:onSelectScenario", {
-                scenarioTarget,
-                riskStateA,
-                riskStateB,
-              });
             }
           }}
         />
@@ -2030,17 +1921,19 @@ export default function PilotFastighetPage() {
           marginTrend={marginTrend}
           cascadeDelay={cascadeDelaySteps}
         />
-        <PromptDock
-          language={uiLanguage}
-          cascadeEventsA={cascadeEventsA}
-          cascadeEventsB={cascadeEventsB}
-          cascadeDelay={cascadeDelaySteps}
-          primaryDriver={primaryDriver}
-          systemPressure={systemPressure}
-          estimatedTimeToBreach={estimatedTimeToBreach}
-          marginTrend={marginTrend}
-          decisionFlowEvents={sortedDecisionFlowEvents}
-        />
+        {false && (
+          <PromptDock
+            language={uiLanguage}
+            cascadeEventsA={cascadeEventsA}
+            cascadeEventsB={cascadeEventsB}
+            cascadeDelay={cascadeDelaySteps}
+            primaryDriver={primaryDriver}
+            systemPressure={systemPressure}
+            estimatedTimeToBreach={estimatedTimeToBreach}
+            marginTrend={marginTrend}
+            decisionFlowEvents={sortedDecisionFlowEvents}
+          />
+        )}
         {selectedQuarter != null && (
           <div style={{ fontSize: "12px", color: "#9CA3AF", marginTop: "8px" }}>
             M{selectedQuarter} — Scenario A: {marginHistoryA[selectedQuarter - 1]?.toFixed(2) ?? "—"} | Scenario B: {marginHistoryB[selectedQuarter - 1]?.toFixed(2) ?? "—"}
