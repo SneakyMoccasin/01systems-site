@@ -17,6 +17,7 @@ const ScenarioLibrary: React.FC<Props> = ({
   onScenarioTargetChange,
   language = "en",
 }) => {
+  console.log("[PULSE SCENARIO LIBRARY MOUNTED]");
   const uiLanguage = language;
   const t = pulseLanguage[uiLanguage];
   const scenarios = getScenarioLibrary(language);
@@ -24,6 +25,7 @@ const ScenarioLibrary: React.FC<Props> = ({
   return (
     <div
       style={{
+        pointerEvents: "auto",
         background: "#111827",
         border: "1px solid #1f2937",
         borderRadius: "6px",
@@ -51,8 +53,10 @@ const ScenarioLibrary: React.FC<Props> = ({
               checked={scenarioTarget === "A"}
               onChange={() => onScenarioTargetChange("A")}
             />
-            {(t as any).currentStrategy ?? "Current strategy"}
           </label>
+          <span style={{ marginRight: "10px" }}>
+            {(t as any).currentStrategy ?? "Current strategy"}
+          </span>
           <label>
             <input
               type="radio"
@@ -60,8 +64,8 @@ const ScenarioLibrary: React.FC<Props> = ({
               checked={scenarioTarget === "B"}
               onChange={() => onScenarioTargetChange("B")}
             />
-            {(t as any).alternativeStrategy ?? "Alternative strategy"}
           </label>
+          <span>{(t as any).alternativeStrategy ?? "Alternative strategy"}</span>
         </div>
       )}
       <div
@@ -83,8 +87,19 @@ const ScenarioLibrary: React.FC<Props> = ({
           >
             <button
               type="button"
-              onClick={() => onSelectScenario(s.id)}
+              onMouseDown={() => {
+                console.log("[PULSE MOUSEDOWN]", s.id);
+              }}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                console.log("[PULSE CLICK]", s.id);
+                if (onSelectScenario) {
+                  onSelectScenario(s.id);
+                }
+              }}
               style={{
+                pointerEvents: "auto",
                 padding: "8px 12px",
                 background: "#1f2937",
                 border: "1px solid #374151",

@@ -168,6 +168,8 @@ export default function PilotFastighetPage() {
   const [previewScenarioTextB, setPreviewScenarioTextB] = useState<string | undefined>(undefined);
   const [scenarioHistory, setScenarioHistory] = useState<string[]>([]);
   const [scenarioPromptA, setScenarioPromptA] = useState("");
+  const [scenarioALabel, setScenarioALabel] = useState<string>("");
+  const [scenarioBLabel, setScenarioBLabel] = useState<string>("");
   const [scenarioPromptB, setScenarioPromptB] = useState("");
   const [parsedScenarioEffectsA, setParsedScenarioEffectsA] = useState<
     ScenarioChange[]
@@ -186,6 +188,8 @@ export default function PilotFastighetPage() {
   const [cascadeEventsB, setCascadeEventsB] = useState<CascadeEvent[]>([]);
   const [domain, setDomain] = useState<DomainKey>(activeDomain);
   const [scenarioTarget, setScenarioTarget] = useState<"A" | "B">("A");
+  const [appliedScenarioAId, setAppliedScenarioAId] = useState<string | null>(null);
+  const [appliedScenarioBId, setAppliedScenarioBId] = useState<string | null>(null);
 
   const engineARef = useRef<RealEstateEngine | null>(null);
   const engineBRef = useRef<RealEstateEngine | null>(null);
@@ -202,6 +206,24 @@ export default function PilotFastighetPage() {
     setHistoryA(loadHistory(STORAGE_KEY_A));
     setHistoryB(loadHistory(STORAGE_KEY_B));
   }, []);
+
+  useEffect(() => {
+    const scenarioLibrary = getScenarioLibrary(uiLanguage);
+
+    const labelA =
+      scenarioLibrary.find((p) => p.id === scenarioALabel)?.prompt ?? "";
+
+    const labelB =
+      scenarioLibrary.find((p) => p.id === scenarioBLabel)?.prompt ?? "";
+
+    if (scenarioALabel) {
+      setScenarioPromptA(labelA);
+    }
+
+    if (scenarioBLabel) {
+      setScenarioPromptB(labelB);
+    }
+  }, [uiLanguage]);
 
   const handleScenarioSubmit = (textA: string, textB: string) => {
     console.log("SIMULATE CLICKED");
@@ -732,7 +754,7 @@ export default function PilotFastighetPage() {
       ? `${caseAName} vs ${caseBName}`
       : caseBName
       ? `Baseline vs ${caseBName}`
-      : "Strategi A vs Strategi B";
+      : undefined;
 
   function getSystemStatus(margin: number | null): string {
     if (margin == null) return "IDLE";
@@ -976,6 +998,7 @@ export default function PilotFastighetPage() {
   return (
     <div
       style={{
+        pointerEvents: "auto",
         width: "100%",
         maxWidth: "100%",
         marginLeft: "0",
@@ -1030,7 +1053,7 @@ export default function PilotFastighetPage() {
         </button>
         <button
           type="button"
-          onClick={() => setShowHelp((v) => !v)}
+          onClick={() => setShowHelp(!showHelp)}
           style={{
             padding: "6px 12px",
             borderRadius: "6px",
@@ -1279,6 +1302,10 @@ export default function PilotFastighetPage() {
               }
               setScenarioPromptA("");
               setScenarioPromptB("");
+              setScenarioALabel("");
+              setScenarioBLabel("");
+              setIsDirty(false);
+              setShowHelp(false);
             }}
             style={{
               padding: "8px 16px",
@@ -1321,39 +1348,29 @@ export default function PilotFastighetPage() {
             color: "#E5E7EB",
           }}
         >
-          <b>Pulse – Help</b>
+          <h3 style={{ margin: "0 0 8px", fontSize: "15px", fontWeight: 700 }}>
+            {pt.helpTitle}
+          </h3>
 
-          <div style={{ marginTop: "8px", marginBottom: "8px" }}>
-            1. Justera risknivåer till vänster eller skriv ett scenario i promptfältet.
-          </div>
+          <ol style={{ margin: "8px 0", paddingLeft: "20px" }}>
+            <li style={{ marginBottom: "8px" }}>{pt.helpStep1}</li>
+            <li style={{ marginBottom: "8px" }}>{pt.helpStep2}</li>
+            <li style={{ marginBottom: "10px" }}>{pt.helpStep3}</li>
+          </ol>
 
-          <div style={{ marginBottom: "8px" }}>
-            2. Klicka <b>Start</b> för att simulera systemets utveckling över tid.
-          </div>
+          <p style={{ margin: "10px 0 8px" }}>{pt.helpZonesTitle}</p>
 
-          <div style={{ marginBottom: "10px", marginTop: "6px" }}>
-            3. Grafen visar hur marginalen utvecklas för nuvarande och alternativ strategi.
-          </div>
+          <ul style={{ margin: "0 0 10px", paddingLeft: "20px" }}>
+            <li style={{ marginBottom: "6px" }}>{pt.helpZoneRobust}</li>
+            <li style={{ marginBottom: "6px" }}>{pt.helpZoneSustainable}</li>
+            <li style={{ marginBottom: "6px" }}>{pt.helpZoneErosion}</li>
+            <li style={{ marginBottom: "6px" }}>{pt.helpZoneCollapse}</li>
+          </ul>
 
-          <div style={{ marginBottom: "10px", marginTop: "6px" }}>
-            4. Zonerna visar systemets tillstånd:
-            <br />
-            Robust → stabil utveckling
-            <br />
-            Hållbar → inom säker nivå
-            <br />
-            Erosion → strukturell försvagning
-            <br />
-            Kollaps → systemet bryter samman
-          </div>
-
-          <div style={{ marginBottom: "8px" }}>
-            5. <b>Freeze</b> sparar ett snapshot så scenarier kan jämföras.
-          </div>
-
-          <div>
-            6. Simulation Horizon (12M / 36M / 60M) styr hur långt simuleringen körs.
-          </div>
+          <ol start={5} style={{ margin: "8px 0 0", paddingLeft: "20px" }}>
+            <li style={{ marginBottom: "8px" }}>{pt.helpStep5}</li>
+            <li>{pt.helpStep6}</li>
+          </ol>
         </div>
       )}
       {selectedPilotCaseId && PILOT_CASES.find((c) => c.id === selectedPilotCaseId) && (
@@ -1364,7 +1381,7 @@ export default function PilotFastighetPage() {
 
       {isDirty && (
         <div style={{ marginBottom: "12px", fontSize: "13px", color: "#9ca3af" }}>
-          New action selected — press Start to simulate.
+          {pt.actionNeedsStart}
         </div>
       )}
 
@@ -1585,11 +1602,10 @@ export default function PilotFastighetPage() {
                       fontWeight: 500,
                     }}
                   >
-                    {uiLanguage === "sv"
-                      ? "Simuleringen behöver uppdateras — tryck Start"
-                      : "Simulation needs update — press Start to rerun"}
+                    {pt.simulationNeedsUpdate}
                   </div>
                 )}
+                <div style={{ pointerEvents: "none" }}>
                 <MarginGraph
                   marginHistoryA={marginHistoryA}
                   marginHistoryB={marginHistoryB}
@@ -1603,7 +1619,7 @@ export default function PilotFastighetPage() {
                   hoverIndex={hoverIndex}
                   showA={showA}
                   showBaselineOnly={showBaselineOnly}
-                  showB={showB && marginHistoryB.length > 0}
+                  showB={showB}
                   simulationHorizon={simulationHorizon}
                   theme={theme}
                   uiLanguage={uiLanguage}
@@ -1613,8 +1629,11 @@ export default function PilotFastighetPage() {
                   cascadeEventsB={cascadeEventsB}
                   onSelectMonth={setSelectedMonthData}
                   selectedMonthIndex={selectedMonthData?.monthIndex}
-                  graphTitle={graphTitle}
+                  graphTitle={undefined}
+                  scenarioALabel={scenarioALabel}
+                  scenarioBLabel={scenarioBLabel}
                 />
+                </div>
               </div>
             </div>
           </div>
@@ -1627,31 +1646,33 @@ export default function PilotFastighetPage() {
               minWidth: 260,
             }}
           >
-            <AIInspectorPanel
-              language={uiLanguage}
-              caseName={
-                PILOT_CASES.find((c) => c.id === selectedPilotCaseId)?.title ?? ""
-              }
-              tippingQuarter={
-                tippingMarginIndexB != null ? tippingMarginIndexB + 1 : null
-              }
-              currentMargin={finalA}
-              alternativeMargin={finalB}
-              marginImpact={finalB - finalA}
-              cascadeEvents={cascadeEvents}
-              cascadeEventsA={cascadeEventsA}
-              cascadeEventsB={cascadeEventsB}
-              seriesLengthA={marginHistoryA.length}
-              seriesLengthB={marginHistoryB.length}
-              simulationHorizon={simulationHorizon}
-              primaryDriver={primaryDriver}
-              systemPressure={systemPressure}
-              constraintBreakQuarter={estimatedTimeToBreach}
-              structuralStatus={t.structuralStatus[structuralStatusKey]}
-              selectedMonthIndex={selectedMonthData?.monthIndex ?? null}
-              selectedMarginValueA={selectedMonthData?.marginA ?? null}
-              selectedMarginValueB={selectedMonthData?.marginB ?? null}
-            />
+            {selectedMonthData && (
+              <AIInspectorPanel
+                language={uiLanguage}
+                caseName={
+                  PILOT_CASES.find((c) => c.id === selectedPilotCaseId)?.title ?? ""
+                }
+                tippingQuarter={
+                  tippingMarginIndexB != null ? tippingMarginIndexB + 1 : null
+                }
+                currentMargin={finalA}
+                alternativeMargin={finalB}
+                marginImpact={finalB - finalA}
+                cascadeEvents={cascadeEvents}
+                cascadeEventsA={cascadeEventsA}
+                cascadeEventsB={cascadeEventsB}
+                seriesLengthA={marginHistoryA.length}
+                seriesLengthB={marginHistoryB.length}
+                simulationHorizon={simulationHorizon}
+                primaryDriver={primaryDriver}
+                systemPressure={systemPressure}
+                constraintBreakQuarter={estimatedTimeToBreach}
+                structuralStatus={t.structuralStatus[structuralStatusKey]}
+                selectedMonthIndex={selectedMonthData?.monthIndex ?? null}
+                selectedMarginValueA={selectedMonthData?.marginA ?? null}
+                selectedMarginValueB={selectedMonthData?.marginB ?? null}
+              />
+            )}
           </div>
         </div>
         {selectedMonthData && (
@@ -1782,24 +1803,38 @@ export default function PilotFastighetPage() {
           <option value="municipal">Municipal</option>
           <option value="consulting">Consulting</option>
         </select>
+        <div>
         <ScenarioLibrary
+          debugTag="PILOT_FASTIGHET_PAGE"
           language={uiLanguage}
           scenarioTarget={scenarioTarget}
           onScenarioTargetChange={(target) => {
             setScenarioTarget(target);
           }}
           onSelectScenario={(presetId) => {
-            const preset = getScenarioLibrary(uiLanguage).find((p) => p.id === presetId);
+            console.log("[PULSE TARGET]", scenarioTarget);
+            console.log("Scenario selected:", presetId);
+            const presetLibrary = getScenarioLibrary(uiLanguage);
+            const preset = presetLibrary.find((p) => p.id === presetId);
             const prompt = preset?.prompt ?? "";
             const nextPresetState = getRiskStateAfterPreset(presetId) as RiskState;
+            const applyTo = scenarioTarget;
 
             if (scenarioTarget === "A") {
               setRiskStateA(structuredClone(nextPresetState));
               setScenarioPromptA(prompt);
+              setAppliedScenarioAId(presetId);
             }
             if (scenarioTarget === "B") {
               setRiskStateB(structuredClone(nextPresetState));
               setScenarioPromptB(prompt);
+              setAppliedScenarioBId(presetId);
+            }
+
+            if (applyTo === "A") {
+              setScenarioALabel(preset?.id ?? "");
+            } else {
+              setScenarioBLabel(preset?.id ?? "");
             }
 
             setIsDirty(true);
@@ -1807,6 +1842,7 @@ export default function PilotFastighetPage() {
             }
           }}
         />
+        </div>
         <ScenarioPromptDock
           language={uiLanguage}
           onScenarioSubmit={handleScenarioSubmit}

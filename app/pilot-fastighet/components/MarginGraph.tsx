@@ -2,6 +2,7 @@
 
 import React from "react";
 import { pulseLanguage } from "@/src/i18n/pulseLanguage";
+import { getScenarioLibrary } from "@/src/pilotFastighet/scenarioLibrary";
 import type { CascadeEvent } from "@/src/pilotFastighet/riskPropagation";
 
 const EXEC_SUSTAIN_THRESHOLD = 0.8;
@@ -38,32 +39,35 @@ export interface MarginGraphProps {
   onSelectMonth?: (payload: MarginGraphSelectMonthPayload) => void;
   selectedMonthIndex?: number;
   graphTitle?: string;
+  scenarioALabel?: string;
+  scenarioBLabel?: string;
 }
 
 type CascadeMarker = { index: number; type: string };
 
-function MarginGraph(props: MarginGraphProps) {
-  const {
-    marginHistoryA,
-    marginHistoryB,
-    displayMarginB,
-    tippingMarginIndexA,
-    tippingMarginIndexB,
-    hoverIndex,
-    showA,
-    showBaselineOnly = false,
-    showB,
-    simulationHorizon,
-    theme,
-    uiLanguage,
-    svgRef,
-    setHoverIndex,
-    cascadeEventsA = [],
-    cascadeEventsB = [],
-    onSelectMonth,
-    selectedMonthIndex,
-    graphTitle,
-  } = props;
+function MarginGraph({
+  marginHistoryA,
+  marginHistoryB,
+  displayMarginB,
+  tippingMarginIndexA,
+  tippingMarginIndexB,
+  hoverIndex,
+  showA,
+  showBaselineOnly = false,
+  showB,
+  simulationHorizon,
+  theme,
+  uiLanguage,
+  svgRef,
+  setHoverIndex,
+  cascadeEventsA = [],
+  cascadeEventsB = [],
+  onSelectMonth,
+  selectedMonthIndex,
+  graphTitle,
+  scenarioALabel,
+  scenarioBLabel,
+}: MarginGraphProps) {
   const [viewMode, setViewMode] = React.useState<"delta" | "absolute">("delta");
   const [hoveredViewMode, setHoveredViewMode] = React.useState<"delta" | "absolute" | null>(null);
 
@@ -82,13 +86,19 @@ function MarginGraph(props: MarginGraphProps) {
       ? "Baslinje = nuläge"
       : "Baseline = current system state";
 
-  const comparisonLegend = graphTitle ?? (showBaselineOnly
-    ? uiLanguage === "sv"
-      ? "Baslinje vs strategi A"
-      : "Baseline vs Scenario A"
-    : uiLanguage === "sv"
-      ? "Strategi A vs strategi B"
-      : "Scenario A vs Scenario B");
+  console.log("[PULSE LABEL CHECK]", scenarioALabel, scenarioBLabel);
+  const scenarioLibrary = getScenarioLibrary(uiLanguage);
+
+  const labelA =
+    scenarioLibrary.find((p) => p.id === scenarioALabel)?.label ?? "";
+
+  const labelB =
+    scenarioLibrary.find((p) => p.id === scenarioBLabel)?.label ?? "";
+
+  const comparisonLegend =
+    labelA && labelB
+      ? `${labelA} vs ${labelB}`
+      : `${t.currentStrategy} vs ${t.alternativeStrategy}`;
 
   const baselineA = marginHistoryA[0] ?? 0;
   const baselineB = marginHistoryB[0] ?? 0;
@@ -501,7 +511,7 @@ function MarginGraph(props: MarginGraphProps) {
     <div>
       <div style={{ marginBottom: 8 }}>
         <span style={{ marginRight: 6, color: "#9ca3af", fontSize: "11px" }}>
-          {uiLanguage === "sv" ? "Vy:" : "View:"}
+          {t.viewLabel}
         </span>
         <div
           style={{
@@ -1016,13 +1026,7 @@ function MarginGraph(props: MarginGraphProps) {
 
 /** Legend row above the margin graph: mirrors `renderMarkerShape` semantics (strategy lines + zone colors). */
 export function MarginGraphLegendRow({ uiLanguage }: { uiLanguage: "sv" | "en" }) {
-  const pt = pulseLanguage[uiLanguage];
-  const gl = pt.graphLegend;
-  const scenarioALabel = uiLanguage === "sv" ? "Scenario A" : "Scenario A";
-  const scenarioBLabel = uiLanguage === "sv" ? "Scenario B" : "Scenario B";
-  const baselineLabel = uiLanguage === "sv" ? "Baslinje (nuläge)" : "Baseline (current state)";
-  const decisionPointLabel = uiLanguage === "sv" ? "Vald tidpunkt" : "Decision point";
-  const tippingPointLabel = uiLanguage === "sv" ? "Tippingpunkt" : "Tipping point";
+  const t = pulseLanguage[uiLanguage];
   const labelStyle = { fontSize: "11px", color: "#9CA3AF" } as const;
   const rowStyle = {
     fontSize: "12px",
@@ -1038,29 +1042,29 @@ export function MarginGraphLegendRow({ uiLanguage }: { uiLanguage: "sv" | "en" }
     <div style={rowStyle}>
       <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
         <span style={{ width: "10px", height: "2px", background: "#3B82F6" }} />
-        <span style={labelStyle}>{scenarioALabel}</span>
+        <span style={labelStyle}>{t.currentStrategy}</span>
       </span>
       <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
         <span style={{ width: "10px", height: "2px", background: "#F59E0B" }} />
-        <span style={labelStyle}>{scenarioBLabel}</span>
+        <span style={labelStyle}>{t.alternativeStrategy}</span>
       </span>
       <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
         <svg width={14} height={14} viewBox="0 0 14 14" aria-hidden style={{ display: "block" }}>
           <circle cx={7} cy={7} r={4} fill="white" stroke="#9ca3af" strokeWidth={1} />
         </svg>
-        <span style={labelStyle}>{baselineLabel}</span>
+        <span style={labelStyle}>{t.baseline}</span>
       </span>
       <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
         <svg width={14} height={14} viewBox="0 0 14 14" aria-hidden style={{ display: "block" }}>
           <polygon points="7,1 1,13 13,13" fill="#2563eb" />
         </svg>
-        <span style={labelStyle}>{decisionPointLabel}</span>
+        <span style={labelStyle}>{t.selectedTimePoint}</span>
       </span>
       <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
         <svg width={14} height={14} viewBox="0 0 14 14" aria-hidden style={{ display: "block" }}>
           <polygon points="7,1 1,7 7,13 13,7" fill="#3b82f6" />
         </svg>
-        <span style={labelStyle}>{tippingPointLabel}</span>
+        <span style={labelStyle}>{t.tippingPoint}</span>
       </span>
     </div>
   );
