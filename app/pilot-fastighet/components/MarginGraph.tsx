@@ -86,7 +86,6 @@ function MarginGraph({
       ? "Baslinje = nuläge"
       : "Baseline = current system state";
 
-  console.log("[PULSE LABEL CHECK]", scenarioALabel, scenarioBLabel);
   const scenarioLibrary = getScenarioLibrary(uiLanguage);
 
   const labelA =
@@ -522,7 +521,10 @@ function MarginGraph({
           }}
         >
           <button
-            onClick={() => setViewMode("delta")}
+            onClick={() => {
+              console.log("delta clicked");
+              setViewMode("delta");
+            }}
             onMouseEnter={() => setHoveredViewMode("delta")}
             onMouseLeave={() => setHoveredViewMode(null)}
             style={{
@@ -538,7 +540,10 @@ function MarginGraph({
           </button>
 
           <button
-            onClick={() => setViewMode("absolute")}
+            onClick={() => {
+              console.log("absolute clicked");
+              setViewMode("absolute");
+            }}
             onMouseEnter={() => setHoveredViewMode("absolute")}
             onMouseLeave={() => setHoveredViewMode(null)}
             style={{

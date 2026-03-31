@@ -1605,7 +1605,7 @@ export default function PilotFastighetPage() {
                     {pt.simulationNeedsUpdate}
                   </div>
                 )}
-                <div style={{ pointerEvents: "none" }}>
+                <div style={{ position: "relative", zIndex: 2 }}>
                 <MarginGraph
                   marginHistoryA={marginHistoryA}
                   marginHistoryB={marginHistoryB}
