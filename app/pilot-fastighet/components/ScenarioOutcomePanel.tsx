@@ -63,8 +63,9 @@ const ScenarioOutcomePanel: React.FC<Props> = ({
           Scenario A
         </div>
         <div style={{ color: "#E5E7EB" }}>
-          {t.structuralBreach}:{" "}
-          {breachA != null ? `Q${breachA}` : t.noBreachInHorizon}
+          {breachA != null
+            ? t.structuralBreakExpectedAround(breachA)
+            : t.noStructuralBreakWithinHorizon}
         </div>
         <div style={{ color: "#E5E7EB" }}>
           {t.finalMargin}: {finalMarginA.toFixed(2)}
@@ -82,8 +83,9 @@ const ScenarioOutcomePanel: React.FC<Props> = ({
           Scenario B
         </div>
         <div style={{ color: "#E5E7EB" }}>
-          {t.structuralBreach}:{" "}
-          {breachB != null ? `Q${breachB}` : t.noBreachInHorizon}
+          {breachB != null
+            ? t.structuralBreakExpectedAround(breachB)
+            : t.noStructuralBreakWithinHorizon}
         </div>
         <div style={{ color: "#E5E7EB" }}>
           {t.finalMargin}: {finalMarginB.toFixed(2)}

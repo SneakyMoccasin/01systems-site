@@ -239,6 +239,11 @@ Improvements are implemented gradually with higher delivery friction.
     scenarioOutcomeTitle: "Scenario Outcome",
     noBreachInHorizon: "No breach in horizon",
     structuralBreach: "Structural breach",
+    structuralBreakExpectedAround: (n: number) =>
+      `Structural break expected around M${n}`,
+    noStructuralBreakWithinHorizon:
+      "No structural break within simulation horizon",
+    estimatedBreachExpectedAround: (n: number) => `Expected around M${n}`,
     finalMargin: "Final margin",
     resultLabel: "Result",
     marginImprovementLabel: "Margin improvement",
@@ -284,6 +289,15 @@ Improvements are implemented gradually with higher delivery friction.
     helpStep5: "Freeze saves a snapshot so scenarios can be compared.",
     helpStep6:
       "Simulation Horizon (12M / 36M / 60M) controls simulation length.",
+    expertMode: "Expert Mode",
+    executiveMode: "Executive Mode",
+    structuralInspectionLayer:
+      "Structural inspection layer — engine diagnostics",
+    structuralMetrics: "Structural Metrics",
+    constraintView: "Constraint View",
+    simulationMonths: "Simulation months",
+    tippingStep: "Tipping step",
+    expertCloseAriaLabel: "Return to Executive Mode",
   },
   sv: {
     executiveQuestion: "Fråga till systemet",
@@ -490,6 +504,11 @@ Förbättringar införs gradvis med högre leveransfriktion.
     scenarioOutcomeTitle: "Scenarioresultat",
     noBreachInHorizon: "Inget brott inom horisonten",
     structuralBreach: "Strukturellt brott",
+    structuralBreakExpectedAround: (n: number) =>
+      `Strukturellt brott väntas kring M${n}`,
+    noStructuralBreakWithinHorizon:
+      "Inget strukturellt brott inom simuleringshorisonten",
+    estimatedBreachExpectedAround: (n: number) => `Väntas kring M${n}`,
     finalMargin: "Slutmarginal",
     resultLabel: "Resultat",
     marginImprovementLabel: "Marginalförbättring",
@@ -535,6 +554,15 @@ Förbättringar införs gradvis med högre leveransfriktion.
     helpStep5: "Freeze sparar ett snapshot så scenarier kan jämföras.",
     helpStep6:
       "Simulation Horizon (12M / 36M / 60M) styr hur långt simuleringen körs.",
+    expertMode: "Expertläge",
+    executiveMode: "Executivt läge",
+    structuralInspectionLayer:
+      "Strukturellt inspektionslager — motordiagnostik",
+    structuralMetrics: "Strukturella mått",
+    constraintView: "Begränsningsvy",
+    simulationMonths: "Simuleringsmånader",
+    tippingStep: "Tipping-steg",
+    expertCloseAriaLabel: "Återgå till executivt läge",
   },
 } as const;
 

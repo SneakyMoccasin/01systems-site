@@ -1332,7 +1332,7 @@ export default function PilotFastighetPage() {
             cursor: "pointer",
           }}
         >
-          {uiMode === "executive" ? "Executive Mode" : "Expert Mode"}
+          {uiMode === "executive" ? pt.expertMode : pt.executiveMode}
         </button>
       </div>
       {showHelp && (
@@ -1869,15 +1869,17 @@ export default function PilotFastighetPage() {
           estimatedTimeToBreach={estimatedTimeToBreach}
           language={uiLanguage}
         />
-        <DecisionExplanationPanel
-          primaryDriver={primaryDriver ?? undefined}
-          systemPressure={systemPressure}
-          marginTrend={marginTrend}
-          cascadeEventsA={cascadeEventsA}
-          cascadeEventsB={cascadeEventsB}
-          estimatedTimeToBreach={estimatedTimeToBreach}
-          language={uiLanguage}
-        />
+        {uiMode === "expert" && (
+          <DecisionExplanationPanel
+            primaryDriver={primaryDriver ?? undefined}
+            systemPressure={systemPressure}
+            marginTrend={marginTrend}
+            cascadeEventsA={cascadeEventsA}
+            cascadeEventsB={cascadeEventsB}
+            estimatedTimeToBreach={estimatedTimeToBreach}
+            language={uiLanguage}
+          />
+        )}
         <ScenarioOutcomePanel
           breachA={tippingMarginIndexA != null ? tippingMarginIndexA + 1 : null}
           breachB={tippingMarginIndexB != null ? tippingMarginIndexB + 1 : null}
@@ -2464,8 +2466,8 @@ export default function PilotFastighetPage() {
             <strong>Margin impact:</strong> {(snapB.engineState.margin - snapA.engineState.margin).toFixed(3)}
             <br />
             <strong>Tipping (ACTIVE):</strong>{" "}
-{tippingStepA != null ? `Scenario A: Q${tippingStepA}` : "Scenario A: never"} |{" "}
-              {tippingStepB != null ? `Scenario B: Q${tippingStepB}` : "Scenario B: never"}
+{tippingStepA != null ? `Scenario A: M${tippingStepA}` : "Scenario A: never"} |{" "}
+              {tippingStepB != null ? `Scenario B: M${tippingStepB}` : "Scenario B: never"}
             <br />
             {executiveConclusion != null && (
               <>
@@ -2485,9 +2487,9 @@ export default function PilotFastighetPage() {
                 <br />
                 <strong>Refinancing lifecycle (Scenario B):</strong> {snapB.engineState.registry.RefinancingConstraint.lifecycle}
                 <br />
-                <strong>Q (Scenario A):</strong> {snapA.engineState.step}
+                <strong>Step (Scenario A):</strong> {snapA.engineState.step}
                 <br />
-                <strong>Q (Scenario B):</strong> {snapB.engineState.step}
+                <strong>Step (Scenario B):</strong> {snapB.engineState.step}
               </>
             )}
           </div>
@@ -2528,16 +2530,16 @@ export default function PilotFastighetPage() {
           >
             <div>
               <h2 style={{ margin: 0, fontSize: "18px", fontWeight: 600, color: "#E5E7EB" }}>
-                Expert Mode
+                {pt.expertMode}
               </h2>
               <p style={{ margin: "6px 0 0", fontSize: "12px", color: "#9CA3AF" }}>
-                Structural inspection layer
+                {pt.structuralInspectionLayer}
               </p>
             </div>
             <button
               type="button"
               onClick={() => setUiMode("executive")}
-              aria-label="Close Expert Mode"
+              aria-label={pt.expertCloseAriaLabel}
               style={{
                 flexShrink: 0,
                 width: "32px",
@@ -2568,7 +2570,7 @@ export default function PilotFastighetPage() {
                 marginBottom: "12px",
               }}
             >
-              Structural Metrics
+              {pt.structuralMetrics}
             </div>
             <div
               style={{
@@ -2625,7 +2627,7 @@ export default function PilotFastighetPage() {
                   color: "#6B7280",
                 }}
               >
-                <span>Tipping (Q)</span>
+                <span>{pt.tippingStep}</span>
                 <span style={{ color: "#9CA3AF", fontVariantNumeric: "tabular-nums" }}>
                   {expertTippingStep != null ? `M${expertTippingStep}` : "—"}
                 </span>
@@ -2638,7 +2640,7 @@ export default function PilotFastighetPage() {
                   color: "#6B7280",
                 }}
               >
-                <span>quarters</span>
+                <span>{pt.simulationMonths}</span>
                 <span style={{ color: "#9CA3AF", fontVariantNumeric: "tabular-nums" }}>
                   {expertSteps}
                 </span>
@@ -2657,7 +2659,7 @@ export default function PilotFastighetPage() {
                 marginBottom: "12px",
               }}
             >
-              Constraint View
+              {pt.constraintView}
             </div>
             <div
               style={{
@@ -2678,7 +2680,7 @@ export default function PilotFastighetPage() {
                 <span>Sustain breach</span>
                 <span style={{ color: "#9CA3AF", fontVariantNumeric: "tabular-nums" }}>
                   {sustainBreachStep != null
-                    ? `Sustain threshold crossed at Q${sustainBreachStep}`
+                    ? `Sustain threshold crossed at M${sustainBreachStep}`
                     : "Sustain threshold not crossed"}
                 </span>
               </div>
@@ -2702,7 +2704,7 @@ export default function PilotFastighetPage() {
                 <span>Collapse breach</span>
                 <span style={{ color: "#9CA3AF", fontVariantNumeric: "tabular-nums" }}>
                   {collapseBreachStep != null
-                    ? `Collapse threshold crossed at Q${collapseBreachStep}`
+                    ? `Collapse threshold crossed at M${collapseBreachStep}`
                     : "Collapse threshold not crossed"}
                 </span>
               </div>
@@ -2717,27 +2719,11 @@ export default function PilotFastighetPage() {
                 >
                   <span>Steady state detected</span>
                   <span style={{ color: "#9CA3AF", fontVariantNumeric: "tabular-nums" }}>
-                    System stabilized at M{steadyStateStep}. No structural change detected for {REQUIRED_STABLE_TICKS} consecutive ticks (after minimum {MIN_STEPS_BEFORE_STEADY} quarters).
+                    System stabilized at M{steadyStateStep}. No structural change detected for {REQUIRED_STABLE_TICKS} consecutive ticks (after minimum {MIN_STEPS_BEFORE_STEADY} months).
                   </span>
                 </div>
               )}
             </div>
-          </section>
-
-          <div style={{ height: "1px", background: "#1F2937", marginBottom: "28px" }} />
-
-          <section style={{ marginBottom: "0" }}>
-            <div
-              style={{
-                fontSize: "13px",
-                fontWeight: 500,
-                color: "#9CA3AF",
-                marginBottom: "10px",
-              }}
-            >
-              Scenario Metadata
-            </div>
-            <div style={{ fontSize: "13px", color: "#6B7280" }}>—</div>
           </section>
         </div>
       )}

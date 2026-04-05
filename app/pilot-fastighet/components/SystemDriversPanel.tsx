@@ -38,7 +38,7 @@ const SystemDriversPanel: React.FC<Props> = ({
 
   const breachLabel =
     estimatedTimeToBreach != null
-      ? `Q${estimatedTimeToBreach}`
+      ? t.estimatedBreachExpectedAround(estimatedTimeToBreach)
       : t.estimatedBreachNotEstimated;
 
   return (
