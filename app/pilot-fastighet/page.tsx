@@ -837,7 +837,14 @@ export default function PilotFastighetPage() {
   const expertSteps = Math.max(marginHistoryA.length, marginHistoryB.length);
   const expertTippingStep = executiveSummary?.tippingStep ?? null;
 
-  const primaryDriver = cascadeEventsA.length > 0 ? cascadeEventsA[0].sourceRisk : null;
+  const activeCascadeEvents =
+    scenarioTarget === "B"
+      ? cascadeEventsB
+      : cascadeEventsA;
+  const primaryDriver =
+    activeCascadeEvents.length > 0
+      ? activeCascadeEvents[0].sourceRisk
+      : null;
   const cascadeEvents =
     cascadeEventsB.length > 0 ? cascadeEventsB : cascadeEventsA;
 
@@ -849,7 +856,7 @@ export default function PilotFastighetPage() {
     EVENT_TRANSLATIONS[key as keyof typeof EVENT_TRANSLATIONS]?.[uiLanguage] ??
     key;
 
-  const cascadeDepth = cascadeEventsA.length;
+  const cascadeDepth = activeCascadeEvents.length;
   const systemPressure =
     cascadeDepth <= 1
       ? "LOW"
@@ -904,11 +911,15 @@ export default function PilotFastighetPage() {
     breachDifference = estimatedTimeToBreachB - estimatedTimeToBreachA;
   }
 
+  const activeMarginHistory =
+    scenarioTarget === "B"
+      ? marginHistoryB
+      : marginHistoryA;
   const marginTrend: "declining" | "stable" | "improving" =
-    marginHistoryB.length >= 2
+    activeMarginHistory.length >= 2
       ? (() => {
-          const start = marginHistoryB[0];
-          const end = marginHistoryB[marginHistoryB.length - 1];
+          const start = activeMarginHistory[0];
+          const end = activeMarginHistory[activeMarginHistory.length - 1];
           const delta = end - start;
           if (delta < -1e-3) return "declining";
           if (delta > 1e-3) return "improving";
@@ -1864,8 +1875,8 @@ export default function PilotFastighetPage() {
           primaryDriver={primaryDriver ?? undefined}
           systemPressure={systemPressure}
           marginTrend={marginTrend}
-          cascadeEventsA={cascadeEventsA}
-          cascadeEventsB={cascadeEventsB}
+          cascadeEventsA={activeCascadeEvents}
+          cascadeEventsB={[]}
           estimatedTimeToBreach={estimatedTimeToBreach}
           language={uiLanguage}
         />
@@ -1972,7 +1983,7 @@ export default function PilotFastighetPage() {
             decisionFlowEvents={sortedDecisionFlowEvents}
           />
         )}
-        {selectedQuarter != null && (
+        {false && selectedQuarter != null && (
           <div style={{ fontSize: "12px", color: "#9CA3AF", marginTop: "8px" }}>
             M{selectedQuarter} — Scenario A: {marginHistoryA[selectedQuarter - 1]?.toFixed(2) ?? "—"} | Scenario B: {marginHistoryB[selectedQuarter - 1]?.toFixed(2) ?? "—"}
           </div>

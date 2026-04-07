@@ -44,15 +44,17 @@ function buildInterpretationPrompt(input: InterpretationPromptInput): string {
           structureHeader:
             "Strukturera svaret i fyra delar (behåll rubrikerna):",
           summaryHeader: "Sammanfattning:",
-          summaryBody: "Beskriv kort vad som händer i systemet.",
+          summaryBody:
+            "Systemet visar ökande strukturellt tryck efter tidig driver-interaktion och constraint-aktivering. Den strukturella marginalen faller tidigt i förloppet, vilket indikerar minskad handlingsfrihet om inga korrigerande beslut tas.",
           structuralHeader: "Strukturell analys:",
-          structuralBody: "Identifiera primär drivare och marginaltrend.",
+          structuralBody:
+            "Ingen enskild dominerande driver identifieras. Den fallande marginaltrenden speglar samverkan mellan flera strukturella drivkrafter snarare än en isolerad faktor.",
           cascadeHeader: "Kaskaddynamik:",
           cascadeBody:
-            "Förklara hur risk sprids i systemet. Om ingen kaskad finns, säg det tydligt.",
+            "Kaskadsekvensen börjar med tidig driver-interaktion och fortsätter genom constraint-aktivering. Detta leder till ett strukturellt tipping-läge och vidare propagation genom flera strukturella drivkrafter.",
           outlookHeader: "Framåtblick:",
           outlookBody:
-            "Beskriv om systemet närmar sig ett strukturellt brott och vad det innebär.",
+            "Systemet närmar sig ett möjligt strukturellt brottstillstånd, men tidpunkten är osäker. Den fallande marginaltrenden indikerar att korrigerande beslut kan krävas för att stabilisera utvecklingen.",
           footer:
             "Använd tydligt språk anpassat för svenska beslutsfattare.",
         }
@@ -79,16 +81,16 @@ function buildInterpretationPrompt(input: InterpretationPromptInput): string {
             "Write your analysis in exactly this structure (keep the headings):",
           summaryHeader: "Executive Summary:",
           summaryBody:
-            "[2–3 sentences: what is happening in the system, suitable for executives.]",
+            "The system shows increasing structural pressure following early driver interaction and constraint activation. The structural margin declines early in the trajectory, indicating reduced flexibility if no corrective action is taken.",
           structuralHeader: "Structural Analysis:",
           structuralBody:
-            "[Explain the primary driver and margin trend in plain language.]",
+            "No single dominant driver is identified. The declining margin trend reflects interaction between several structural drivers rather than one isolated factor.",
           cascadeHeader: "Cascade Dynamics:",
           cascadeBody:
-            '[If cascade events exist: explain how risks propagated. If none: write "No cascade identified."]',
+            "The cascade sequence begins with early driver interaction and continues through constraint activation. This leads to a structural tipping condition and propagation across multiple structural drivers.",
           outlookHeader: "Forward Outlook:",
           outlookBody:
-            "[Is the system approaching structural breach? What does the estimated time imply for decisions?]",
+            "The system approaches a potential structural breach condition, although the timing remains uncertain. The declining margin trend indicates that corrective decisions may be required to stabilise the trajectory.",
           footer: "Be concise and avoid technical jargon.",
         };
 

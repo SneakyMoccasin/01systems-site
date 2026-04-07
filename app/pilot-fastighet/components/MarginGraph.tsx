@@ -1032,6 +1032,12 @@ function MarginGraph({
 /** Legend row above the margin graph: mirrors `renderMarkerShape` semantics (strategy lines + zone colors). */
 export function MarginGraphLegendRow({ uiLanguage }: { uiLanguage: "sv" | "en" }) {
   const t = pulseLanguage[uiLanguage];
+  const structuralReferencePointsLabel =
+    uiLanguage === "sv" ? "Strukturella referenspunkter" : "Structural reference points";
+  const stabilizedStructuralMarginLabel =
+    uiLanguage === "sv"
+      ? "Stabiliserad strukturell marginalnivå"
+      : "Stabilised structural margin level";
   const labelStyle = { fontSize: "11px", color: "#9CA3AF" } as const;
   const rowStyle = {
     fontSize: "12px",
@@ -1070,6 +1076,26 @@ export function MarginGraphLegendRow({ uiLanguage }: { uiLanguage: "sv" | "en" }
           <polygon points="7,1 1,7 7,13 13,7" fill="#3b82f6" />
         </svg>
         <span style={labelStyle}>{t.tippingPoint}</span>
+      </span>
+      <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+        <svg width={14} height={14} viewBox="0 0 14 14" aria-hidden style={{ display: "block" }}>
+          <rect x={2} y={2} width={10} height={10} fill="#22c55e" />
+        </svg>
+        <span style={labelStyle}>{structuralReferencePointsLabel}</span>
+      </span>
+      <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+        <svg width={16} height={14} viewBox="0 0 16 14" aria-hidden style={{ display: "block" }}>
+          <line
+            x1={1}
+            y1={7}
+            x2={15}
+            y2={7}
+            stroke="#ef4444"
+            strokeWidth={1.5}
+            strokeDasharray="5 3"
+          />
+        </svg>
+        <span style={labelStyle}>{stabilizedStructuralMarginLabel}</span>
       </span>
     </div>
   );
