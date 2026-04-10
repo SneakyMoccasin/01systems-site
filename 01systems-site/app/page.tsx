@@ -31,18 +31,30 @@ export default function Page() {
       <section style={{ marginBottom: "64px" }}>
         <h1 style={{ fontSize: "40px", marginBottom: "20px" }}>
           {lang === "sv"
-            ? "AI-baserad simulering av hur beslut skapar kaskader i komplexa system."
-            : "AI-based simulation of how decisions create cascades in complex systems."}
+            ? "Simulera konsekvenser av beslut innan de inträffar."
+            : "Simulate the consequences of decisions before they occur."}
         </h1>
-        {lang === "sv" ? (
+        <p style={{ fontSize: "20px", marginBottom: "12px", maxWidth: "680px" }}>
+  {lang === "sv"
+    ? "Förstå hur beslut påverkar varandra innan du genomför dem."
+    : "Understand how decisions influence each other before they are implemented."
+  }
+</p>
+       {lang === "sv" ? (
           <p style={{ fontSize: "18px", color: "#555", maxWidth: "680px" }}>
-            En modell som visar hur kapacitet, belastning och strukturell marginal utvecklas över tid – och hur beslut skapar kaskadeffekter mellan sammanlänkade faktorer innan konsekvenserna blir synliga.
+            Cascade Engine är en deterministisk decision-flow-simuleringsmotor som gör det möjligt att testa alternativa beslut och se hur konsekvenser sprids genom beroenden, resurser och begränsningar innan besluten genomförs i verkligheten.
           </p>
         ) : (
           <>
             <p style={{ fontSize: "18px", color: "#555", maxWidth: "680px" }}>
-              01 Systems develops deterministic decision-flow simulations for organizations operating in complex environments.
+            Cascade Engine is a deterministic decision-flow simulation engine that allows organizations to test alternative decisions and observe how consequences propagate through dependencies, resources and constraints before decisions are implemented in reality.
             </p>
+            <p style={{ fontSize: "18px", color: "#555", maxWidth: "680px", marginTop: "12px" }}>
+  {lang === "sv"
+    ? "Utvecklad för organisationer där beslut påverkar många delar av verksamheten — inom fastighet, infrastruktur och offentlig sektor."
+    : "Designed for organizations where decisions affect many parts of the organization — including real estate, infrastructure and the public sector."
+  }
+</p>
             <p
               style={{
                 fontSize: "18px",
@@ -105,7 +117,7 @@ export default function Page() {
           </>
         )}
         <p style={{ marginTop: "15px", fontWeight: 500, maxWidth: "680px" }}>
-          Simulation · Cascades · Determinism · AI
+        Decision Flow Simulation · Cascade Propagation · Constraint Dynamics · Deterministic Modeling
         </p>
       </section>
 
@@ -423,6 +435,11 @@ export default function Page() {
 
         <p style={{ fontSize: "14px", color: "#999" }}>christian@01systems.se</p>
       </section>
+      <footer style={{ marginTop: "80px", padding: "40px 0", opacity: 0.6 }}>
+        <div style={{ fontSize: "14px" }}>
+          © 2026 01 Systems
+        </div>
+      </footer>
     </main>
   );
 }
