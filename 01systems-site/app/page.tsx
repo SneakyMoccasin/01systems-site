@@ -46,74 +46,100 @@ export default function Page() {
           </p>
         ) : (
           <>
-            <p style={{ fontSize: "18px", color: "#555", maxWidth: "680px" }}>
-            Cascade Engine is a deterministic decision-flow simulation engine that allows organizations to test alternative decisions and observe how consequences propagate through dependencies, resources and constraints before decisions are implemented in reality.
-            </p>
-            <p style={{ fontSize: "18px", color: "#555", maxWidth: "680px", marginTop: "12px" }}>
-  {(lang as "sv" | "en") === "sv"
-    ? "Utvecklad för organisationer där beslut påverkar många delar av verksamheten — inom fastighet, infrastruktur och offentlig sektor."
-    : "Designed for organizations where decisions affect many parts of the organization — including real estate, infrastructure and the public sector."
-  }
-</p>
-            <p
-              style={{
-                fontSize: "18px",
-                color: "#555",
-                maxWidth: "680px",
-                marginTop: "12px",
-              }}
-            >
-              We model how capacity, system load and structural margin evolve over time — and how decisions create cascade effects across interconnected factors.
-            </p>
-            <p
-              style={{
-                fontSize: "18px",
-                color: "#555",
-                maxWidth: "680px",
-                marginTop: "12px",
-              }}
-            >
-              This is not forecasting.
-              <br />
-              It is not optimization.
-              <br />
-              It is structural consequence modeling.
-            </p>
-            <p
-              style={{
-                fontSize: "18px",
-                color: "#555",
-                maxWidth: "680px",
-                marginTop: "12px",
-              }}
-            >
-              Using our simulation engine, organizations can:
-            </p>
-            <ul
-              style={{
-                fontSize: "18px",
-                color: "#555",
-                maxWidth: "680px",
-                marginTop: "8px",
-                paddingLeft: "20px",
-              }}
-            >
-              <li>Identify when structural flexibility begins to erode</li>
-              <li>Compare alternative strategies before capital is committed</li>
-              <li>Understand how parallel decisions interact over time</li>
-              <li>Detect cascade effects before they become systemic risk</li>
-              <li>Run simulations interactively or headless for large scenario sets</li>
-            </ul>
-            <p
-              style={{
-                fontSize: "18px",
-                color: "#555",
-                maxWidth: "680px",
-                marginTop: "12px",
-              }}
-            >
-              01 Systems is based in Sweden and works with decision-makers in real estate, infrastructure and other system-critical sectors.
-            </p>
+            <div style={{ maxWidth: "720px", lineHeight: "1.6", marginTop: "24px" }}>
+              <p style={{ fontSize: "18px", color: "#555", maxWidth: "680px" }}>
+              Cascade Engine is a deterministic decision-flow simulation engine that allows organizations to test alternative decisions and observe how consequences propagate through dependencies, resources and constraints before decisions are implemented in reality.
+              </p>
+              <p style={{ fontSize: "18px", color: "#555", maxWidth: "680px", marginTop: "16px" }}>
+    {(lang as "sv" | "en") === "sv"
+      ? "Utvecklad för organisationer där beslut påverkar många delar av verksamheten — inom fastighet, infrastruktur och offentlig sektor."
+      : "Designed for organizations where decisions affect many parts of the organization — including real estate, infrastructure and the public sector."
+    }
+  </p>
+              <p
+                style={{
+                  fontSize: "18px",
+                  color: "#555",
+                  maxWidth: "680px",
+                  marginTop: "16px",
+                }}
+              >
+                We model how capacity, system load and structural margin evolve over time — and how decisions create cascade effects across interconnected factors.
+              </p>
+              <div
+                style={{
+                  marginTop: "32px",
+                  marginBottom: "32px",
+                  fontWeight: 500,
+                  letterSpacing: "0.2px",
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: "18px",
+                    color: "#555",
+                    maxWidth: "680px",
+                  }}
+                >
+                  This is not forecasting.
+                </p>
+                <p
+                  style={{
+                    fontSize: "18px",
+                    color: "#555",
+                    maxWidth: "680px",
+                    marginTop: "6px",
+                  }}
+                >
+                  It is not optimization.
+                </p>
+                <p
+                  style={{
+                    fontSize: "18px",
+                    color: "#555",
+                    maxWidth: "680px",
+                    marginTop: "6px",
+                  }}
+                >
+                  It is structural consequence modeling.
+                </p>
+              </div>
+              <p
+                style={{
+                  fontSize: "18px",
+                  color: "#555",
+                  maxWidth: "680px",
+                  marginTop: "16px",
+                }}
+              >
+                Using our simulation engine, organizations can:
+              </p>
+              <ul
+                style={{
+                  fontSize: "18px",
+                  color: "#555",
+                  maxWidth: "680px",
+                  marginTop: "8px",
+                  paddingLeft: "20px",
+                }}
+              >
+                <li>Identify when structural flexibility begins to erode</li>
+                <li>Compare alternative strategies before capital is committed</li>
+                <li>Understand how parallel decisions interact over time</li>
+                <li>Detect cascade effects before they become systemic risk</li>
+                <li>Run simulations interactively or headless for large scenario sets</li>
+              </ul>
+              <p
+                style={{
+                  fontSize: "18px",
+                  color: "#555",
+                  maxWidth: "680px",
+                  marginTop: "16px",
+                }}
+              >
+                01 Systems is based in Sweden and works with decision-makers in real estate, infrastructure and other system-critical sectors.
+              </p>
+            </div>
           </>
         )}
         <p style={{ marginTop: "15px", fontWeight: 500, maxWidth: "680px" }}>
