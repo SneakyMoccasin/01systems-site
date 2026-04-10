@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 title: "01 Systems — Decision Flow Simulation",
   description: "Decision-flow simulation engine",
   icons: {
-    icon: "/images/favicon.svg",
+    icon: "/favicon.svg",
   },
 };
 
