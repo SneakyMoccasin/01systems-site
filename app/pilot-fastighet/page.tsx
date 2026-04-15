@@ -26,6 +26,7 @@ import SystemDriversPanel from "./components/SystemDriversPanel";
 import DecisionExplanationPanel from "./components/DecisionExplanationPanel";
 import ScenarioPreviewPanel from "./components/ScenarioPreviewPanel";
 import AIInspectorPanel from "./components/AIInspectorPanel";
+import ActionPanel from "./components/ActionPanel";
 import MarginGraph, {
   MarginGraphLegendRow,
   type MarginGraphSelectMonthPayload,
@@ -53,6 +54,51 @@ const EXEC_COLLAPSE_THRESHOLD = 0.6;
 const MIN_STEPS_BEFORE_STEADY = 5;
 const REQUIRED_STABLE_TICKS = 3;
 const ANALYSIS_HORIZON = 16;
+const actionEffects = {
+  increase_service_frequency: {
+    accessibility: +1,
+    operational_capacity: -0.5,
+    budget_pressure: +0.5,
+  },
+  reduce_travel_time: {
+    accessibility: +1,
+    modal_attractiveness: +1,
+  },
+  expand_cycling_infrastructure: {
+    modal_attractiveness: +2,
+    congestion_pressure: -1,
+    budget_pressure: +1,
+  },
+  congestion_pricing: {
+    modal_shift_pressure: +2,
+    political_feasibility: -1,
+  },
+  electrify_bus_fleet: {
+    energyExposureRisk: -1,
+    operationalEfficiencyRisk: -0.5,
+    capitalCommitmentRigidityRisk: +0.5,
+  },
+  transit_signal_priority: {
+    modal_attractiveness: +1,
+    accessibility: +1,
+  },
+  reduce_parking_supply: {
+    modal_attractiveness: +1,
+    demandRisk: -0.5,
+  },
+  phase_project_starts: {
+    capitalCommitmentRigidityRisk: -1,
+    refinancingRisk: -0.5,
+  },
+  delay_maintenance: {
+    maintenanceIntensityRisk: +1,
+    tenantStabilityRisk: +0.5,
+  },
+  early_refinancing: {
+    refinancingRisk: -1,
+    interestRateExposureRisk: -0.5,
+  },
+} as const;
 const domainTitles = {
   realEstate: "Real Estate Portfolio",
   municipal: "Municipal System",
@@ -143,6 +189,9 @@ export default function PilotFastighetPage() {
   const [isRunning, setIsRunning] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [selectedPilotCaseId, setSelectedPilotCaseId] = useState<string>("");
+  const [selectedGoal, setSelectedGoal] = useState<
+    "accessibility" | "congestion" | "margin_stability" | "avoid_tipping"
+  >("accessibility");
   const [freezeFlash, setFreezeFlash] = useState<"A" | "B" | null>(null);
   const [uiTheme, setUiTheme] = useState<"dark" | "light">("dark");
   const [uiLanguage, setUiLanguage] = useState<Language>("sv");
@@ -190,6 +239,8 @@ export default function PilotFastighetPage() {
   const [scenarioTarget, setScenarioTarget] = useState<"A" | "B">("A");
   const [appliedScenarioAId, setAppliedScenarioAId] = useState<string | null>(null);
   const [appliedScenarioBId, setAppliedScenarioBId] = useState<string | null>(null);
+  const [selectedActionsA, setSelectedActionsA] = useState<string[]>([]);
+  const [selectedActionsB, setSelectedActionsB] = useState<string[]>([]);
 
   const engineARef = useRef<RealEstateEngine | null>(null);
   const engineBRef = useRef<RealEstateEngine | null>(null);
@@ -692,6 +743,145 @@ export default function PilotFastighetPage() {
     },
     {} as Record<string, ParameterSpec[]>
   );
+  const goalRelevantDrivers: Record<string, string[]> = {
+    accessibility: [
+      "accessibility",
+      "modal_attractiveness",
+      "transit_signal_priority",
+      "operational_capacity",
+    ],
+    congestion: [
+      "congestion_pressure",
+      "modal_attractiveness",
+      "transit_signal_priority",
+    ],
+    margin_stability: [
+      "capitalCommitmentRigidityRisk",
+      "refinancingRisk",
+      "interestRateExposureRisk",
+      "maintenanceIntensityRisk",
+    ],
+    avoid_tipping: [
+      "capitalCommitmentRigidityRisk",
+      "leverageLevelRisk",
+      "refinancingRisk",
+    ],
+  };
+
+  function handleParameterChangeScenarioA(
+    parameter: string,
+    valueOrDelta: RiskLevel | number,
+    isDelta = false
+  ) {
+    setIsDirty(true);
+    const riskLevels: RiskLevel[] = ["LOW", "MODERATE", "HIGH", "SEVERE"];
+
+    const updateScenarioState = (current: RiskState): RiskState => {
+      if (!(parameter in current)) return current;
+
+      let nextValue: RiskLevel;
+      if (isDelta) {
+        const currentValue = current[parameter as keyof RiskState];
+        const currentIndex = riskLevels.indexOf(currentValue);
+        if (currentIndex < 0) return current;
+        const delta = Number(valueOrDelta);
+        const targetIndex = Math.max(
+          0,
+          Math.min(riskLevels.length - 1, Math.round(currentIndex + delta))
+        );
+        nextValue = riskLevels[targetIndex];
+      } else {
+        nextValue = valueOrDelta as RiskLevel;
+      }
+
+      return {
+        ...current,
+        [parameter]: nextValue,
+      };
+    };
+
+    setRiskStateA((prev) => updateScenarioState(prev));
+  }
+
+  function handleParameterChangeScenarioB(
+    parameter: string,
+    valueOrDelta: RiskLevel | number,
+    isDelta = false
+  ) {
+    setIsDirty(true);
+    const riskLevels: RiskLevel[] = ["LOW", "MODERATE", "HIGH", "SEVERE"];
+
+    const updateScenarioState = (current: RiskState): RiskState => {
+      if (!(parameter in current)) return current;
+
+      let nextValue: RiskLevel;
+      if (isDelta) {
+        const currentValue = current[parameter as keyof RiskState];
+        const currentIndex = riskLevels.indexOf(currentValue);
+        if (currentIndex < 0) return current;
+        const delta = Number(valueOrDelta);
+        const targetIndex = Math.max(
+          0,
+          Math.min(riskLevels.length - 1, Math.round(currentIndex + delta))
+        );
+        nextValue = riskLevels[targetIndex];
+      } else {
+        nextValue = valueOrDelta as RiskLevel;
+      }
+
+      return {
+        ...current,
+        [parameter]: nextValue,
+      };
+    };
+
+    setRiskStateB((prev) => updateScenarioState(prev));
+  }
+
+  function handleParameterChange(
+    parameter: string,
+    valueOrDelta: RiskLevel | number,
+    isDelta = false
+  ) {
+    if (activeScenario === "A") {
+      handleParameterChangeScenarioA(parameter, valueOrDelta, isDelta);
+    } else if (activeScenario === "B") {
+      handleParameterChangeScenarioB(parameter, valueOrDelta, isDelta);
+    }
+  }
+
+  function applyAction(action: string) {
+    const toggleAction = (prev: string[]) =>
+      prev.includes(action)
+        ? prev.filter((a) => a !== action)
+        : [...prev, action];
+
+    if (activeScenario === "A") {
+      setSelectedActionsA(toggleAction);
+    } else if (activeScenario === "B") {
+      setSelectedActionsB(toggleAction);
+    }
+
+    const effects = actionEffects[action as keyof typeof actionEffects];
+    if (!effects) return;
+    if (activeScenario === "A") {
+      Object.entries(effects).forEach(([driver, delta]) => {
+        handleParameterChangeScenarioA(driver, delta, true);
+      });
+    }
+    if (activeScenario === "B") {
+      Object.entries(effects).forEach(([driver, delta]) => {
+        handleParameterChangeScenarioB(driver, delta, true);
+      });
+    }
+  }
+
+  const selectedActionsForPanel =
+    activeScenario === "A"
+      ? selectedActionsA
+      : activeScenario === "B"
+        ? selectedActionsB
+        : [];
 
   const baselineA = marginHistoryA.length > 0 ? marginHistoryA[0] : 0;
   const finalA =
@@ -731,6 +921,10 @@ export default function PilotFastighetPage() {
   const theme = THEME[uiTheme];
   const t = UI_TEXT[uiLanguage];
   const pt = pulseLanguage[uiLanguage];
+  const scenarioALabelText = uiLanguage === "sv" ? "Nuläge" : "Baseline";
+  const scenarioBLabelText = uiLanguage === "sv" ? "Målstrategi" : "Goal strategy";
+  const scenarioStatusSuffix = uiLanguage === "sv" ? "status" : "status";
+  const scenarioMarginSuffix = uiLanguage === "sv" ? "marginal" : "margin";
 
   const currentMarginA =
     marginHistoryA.length > 0
@@ -1077,6 +1271,21 @@ export default function PilotFastighetPage() {
         >
           Help
         </button>
+        <button
+          type="button"
+          onClick={() => setUiMode((m) => (m === "executive" ? "expert" : "executive"))}
+          style={{
+            padding: "6px 12px",
+            borderRadius: "6px",
+            border: "1px solid #374151",
+            background: "#111827",
+            color: "#E5E7EB",
+            fontSize: "12px",
+            cursor: "pointer",
+          }}
+        >
+          {uiMode === "executive" ? pt.expertMode : pt.executiveMode}
+        </button>
       </div>
       <div
         style={{
@@ -1131,6 +1340,30 @@ export default function PilotFastighetPage() {
               </option>
             ))}
           </select>
+          <label style={{ fontSize: "13px", marginRight: "6px", color: theme.subtext }}>
+            {uiLanguage === "sv" ? "Mål:" : "Goal:"}
+          </label>
+          <select
+            value={selectedGoal}
+            onChange={(e) => setSelectedGoal(e.target.value as any)}
+            className="px-2 py-1 rounded border bg-gray-800 text-gray-200"
+          >
+            {uiLanguage === "sv" ? (
+              <>
+                <option value="accessibility">Öka tillgänglighet</option>
+                <option value="congestion">Minska trängsel</option>
+                <option value="margin_stability">Behåll marginalstabilitet</option>
+                <option value="avoid_tipping">Undvik tipping-risk</option>
+              </>
+            ) : (
+              <>
+                <option value="accessibility">Increase accessibility</option>
+                <option value="congestion">Reduce congestion</option>
+                <option value="margin_stability">Maintain margin stability</option>
+                <option value="avoid_tipping">Avoid tipping risk</option>
+              </>
+            )}
+          </select>
           <button
             type="button"
             className={activeScenario === "A" ? "active-button" : ""}
@@ -1148,7 +1381,7 @@ export default function PilotFastighetPage() {
               cursor: "pointer",
             }}
           >
-            Scenario A
+            {scenarioALabelText}
           </button>
           <button
             type="button"
@@ -1167,7 +1400,7 @@ export default function PilotFastighetPage() {
               cursor: "pointer",
             }}
           >
-            Scenario B
+            {scenarioBLabelText}
           </button>
           <button
             type="button"
@@ -1209,7 +1442,7 @@ export default function PilotFastighetPage() {
               >
                 {freezeFlash === "A" ? "✓" : "✚"}
               </span>
-              Freeze Scenario A
+              {`${uiLanguage === "sv" ? "Frys" : "Freeze"} ${scenarioALabelText}`}
             </span>
           </button>
           <button
@@ -1233,7 +1466,7 @@ export default function PilotFastighetPage() {
               >
                 {freezeFlash === "B" ? "✓" : "✚"}
               </span>
-              Freeze Scenario B
+              {`${uiLanguage === "sv" ? "Frys" : "Freeze"} ${scenarioBLabelText}`}
             </span>
           </button>
           <button
@@ -1330,21 +1563,6 @@ export default function PilotFastighetPage() {
             {pulseLanguage[uiLanguage].reset}
           </button>
         </div>
-        <button
-          type="button"
-          onClick={() => setUiMode((m) => (m === "executive" ? "expert" : "executive"))}
-          style={{
-            padding: "6px 12px",
-            fontSize: "12px",
-            background: theme.buttonBg,
-            border: `1px solid ${theme.buttonBorder}`,
-            borderRadius: "6px",
-            color: theme.text,
-            cursor: "pointer",
-          }}
-        >
-          {uiMode === "executive" ? pt.expertMode : pt.executiveMode}
-        </button>
       </div>
       {showHelp && (
         <div
@@ -1407,6 +1625,11 @@ export default function PilotFastighetPage() {
       >
         <div style={{ position: "sticky", top: "16px" }}>
           <div style={{ marginBottom: "24px" }}>
+            <ActionPanel
+              language={uiLanguage}
+              selectedActions={selectedActionsForPanel}
+              applyAction={applyAction}
+            />
             {Object.entries(groupedParameters).map(([groupName, params]) => (
               <div
                 key={groupName}
@@ -1428,56 +1651,56 @@ export default function PilotFastighetPage() {
                 >
                   {groupName}
                 </div>
-                {params.map((param) => (
-                  <div
-                    key={param.key}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: "10px",
-                    }}
-                  >
-                    <span style={{ fontSize: "13px" }}>
-                      {pulseLanguage[uiLanguage].riskLabels[param.key] ?? param.label}
-                    </span>
-                    <select
-                      value={activeRiskState[param.key]}
-                      disabled={!isEditableScenario}
-                      onChange={(e) => {
-                        setIsDirty(true);
-                        const parameter = param.key;
-                        const nextValue = e.target.value as RiskLevel;
-                        if (activeScenario === "A") {
-                          setRiskStateA((prev) => {
-                            const nextState = {
-                              ...prev,
-                              [parameter]: nextValue,
-                            };
-                            return nextState;
-                          });
-                        } else if (activeScenario === "B") {
-                          setRiskStateB((prev) => ({
-                            ...prev,
-                            [parameter]: nextValue,
-                          }));
-                        }
-                      }}
+                {params.map((param) => {
+                  const isGoalRelevant =
+                    selectedGoal &&
+                    goalRelevantDrivers[selectedGoal]?.includes(param.key);
+
+                  return (
+                    <div
+                      key={param.key}
                       style={{
-                        background: "#0e1117",
-                        color: "#e6edf3",
-                        border: "1px solid #2f333a",
-                        borderRadius: "6px",
-                        padding: "4px 8px",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: "10px",
+                        background: isGoalRelevant
+                          ? "rgba(59,130,246,0.12)"
+                          : "transparent",
+                        borderLeft: isGoalRelevant
+                          ? "3px solid #3b82f6"
+                          : "3px solid transparent",
+                        paddingLeft: "6px",
                       }}
                     >
-                      <option value="LOW">LOW</option>
-                      <option value="MODERATE">MODERATE</option>
-                      <option value="HIGH">HIGH</option>
-                      <option value="SEVERE">SEVERE</option>
-                    </select>
-                  </div>
-                ))}
+                      <span style={{ fontSize: "13px" }}>
+                        {pulseLanguage[uiLanguage].riskLabels[param.key] ??
+                          (typeof param.label === "string"
+                            ? param.label
+                            : param.label[uiLanguage])}
+                      </span>
+                      <select
+                        value={activeRiskState[param.key]}
+                        disabled={!isEditableScenario}
+                        onChange={(e) => {
+                          handleParameterChange(param.key, e.target.value as RiskLevel);
+                        }}
+                        style={{
+                          background: "#0e1117",
+                          color: "#e6edf3",
+                          border: "1px solid #2f333a",
+                          borderRadius: "6px",
+                          padding: "4px 8px",
+                        }}
+                      >
+                        <option value="LOW">LOW</option>
+                        <option value="MODERATE">MODERATE</option>
+                        <option value="HIGH">HIGH</option>
+                        <option value="SEVERE">SEVERE</option>
+                      </select>
+                    </div>
+                  );
+                })}
               </div>
             ))}
           </div>
@@ -1577,7 +1800,11 @@ export default function PilotFastighetPage() {
           setIsDragging(false);
         }}
       >
-        <MarginGraphLegendRow uiLanguage={uiLanguage} />
+        <MarginGraphLegendRow
+          uiLanguage={uiLanguage}
+          scenarioALabelText={scenarioALabelText}
+          scenarioBLabelText={scenarioBLabelText}
+        />
         {breachDifference !== null && (
           <div
             style={{
@@ -1643,6 +1870,8 @@ export default function PilotFastighetPage() {
                   graphTitle={undefined}
                   scenarioALabel={scenarioALabel}
                   scenarioBLabel={scenarioBLabel}
+                  scenarioALegendDefault={scenarioALabelText}
+                  scenarioBLegendDefault={scenarioBLabelText}
                 />
                 </div>
               </div>
@@ -1682,6 +1911,7 @@ export default function PilotFastighetPage() {
                 selectedMonthIndex={selectedMonthData?.monthIndex ?? null}
                 selectedMarginValueA={selectedMonthData?.marginA ?? null}
                 selectedMarginValueB={selectedMonthData?.marginB ?? null}
+                selectedGoal={selectedGoal}
               />
             )}
           </div>
@@ -1708,7 +1938,7 @@ export default function PilotFastighetPage() {
             </div>
 
             <div>
-              Scenario A:
+              {`${scenarioALabelText}:`}
               <strong>
                 {" "}
                 {selectedMonthData.marginA.toFixed(1)}%
@@ -1716,7 +1946,7 @@ export default function PilotFastighetPage() {
             </div>
 
             <div>
-              Scenario B:
+              {`${scenarioBLabelText}:`}
               <strong>
                 {" "}
                 {selectedMonthData.marginB.toFixed(1)}%
@@ -1985,7 +2215,7 @@ export default function PilotFastighetPage() {
         )}
         {false && selectedQuarter != null && (
           <div style={{ fontSize: "12px", color: "#9CA3AF", marginTop: "8px" }}>
-            M{selectedQuarter} — Scenario A: {marginHistoryA[selectedQuarter - 1]?.toFixed(2) ?? "—"} | Scenario B: {marginHistoryB[selectedQuarter - 1]?.toFixed(2) ?? "—"}
+            M{selectedQuarter} — {scenarioALabelText}: {marginHistoryA[selectedQuarter - 1]?.toFixed(2) ?? "—"} | {scenarioBLabelText}: {marginHistoryB[selectedQuarter - 1]?.toFixed(2) ?? "—"}
           </div>
         )}
       </div>
@@ -2003,22 +2233,22 @@ export default function PilotFastighetPage() {
       >
         <div style={{ fontSize: "12px", color: "#9CA3AF", marginBottom: "8px" }}>{pt.systemStatus}</div>
         <div style={{ fontSize: "13px", lineHeight: 1.6 }}>
-          <span style={{ color: "#9CA3AF" }}>{pulseLanguage[uiLanguage].scenarioAStatus} </span>
+          <span style={{ color: "#9CA3AF" }}>{`${scenarioALabelText} ${scenarioStatusSuffix}:`} </span>
           <span style={{ color: colorA, fontWeight: 600 }}>
             {labelA}
           </span>
         </div>
         <div style={{ fontSize: "12px", color: "#9CA3AF", lineHeight: 1.6, marginTop: "4px" }}>
-          {pulseLanguage[uiLanguage].scenarioAMargin} {currentMarginA != null ? currentMarginA.toFixed(2) : "—"}
+          {`${scenarioALabelText} ${scenarioMarginSuffix}:`} {currentMarginA != null ? currentMarginA.toFixed(2) : "—"}
         </div>
         <div style={{ fontSize: "13px", lineHeight: 1.6, marginTop: "8px" }}>
-          <span style={{ color: "#9CA3AF" }}>{pulseLanguage[uiLanguage].scenarioBStatus} </span>
+          <span style={{ color: "#9CA3AF" }}>{`${scenarioBLabelText} ${scenarioStatusSuffix}:`} </span>
           <span style={{ color: colorB, fontWeight: 600 }}>
             {labelB}
           </span>
         </div>
         <div style={{ fontSize: "12px", color: "#9CA3AF", lineHeight: 1.6, marginTop: "4px" }}>
-          {pulseLanguage[uiLanguage].scenarioBMargin} {currentMarginB != null ? currentMarginB.toFixed(2) : "—"}
+          {`${scenarioBLabelText} ${scenarioMarginSuffix}:`} {currentMarginB != null ? currentMarginB.toFixed(2) : "—"}
         </div>
         <div style={{ marginTop: "16px", paddingTop: "16px", borderTop: "1px solid #1f2937" }}>
           <div style={{ fontSize: "12px", color: "#9CA3AF" }}>
@@ -2150,7 +2380,7 @@ export default function PilotFastighetPage() {
           }}
         >
           <div style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px", color: "#9ca3af" }}>
-            Frozen Snapshots — Scenario A
+            {`Frozen Snapshots — ${scenarioALabelText}`}
           </div>
           {historyA.length === 0 ? (
             <div style={{ fontSize: "13px", color: "#6b7280" }}>No snapshots yet.</div>
@@ -2299,7 +2529,7 @@ export default function PilotFastighetPage() {
           }}
         >
           <div style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px", color: "#9ca3af" }}>
-            Frozen Snapshots — Scenario B
+            {`Frozen Snapshots — ${scenarioBLabelText}`}
           </div>
           {historyB.length === 0 ? (
             <div style={{ fontSize: "13px", color: "#6b7280" }}>No snapshots yet.</div>
@@ -2451,7 +2681,7 @@ export default function PilotFastighetPage() {
           }}
         >
           <div style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px", color: "#9ca3af" }}>
-            Compare Frozen Snapshots (Scenario B − Scenario A)
+            {`Compare Frozen Snapshots (${scenarioBLabelText} − ${scenarioALabelText})`}
           </div>
           <button
             type="button"
@@ -2470,15 +2700,15 @@ export default function PilotFastighetPage() {
             {showTechnicalDetails ? "Hide technical details" : "Show technical details"}
           </button>
           <div style={{ fontSize: "13px", lineHeight: "1.8" }}>
-            <strong>Scenario A:</strong> {snapA.engineState.margin.toFixed(3)}
+            <strong>{`${scenarioALabelText}:`}</strong> {snapA.engineState.margin.toFixed(3)}
             <br />
-            <strong>Scenario B:</strong> {snapB.engineState.margin.toFixed(3)}
+            <strong>{`${scenarioBLabelText}:`}</strong> {snapB.engineState.margin.toFixed(3)}
             <br />
             <strong>Margin impact:</strong> {(snapB.engineState.margin - snapA.engineState.margin).toFixed(3)}
             <br />
             <strong>Tipping (ACTIVE):</strong>{" "}
-{tippingStepA != null ? `Scenario A: M${tippingStepA}` : "Scenario A: never"} |{" "}
-              {tippingStepB != null ? `Scenario B: M${tippingStepB}` : "Scenario B: never"}
+{tippingStepA != null ? `${scenarioALabelText}: M${tippingStepA}` : `${scenarioALabelText}: never`} |{" "}
+              {tippingStepB != null ? `${scenarioBLabelText}: M${tippingStepB}` : `${scenarioBLabelText}: never`}
             <br />
             {executiveConclusion != null && (
               <>
@@ -2494,13 +2724,13 @@ export default function PilotFastighetPage() {
             )}
             {showTechnicalDetails && (
               <>
-                <strong>Refinancing lifecycle (Scenario A):</strong> {snapA.engineState.registry.RefinancingConstraint.lifecycle}
+                <strong>{`Refinancing lifecycle (${scenarioALabelText}):`}</strong> {snapA.engineState.registry.RefinancingConstraint.lifecycle}
                 <br />
-                <strong>Refinancing lifecycle (Scenario B):</strong> {snapB.engineState.registry.RefinancingConstraint.lifecycle}
+                <strong>{`Refinancing lifecycle (${scenarioBLabelText}):`}</strong> {snapB.engineState.registry.RefinancingConstraint.lifecycle}
                 <br />
-                <strong>Step (Scenario A):</strong> {snapA.engineState.step}
+                <strong>{`Step (${scenarioALabelText}):`}</strong> {snapA.engineState.step}
                 <br />
-                <strong>Step (Scenario B):</strong> {snapB.engineState.step}
+                <strong>{`Step (${scenarioBLabelText}):`}</strong> {snapB.engineState.step}
               </>
             )}
           </div>

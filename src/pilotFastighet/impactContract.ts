@@ -14,7 +14,13 @@ export type ParameterKey =
   | "refinancingRisk"
   | "marketVolatilityRisk"
   | "regulatoryPressureRisk"
-  | "capitalCommitmentRigidityRisk";
+  | "capitalCommitmentRigidityRisk"
+  | "accessibility"
+  | "modal_attractiveness"
+  | "congestion_pressure"
+  | "operational_capacity"
+  | "transit_signal_priority"
+  | "budget_pressure";
 
 export type ImpactSpec = {
   dimension: SystemDimension;
@@ -24,8 +30,15 @@ export type ImpactSpec = {
 
 export type ParameterSpec = {
   key: ParameterKey;
-  label: string;
-  group: "Income Dynamics" | "Operations" | "Capital & Financing" | "External Pressure";
+  label: string | { sv: string; en: string };
+  group:
+    | "Income Dynamics"
+    | "Operations"
+    | "Capital & Financing"
+    | "External Pressure"
+    | "Accessibility & Mode Shift"
+    | "Operations & Capacity"
+    | "Financial Flexibility";
   impacts: ImpactSpec[];
 };
 
@@ -127,6 +140,78 @@ export const REAL_ESTATE_IMPACT_CONTRACT: ParameterSpec[] = [
     group: "External Pressure",
     impacts: [{ dimension: "recovery", direction: "decrease", curve: "LINEAR" }],
   },
+  {
+    key: "accessibility",
+    label: {
+      sv: "Tillgänglighet",
+      en: "Accessibility",
+    },
+    group: "Accessibility & Mode Shift",
+    impacts: [
+      { dimension: "load", direction: "decrease", curve: "LINEAR" },
+      { dimension: "recovery", direction: "increase", curve: "LINEAR" },
+    ],
+  },
+  {
+    key: "modal_attractiveness",
+    label: {
+      sv: "Färdmedelsattraktivitet",
+      en: "Modal Attractiveness",
+    },
+    group: "Accessibility & Mode Shift",
+    impacts: [
+      { dimension: "load", direction: "decrease", curve: "LINEAR" },
+      { dimension: "recovery", direction: "increase", curve: "LINEAR" },
+    ],
+  },
+  {
+    key: "congestion_pressure",
+    label: {
+      sv: "Trängseltryck",
+      en: "Congestion Pressure",
+    },
+    group: "Accessibility & Mode Shift",
+    impacts: [
+      { dimension: "load", direction: "increase", curve: "LINEAR" },
+      { dimension: "cost", direction: "increase", curve: "LINEAR" },
+    ],
+  },
+  {
+    key: "operational_capacity",
+    label: {
+      sv: "Operativ kapacitet",
+      en: "Operational Capacity",
+    },
+    group: "Operations & Capacity",
+    impacts: [
+      { dimension: "load", direction: "decrease", curve: "LINEAR" },
+      { dimension: "recovery", direction: "increase", curve: "LINEAR" },
+    ],
+  },
+  {
+    key: "transit_signal_priority",
+    label: {
+      sv: "Signalprioritering kollektivtrafik",
+      en: "Transit Signal Priority",
+    },
+    group: "Operations & Capacity",
+    impacts: [
+      { dimension: "load", direction: "decrease", curve: "LINEAR" },
+      { dimension: "recovery", direction: "increase", curve: "LINEAR" },
+    ],
+  },
+  {
+    key: "budget_pressure",
+    label: {
+      sv: "Budgettryck",
+      en: "Budget Pressure",
+    },
+    group: "Financial Flexibility",
+    impacts: [
+      { dimension: "cost", direction: "increase", curve: "LINEAR" },
+      { dimension: "recovery", direction: "decrease", curve: "LINEAR" },
+    ],
+  },
 ];
 
 const CAPITAL_KEYS: ParameterKey[] = [
@@ -143,6 +228,9 @@ export function groupContractByGroup(
     Operations: [],
     "Capital & Financing": [],
     "External Pressure": [],
+    "Accessibility & Mode Shift": [],
+    "Operations & Capacity": [],
+    "Financial Flexibility": [],
   };
   for (const spec of contract) {
     out[spec.group].push(spec);

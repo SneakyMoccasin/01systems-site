@@ -23,6 +23,24 @@ export const RISK_PROPAGATION: Record<
   tenantStabilityRisk: [
     { target: "demandRisk", level: "HIGH" },
   ],
+  congestion_pressure: [
+    { target: "modal_attractiveness", level: "HIGH" },
+  ],
+  modal_attractiveness: [
+    { target: "accessibility", level: "HIGH" },
+  ],
+  accessibility: [
+    { target: "demandRisk", level: "HIGH" },
+  ],
+  operational_capacity: [
+    { target: "tenantStabilityRisk", level: "HIGH" },
+  ],
+  budget_pressure: [
+    { target: "capitalCommitmentRigidityRisk", level: "HIGH" },
+  ],
+  transit_signal_priority: [
+    { target: "operational_capacity", level: "HIGH" },
+  ],
 };
 
 export type CascadeEvent = {

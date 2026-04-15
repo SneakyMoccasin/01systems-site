@@ -20,6 +20,12 @@ export const defaultRiskState: Record<string, RiskLevel> = {
   marketVolatilityRisk: "MODERATE",
   regulatoryPressureRisk: "MODERATE",
   capitalCommitmentRigidityRisk: "MODERATE",
+  accessibility: "MODERATE",
+  modal_attractiveness: "MODERATE",
+  congestion_pressure: "MODERATE",
+  operational_capacity: "MODERATE",
+  transit_signal_priority: "MODERATE",
+  budget_pressure: "MODERATE",
 };
 
 const PRESET_MAPPINGS: Record<string, Record<string, RiskLevel>> = {

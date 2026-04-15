@@ -66,6 +66,30 @@ export const PARAMETER_CURVE_CONFIG: Record<string, ParameterCurveConfig> = {
     curve: "LINEAR",
     amplitude: { base: 1.0, low: 0.95, high: 1.15, severe: 1.3 },
   },
+  accessibility: {
+    curve: "LINEAR",
+    amplitude: { base: 1.0, low: 0.98, high: 1.04, severe: 1.08 },
+  },
+  modal_attractiveness: {
+    curve: "LINEAR",
+    amplitude: { base: 1.0, low: 0.97, high: 1.05, severe: 1.1 },
+  },
+  congestion_pressure: {
+    curve: "LINEAR",
+    amplitude: { base: 1.0, low: 0.98, high: 1.05, severe: 1.1 },
+  },
+  operational_capacity: {
+    curve: "LINEAR",
+    amplitude: { base: 1.0, low: 0.98, high: 1.04, severe: 1.08 },
+  },
+  transit_signal_priority: {
+    curve: "LINEAR",
+    amplitude: { base: 1.0, low: 0.98, high: 1.03, severe: 1.06 },
+  },
+  budget_pressure: {
+    curve: "LINEAR",
+    amplitude: { base: 1.0, low: 0.99, high: 1.06, severe: 1.12 },
+  },
 };
 
 export function resolveLinear(level: RiskLevel, amp: CurveAmplitudeConfig): number {

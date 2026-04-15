@@ -41,6 +41,8 @@ export interface MarginGraphProps {
   graphTitle?: string;
   scenarioALabel?: string;
   scenarioBLabel?: string;
+  scenarioALegendDefault?: string;
+  scenarioBLegendDefault?: string;
 }
 
 type CascadeMarker = { index: number; type: string };
@@ -67,6 +69,8 @@ function MarginGraph({
   graphTitle,
   scenarioALabel,
   scenarioBLabel,
+  scenarioALegendDefault,
+  scenarioBLegendDefault,
 }: MarginGraphProps) {
   const [viewMode, setViewMode] = React.useState<"delta" | "absolute">("delta");
   const [hoveredViewMode, setHoveredViewMode] = React.useState<"delta" | "absolute" | null>(null);
@@ -97,7 +101,7 @@ function MarginGraph({
   const comparisonLegend =
     labelA && labelB
       ? `${labelA} vs ${labelB}`
-      : `${t.currentStrategy} vs ${t.alternativeStrategy}`;
+      : `${scenarioALegendDefault ?? t.currentStrategy} vs ${scenarioBLegendDefault ?? t.alternativeStrategy}`;
 
   const baselineA = marginHistoryA[0] ?? 0;
   const baselineB = marginHistoryB[0] ?? 0;
@@ -1030,7 +1034,15 @@ function MarginGraph({
 }
 
 /** Legend row above the margin graph: mirrors `renderMarkerShape` semantics (strategy lines + zone colors). */
-export function MarginGraphLegendRow({ uiLanguage }: { uiLanguage: "sv" | "en" }) {
+export function MarginGraphLegendRow({
+  uiLanguage,
+  scenarioALabelText,
+  scenarioBLabelText,
+}: {
+  uiLanguage: "sv" | "en";
+  scenarioALabelText?: string;
+  scenarioBLabelText?: string;
+}) {
   const t = pulseLanguage[uiLanguage];
   const structuralReferencePointsLabel =
     uiLanguage === "sv" ? "Strukturella referenspunkter" : "Structural reference points";
@@ -1053,11 +1065,11 @@ export function MarginGraphLegendRow({ uiLanguage }: { uiLanguage: "sv" | "en" }
     <div style={rowStyle}>
       <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
         <span style={{ width: "10px", height: "2px", background: "#3B82F6" }} />
-        <span style={labelStyle}>{t.currentStrategy}</span>
+        <span style={labelStyle}>{scenarioALabelText ?? t.currentStrategy}</span>
       </span>
       <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
         <span style={{ width: "10px", height: "2px", background: "#F59E0B" }} />
-        <span style={labelStyle}>{t.alternativeStrategy}</span>
+        <span style={labelStyle}>{scenarioBLabelText ?? t.alternativeStrategy}</span>
       </span>
       <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
         <svg width={14} height={14} viewBox="0 0 14 14" aria-hidden style={{ display: "block" }}>
