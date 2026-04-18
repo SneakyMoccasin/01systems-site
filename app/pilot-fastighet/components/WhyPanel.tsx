@@ -3,6 +3,8 @@
 import React from "react";
 import { pulseLanguage } from "@/src/i18n/pulseLanguage";
 import type { CascadeEvent } from "@/src/pilotFastighet/riskPropagation";
+import { resolveTransportInspectorContext } from "@/src/pilotFastighet/transportInspectorAdapter";
+import CascadeRendererRealEstate from "./CascadeRendererRealEstate";
 
 type Language = "sv" | "en";
 
@@ -14,6 +16,8 @@ type Props = {
   breachDifference?: number | null;
   language?: Language;
   getRiskLabel?: (key: string) => string;
+  caseType?: "transport" | "real-estate" | null;
+  selectedActions?: string[];
 };
 
 export type CascadeNode = { label: string; quarter: number };
@@ -52,15 +56,33 @@ const WhyPanel: React.FC<Props> = ({
   breachDifference = null,
   language = "en",
   getRiskLabel = (k) => k,
+  caseType = null,
+  selectedActions = [],
 }) => {
   const uiLanguage = language;
   const t = pulseLanguage[uiLanguage];
   const nodesA = formatCascadeChain(cascadeEventsA, getRiskLabel);
   const nodesB = formatCascadeChain(cascadeEventsB, getRiskLabel);
   const nodes = nodesB.length > 0 ? nodesB : nodesA;
+  const transportInspectorContext = resolveTransportInspectorContext({
+    language: uiLanguage,
+    selectedActions,
+    primaryDriverKey: primaryDriver,
+  });
+  console.log("WhyPanel caseType:", caseType);
+  console.log("WhyPanel selectedActions:", selectedActions);
+  console.log("WhyPanel primaryDriver:", primaryDriver);
+  console.log("WhyPanel transport propagation label:", transportInspectorContext?.propagationChainLabel);
   const cascadeChainText =
-    nodes.length > 0 ? `Kaskad: ${nodes.map((n) => n.label).join(" \u2192 ")}` : null;
-  const hasCascade = nodes.length > 0;
+    caseType === "transport"
+      ? transportInspectorContext?.propagationChainLabel ?? null
+      : nodes.length > 0
+      ? `Kaskad: ${nodes.map((n) => n.label).join(" \u2192 ")}`
+      : null;
+  const hasCascade =
+    caseType === "transport"
+      ? Boolean(transportInspectorContext?.propagationChainLabel)
+      : nodes.length > 0;
   const fallbackExplanation =
     primaryDriver && !hasCascade
       ? `${getRiskLabel(primaryDriver)} impacts margin directly`
@@ -118,9 +140,21 @@ const WhyPanel: React.FC<Props> = ({
           {t.cascadePropagation}
         </div>
         <div style={{ color: "#e5e7eb" }}>
-          {nodes.length > 0 ? (
+          {hasCascade ? (
             <>
-              <div>{cascadeChainText}</div>
+              {caseType === "transport" ? (
+                <CascadeRendererTransport
+                  primaryDriver={primaryDriver}
+                  selectedActions={selectedActions}
+                  language={uiLanguage}
+                />
+              ) : (
+                <CascadeRendererRealEstate
+                  cascadeEventsA={cascadeEventsA}
+                  cascadeEventsB={cascadeEventsB}
+                  getRiskLabel={getRiskLabel}
+                />
+              )}
               <div>Margin impact</div>
             </>
           ) : (

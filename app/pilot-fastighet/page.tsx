@@ -36,14 +36,39 @@ import { pulseLanguage, activeDomain, setActiveDomain, type DomainKey } from "@/
 import { type ScenarioChange } from "@/lib/scenarioParser";
 import { parsePreviewScenarioImpact } from "@/src/pilotFastighet/previewScenarioImpact";
 import { getScenarioLibrary } from "@/src/pilotFastighet/scenarioLibrary";
+import { resolveTransportInspectorContext } from "@/src/pilotFastighet/transportInspectorAdapter";
+import {
+  TRANSPORT_SYSTEM_DRIVERS,
+  type TransportSystemDriverId,
+} from "@/src/pilotFastighet/transportDomainMapping";
 import {
   defaultRiskState,
   getRiskStateAfterPreset,
 } from "@/src/pilotFastighet/presetRiskMapping";
 
+function toReadableLabel(
+  driverId: TransportSystemDriverId,
+  language: "sv" | "en"
+): string {
+  const driverDef = TRANSPORT_SYSTEM_DRIVERS[driverId];
+
+  if (language === "sv" && driverDef?.readableLabel_sv) {
+    return driverDef.readableLabel_sv;
+  }
+
+  if (language === "en" && driverDef?.readableLabel_en) {
+    return driverDef.readableLabel_en;
+  }
+
+  const withSpaces = driverId.replace(/([a-z])([A-Z])/g, "$1 $2");
+
+  return withSpaces.charAt(0).toUpperCase() + withSpaces.slice(1);
+}
+
 const STORAGE_KEY_A = "pulse_pilot_fastighet_history_A";
 const STORAGE_KEY_B = "pulse_pilot_fastighet_history_B";
 const SNAPSHOT_LABELS_KEY = "pulse.snapshotLabels.v1";
+const UI_MODE_KEY = "pulse.pilotFastighet.uiMode.v1";
 
 const VISIBLE_PILOT_CASES = PILOT_CASES.filter(
   (c) => c.id !== "neutral-baseline"
@@ -256,7 +281,19 @@ export default function PilotFastighetPage() {
   useEffect(() => {
     setHistoryA(loadHistory(STORAGE_KEY_A));
     setHistoryB(loadHistory(STORAGE_KEY_B));
+    if (typeof window !== "undefined") {
+      const savedMode = window.localStorage.getItem(UI_MODE_KEY);
+      if (savedMode === "executive" || savedMode === "expert") {
+        setUiMode(savedMode);
+      }
+    }
   }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(UI_MODE_KEY, uiMode);
+    }
+  }, [uiMode]);
 
   useEffect(() => {
     const scenarioLibrary = getScenarioLibrary(uiLanguage);
@@ -876,12 +913,61 @@ export default function PilotFastighetPage() {
     }
   }
 
+  function applyActionEffectsToRiskState(
+    baseState: RiskState,
+    actions: string[]
+  ): RiskState {
+    const riskLevels: RiskLevel[] = ["LOW", "MODERATE", "HIGH", "SEVERE"];
+    const nextState = structuredClone(baseState);
+
+    actions.forEach((action) => {
+      const effects = actionEffects[action as keyof typeof actionEffects];
+      if (!effects) return;
+      Object.entries(effects).forEach(([driver, delta]) => {
+        if (!(driver in nextState)) return;
+        const currentValue = nextState[driver as keyof RiskState];
+        const currentIndex = riskLevels.indexOf(currentValue);
+        if (currentIndex < 0) return;
+        const targetIndex = Math.max(
+          0,
+          Math.min(riskLevels.length - 1, Math.round(currentIndex + Number(delta)))
+        );
+        nextState[driver as keyof RiskState] = riskLevels[targetIndex];
+      });
+    });
+
+    return nextState;
+  }
+
   const selectedActionsForPanel =
-    activeScenario === "A"
+    scenarioTarget === "A"
       ? selectedActionsA
-      : activeScenario === "B"
+      : scenarioTarget === "B"
         ? selectedActionsB
         : [];
+  const caseType =
+    domain === "municipal"
+      ? "transport"
+      : domain === "real-estate"
+        ? "real-estate"
+        : null;
+  const transportContext =
+    caseType === "transport"
+      ? resolveTransportInspectorContext({
+          language: uiLanguage,
+          selectedActions: selectedActionsForPanel,
+        })
+      : null;
+  const primaryDriver = transportContext?.primaryDriver ?? null;
+  const systemStatusCascadeChainText =
+    caseType === "transport"
+      ? transportContext?.propagationChainLabel ?? null
+      : null;
+  const diffSeries = marginHistoryB.map(
+    (v, index) => v - (marginHistoryA[index] ?? v)
+  );
+  const firstDivergenceMonth =
+    diffSeries?.findIndex((v) => Math.abs(v) > 0.01) ?? null;
 
   const baselineA = marginHistoryA.length > 0 ? marginHistoryA[0] : 0;
   const finalA =
@@ -919,6 +1005,7 @@ export default function PilotFastighetPage() {
   } as const;
 
   const theme = THEME[uiTheme];
+  const language = uiLanguage;
   const t = UI_TEXT[uiLanguage];
   const pt = pulseLanguage[uiLanguage];
   const scenarioALabelText = uiLanguage === "sv" ? "Nuläge" : "Baseline";
@@ -1035,10 +1122,6 @@ export default function PilotFastighetPage() {
     scenarioTarget === "B"
       ? cascadeEventsB
       : cascadeEventsA;
-  const primaryDriver =
-    activeCascadeEvents.length > 0
-      ? activeCascadeEvents[0].sourceRisk
-      : null;
   const cascadeEvents =
     cascadeEventsB.length > 0 ? cascadeEventsB : cascadeEventsA;
 
@@ -1273,7 +1356,9 @@ export default function PilotFastighetPage() {
         </button>
         <button
           type="button"
-          onClick={() => setUiMode((m) => (m === "executive" ? "expert" : "executive"))}
+          onClick={() => {
+            setUiMode((m) => (m === "executive" ? "expert" : "executive"));
+          }}
           style={{
             padding: "6px 12px",
             borderRadius: "6px",
@@ -1822,6 +1907,45 @@ export default function PilotFastighetPage() {
           </div>
         )}
         <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+          <div
+            style={{
+              flex: 1,
+              background: "#111827",
+              borderRadius: 8,
+              padding: 12,
+              minWidth: 260,
+            }}
+          >
+              <AIInspectorPanel
+                language={uiLanguage}
+                caseName={
+                  PILOT_CASES.find((c) => c.id === selectedPilotCaseId)?.title ?? ""
+                }
+                tippingQuarter={
+                  tippingMarginIndexB != null ? tippingMarginIndexB + 1 : null
+                }
+                currentMargin={finalA}
+                alternativeMargin={finalB}
+                marginImpact={finalB - finalA}
+                cascadeEvents={cascadeEvents}
+                cascadeEventsA={cascadeEventsA}
+                cascadeEventsB={cascadeEventsB}
+                seriesLengthA={marginHistoryA.length}
+                seriesLengthB={marginHistoryB.length}
+                simulationHorizon={simulationHorizon}
+                primaryDriver={primaryDriver}
+                systemPressure={systemPressure}
+                constraintBreakQuarter={estimatedTimeToBreach}
+                structuralStatus={t.structuralStatus[structuralStatusKey]}
+                selectedMonthIndex={selectedMonthData?.monthIndex ?? null}
+                selectedMarginValueA={selectedMonthData?.marginA ?? null}
+                selectedMarginValueB={selectedMonthData?.marginB ?? null}
+                selectedGoal={selectedGoal}
+                selectedActions={selectedActionsForPanel}
+                inspectionMode={uiMode}
+                caseType={caseType}
+              />
+          </div>
           <div style={{ flex: 2, minWidth: 0 }}>
             <div
               style={{
@@ -1873,47 +1997,91 @@ export default function PilotFastighetPage() {
                   scenarioALegendDefault={scenarioALabelText}
                   scenarioBLegendDefault={scenarioBLabelText}
                 />
+                <div
+                  style={{
+                    marginTop: "16px",
+                    padding: "14px",
+                    borderRadius: "12px",
+                    background: "rgba(30, 41, 59, 0.6)",
+                    border: "1px solid rgba(148, 163, 184, 0.2)"
+                  }}
+                >
+                  <div style={{ fontWeight: 600, marginBottom: "8px" }}>
+                    {uiLanguage === "sv" ? "Systemstatus" : "System status"}
+                  </div>
+
+                  <div>
+                    {uiLanguage === "sv"
+                      ? `Nuläge: ${finalA >= 0 ? "Robust" : "Kollapszon"} (marginal ${finalA.toFixed(2)})`
+                      : `Baseline: ${finalA >= 0 ? "Robust" : "Collapse zone"} (margin ${finalA.toFixed(2)})`}
+                  </div>
+
+                  <div>
+                    {uiLanguage === "sv"
+                      ? `Målstrategi: ${finalB >= 0 ? "Robust" : "Kollapszon"} (marginal ${finalB.toFixed(2)})`
+                      : `Target strategy: ${finalB >= 0 ? "Robust" : "Collapse zone"} (margin ${finalB.toFixed(2)})`}
+                  </div>
+
+                  <div style={{ marginTop: "6px" }}>
+                    {uiLanguage === "sv"
+                      ? `Kapitalbegränsning: ${
+                          tippingMarginIndexB != null ? "AKTIV" : "INAKTIV"
+                        }`
+                      : `Capital constraint: ${
+                          tippingMarginIndexB != null ? "ACTIVE" : "INACTIVE"
+                        }`}
+                  </div>
+
+                  <div style={{ marginTop: "6px" }}>
+                    {uiLanguage === "sv"
+                    ? `Primär drivare: ${
+                        primaryDriver
+                          ? toReadableLabel(primaryDriver as TransportSystemDriverId, language)
+                          : "—"
+                      }`
+                    : `Primary driver: ${
+                        primaryDriver
+                          ? toReadableLabel(primaryDriver as TransportSystemDriverId, language)
+                          : "—"
+                      }`}
+                  </div>
+                </div>
+                <AIInterpretationPanel
+                  language={uiLanguage}
+                  tippingQuarter={
+                    tippingMarginIndexB != null ? tippingMarginIndexB + 1 : null
+                  }
+                  caseName={
+                    PILOT_CASES.find((c) => c.id === selectedPilotCaseId)?.title ?? ""
+                  }
+                  events={[
+                    { quarter: 1, type: "Maintenance deferred" },
+                    {
+                      quarter:
+                        tippingMarginIndexB != null
+                          ? tippingMarginIndexB + 1
+                          : 0,
+                      type: "Capital constraint activated",
+                    },
+                  ].filter((e) => e.quarter > 0)}
+                  simulationCompleted={hasSimulationCompleted}
+                  currentMargin={finalA}
+                  alternativeMargin={finalB}
+                  marginImpact={finalB - finalA}
+                  cascadeEventsA={cascadeEventsA}
+                  cascadeEventsB={cascadeEventsB}
+                  primaryDriver={primaryDriver}
+                  systemPressure={systemPressure}
+                  estimatedTimeToBreach={estimatedTimeToBreach}
+                  decisionFlowEvents={sortedDecisionFlowEvents}
+                  marginTrend={marginTrend}
+                  cascadeDelay={cascadeDelaySteps}
+                  caseType={caseType}
+                  selectedActions={selectedActionsForPanel}
+                />
                 </div>
               </div>
             </div>
-          </div>
-          <div
-            style={{
-              flex: 1,
-              background: "#111827",
-              borderRadius: 8,
-              padding: 12,
-              minWidth: 260,
-            }}
-          >
-            {selectedMonthData && (
-              <AIInspectorPanel
-                language={uiLanguage}
-                caseName={
-                  PILOT_CASES.find((c) => c.id === selectedPilotCaseId)?.title ?? ""
-                }
-                tippingQuarter={
-                  tippingMarginIndexB != null ? tippingMarginIndexB + 1 : null
-                }
-                currentMargin={finalA}
-                alternativeMargin={finalB}
-                marginImpact={finalB - finalA}
-                cascadeEvents={cascadeEvents}
-                cascadeEventsA={cascadeEventsA}
-                cascadeEventsB={cascadeEventsB}
-                seriesLengthA={marginHistoryA.length}
-                seriesLengthB={marginHistoryB.length}
-                simulationHorizon={simulationHorizon}
-                primaryDriver={primaryDriver}
-                systemPressure={systemPressure}
-                constraintBreakQuarter={estimatedTimeToBreach}
-                structuralStatus={t.structuralStatus[structuralStatusKey]}
-                selectedMonthIndex={selectedMonthData?.monthIndex ?? null}
-                selectedMarginValueA={selectedMonthData?.marginA ?? null}
-                selectedMarginValueB={selectedMonthData?.marginB ?? null}
-                selectedGoal={selectedGoal}
-              />
-            )}
           </div>
         </div>
         {selectedMonthData && (
@@ -2059,17 +2227,30 @@ export default function PilotFastighetPage() {
             const preset = presetLibrary.find((p) => p.id === presetId);
             const prompt = preset?.prompt ?? "";
             const nextPresetState = getRiskStateAfterPreset(presetId) as RiskState;
+            const selectedActionKeys = preset?.actionKeys ?? [];
+            const knownActionKeys = new Set(Object.keys(actionEffects));
+            const applicableActions = selectedActionKeys.filter((a) => knownActionKeys.has(a));
+            const missingActionKeys = selectedActionKeys.filter((a) => !knownActionKeys.has(a));
+            if (missingActionKeys.length > 0) {
+              console.warn("[PULSE TRANSPORT] Missing intervention keys:", missingActionKeys);
+            }
+            const scenarioStateWithActions = applyActionEffectsToRiskState(
+              nextPresetState,
+              applicableActions
+            );
             const applyTo = scenarioTarget;
 
             if (scenarioTarget === "A") {
-              setRiskStateA(structuredClone(nextPresetState));
+              setRiskStateA(structuredClone(scenarioStateWithActions));
               setScenarioPromptA(prompt);
               setAppliedScenarioAId(presetId);
+              setSelectedActionsA(applicableActions);
             }
             if (scenarioTarget === "B") {
-              setRiskStateB(structuredClone(nextPresetState));
+              setRiskStateB(structuredClone(scenarioStateWithActions));
               setScenarioPromptB(prompt);
               setAppliedScenarioBId(presetId);
+              setSelectedActionsB(applicableActions);
             }
 
             if (applyTo === "A") {
@@ -2093,41 +2274,6 @@ export default function PilotFastighetPage() {
           scenarioPromptB={scenarioPromptB}
           onScenarioPromptAChange={setScenarioPromptA}
           onScenarioPromptBChange={setScenarioPromptB}
-        />
-        <ScenarioInterpretationPanel
-          parsedScenarioEffectsA={parsedScenarioEffectsA}
-          parsedScenarioEffectsB={parsedScenarioEffectsB}
-          scenarioTextA={previewScenarioTextA}
-          scenarioTextB={previewScenarioTextB}
-          language={uiLanguage}
-        />
-        <SystemDriversPanel
-          primaryDriver={primaryDriver ?? undefined}
-          systemPressure={systemPressure}
-          marginTrend={marginTrend}
-          cascadeEventsA={activeCascadeEvents}
-          cascadeEventsB={[]}
-          estimatedTimeToBreach={estimatedTimeToBreach}
-          language={uiLanguage}
-        />
-        {uiMode === "expert" && (
-          <DecisionExplanationPanel
-            primaryDriver={primaryDriver ?? undefined}
-            systemPressure={systemPressure}
-            marginTrend={marginTrend}
-            cascadeEventsA={cascadeEventsA}
-            cascadeEventsB={cascadeEventsB}
-            estimatedTimeToBreach={estimatedTimeToBreach}
-            language={uiLanguage}
-          />
-        )}
-        <ScenarioOutcomePanel
-          breachA={tippingMarginIndexA != null ? tippingMarginIndexA + 1 : null}
-          breachB={tippingMarginIndexB != null ? tippingMarginIndexB + 1 : null}
-          finalMarginA={finalA}
-          finalMarginB={finalB}
-          breachDifference={breachDifference}
-          language={uiLanguage}
         />
         <ScenarioPreviewPanel
           visible={previewVisible}
@@ -2160,46 +2306,6 @@ export default function PilotFastighetPage() {
             setPreviewVisible(false);
           }}
         />
-        <WhyPanel
-          primaryDriver={primaryDriver}
-          cascadeEventsA={cascadeEventsA}
-          cascadeEventsB={cascadeEventsB}
-          marginImpact={finalB - finalA}
-          breachDifference={breachDifference}
-          language={uiLanguage}
-          getRiskLabel={getRiskLabel}
-        />
-        <AIInterpretationPanel
-          language={uiLanguage}
-          tippingQuarter={
-            tippingMarginIndexB != null ? tippingMarginIndexB + 1 : null
-          }
-          caseName={
-            PILOT_CASES.find((c) => c.id === selectedPilotCaseId)?.title ?? ""
-          }
-          events={[
-            { quarter: 1, type: "Maintenance deferred" },
-            {
-              quarter:
-                tippingMarginIndexB != null
-                  ? tippingMarginIndexB + 1
-                  : 0,
-              type: "Capital constraint activated",
-            },
-          ].filter((e) => e.quarter > 0)}
-          simulationCompleted={hasSimulationCompleted}
-          currentMargin={finalA}
-          alternativeMargin={finalB}
-          marginImpact={finalB - finalA}
-          cascadeEventsA={cascadeEventsA}
-          cascadeEventsB={cascadeEventsB}
-          primaryDriver={primaryDriver}
-          systemPressure={systemPressure}
-          estimatedTimeToBreach={estimatedTimeToBreach}
-          decisionFlowEvents={sortedDecisionFlowEvents}
-          marginTrend={marginTrend}
-          cascadeDelay={cascadeDelaySteps}
-        />
         {false && (
           <PromptDock
             language={uiLanguage}
@@ -2217,100 +2323,6 @@ export default function PilotFastighetPage() {
           <div style={{ fontSize: "12px", color: "#9CA3AF", marginTop: "8px" }}>
             M{selectedQuarter} — {scenarioALabelText}: {marginHistoryA[selectedQuarter - 1]?.toFixed(2) ?? "—"} | {scenarioBLabelText}: {marginHistoryB[selectedQuarter - 1]?.toFixed(2) ?? "—"}
           </div>
-        )}
-      </div>
-
-      {/* System Status panel – below graph */}
-      <div
-        style={{
-          marginTop: "24px",
-          marginBottom: "16px",
-          padding: "16px 20px",
-          background: "#111827",
-          border: "1px solid #1f2937",
-          borderRadius: "8px",
-        }}
-      >
-        <div style={{ fontSize: "12px", color: "#9CA3AF", marginBottom: "8px" }}>{pt.systemStatus}</div>
-        <div style={{ fontSize: "13px", lineHeight: 1.6 }}>
-          <span style={{ color: "#9CA3AF" }}>{`${scenarioALabelText} ${scenarioStatusSuffix}:`} </span>
-          <span style={{ color: colorA, fontWeight: 600 }}>
-            {labelA}
-          </span>
-        </div>
-        <div style={{ fontSize: "12px", color: "#9CA3AF", lineHeight: 1.6, marginTop: "4px" }}>
-          {`${scenarioALabelText} ${scenarioMarginSuffix}:`} {currentMarginA != null ? currentMarginA.toFixed(2) : "—"}
-        </div>
-        <div style={{ fontSize: "13px", lineHeight: 1.6, marginTop: "8px" }}>
-          <span style={{ color: "#9CA3AF" }}>{`${scenarioBLabelText} ${scenarioStatusSuffix}:`} </span>
-          <span style={{ color: colorB, fontWeight: 600 }}>
-            {labelB}
-          </span>
-        </div>
-        <div style={{ fontSize: "12px", color: "#9CA3AF", lineHeight: 1.6, marginTop: "4px" }}>
-          {`${scenarioBLabelText} ${scenarioMarginSuffix}:`} {currentMarginB != null ? currentMarginB.toFixed(2) : "—"}
-        </div>
-        <div style={{ marginTop: "16px", paddingTop: "16px", borderTop: "1px solid #1f2937" }}>
-          <div style={{ fontSize: "12px", color: "#9CA3AF" }}>
-            {(pt as any).capitalConstraint ?? "Capital constraint"}
-          </div>
-          <div
-            style={{
-              fontSize: "18px",
-              fontWeight: 600,
-              color:
-                activeState.registry.RefinancingConstraint.lifecycle === "ACTIVE"
-                  ? "#ef4444"
-                  : "#22c55e",
-            }}
-          >
-            {activeState.registry.RefinancingConstraint.lifecycle === "ACTIVE"
-              ? ((pt as any).active ?? "ACTIVE")
-              : ((pt as any).inactive ?? "INACTIVE")}
-          </div>
-        </div>
-      </div>
-
-      {/* System Cascade panel – shows first 6 cascade events */}
-      <div
-        style={{
-          marginTop: "12px",
-          marginBottom: "16px",
-          padding: "12px 16px",
-          background: "#0b1120",
-          border: "1px solid #1f2937",
-          borderRadius: "8px",
-        }}
-      >
-        <div style={{ fontSize: "12px", color: "#9CA3AF", marginBottom: "4px" }}>
-          {pt.primaryDriver}: {primaryDriver ? getRiskLabel(primaryDriver) : "—"}
-        </div>
-        <div style={{ fontSize: "12px", color: "#9CA3AF", marginBottom: "6px" }}>
-          {pt.cascade}
-        </div>
-        {cascadeEventsA.length === 0 && cascadeEventsB.length === 0 ? (
-          <div style={{ fontSize: "12px", color: "#6B7280" }}>—</div>
-        ) : (
-          <ul
-            style={{
-              listStyle: "none",
-              padding: 0,
-              margin: 0,
-              fontSize: "12px",
-              color: "#E5E7EB",
-            }}
-          >
-            {cascadeEventsA.slice(0, 6).map((e, idx) => (
-              <li key={`a-${idx}`} style={{ marginBottom: "2px" }}>
-                A: {getRiskLabel(e.sourceRisk)} → {getRiskLabel(e.targetRisk)} ({e.level})
-              </li>
-            ))}
-            {cascadeEventsB.slice(0, 6).map((e, idx) => (
-              <li key={`b-${idx}`} style={{ marginBottom: "2px" }}>
-                B: {getRiskLabel(e.sourceRisk)} → {getRiskLabel(e.targetRisk)} ({e.level})
-              </li>
-            ))}
-          </ul>
         )}
       </div>
 
@@ -2779,7 +2791,9 @@ export default function PilotFastighetPage() {
             </div>
             <button
               type="button"
-              onClick={() => setUiMode("executive")}
+              onClick={() => {
+                setUiMode("executive");
+              }}
               aria-label={pt.expertCloseAriaLabel}
               style={{
                 flexShrink: 0,
@@ -2802,7 +2816,87 @@ export default function PilotFastighetPage() {
             </button>
           </div>
 
-          <section style={{ marginBottom: "28px" }}>
+          <div
+            style={{
+              marginBottom: "18px",
+              paddingBottom: "10px",
+              borderBottom: "1px solid #1f2937",
+            }}
+          >
+            <div
+              style={{
+                fontSize: "13px",
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                color: "#9CA3AF",
+                marginBottom: "6px",
+              }}
+            >
+              {uiLanguage === "sv"
+                ? "Strukturell diagnostik"
+                : "Structural diagnostics"}
+            </div>
+
+            <div
+              style={{
+                fontSize: "15px",
+                color: "#E5E7EB",
+                fontWeight: 500,
+              }}
+            >
+              {uiLanguage === "sv"
+                ? "Modellens tillståndsinspektion och begränsningspropagering"
+                : "Model state inspection and constraint propagation structure"}
+            </div>
+          </div>
+
+          <SystemDriversPanel
+            primaryDriver={primaryDriver ?? undefined}
+            systemPressure={systemPressure}
+            marginTrend={marginTrend}
+            cascadeEventsA={activeCascadeEvents}
+            cascadeEventsB={cascadeEventsB}
+            estimatedTimeToBreach={estimatedTimeToBreach}
+            language={uiLanguage}
+          />
+
+          <DecisionExplanationPanel
+            primaryDriver={primaryDriver ?? undefined}
+            systemPressure={systemPressure}
+            marginTrend={marginTrend}
+            cascadeEventsA={cascadeEventsA}
+            cascadeEventsB={cascadeEventsB}
+            estimatedTimeToBreach={estimatedTimeToBreach}
+            language={uiLanguage}
+          />
+
+          <ScenarioInterpretationPanel
+            parsedScenarioEffectsA={parsedScenarioEffectsA}
+            parsedScenarioEffectsB={parsedScenarioEffectsB}
+            scenarioTextA={previewScenarioTextA}
+            scenarioTextB={previewScenarioTextB}
+            language={uiLanguage}
+          />
+
+          <ScenarioOutcomePanel
+            breachA={tippingMarginIndexA != null ? tippingMarginIndexA + 1 : null}
+            breachB={tippingMarginIndexB != null ? tippingMarginIndexB + 1 : null}
+            finalMarginA={finalA}
+            finalMarginB={finalB}
+            breachDifference={breachDifference}
+            language={uiLanguage}
+          />
+
+          <div
+            style={{
+              marginBottom: "28px",
+              padding: "16px 20px",
+              background: "#111827",
+              border: "1px solid #1f2937",
+              borderRadius: "8px",
+            }}
+          >
+          <section style={{ marginBottom: "0" }}>
             <div
               style={{
                 fontSize: "13px",
@@ -2888,10 +2982,20 @@ export default function PilotFastighetPage() {
               </div>
             </div>
           </section>
+          </div>
 
           <div style={{ height: "1px", background: "#1F2937", marginBottom: "28px" }} />
 
-          <section style={{ marginBottom: "28px" }}>
+          <div
+            style={{
+              marginBottom: "28px",
+              padding: "16px 20px",
+              background: "#111827",
+              border: "1px solid #1f2937",
+              borderRadius: "8px",
+            }}
+          >
+          <section style={{ marginBottom: "0" }}>
             <div
               style={{
                 fontSize: "13px",
@@ -2966,6 +3070,7 @@ export default function PilotFastighetPage() {
               )}
             </div>
           </section>
+          </div>
         </div>
       )}
       </div>

@@ -1,6 +1,41 @@
 import React from "react";
 import { pulseLanguage } from "@/src/i18n/pulseLanguage";
 import type { CascadeEvent } from "@/src/pilotFastighet/riskPropagation";
+import {
+  TRANSPORT_SYSTEM_DRIVERS,
+  type TransportSystemDriverId,
+} from "@/src/pilotFastighet/transportDomainMapping";
+import { resolveTransportInspectorContext } from "@/src/pilotFastighet/transportInspectorAdapter";
+import { buildDomainPropagationEvents } from "./inspector-utils/buildDomainPropagationEvents";
+
+function toReadableLabel(
+  driverId: TransportSystemDriverId | string | null | undefined,
+  language: "sv" | "en"
+): string {
+  if (!driverId) {
+    return "";
+  }
+
+  const driverDef =
+    TRANSPORT_SYSTEM_DRIVERS[
+      driverId as keyof typeof TRANSPORT_SYSTEM_DRIVERS
+    ];
+
+  if (language === "sv" && driverDef?.readableLabel_sv) {
+    return driverDef.readableLabel_sv;
+  }
+
+  if (language === "en" && driverDef?.readableLabel_en) {
+    return driverDef.readableLabel_en;
+  }
+
+  const withSpaces = String(driverId).replace(
+    /([a-z])([A-Z])/g,
+    "$1 $2"
+  );
+
+  return withSpaces.charAt(0).toUpperCase() + withSpaces.slice(1);
+}
 
 /** Aligns cascade events to graph month indices (same logic as MarginGraph.mapCascadeToMarkers). */
 function mapCascadeEventToIndex(
@@ -76,14 +111,14 @@ function getTippingWindowText(
 ): string {
   if (tippingMarginIndexB == null) {
     return uiLanguage === "sv"
-      ? "Ingen tipping-risk"
-      : "No tipping risk";
+      ? "Ingen strukturell försvagning identifierad inom analysperioden"
+      : "No structural weakening identified within the analysis horizon";
   }
 
   if (selectedMonthIndex == null) {
     return uiLanguage === "sv"
-      ? "Ingen tipping-risk"
-      : "No tipping risk";
+      ? "Ingen strukturell försvagning identifierad inom analysperioden"
+      : "No structural weakening identified within the analysis horizon";
   }
 
   const distance = tippingMarginIndexB - selectedMonthIndex;
@@ -231,6 +266,10 @@ type Props = {
   selectedMarginValueA?: number | null;
   selectedMarginValueB?: number | null;
   selectedGoal?: "accessibility" | "congestion" | "margin_stability" | "avoid_tipping";
+  selectedActions?: string[];
+  inspectionMode?: "executive" | "expert";
+  firstDivergenceMonth?: number | null;
+  caseType?: "transport" | "real-estate" | null;
 };
 
 const AIInspectorPanel: React.FC<Props> = ({
@@ -254,7 +293,15 @@ const AIInspectorPanel: React.FC<Props> = ({
   selectedMarginValueA = null,
   selectedMarginValueB = null,
   selectedGoal,
+  selectedActions = [],
+  inspectionMode = "executive",
+  firstDivergenceMonth = null,
+  caseType = null,
 }) => {
+  const analysisReady =
+    primaryDriver !== null ||
+    cascadeEventsA?.length > 0 ||
+    cascadeEventsB?.length > 0;
   const uiLanguage = language;
   const t = pulseLanguage[uiLanguage];
   const riskLabels = (t as any).riskLabels ?? {};
@@ -309,6 +356,16 @@ const AIInspectorPanel: React.FC<Props> = ({
         ? `Primär strukturell påverkan: ${systemDriver} (via ${policyDriver})`
         : `Primary structural influence: ${systemDriver} (via ${policyDriver})`
       : null;
+  const transportInspectorContext = resolveTransportInspectorContext({
+    language: uiLanguage,
+    selectedActions,
+    policyDriverKey,
+    systemDriverKey,
+    primaryDriverKey: primaryDriver,
+  });
+  console.log("caseType:", caseType);
+  console.log("selectedActions:", selectedActions);
+  console.log("transportInspectorContext:", transportInspectorContext);
   const scenarioALabel = language === "sv" ? "Nuläge" : "Baseline";
   const scenarioBLabel = language === "sv" ? "Målstrategi" : "Goal strategy";
   const cascadeStatusText =
@@ -321,20 +378,54 @@ const AIInspectorPanel: React.FC<Props> = ({
         : "Cascade: None";
   const cascadeStatusHeading =
     language === "sv" ? "KASKADSTATUS" : "CASCADE STATUS";
+  const systemPressureExecutiveLabel =
+    systemPressure === "SYSTEMIC"
+      ? language === "sv"
+        ? `Systemet är under strukturellt tryck via ${toReadableLabel(
+            primaryDriver as TransportSystemDriverId,
+            language
+          ).toLowerCase()}`
+        : "The system is under clear structural pressure"
+      : systemPressure === "LOW"
+      ? language === "sv"
+          ? "Systemet är under lågt strukturellt tryck"
+          : "The system is under low structural pressure"
+      : systemPressure;
+  const breachEstimate =
+    constraintBreakQuarter != null ? `Q${constraintBreakQuarter}` : null;
+  const breachEstimateExecutiveLabel =
+    breachEstimate === null || breachEstimate === undefined
+      ? language === "sv"
+        ? "Ingen strukturell risk identifierad inom analysperioden"
+        : "No structural breach risk detected within the analysis horizon"
+      : breachEstimate;
   const tippingWindowText = getTippingWindowText(
     selectedMonthIndex,
     tippingQuarter ? tippingQuarter - 1 : null,
     language
   );
   const tippingWindowHeading =
-    language === "sv" ? "TIPPING-FÖNSTER" : "TIPPING WINDOW";
+    language === "sv"
+      ? "Riskzon för strukturell försvagning"
+      : "Structural weakening risk window";
   const selectedDifference =
     selectedMarginValueA != null && selectedMarginValueB != null
       ? selectedMarginValueB - selectedMarginValueA
       : marginImpact;
 
   const decisionEffectText = getDecisionEffectText(selectedDifference, language);
-  const scenarioDifferenceText = getScenarioDifferenceText(selectedDifference, language);
+  const scenarioDifferenceText =
+    firstDivergenceMonth == null
+      ? language === "sv"
+        ? "Scenarierna är strukturellt lika"
+        : "Scenarios remain structurally similar"
+      : firstDivergenceMonth <= 6
+      ? language === "sv"
+        ? "Scenarierna divergerar tydligt"
+        : "Scenarios diverge clearly"
+      : language === "sv"
+      ? "Scenarierna börjar divergera"
+      : "Scenarios begin to diverge";
   const constraintActive = constraintBreakQuarter != null;
   const cascadeDetected = simulationCascadeEvents.length > 0;
   const marginTrend = marginImpact < 0 ? "DECLINING" : "STABLE";
@@ -354,13 +445,13 @@ const AIInspectorPanel: React.FC<Props> = ({
 
       case "margin_stability":
         return uiLanguage === "sv"
-          ? "Strukturell marginal stabiliseras över simuleringshorisonten."
-          : "Structural margin stabilizes across the simulation horizon.";
+          ? "Strukturell marginal stabiliseras över analysperioden."
+          : "Structural margin stabilizes across the analysis horizon.";
 
       case "avoid_tipping":
         return uiLanguage === "sv"
-          ? "Ingen tipping-risk identifierad inom simuleringshorisonten."
-          : "No tipping risk detected within the simulation horizon.";
+          ? "Ingen tipping-risk identifierad inom analysperioden."
+          : "No tipping risk detected within the analysis horizon.";
 
       default:
         return null;
@@ -380,8 +471,8 @@ const AIInspectorPanel: React.FC<Props> = ({
     if (selectedGoal === "margin_stability") {
       if (marginTrend === "DECLINING") {
         return uiLanguage === "sv"
-          ? "Marginalstabilitet försvagas över simuleringshorisonten."
-          : "Margin stability weakens across the simulation horizon.";
+          ? "Marginalstabilitet försvagas över analysperioden."
+          : "Margin stability weakens across the analysis horizon.";
       }
     }
 
@@ -441,18 +532,45 @@ const AIInspectorPanel: React.FC<Props> = ({
     return null;
   })();
 
-  const activeCascadeEvents =
+  const domainEvents = buildDomainPropagationEvents(
+    primaryDriver as TransportSystemDriverId | null,
+    language
+  );
+  const activeDomainEvents =
     selectedMonthIndex != null
+      ? domainEvents.filter((e) => e.month === selectedMonthIndex)
+      : domainEvents;
+  const uniqueCascadePairs = new Set(
+    simulationCascadeEvents.map((event) => `${event.sourceRisk}->${event.targetRisk}`)
+  );
+  const driverInteractionDepthText =
+    uiLanguage === "sv"
+      ? `${uniqueCascadePairs.size} unika kopplingar`
+      : `${uniqueCascadePairs.size} unique interactions`;
+  const constraintLifecycleText =
+    uiLanguage === "sv"
+      ? constraintActive
+        ? `Aktiv (uppskattad påverkan kring M${constraintBreakQuarter})`
+        : "Inaktiv"
+      : constraintActive
+        ? `Active (estimated impact around M${constraintBreakQuarter})`
+        : "Inactive";
+  const cascadeStructureText =
+    caseType === "transport"
+      ? (transportInspectorContext?.propagationChainLabel ??
+        (uiLanguage === "sv" ? "Ingen aktiv struktur" : "No active structure"))
+      : simulationCascadeEvents.length > 0
       ? simulationCascadeEvents
-          .map((_event, index) => ({
-            month: index,
-            label: getCascadeEventLabel(index + 1, language),
-          }))
-          .filter((e) => e.month === selectedMonthIndex)
-      : simulationCascadeEvents.map((event, index) => ({
-          month: index,
-          label: getCascadeEventLabel(event.iteration ?? index + 1, language),
-        }));
+          .slice(0, 3)
+          .map((event) => `${event.sourceRisk} -> ${event.targetRisk}`)
+          .join(" | ")
+      : uiLanguage === "sv"
+      ? "Ingen aktiv struktur"
+      : "No active structure";
+  const marginPropagationMechanicsText =
+    uiLanguage === "sv"
+      ? "Marginalen drivs av kombinerat tryck från belastning, kostnad och återhämtningsförmåga."
+      : "Margin is driven by combined pressure from load, cost, and recovery capacity.";
 
   return (
     <div
@@ -486,69 +604,209 @@ const AIInspectorPanel: React.FC<Props> = ({
       >
         <div>
           <span style={{ color: "#9CA3AF", marginRight: "6px" }}>{t.caseLabel}</span>
-          <span>{caseName || "—"}</span>
+          <span>{caseName || t.noAnalysisActive}</span>
         </div>
-        {resolvedPolicyDriver && (
-          <div>
-            <span style={{ color: "#9CA3AF", marginRight: "6px" }}>
-              {policyDriverLabel}:
-            </span>
-            <span>{resolvedPolicyDriver}</span>
-          </div>
+        {inspectionMode === "expert" && (
+          <>
+            {resolvedPolicyDriver && (
+              <div>
+                <span style={{ color: "#9CA3AF", marginRight: "6px" }}>
+                  {policyDriverLabel}:
+                </span>
+                <span>{resolvedPolicyDriver}</span>
+              </div>
+            )}
+            {resolvedSystemDriver && (
+              <div>
+                <span style={{ color: "#9CA3AF", marginRight: "6px" }}>
+                  {systemDriverLabel}:
+                </span>
+                <span>{resolvedSystemDriver}</span>
+              </div>
+            )}
+            {primaryDriverFallbackText && (
+              <div>
+                <span>{primaryDriverFallbackText}</span>
+              </div>
+            )}
+            {!resolvedPolicyDriver && !resolvedSystemDriver && (
+              <div>
+                <span style={{ color: "#9CA3AF", marginRight: "6px" }}>
+                  {t.primaryDriver}:
+                </span>
+                <span>—</span>
+              </div>
+            )}
+            {transportInspectorContext && (
+              <div style={{ marginTop: "2px" }}>
+                <div>
+                  <span style={{ color: "#9CA3AF", marginRight: "6px" }}>
+                    {uiLanguage === "sv" ? "Policyspak:" : "Policy lever:"}
+                  </span>
+                  <span>{transportInspectorContext.policyLeverLabel}</span>
+                </div>
+                <div>
+                  <span style={{ color: "#9CA3AF", marginRight: "6px" }}>
+                    {uiLanguage === "sv" ? "Systemdrivare:" : "System driver:"}
+                  </span>
+                  <span>{transportInspectorContext.systemDriverLabel}</span>
+                </div>
+                <div style={{ color: "#9CA3AF" }}>
+                  {transportInspectorContext.propagationChainLabel}
+                </div>
+              </div>
+            )}
+          </>
         )}
-        {resolvedSystemDriver && (
-          <div>
-            <span style={{ color: "#9CA3AF", marginRight: "6px" }}>
-              {systemDriverLabel}:
-            </span>
-            <span>{resolvedSystemDriver}</span>
+        <div>
+          {language === "sv"
+            ? `Primär drivare: ${
+                primaryDriver
+                  ? toReadableLabel(
+                      primaryDriver as TransportSystemDriverId,
+                      language
+                    )
+                  : t.noActiveDriver
+              }`
+            : `Primary driver: ${
+                primaryDriver
+                  ? toReadableLabel(primaryDriver as TransportSystemDriverId, language)
+                  : t.noActiveDriver
+              }`}
+        </div>
+        {!analysisReady ? (
+          <div style={{ opacity: 0.7 }}>
+            Ingen simulering körd ännu
           </div>
-        )}
-        {primaryDriverFallbackText && (
-          <div>
-            <span>{primaryDriverFallbackText}</span>
-          </div>
-        )}
-        {!resolvedPolicyDriver && !resolvedSystemDriver && (
-          <div>
-            <span style={{ color: "#9CA3AF", marginRight: "6px" }}>
-              {t.primaryDriver}:
-            </span>
-            <span>—</span>
-          </div>
-        )}
+        ) : (
+        <>
         <div>
           <span style={{ color: "#9CA3AF", marginRight: "6px" }}>
             {t.systemPressure}:
           </span>
-          <span>{systemPressure ?? "—"}</span>
+          <span>{systemPressureExecutiveLabel}</span>
         </div>
         <div>
           <span style={{ color: "#9CA3AF", marginRight: "6px" }}>
-            {t.estimatedBreach}:
+            {language === "sv"
+              ? "Risk för strukturellt brott"
+              : "Estimated structural breach"}
+            :
           </span>
-          <span>
-            {constraintBreakQuarter != null
-              ? `Q${constraintBreakQuarter}`
-              : t.estimatedBreachNotEstimated}
-          </span>
+          <span>{breachEstimateExecutiveLabel}</span>
+        </div>
+        <div>
+          <div style={{ color: "#9CA3AF", marginBottom: "4px" }}>
+            {language === "sv"
+              ? "Hur förändringen sprids i systemet"
+              : "How the change spreads through the system"}
+          </div>
+          <div>
+            {(() => {
+              const propagationChainLabel =
+                caseType === "transport"
+                  ? transportInspectorContext?.propagationChainLabel
+                  : cascadeStructureText;
+              if (!propagationChainLabel) {
+                return <span style={{ color: "#6B7280" }}>—</span>;
+              }
+              const chainWithoutPrefix = propagationChainLabel
+                .replace(/^.*?:\s*/, "")
+                .replace(/->/g, "→");
+              const chainSteps = chainWithoutPrefix
+                .split("→")
+                .map((step) => step.trim())
+                .filter(Boolean);
+              if (chainSteps.length === 0) {
+                return <span style={{ color: "#6B7280" }}>—</span>;
+              }
+              return (
+                <>
+                  {chainSteps.map((step, index) => {
+                    const normalizedStep =
+                      step === "demandRisk"
+                        ? "demand"
+                        : step === "modal_attractiveness"
+                        ? "modalAttractiveness"
+                        : step;
+                    return (
+                      <div key={index}>
+                        {index === 0
+                          ? toReadableLabel(primaryDriver as TransportSystemDriverId, language)
+                          : `→ ${
+                              toReadableLabel(
+                                normalizedStep as TransportSystemDriverId,
+                                language
+                              )
+                            }`}
+                      </div>
+                    );
+                  })}
+                  <div style={{ marginTop: "8px", opacity: 0.9 }}>
+                    <strong>Primär påverkningskanal</strong>
+                    <div>
+                      {chainSteps.length > 0 &&
+                        chainSteps
+                          .map((step, index) => {
+                            const normalizedStep =
+                              step === "demandRisk"
+                                ? "demand"
+                                : step === "modal_attractiveness"
+                                ? "modalAttractiveness"
+                                : step;
+
+                            return toReadableLabel(
+                              normalizedStep as TransportSystemDriverId,
+                              language
+                            );
+                          })
+                          .join(" → ")}
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
         </div>
 
         <div>
           <div style={{ color: "#9CA3AF", marginBottom: "4px" }}>
-            {language === "sv" ? "HÄNDELSER" : "EVENTS"}
+            {language === "sv"
+              ? "När förändringen börjar märkas"
+              : "When effects begin to appear"}
           </div>
 
-          {activeCascadeEvents.length === 0 ? (
+          {activeDomainEvents.length === 0 ? (
             <span style={{ color: "#6B7280" }}>—</span>
           ) : (
-            activeCascadeEvents.map((e, i) => (
+            activeDomainEvents.map((e, i) => (
               <div key={i}>
                 M{e.month + 1} — {e.label}
               </div>
             ))
           )}
         </div>
+        {caseType === "transport" &&
+          primaryDriver &&
+          (
+            TRANSPORT_SYSTEM_DRIVERS[
+              primaryDriver as keyof typeof TRANSPORT_SYSTEM_DRIVERS
+            ]?.propagationChain as string[] | undefined
+          )?.includes("demand") && (
+          <div style={{ marginTop: "12px" }}>
+            <div style={{ color: "#9CA3AF", marginBottom: "4px" }}>
+              {language === "sv"
+                ? "EFTERFRÅGERESPONS"
+                : "DEMAND RESPONSE"}
+            </div>
+
+            <div>
+              {language === "sv"
+                ? "Efterfrågan börjar justeras när tillgänglighet och attraktivitet förändras."
+                : "Demand begins adjusting as accessibility and modal attractiveness change."}
+            </div>
+          </div>
+        )}
 
         <div>
           <div style={{ color: "#9CA3AF", marginBottom: "4px" }}>
@@ -570,9 +828,31 @@ const AIInspectorPanel: React.FC<Props> = ({
                 : alternativeMargin}
             </span>
             <span>
-              {t.impact}:{" "}
-              {typeof marginImpact === "number" ? marginImpact.toFixed(2) : marginImpact}
+              {language === "sv" ? "Skillnad:" : "Difference:"}{" "}
+              {typeof marginImpact === "number"
+                ? marginImpact.toFixed(2)
+                : marginImpact}
             </span>
+          </div>
+        </div>
+        <div style={{ marginTop: "6px" }}>
+          <div style={{ color: "#9CA3AF", marginBottom: "4px" }}>
+            {language === "sv"
+              ? "Handlingsutrymme framåt"
+              : "Forward decision flexibility"}
+          </div>
+          <div>
+            {marginTrend === "down"
+              ? language === "sv"
+                ? "Minskar över tid"
+                : "Decreasing over time"
+              : marginTrend === "up"
+              ? language === "sv"
+                ? "Ökar över tid"
+                : "Increasing over time"
+              : language === "sv"
+              ? "Stabilt"
+              : "Stable"}
           </div>
         </div>
 
@@ -623,20 +903,6 @@ const AIInspectorPanel: React.FC<Props> = ({
 
         <div>
           <div style={{ color: "#9CA3AF", marginBottom: "4px" }}>
-            {cascadeStatusHeading}
-          </div>
-          <div>{cascadeStatusText}</div>
-        </div>
-
-        <div>
-          <div style={{ color: "#9CA3AF", marginBottom: "4px" }}>
-            {structuralStateHeading}
-          </div>
-          <div>{structuralStatus ?? structuralStateText}</div>
-        </div>
-
-        <div>
-          <div style={{ color: "#9CA3AF", marginBottom: "4px" }}>
             {language === "sv" ? "BESLUTSEFFEKT" : "DECISION EFFECT"}
           </div>
           <div>{decisionEffectText}</div>
@@ -644,10 +910,64 @@ const AIInspectorPanel: React.FC<Props> = ({
 
         <div>
           <div style={{ color: "#9CA3AF", marginBottom: "4px" }}>
-            {language === "sv" ? "SCENARIOSKILLNAD" : "SCENARIO DIFFERENCE"}
+            {language === "sv"
+              ? "Skillnad mellan strategierna"
+              : "Difference between strategies"}
           </div>
           <div>{scenarioDifferenceText}</div>
+          <div>
+            {firstDivergenceMonth != null
+              ? language === "sv"
+                ? `Skillnaden börjar uppstå runt M${firstDivergenceMonth}`
+                : `Difference begins around M${firstDivergenceMonth}`
+              : language === "sv"
+              ? "Ingen strukturell divergence identifierad inom aktuell simuleringshorisont"
+              : "No structural divergence detected yet"}
+          </div>
         </div>
+        {inspectionMode === "expert" && (
+          <div>
+            <div style={{ color: "#9CA3AF", marginBottom: "6px", fontWeight: 600 }}>
+              {uiLanguage === "sv"
+                ? "Strukturellt inspektionslager — motordiagnostik"
+                : "Structural inspection layer — engine diagnostics"}
+            </div>
+            <div style={{ display: "grid", gap: "6px" }}>
+              <div>
+                <span style={{ color: "#9CA3AF", marginRight: "6px" }}>
+                  {uiLanguage === "sv" ? "Driver interaction depth:" : "Driver interaction depth:"}
+                </span>
+                <span>{driverInteractionDepthText}</span>
+              </div>
+              <div>
+                <span style={{ color: "#9CA3AF", marginRight: "6px" }}>
+                  {uiLanguage === "sv" ? "Constraint lifecycle:" : "Constraint lifecycle:"}
+                </span>
+                <span>{constraintLifecycleText}</span>
+              </div>
+              <div>
+                <span style={{ color: "#9CA3AF", marginRight: "6px" }}>
+                  {uiLanguage === "sv" ? "Cascade structure:" : "Cascade structure:"}
+                </span>
+                <span>{cascadeStructureText}</span>
+              </div>
+              <div>
+                <span style={{ color: "#9CA3AF", marginRight: "6px" }}>
+                  {uiLanguage === "sv" ? "Margin propagation mechanics:" : "Margin propagation mechanics:"}
+                </span>
+                <span>{marginPropagationMechanicsText}</span>
+              </div>
+              <div>
+                <span style={{ color: "#9CA3AF", marginRight: "6px" }}>
+                  {uiLanguage === "sv" ? "Diagnostics metadata:" : "Diagnostics metadata:"}
+                </span>
+                <span>{`Horizon=${simulationHorizon ?? "—"}, SeriesA=${seriesLengthA}, SeriesB=${seriesLengthB}, SelectedM=${selectedMonthIndex != null ? selectedMonthIndex + 1 : "—"}`}</span>
+              </div>
+            </div>
+          </div>
+        )}
+        </>
+        )}
       </div>
     </div>
   );

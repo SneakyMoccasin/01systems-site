@@ -27,6 +27,8 @@ type Props = {
   decisionFlowEvents?: { time: string; text: string }[];
   marginTrend?: "declining" | "stable" | "improving";
   cascadeDelay?: number;
+  caseType?: "transport" | "real-estate" | null;
+  selectedActions?: string[];
 };
 
 const AIInterpretationPanel: React.FC<Props> = ({
@@ -46,6 +48,8 @@ const AIInterpretationPanel: React.FC<Props> = ({
   decisionFlowEvents,
   marginTrend,
   cascadeDelay,
+  caseType = null,
+  selectedActions = [],
 }) => {
   const [aiText, setAiText] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -83,6 +87,8 @@ const AIInterpretationPanel: React.FC<Props> = ({
         interpretationMode: "detailed",
         marginTrend,
         cascadeDelay,
+        caseType,
+        selectedActions,
       }),
     })
       .then((res) => res.json())

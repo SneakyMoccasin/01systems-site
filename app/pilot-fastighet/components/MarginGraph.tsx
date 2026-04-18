@@ -43,6 +43,7 @@ export interface MarginGraphProps {
   scenarioBLabel?: string;
   scenarioALegendDefault?: string;
   scenarioBLegendDefault?: string;
+  inspectionDepth?: "executive" | "expert";
 }
 
 type CascadeMarker = { index: number; type: string };
@@ -71,6 +72,7 @@ function MarginGraph({
   scenarioBLabel,
   scenarioALegendDefault,
   scenarioBLegendDefault,
+  inspectionDepth = "executive",
 }: MarginGraphProps) {
   const [viewMode, setViewMode] = React.useState<"delta" | "absolute">("delta");
   const [hoveredViewMode, setHoveredViewMode] = React.useState<"delta" | "absolute" | null>(null);
@@ -102,6 +104,10 @@ function MarginGraph({
     labelA && labelB
       ? `${labelA} vs ${labelB}`
       : `${scenarioALegendDefault ?? t.currentStrategy} vs ${scenarioBLegendDefault ?? t.alternativeStrategy}`;
+  const graphBackground =
+    inspectionDepth === "executive"
+      ? "#0B1220"
+      : "#FFFFFF";
 
   const baselineA = marginHistoryA[0] ?? 0;
   const baselineB = marginHistoryB[0] ?? 0;
@@ -578,7 +584,7 @@ function MarginGraph({
         height={480}
         style={{
           display: "block",
-          background: "#ffffff",
+          background: graphBackground,
           border: "1px solid #e5e7eb",
           borderRadius: "4px",
           minHeight: 480,
@@ -595,7 +601,7 @@ function MarginGraph({
         }}
         onMouseLeave={() => setHoverIndex(null)}
       >
-      <rect x={0} y={0} width={600} height={300} fill="white" />
+      <rect x={0} y={0} width={600} height={300} fill={graphBackground} />
       <text
         x={600 - RIGHT_PADDING - 6}
         y={TOP_PADDING + 12}
@@ -655,16 +661,18 @@ function MarginGraph({
           {`${Math.round(value * 10)}%`}
         </text>
       ))}
-      <line
-        x1={LEFT_PADDING}
-        x2={600}
-        y1={scaleY(EXEC_SUSTAIN_THRESHOLD)}
-        y2={scaleY(EXEC_SUSTAIN_THRESHOLD)}
-        stroke="#9CA3AF"
-        strokeWidth={1.25}
-        strokeDasharray="6 4"
-        opacity={0.85}
-      />
+      {inspectionDepth === "expert" && (
+        <line
+          x1={LEFT_PADDING}
+          x2={600}
+          y1={scaleY(EXEC_SUSTAIN_THRESHOLD)}
+          y2={scaleY(EXEC_SUSTAIN_THRESHOLD)}
+          stroke="#9CA3AF"
+          strokeWidth={1.25}
+          strokeDasharray="6 4"
+          opacity={0.85}
+        />
+      )}
       {zeroBetween && (
         <line
           x1={LEFT_PADDING}
@@ -686,14 +694,16 @@ function MarginGraph({
         strokeWidth={1.5}
       />
 
-      <line
-        x1={LEFT_PADDING}
-        x2={LEFT_PADDING + graphWidth}
-        y1={ySustainable}
-        y2={ySustainable}
-        stroke="rgba(255,255,255,0.25)"
-        strokeWidth={1.5}
-      />
+      {inspectionDepth === "expert" && (
+        <line
+          x1={LEFT_PADDING}
+          x2={LEFT_PADDING + graphWidth}
+          y1={ySustainable}
+          y2={ySustainable}
+          stroke="rgba(255,255,255,0.25)"
+          strokeWidth={1.5}
+        />
+      )}
 
       <line
         x1={LEFT_PADDING}
@@ -704,14 +714,16 @@ function MarginGraph({
         strokeWidth={1.5}
       />
 
-      <line
-        x1={LEFT_PADDING}
-        x2={LEFT_PADDING + graphWidth}
-        y1={yCollapse}
-        y2={yCollapse}
-        stroke="rgba(255,255,255,0.25)"
-        strokeWidth={1.5}
-      />
+      {inspectionDepth === "expert" && (
+        <line
+          x1={LEFT_PADDING}
+          x2={LEFT_PADDING + graphWidth}
+          y1={yCollapse}
+          y2={yCollapse}
+          stroke="rgba(255,255,255,0.25)"
+          strokeWidth={1.5}
+        />
+      )}
       {/* Tipping risk window (behind series paths, after grid / zone lines) */}
       {showTippingRiskBand && (
         <>
@@ -761,7 +773,7 @@ function MarginGraph({
         </>
       )}
       {/* (zone guide lines removed; only threshold lines remain) */}
-      {tippingIndex !== null && tippingY !== null && (
+      {inspectionDepth === "expert" && tippingIndex !== null && tippingY !== null && (
         <polygon
           points={`
             ${scaleX(tippingIndex)},${scaleY(normalizedB[tippingIndex]) - 6}

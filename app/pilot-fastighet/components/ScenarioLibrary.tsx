@@ -21,6 +21,15 @@ const ScenarioLibrary: React.FC<Props> = ({
   const uiLanguage = language;
   const t = pulseLanguage[uiLanguage];
   const scenarios = getScenarioLibrary(language);
+  const groupedScenarios = scenarios.reduce(
+    (acc, scenario) => {
+      const key = scenario.group ?? "core";
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(scenario);
+      return acc;
+    },
+    {} as Record<string, typeof scenarios>
+  );
 
   return (
     <div
@@ -68,63 +77,72 @@ const ScenarioLibrary: React.FC<Props> = ({
           <span>{(t as any).alternativeStrategy ?? "Alternative strategy"}</span>
         </div>
       )}
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "10px",
-        }}
-      >
-        {scenarios.map((s) => (
+      {Object.entries(groupedScenarios).map(([groupName, list]) => (
+        <div key={groupName} style={{ marginBottom: "10px" }}>
+          <div style={{ fontSize: "11px", color: "#6B7280", marginBottom: "6px" }}>
+            {groupName === "transport"
+              ? (uiLanguage === "sv" ? "Transportscenarier" : "Transport scenarios")
+              : (uiLanguage === "sv" ? "Kärnscenarier" : "Core scenarios")}
+          </div>
           <div
-            key={s.id}
             style={{
               display: "flex",
-              flexDirection: "column",
-              alignItems: "flex-start",
-              gap: "4px",
+              flexWrap: "wrap",
+              gap: "10px",
             }}
           >
-            <button
-              type="button"
-              onMouseDown={() => {
-                console.log("[PULSE MOUSEDOWN]", s.id);
-              }}
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                console.log("[PULSE CLICK]", s.id);
-                if (onSelectScenario) {
-                  onSelectScenario(s.id);
-                }
-              }}
-              style={{
-                pointerEvents: "auto",
-                padding: "8px 12px",
-                background: "#1f2937",
-                border: "1px solid #374151",
-                borderRadius: "6px",
-                color: "#e5e7eb",
-                fontSize: "12px",
-                fontWeight: 500,
-                cursor: "pointer",
-              }}
-            >
-              {s.label}
-            </button>
-            <span
-              style={{
-                fontSize: "11px",
-                color: "#9CA3AF",
-                maxWidth: "200px",
-                lineHeight: 1.3,
-              }}
-            >
-              {s.description}
-            </span>
+            {list.map((s) => (
+              <div
+                key={s.id}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-start",
+                  gap: "4px",
+                }}
+              >
+                <button
+                  type="button"
+                  onMouseDown={() => {
+                    console.log("[PULSE MOUSEDOWN]", s.id);
+                  }}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    console.log("[PULSE CLICK]", s.id);
+                    if (onSelectScenario) {
+                      onSelectScenario(s.id);
+                    }
+                  }}
+                  style={{
+                    pointerEvents: "auto",
+                    padding: "8px 12px",
+                    background: "#1f2937",
+                    border: "1px solid #374151",
+                    borderRadius: "6px",
+                    color: "#e5e7eb",
+                    fontSize: "12px",
+                    fontWeight: 500,
+                    cursor: "pointer",
+                  }}
+                >
+                  {s.label}
+                </button>
+                <span
+                  style={{
+                    fontSize: "11px",
+                    color: "#9CA3AF",
+                    maxWidth: "200px",
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {s.description}
+                </span>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { pulseLanguage } from "@/src/i18n/pulseLanguage";
 import { EVENT_TRANSLATIONS } from "@/src/pilotFastighet/uiText";
+import { resolveTransportInspectorContext } from "@/src/pilotFastighet/transportInspectorAdapter";
 
 type InterpretationLanguage = "sv" | "en";
 
@@ -169,8 +170,11 @@ export async function POST(req: Request) {
       decisionFlowEvents,
       marginTrend,
       cascadeDelay,
+      caseType,
+      selectedActions,
       question: executiveQuestion,
     } = body;
+    console.log("AI interpretation route caseType:", caseType);
     const uiLanguage: InterpretationLanguage = language === "sv" ? "sv" : "en";
     const t = pulseLanguage[uiLanguage] as any;
     const driverLabels = t.driverLabels ?? {};
@@ -235,12 +239,27 @@ export async function POST(req: Request) {
         return `Q${e.quarter}: ${translatedType}`;
       })
       .join("\n");
-    const translatedCascadeText = (cascadeEvents ?? [])
-      .map(
-        (e: any) =>
-          `${translateRisk(e.sourceRisk)} -> ${translateRisk(e.targetRisk)} (${translateLevel(e.level)})`
-      )
-      .join("\n");
+    const translatedCascadeText =
+      caseType === "transport"
+        ? (console.log("selectedActions:", selectedActions),
+          console.log("primaryDriver:", primaryDriver),
+          resolveTransportInspectorContext({
+            language: uiLanguage,
+            selectedActions: selectedActions ?? [],
+            primaryDriverKey: primaryDriver,
+          })?.propagationChainLabel ??
+          (cascadeEvents ?? [])
+            .map(
+              (e: any) =>
+                `${translateRisk(e.sourceRisk)} -> ${translateRisk(e.targetRisk)} (${translateLevel(e.level)})`
+            )
+            .join("\n"))
+        : (cascadeEvents ?? [])
+            .map(
+              (e: any) =>
+                `${translateRisk(e.sourceRisk)} -> ${translateRisk(e.targetRisk)} (${translateLevel(e.level)})`
+            )
+            .join("\n");
     const translatedPrimaryDriverText = primaryDriver
       ? translateRisk(primaryDriver)
       : unknownText;

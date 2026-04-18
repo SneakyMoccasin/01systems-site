@@ -5,6 +5,8 @@ export type ScenarioPreset = {
   label: string;
   description: string;
   prompt: string;
+  group?: "core" | "transport";
+  actionKeys?: string[];
   riskChanges?: Record<string, string>;
 };
 
@@ -19,6 +21,7 @@ export function getScenarioLibrary(language: ScenarioLanguage = "en"): ScenarioP
   return [
     {
       id: "interest-shock",
+      group: "core",
       label: labels["interest-shock"] ?? "Interest Rate Shock",
       description:
         descriptions["interest-shock"] ?? "Sharp increase in financing costs.",
@@ -32,6 +35,7 @@ export function getScenarioLibrary(language: ScenarioLanguage = "en"): ScenarioP
     },
     {
       id: "energy-spike",
+      group: "core",
       label: labels["energy-spike"] ?? "Energy Cost Spike",
       description:
         descriptions["energy-spike"] ?? "Operating costs increase due to energy prices.",
@@ -40,6 +44,7 @@ export function getScenarioLibrary(language: ScenarioLanguage = "en"): ScenarioP
     },
     {
       id: "tenant-loss",
+      group: "core",
       label: labels["tenant-loss"] ?? "Tenant Loss",
       description:
         descriptions["tenant-loss"] ?? "Large tenant leaves the property.",
@@ -48,6 +53,7 @@ export function getScenarioLibrary(language: ScenarioLanguage = "en"): ScenarioP
     },
     {
       id: "maintenance-backlog",
+      group: "core",
       label: labels["maintenance-backlog"] ?? "Maintenance Backlog",
       description:
         descriptions["maintenance-backlog"] ??
@@ -58,6 +64,7 @@ export function getScenarioLibrary(language: ScenarioLanguage = "en"): ScenarioP
     },
     {
       id: "refinancing-shock",
+      group: "core",
       label: labels["refinancing-shock"] ?? "Refinancing Shock",
       description:
         descriptions["refinancing-shock"] ??
@@ -68,6 +75,7 @@ export function getScenarioLibrary(language: ScenarioLanguage = "en"): ScenarioP
     },
     {
       id: "active-maintenance-strategy",
+      group: "core",
       label: labels["active-maintenance-strategy"] ?? "Active maintenance strategy",
       description:
         descriptions["active-maintenance-strategy"] ??
@@ -78,6 +86,7 @@ export function getScenarioLibrary(language: ScenarioLanguage = "en"): ScenarioP
     },
     {
       id: "parallelInvestmentStarts",
+      group: "core",
       label: labels.parallelInvestmentStarts ?? "Parallel investment starts",
       description:
         descriptions.parallelInvestmentStarts ??
@@ -92,6 +101,7 @@ export function getScenarioLibrary(language: ScenarioLanguage = "en"): ScenarioP
     },
     {
       id: "delayedIntervention",
+      group: "core",
       label: labels.delayedIntervention ?? "Delayed intervention",
       description:
         descriptions.delayedIntervention ??
@@ -106,6 +116,7 @@ export function getScenarioLibrary(language: ScenarioLanguage = "en"): ScenarioP
     },
     {
       id: "limitedExecutionCapacity",
+      group: "core",
       label: labels.limitedExecutionCapacity ?? "Limited execution capacity",
       description:
         descriptions.limitedExecutionCapacity ??
@@ -117,6 +128,122 @@ export function getScenarioLibrary(language: ScenarioLanguage = "en"): ScenarioP
         operationalEfficiency: "LOW",
         capitalCommitmentRigidity: "MODERATE",
       },
+    },
+    {
+      id: "transport-baseline",
+      group: "transport",
+      label:
+        language === "sv"
+          ? "Transport: Baslinje"
+          : "Transport: Baseline",
+      description:
+        language === "sv"
+          ? "Ingen transportintervention aktiverad."
+          : "No transport interventions activated.",
+      prompt:
+        language === "sv"
+          ? "Transportbaslinje utan aktiva åtgärder."
+          : "Transport baseline without active interventions.",
+      actionKeys: [],
+    },
+    {
+      id: "transport-scenario-a",
+      group: "transport",
+      label:
+        language === "sv"
+          ? "Transport A: Öka turtäthet"
+          : "Transport A: Increase service frequency",
+      description:
+        language === "sv"
+          ? "Öka kollektivtrafikens tillgänglighet via tätare trafik."
+          : "Improve public transport accessibility with higher service frequency.",
+      prompt:
+        language === "sv"
+          ? "Öka turtätheten i kollektivtrafiken."
+          : "Increase public transport service frequency.",
+      actionKeys: ["increase_service_frequency"],
+    },
+    {
+      id: "transport-scenario-b",
+      group: "transport",
+      label:
+        language === "sv"
+          ? "Transport B: Turtäthet + restid"
+          : "Transport B: Frequency + travel time",
+      description:
+        language === "sv"
+          ? "Kombinerar ökad turtäthet med restidsförkortning."
+          : "Combines higher service frequency with travel time reduction.",
+      prompt:
+        language === "sv"
+          ? "Öka turtätheten och minska restiden."
+          : "Increase service frequency and reduce travel time.",
+      actionKeys: ["increase_service_frequency", "reduce_travel_time"],
+    },
+    {
+      id: "transport-scenario-c",
+      group: "transport",
+      label:
+        language === "sv"
+          ? "Transport C: + signalprioritering"
+          : "Transport C: + signal priority",
+      description:
+        language === "sv"
+          ? "Lägger till signalprioritering för kollektivtrafik."
+          : "Adds transit signal priority to the package.",
+      prompt:
+        language === "sv"
+          ? "Öka turtäthet, minska restid och signalprioritera kollektivtrafik."
+          : "Increase frequency, reduce travel time, and apply transit signal priority.",
+      actionKeys: [
+        "increase_service_frequency",
+        "reduce_travel_time",
+        "transit_signal_priority",
+      ],
+    },
+    {
+      id: "transport-scenario-d",
+      group: "transport",
+      label:
+        language === "sv"
+          ? "Transport D: + parkeringsreduktion"
+          : "Transport D: + parking reduction",
+      description:
+        language === "sv"
+          ? "Adderar parkeringsreduktion för ökad modal omställning."
+          : "Adds parking reduction to support modal shift.",
+      prompt:
+        language === "sv"
+          ? "Öka turtäthet, minska restid, signalprioritera och minska parkering."
+          : "Increase frequency, reduce travel time, add signal priority, and reduce parking.",
+      actionKeys: [
+        "increase_service_frequency",
+        "reduce_travel_time",
+        "transit_signal_priority",
+        "reduce_parking_supply",
+      ],
+    },
+    {
+      id: "transport-scenario-e",
+      group: "transport",
+      label:
+        language === "sv"
+          ? "Transport E: + korridorprioritering"
+          : "Transport E: + corridor prioritization",
+      description:
+        language === "sv"
+          ? "Korridorprioritering kräver separat interventionsnyckel (ej tillgänglig ännu)."
+          : "Corridor prioritization requires a dedicated intervention key (not yet available).",
+      prompt:
+        language === "sv"
+          ? "Scenario E inkluderar korridorprioritering när interventionsnyckeln finns."
+          : "Scenario E includes corridor prioritization when intervention key is available.",
+      actionKeys: [
+        "increase_service_frequency",
+        "reduce_travel_time",
+        "transit_signal_priority",
+        "reduce_parking_supply",
+      ],
     },
   ];
 }
