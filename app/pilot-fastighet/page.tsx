@@ -26,6 +26,10 @@ import SystemDriversPanel from "./components/SystemDriversPanel";
 import DecisionExplanationPanel from "./components/DecisionExplanationPanel";
 import ScenarioPreviewPanel from "./components/ScenarioPreviewPanel";
 import AIInspectorPanel from "./components/AIInspectorPanel";
+import {
+  buildDomainPropagationEvents,
+  getPrimaryPropagationSignature,
+} from "./components/inspector-utils/buildDomainPropagationEvents";
 import ActionPanel from "./components/ActionPanel";
 import MarginGraph, {
   MarginGraphLegendRow,
@@ -79,6 +83,12 @@ const EXEC_COLLAPSE_THRESHOLD = 0.6;
 const MIN_STEPS_BEFORE_STEADY = 5;
 const REQUIRED_STABLE_TICKS = 3;
 const ANALYSIS_HORIZON = 16;
+const RISK_LEVEL_TO_NUMBER: Record<RiskLevel, number> = {
+  LOW: 0,
+  MODERATE: 1,
+  HIGH: 2,
+  SEVERE: 3,
+};
 const actionEffects = {
   increase_service_frequency: {
     accessibility: +1,
@@ -208,6 +218,8 @@ export default function PilotFastighetPage() {
   const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
   const [marginHistoryA, setMarginHistoryA] = useState<number[]>([]);
   const [marginHistoryB, setMarginHistoryB] = useState<number[]>([]);
+  const [demandHistoryA, setDemandHistoryA] = useState<number[]>([]);
+  const [demandHistoryB, setDemandHistoryB] = useState<number[]>([]);
   const [marginHistoryBaseline, setMarginHistoryBaseline] = useState<number[]>([]);
   const [tippingMarginIndexA, setTippingMarginIndexA] = useState<number | null>(null);
   const [tippingMarginIndexB, setTippingMarginIndexB] = useState<number | null>(null);
@@ -480,6 +492,8 @@ export default function PilotFastighetPage() {
   function resetRunState() {
     setMarginHistoryA([]);
     setMarginHistoryB([]);
+    setDemandHistoryA([]);
+    setDemandHistoryB([]);
     setMarginHistoryBaseline([]);
     setHistoryBaseline([]);
     setTippingMarginIndexA(null);
@@ -617,6 +631,18 @@ export default function PilotFastighetPage() {
         }
         return [...prev, sB.margin];
       });
+      setDemandHistoryA((prev) => [
+        ...prev,
+        RISK_LEVEL_TO_NUMBER[
+          (sA.riskState.demandRisk as RiskLevel) ?? "MODERATE"
+        ],
+      ]);
+      setDemandHistoryB((prev) => [
+        ...prev,
+        RISK_LEVEL_TO_NUMBER[
+          (sB.riskState.demandRisk as RiskLevel) ?? "MODERATE"
+        ],
+      ]);
 
       if (sBaseline != null) {
         setMarginHistoryBaseline((prev) => [...prev, sBaseline.margin]);
@@ -951,14 +977,30 @@ export default function PilotFastighetPage() {
       : domain === "real-estate"
         ? "real-estate"
         : null;
+  console.log("cascadeEventsA length:", cascadeEventsA?.length);
+  console.log("cascadeEventsB length:", cascadeEventsB?.length);
   const transportContext =
     caseType === "transport"
       ? resolveTransportInspectorContext({
           language: uiLanguage,
           selectedActions: selectedActionsForPanel,
+          cascadeEventsA,
+          cascadeEventsB,
+          primaryPropagationSignatureA: getPrimaryPropagationSignature(cascadeEventsA),
+          primaryPropagationSignatureB: getPrimaryPropagationSignature(cascadeEventsB),
         })
       : null;
+  console.log("transportContext.primaryDriver:", transportContext?.primaryDriver);
   const primaryDriver = transportContext?.primaryDriver ?? null;
+  const domainEventsForGraph =
+    caseType === "transport"
+      ? buildDomainPropagationEvents(
+          primaryDriver as TransportSystemDriverId | null,
+          uiLanguage,
+          cascadeEventsA,
+          cascadeEventsB
+        ).events
+      : [];
   const systemStatusCascadeChainText =
     caseType === "transport"
       ? transportContext?.propagationChainLabel ?? null
@@ -1944,6 +1986,9 @@ export default function PilotFastighetPage() {
                 selectedActions={selectedActionsForPanel}
                 inspectionMode={uiMode}
                 caseType={caseType}
+                dominantScenarioDifferenceChannel={
+                  transportContext?.dominantScenarioDifferenceChannel ?? null
+                }
               />
           </div>
           <div style={{ flex: 2, minWidth: 0 }}>
@@ -1971,6 +2016,11 @@ export default function PilotFastighetPage() {
                 <MarginGraph
                   marginHistoryA={marginHistoryA}
                   marginHistoryB={marginHistoryB}
+                  demandHistoryA={demandHistoryA}
+                  demandHistoryB={demandHistoryB}
+                  driverEvents={
+                    caseType === "transport" ? domainEventsForGraph : []
+                  }
                   displayMarginB={
                     marginHistoryA.length > 0 && marginHistoryB.length > 0
                       ? [marginHistoryA[0], ...marginHistoryB.slice(1)]

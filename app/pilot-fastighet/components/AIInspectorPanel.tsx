@@ -2,6 +2,7 @@ import React from "react";
 import { pulseLanguage } from "@/src/i18n/pulseLanguage";
 import type { CascadeEvent } from "@/src/pilotFastighet/riskPropagation";
 import {
+  TRANSPORT_ENGINE_RISK_LABELS,
   TRANSPORT_SYSTEM_DRIVERS,
   type TransportSystemDriverId,
 } from "@/src/pilotFastighet/transportDomainMapping";
@@ -270,6 +271,7 @@ type Props = {
   inspectionMode?: "executive" | "expert";
   firstDivergenceMonth?: number | null;
   caseType?: "transport" | "real-estate" | null;
+  dominantScenarioDifferenceChannel?: string | null;
 };
 
 const AIInspectorPanel: React.FC<Props> = ({
@@ -297,6 +299,7 @@ const AIInspectorPanel: React.FC<Props> = ({
   inspectionMode = "executive",
   firstDivergenceMonth = null,
   caseType = null,
+  dominantScenarioDifferenceChannel = null,
 }) => {
   const analysisReady =
     primaryDriver !== null ||
@@ -356,12 +359,22 @@ const AIInspectorPanel: React.FC<Props> = ({
         ? `Primär strukturell påverkan: ${systemDriver} (via ${policyDriver})`
         : `Primary structural influence: ${systemDriver} (via ${policyDriver})`
       : null;
+  const domainPropagation = buildDomainPropagationEvents(
+    primaryDriver as TransportSystemDriverId | null,
+    language,
+    cascadeEventsA,
+    cascadeEventsB
+  );
   const transportInspectorContext = resolveTransportInspectorContext({
     language: uiLanguage,
     selectedActions,
     policyDriverKey,
     systemDriverKey,
     primaryDriverKey: primaryDriver,
+    cascadeEventsA,
+    cascadeEventsB,
+    primaryPropagationSignatureA: domainPropagation.primaryPropagationSignatureA,
+    primaryPropagationSignatureB: domainPropagation.primaryPropagationSignatureB,
   });
   console.log("caseType:", caseType);
   console.log("selectedActions:", selectedActions);
@@ -532,10 +545,34 @@ const AIInspectorPanel: React.FC<Props> = ({
     return null;
   })();
 
-  const domainEvents = buildDomainPropagationEvents(
-    primaryDriver as TransportSystemDriverId | null,
-    language
-  );
+  const domainEvents =
+    domainPropagation.events.length > 0
+      ? domainPropagation.events
+      : (
+          cascadeEventsB && cascadeEventsB.length > 0
+            ? cascadeEventsB
+            : cascadeEventsA && cascadeEventsA.length > 0
+            ? cascadeEventsA
+            : []
+        ).slice(0, 3).map((event, index) => ({
+          month: index,
+          label:
+            language === "sv"
+              ? (
+                  TRANSPORT_SYSTEM_DRIVERS[event.targetRisk as keyof typeof TRANSPORT_SYSTEM_DRIVERS]?.readableLabel_sv ??
+                  TRANSPORT_ENGINE_RISK_LABELS[event.targetRisk]?.readableLabel_sv ??
+                  event.targetRisk
+                )
+              : (
+                  TRANSPORT_SYSTEM_DRIVERS[event.targetRisk as keyof typeof TRANSPORT_SYSTEM_DRIVERS]?.readableLabel_en ??
+                  TRANSPORT_ENGINE_RISK_LABELS[event.targetRisk]?.readableLabel_en ??
+                  event.targetRisk
+                )
+        }));
+  const _dominantScenarioDifferenceChannel =
+    dominantScenarioDifferenceChannel ??
+    transportInspectorContext?.dominantScenarioDifferenceChannel ??
+    null;
   const activeDomainEvents =
     selectedMonthIndex != null
       ? domainEvents.filter((e) => e.month === selectedMonthIndex)
@@ -556,10 +593,7 @@ const AIInspectorPanel: React.FC<Props> = ({
         ? `Active (estimated impact around M${constraintBreakQuarter})`
         : "Inactive";
   const cascadeStructureText =
-    caseType === "transport"
-      ? (transportInspectorContext?.propagationChainLabel ??
-        (uiLanguage === "sv" ? "Ingen aktiv struktur" : "No active structure"))
-      : simulationCascadeEvents.length > 0
+    simulationCascadeEvents.length > 0
       ? simulationCascadeEvents
           .slice(0, 3)
           .map((event) => `${event.sourceRisk} -> ${event.targetRisk}`)
@@ -571,6 +605,58 @@ const AIInspectorPanel: React.FC<Props> = ({
     uiLanguage === "sv"
       ? "Marginalen drivs av kombinerat tryck från belastning, kostnad och återhämtningsförmåga."
       : "Margin is driven by combined pressure from load, cost, and recovery capacity.";
+  const normalizeTransportDriverKey = (key?: string) => {
+    if (!key) return key;
+
+    const compact = key.replace(/\s+/g, "");
+    const mapping: Record<string, string> = {
+      DemandRisk: "demandRisk",
+      CapitalCommitmentRigidityRisk: "capitalCommitmentRigidityRisk",
+      MaintenanceIntensityRisk: "maintenanceIntensityRisk",
+    };
+    const normalized = mapping[compact] ?? compact;
+    return normalized === "modal_attractiveness"
+      ? "modalAttractiveness"
+      : normalized;
+  };
+  const getTransportReadableCascadeLine = (
+    event: CascadeEvent,
+    index: number
+  ): string => {
+    const readable = (event as any).readableLabel as string | undefined;
+    if (readable && readable.trim().length > 0) {
+      return index === 0 ? readable.trim() : `→ ${readable.trim()}`;
+    }
+
+    const normalizedSource =
+      normalizeTransportDriverKey(event.sourceRisk) ?? event.sourceRisk ?? "";
+    const normalizedTarget =
+      normalizeTransportDriverKey(event.targetRisk) ?? event.targetRisk ?? "";
+
+    if (language === "sv") {
+      const sourceReadable =
+        TRANSPORT_ENGINE_RISK_LABELS[normalizedSource]?.readableLabel_sv ??
+        event.sourceRisk;
+      const targetReadable =
+        TRANSPORT_ENGINE_RISK_LABELS[normalizedTarget]?.readableLabel_sv ??
+        event.targetRisk;
+
+      return index === 0
+        ? `${sourceReadable} påverkar ${targetReadable}`
+        : `→ som påverkar ${targetReadable}`;
+    }
+
+    const sourceReadable =
+      TRANSPORT_ENGINE_RISK_LABELS[normalizedSource]?.readableLabel_en ??
+      event.sourceRisk;
+    const targetReadable =
+      TRANSPORT_ENGINE_RISK_LABELS[normalizedTarget]?.readableLabel_en ??
+      event.targetRisk;
+
+    return index === 0
+      ? `${sourceReadable} affects ${targetReadable}`
+      : `→ which affects ${targetReadable}`;
+  };
 
   return (
     <div
@@ -703,10 +789,37 @@ const AIInspectorPanel: React.FC<Props> = ({
           </div>
           <div>
             {(() => {
+              if (caseType === "transport") {
+                const transportEventLabels = domainEvents
+                  .slice(0, 3)
+                  .map((event) => event.label);
+                if (transportEventLabels.length === 0) {
+                  return <span style={{ color: "#6B7280" }}>—</span>;
+                }
+                const transportCascadeLines = transportEventLabels.map((label, index) =>
+                  index === 0 ? label : `→ ${label}`
+                );
+                const primaryChannelLine = transportEventLabels.join(" → ");
+
+                return (
+                  <>
+                    {transportCascadeLines.map((line, index) => (
+                      <div key={index}>{line}</div>
+                    ))}
+                    <div style={{ marginTop: "8px", opacity: 0.9 }}>
+                      <strong>
+                        {language === "sv"
+                          ? "Primär påverkningskanal"
+                          : "Primary propagation channel"}
+                      </strong>
+                      <div>{primaryChannelLine}</div>
+                    </div>
+                  </>
+                );
+              }
+
               const propagationChainLabel =
-                caseType === "transport"
-                  ? transportInspectorContext?.propagationChainLabel
-                  : cascadeStructureText;
+                cascadeStructureText;
               if (!propagationChainLabel) {
                 return <span style={{ color: "#6B7280" }}>—</span>;
               }
@@ -768,6 +881,16 @@ const AIInspectorPanel: React.FC<Props> = ({
             })()}
           </div>
         </div>
+        {_dominantScenarioDifferenceChannel && (
+          <div>
+            <div style={{ color: "#9CA3AF", marginBottom: "4px" }}>
+              {language === "sv"
+                ? "Skillnaden mellan strategierna drivs främst via"
+                : "The difference between strategies is primarily driven via"}
+            </div>
+            <div>{_dominantScenarioDifferenceChannel}</div>
+          </div>
+        )}
 
         <div>
           <div style={{ color: "#9CA3AF", marginBottom: "4px" }}>
@@ -949,7 +1072,16 @@ const AIInspectorPanel: React.FC<Props> = ({
                 <span style={{ color: "#9CA3AF", marginRight: "6px" }}>
                   {uiLanguage === "sv" ? "Cascade structure:" : "Cascade structure:"}
                 </span>
-                <span>{cascadeStructureText}</span>
+                <span>
+                  {caseType === "transport"
+                    ? domainEvents.length > 0
+                      ? domainEvents
+                          .slice(0, 3)
+                          .map((event) => event.label)
+                          .join(" → ")
+                      : (uiLanguage === "sv" ? "Ingen aktiv struktur" : "No active structure")
+                    : cascadeStructureText}
+                </span>
               </div>
               <div>
                 <span style={{ color: "#9CA3AF", marginRight: "6px" }}>

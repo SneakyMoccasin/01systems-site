@@ -17,7 +17,9 @@ const ScenarioLibrary: React.FC<Props> = ({
   onScenarioTargetChange,
   language = "en",
 }) => {
-  console.log("[PULSE SCENARIO LIBRARY MOUNTED]");
+  if (process.env.NODE_ENV === "development") {
+    // console.log("[PULSE SCENARIO LIBRARY MOUNTED]");
+  }
   const uiLanguage = language;
   const t = pulseLanguage[uiLanguage];
   const scenarios = getScenarioLibrary(language);
@@ -104,12 +106,16 @@ const ScenarioLibrary: React.FC<Props> = ({
                 <button
                   type="button"
                   onMouseDown={() => {
-                    console.log("[PULSE MOUSEDOWN]", s.id);
+                    if (process.env.NODE_ENV === "development") {
+                      // console.log("[PULSE MOUSEDOWN]", s.id);
+                    }
                   }}
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
-                    console.log("[PULSE CLICK]", s.id);
+                    if (process.env.NODE_ENV === "development") {
+                      // console.log("[PULSE CLICK]", s.id);
+                    }
                     if (onSelectScenario) {
                       onSelectScenario(s.id);
                     }

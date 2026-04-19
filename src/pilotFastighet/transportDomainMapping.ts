@@ -49,6 +49,36 @@ export type TransportPolicyLeverMapping = {
   }>;
 };
 
+export const TRANSPORT_ENGINE_RISK_LABELS: Record<
+  string,
+  { readableLabel_sv: string; readableLabel_en: string }
+> = {
+  demandRisk: {
+    readableLabel_sv: "Efterfrågan i transportsystemet",
+    readableLabel_en: "Demand in the transport system",
+  },
+  budget_pressure: {
+    readableLabel_sv: "Budgettrycket i transportsystemet",
+    readableLabel_en: "Budget pressure in the transport system",
+  },
+  capitalCommitmentRigidity: {
+    readableLabel_sv: "Investeringsbindning i transportsystemet",
+    readableLabel_en: "Capital commitment rigidity in the transport system",
+  },
+  capitalCommitmentRigidityRisk: {
+    readableLabel_sv: "Investeringsbindning i transportsystemet",
+    readableLabel_en: "Capital commitment rigidity in the transport system",
+  },
+  maintenanceIntensity: {
+    readableLabel_sv: "Underhallsintensiteten i transportsystemet",
+    readableLabel_en: "Maintenance intensity in the transport system",
+  },
+  maintenanceIntensityRisk: {
+    readableLabel_sv: "Underhallsintensiteten i transportsystemet",
+    readableLabel_en: "Maintenance intensity in the transport system",
+  },
+};
+
 export const TRANSPORT_SYSTEM_DRIVERS: Record<
   TransportSystemDriverId,
   TransportDriverDefinition

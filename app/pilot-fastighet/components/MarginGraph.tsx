@@ -18,9 +18,18 @@ export type MarginGraphSelectMonthPayload = {
   difference: number;
 };
 
+export type DomainEvent = {
+  month: number;
+  label?: string;
+  driver?: { readableLabel?: string } | string;
+};
+
 export interface MarginGraphProps {
   marginHistoryA: number[];
   marginHistoryB: number[];
+  demandHistoryA?: number[];
+  demandHistoryB?: number[];
+  driverEvents?: DomainEvent[];
   displayMarginB: number[];
   tippingMarginIndexA: number | null;
   tippingMarginIndexB: number | null;
@@ -51,6 +60,9 @@ type CascadeMarker = { index: number; type: string };
 function MarginGraph({
   marginHistoryA,
   marginHistoryB,
+  demandHistoryA = [],
+  demandHistoryB = [],
+  driverEvents = [],
   displayMarginB,
   tippingMarginIndexA,
   tippingMarginIndexB,
@@ -76,6 +88,7 @@ function MarginGraph({
 }: MarginGraphProps) {
   const [viewMode, setViewMode] = React.useState<"delta" | "absolute">("delta");
   const [hoveredViewMode, setHoveredViewMode] = React.useState<"delta" | "absolute" | null>(null);
+  const [showDriverOverlay, setShowDriverOverlay] = React.useState(false);
 
   const t = pulseLanguage[uiLanguage];
   const marginLabel =
@@ -323,6 +336,18 @@ function MarginGraph({
     });
   };
 
+  function detectDemandShiftIndex(series?: number[]) {
+    if (!series || series.length < 2) return null;
+
+    for (let i = 1; i < series.length; i++) {
+      if (series[i] !== series[i - 1]) {
+        return i;
+      }
+    }
+
+    return null;
+  }
+
   function buildSmoothPath(data: number[], scaleX: any, scaleY: any) {
     if (!data.length) return "";
 
@@ -401,6 +426,11 @@ function MarginGraph({
     tippingIndex !== null ? Math.max(0, tippingIndex - 2) : null;
   const tippingTriggerIndex =
     tippingIndex !== null ? Math.max(0, tippingIndex - 2) : null;
+  const plotAreaX = LEFT_PADDING;
+  const plotAreaWidth = graphWidth;
+  const chartWidth = 600;
+  const plotAreaLeftPercent = (plotAreaX / chartWidth) * 100;
+  const plotAreaWidthPercent = (plotAreaWidth / chartWidth) * 100;
   const plotAreaY = TOP_PADDING;
   const plotAreaH = 300 - TOP_PADDING - BOTTOM_PADDING;
   const xTippingBandLeft =
@@ -422,6 +452,14 @@ function MarginGraph({
     uiLanguage === "sv" ? "Tipping risk-fönster" : "Tipping Risk Window";
   const tippingTriggerLabel =
     uiLanguage === "sv" ? "Tipping risk-start" : "Tipping Risk Trigger";
+  const demandShiftA = detectDemandShiftIndex(demandHistoryA);
+  const demandShiftB = detectDemandShiftIndex(demandHistoryB);
+  const demandShiftLabel =
+    uiLanguage === "sv" ? "Efterfrågeskifte" : "Demand shift";
+  const demandDivergenceLabel =
+    uiLanguage === "sv"
+      ? "Efterfrågedivergens mellan scenarier"
+      : "Demand divergence between scenarios";
 
   const decisionEvents =
     Math.max(marginHistoryA.length, marginHistoryB.length) > 0
@@ -436,6 +474,42 @@ function MarginGraph({
             e.quarter <= Math.max(marginHistoryA.length, marginHistoryB.length)
         )
       : [];
+  const driverActivationMarkers = driverEvents
+    .map((event) => {
+      const rawLabel =
+        event.label ??
+        (typeof event.driver === "string"
+          ? event.driver
+          : event.driver?.readableLabel);
+      return {
+        month: event.month,
+        label: rawLabel ?? (uiLanguage === "sv" ? "Drivaraktivering" : "Driver activation"),
+      };
+    })
+    .filter(
+      (event) =>
+        Number.isFinite(event.month) &&
+        event.month >= 0 &&
+        event.month < totalSteps
+    );
+  const driverActivationOverlayMarkers = (() => {
+    const occurrenceByMonth = new Map<number, number>();
+    return driverActivationMarkers.map((event) => {
+      const occurrence = occurrenceByMonth.get(event.month) ?? 0;
+      occurrenceByMonth.set(event.month, occurrence + 1);
+      return {
+        ...event,
+        sameMonthIndex: occurrence,
+        xPercent:
+          simulationHorizon && simulationHorizon > 0
+            ? (event.month / simulationHorizon) * 100
+            : (event.month / Math.max(totalSteps - 1, 1)) * 100,
+        yTopPercent: (plotAreaY / 300) * 100,
+        yHeightPercent: (plotAreaH / 300) * 100,
+        overlapOffsetPx: occurrence * 6,
+      };
+    });
+  })();
 
   const riskStartIndex = (() => {
     const n = Math.max(marginHistoryA.length, displayMarginB.length);
@@ -518,6 +592,59 @@ function MarginGraph({
 
   return (
     <div>
+      <style jsx>{`
+        .driver-marker-wrapper {
+          position: absolute;
+          transform: translateX(-50%);
+        }
+
+        .driver-marker-line {
+          width: 1px;
+          height: 100%;
+          background: #a78bfa;
+          opacity: 0.5;
+          border-left: 1px dashed #a78bfa;
+        }
+
+        .driver-marker-tooltip {
+          display: none;
+          position: absolute;
+          bottom: 140%;
+          left: 50%;
+          transform: translateX(-50%);
+          padding: 6px 10px;
+          font-size: 12px;
+          background: #0f172a;
+          color: #fff;
+          border-radius: 6px;
+          white-space: nowrap;
+          pointer-events: none;
+          opacity: 0.95;
+          z-index: 10;
+        }
+
+        .driver-marker-wrapper:hover .driver-marker-tooltip {
+          display: block;
+        }
+
+        .driver-marker-inline-label {
+          position: absolute;
+          left: 50%;
+          transform: translateX(-50%);
+          top: 28px;
+          font-size: 12px;
+          font-weight: 500;
+          color: #e5e7eb;
+          background: rgba(15, 23, 42, 0.85);
+          backdrop-filter: blur(2px);
+          padding: 4px 8px;
+          border-radius: 6px;
+          white-space: normal;
+          max-width: 220px;
+          pointer-events: none;
+          text-align: center;
+        }
+      `}</style>
       <div style={{ marginBottom: 8 }}>
         <span style={{ marginRight: 6, color: "#9ca3af", fontSize: "11px" }}>
           {t.viewLabel}
@@ -568,12 +695,30 @@ function MarginGraph({
               : "System level")}
           </button>
         </div>
+        <label
+          style={{
+            marginLeft: 12,
+            fontSize: "11px",
+            color: "#9ca3af",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={showDriverOverlay}
+            onChange={(e) => setShowDriverOverlay(e.target.checked)}
+          />
+          {uiLanguage === "sv" ? "Visa drivarakiveringar" : "Show driver activations"}
+        </label>
       </div>
       <div
         style={{
           overflowX: "auto",
           maxWidth: "100%",
           overflowY: "hidden",
+          position: "relative",
         }}
       >
       <svg
@@ -772,6 +917,71 @@ function MarginGraph({
           </text>
         </>
       )}
+      {demandShiftA !== null && (
+        <>
+          <line
+            x1={scaleX(demandShiftA)}
+            x2={scaleX(demandShiftA)}
+            y1={plotAreaY}
+            y2={plotAreaY + plotAreaH}
+            stroke="#60a5fa"
+            strokeWidth={1}
+            strokeDasharray="3 4"
+            opacity={0.45}
+          />
+          <text
+            x={scaleX(demandShiftA) + 3}
+            y={plotAreaY + 22}
+            fill="#93c5fd"
+            fontSize={9}
+            fontWeight={500}
+            textAnchor="start"
+            opacity={0.85}
+          >
+            {demandShiftLabel}
+          </text>
+        </>
+      )}
+      {demandShiftB !== null && (
+        <>
+          <line
+            x1={scaleX(demandShiftB)}
+            x2={scaleX(demandShiftB)}
+            y1={plotAreaY}
+            y2={plotAreaY + plotAreaH}
+            stroke="#fbbf24"
+            strokeWidth={1}
+            strokeDasharray="3 4"
+            opacity={0.45}
+          />
+          <text
+            x={scaleX(demandShiftB) + 3}
+            y={plotAreaY + 34}
+            fill="#fcd34d"
+            fontSize={9}
+            fontWeight={500}
+            textAnchor="start"
+            opacity={0.85}
+          >
+            {demandShiftLabel}
+          </text>
+        </>
+      )}
+      {demandShiftA !== null &&
+        demandShiftB !== null &&
+        demandShiftA !== demandShiftB && (
+          <text
+            x={LEFT_PADDING + graphWidth / 2}
+            y={plotAreaY + 12}
+            fill="#cbd5e1"
+            fontSize={9}
+            fontWeight={600}
+            textAnchor="middle"
+            opacity={0.9}
+          >
+            {demandDivergenceLabel}
+          </text>
+        )}
       {/* (zone guide lines removed; only threshold lines remain) */}
       {inspectionDepth === "expert" && tippingIndex !== null && tippingY !== null && (
         <polygon
@@ -1040,6 +1250,34 @@ function MarginGraph({
           });
         })()}
       </svg>
+      {showDriverOverlay &&
+        driverActivationOverlayMarkers.map((event, index) => (
+          <React.Fragment key={`driver-activation-overlay-${index}`}>
+            <div
+              className="driver-marker-wrapper"
+              style={{
+                left: `calc(${plotAreaLeftPercent}% + (${event.xPercent} * ${plotAreaWidthPercent} / 100)%)`,
+                top: `${event.yTopPercent}%`,
+                height: `${event.yHeightPercent}%`,
+              }}
+            >
+              <div className="driver-marker-tooltip">
+                {event.label ?? (uiLanguage === "sv" ? "Drivaraktivering" : "Driver activation")}
+              </div>
+              <div className="driver-marker-line" />
+            </div>
+            <div
+              className="driver-marker-inline-label"
+              style={{
+                left: `calc(${plotAreaLeftPercent}% + (${event.xPercent} * ${plotAreaWidthPercent} / 100)%)`,
+                transform: "translateX(calc(-50% + 1px))",
+                top: `calc(${event.yTopPercent}% + ${42 + event.sameMonthIndex * 18}px)`,
+              }}
+            >
+              {event.label ?? (uiLanguage === "sv" ? "Drivaraktivering" : "Driver activation")}
+            </div>
+          </React.Fragment>
+        ))}
       </div>
     </div>
   );

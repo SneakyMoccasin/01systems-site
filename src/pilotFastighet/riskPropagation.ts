@@ -132,14 +132,16 @@ export function propagateRisks(
                 level: effect.level,
                 iteration,
               });
-              console.log("[PULSE TRACE] risk propagation", {
-                iteration,
-                source,
-                sourceLevel: level,
-                target: effect.target,
-                previousTargetLevel: current,
-                appliedLevel: effect.level,
-              });
+              if (process.env.NODE_ENV === "development") {
+                // console.log("[PULSE TRACE] risk propagation", {
+                //   iteration,
+                //   source,
+                //   sourceLevel: level,
+                //   target: effect.target,
+                //   previousTargetLevel: current,
+                //   appliedLevel: effect.level,
+                // });
+              }
               console.log("[CASCADE DEBUG] pushing event", {
                 step: iteration + 1,
                 sourceRisk: source,
