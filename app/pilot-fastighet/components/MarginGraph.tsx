@@ -659,7 +659,6 @@ function MarginGraph({
         >
           <button
             onClick={() => {
-              console.log("delta clicked");
               setViewMode("delta");
             }}
             onMouseEnter={() => setHoveredViewMode("delta")}
@@ -678,7 +677,6 @@ function MarginGraph({
 
           <button
             onClick={() => {
-              console.log("absolute clicked");
               setViewMode("absolute");
             }}
             onMouseEnter={() => setHoveredViewMode("absolute")}
@@ -1084,18 +1082,6 @@ function MarginGraph({
       {/* Scenario A margin line (blue) */}
       {showA && marginHistoryA.length > 0 && (
         <>
-          {(() => {
-            console.log("MARGINGRAPH A DEBUG", {
-              length: marginHistoryA.length,
-              first5: marginHistoryA.slice(0, 5),
-              last5: marginHistoryA.slice(-5),
-              dataMin,
-              dataMax,
-              yMin,
-              yMax,
-            });
-            return null;
-          })()}
           <path
             d={buildSmoothPath(normalizedA, scaleX, scaleY)}
             fill="none"

@@ -1,10 +1,12 @@
 import {
+  TRANSPORT_ENGINE_RISK_LABELS,
   TRANSPORT_POLICY_LEVER_MAPPINGS,
   TRANSPORT_SYSTEM_DRIVERS,
   type TransportPolicyLeverId,
   type TransportSystemDriverId,
 } from "./transportDomainMapping";
 import type { CascadeEvent } from "./riskPropagation";
+import { mapRiskLabelToPolicyLabel } from "@/app/pilot-fastighet/components/inspector-utils/mapRiskLabelToPolicyLabel";
 
 type Language = "sv" | "en";
 
@@ -54,6 +56,55 @@ function localizePolicyLeverName(lever: TransportPolicyLeverId, language: Langua
   return language === "sv" ? sv[lever] : en[lever];
 }
 
+function normalizeTransportDriverKey(
+  key: string | null | undefined
+): TransportSystemDriverId | null {
+  if (!key) return null;
+  const aliases: Record<string, TransportSystemDriverId> = {
+    accessibility: "accessibility",
+    modal_attractiveness: "modalAttractiveness",
+    modalAttractiveness: "modalAttractiveness",
+    demandRisk: "demand",
+    demand: "demand",
+    transit_signal_priority: "networkEfficiency",
+    networkEfficiency: "networkEfficiency",
+    congestion_pressure: "capacityPressure",
+    capacityPressure: "capacityPressure",
+    operational_capacity: "implementationPacing",
+    implementationPacing: "implementationPacing",
+    budget_pressure: "budgetPressure",
+    budgetPressure: "budgetPressure",
+  };
+  return aliases[key] ?? null;
+}
+
+function toReadableTransportChainStep(stepKey: string, language: Language): string {
+  const systemDef =
+    TRANSPORT_SYSTEM_DRIVERS[
+      stepKey as keyof typeof TRANSPORT_SYSTEM_DRIVERS
+    ];
+  if (systemDef) {
+    return language === "sv"
+      ? systemDef.readableLabel_sv ?? systemDef.label
+      : systemDef.readableLabel_en ?? systemDef.label;
+  }
+
+  const engineDef = TRANSPORT_ENGINE_RISK_LABELS[stepKey];
+  if (engineDef) {
+    return language === "sv"
+      ? engineDef.readableLabel_sv
+      : engineDef.readableLabel_en;
+  }
+
+  const policyLabel = mapRiskLabelToPolicyLabel(stepKey, language);
+  if (policyLabel !== stepKey) return policyLabel;
+
+  return stepKey
+    .replace(/_/g, " ")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
 export type TransportInspectorContext = {
   policyLeverLabel: string;
   systemDriverLabel: string;
@@ -97,30 +148,32 @@ export function resolveTransportInspectorContext(
   if (!leverMapping || leverMapping.influences.length === 0) return null;
 
   const selectedTransportDriver =
-    cascadeEventsB && cascadeEventsB.length > 0
+    primaryDriverKey ??
+    (cascadeEventsB && cascadeEventsB.length > 0
       ? (cascadeEventsB[0].sourceRisk as TransportSystemDriverId)
       : cascadeEventsA && cascadeEventsA.length > 0
       ? (cascadeEventsA[0].sourceRisk as TransportSystemDriverId)
-      : null;
+      : null);
   if (!selectedTransportDriver) return null;
 
   const policyLeverLabel = localizePolicyLeverName(policyLever, language);
-  const systemDriverLabel = localizeSystemDriverName(selectedTransportDriver, language);
-  const propagationChain = TRANSPORT_SYSTEM_DRIVERS[
-    selectedTransportDriver
-  ].propagationChain
-    .map((driverId) => {
-      const driverDef =
-        TRANSPORT_SYSTEM_DRIVERS[
-          driverId as keyof typeof TRANSPORT_SYSTEM_DRIVERS
-        ];
+  const systemDriverLabel = selectedTransportDriver
+    ? mapRiskLabelToPolicyLabel(selectedTransportDriver, language)
+    : null;
+  const normalizedSelectedDriver = normalizeTransportDriverKey(selectedTransportDriver);
+  const driverDef =
+    (normalizedSelectedDriver &&
+      TRANSPORT_SYSTEM_DRIVERS[
+        normalizedSelectedDriver as keyof typeof TRANSPORT_SYSTEM_DRIVERS
+      ]) ||
+    null;
 
-      return language === "sv"
-        ? driverDef?.readableLabel_sv ?? driverId
-        : driverDef?.readableLabel_en ?? driverId;
-    })
-    .join(" → ");
-  const propagationChainLabel = propagationChain;
+  if (!driverDef) return null;
+
+  const propagationChainLabel = driverDef.propagationChain
+    .map((driverId) => toReadableTransportChainStep(driverId, language))
+    .map((step, index) => (index === 0 ? step : `→ ${step}`))
+    .join("\n");
   const dominantScenarioDifferenceChannel =
     primaryPropagationSignatureA &&
     primaryPropagationSignatureB &&
@@ -129,8 +182,14 @@ export function resolveTransportInspectorContext(
       : null;
 
   return {
-    policyLeverLabel,
-    systemDriverLabel,
+    policyLeverLabel:
+      policyDriverKey
+        ? mapRiskLabelToPolicyLabel(policyDriverKey, language)
+        : null,
+    systemDriverLabel:
+      systemDriverKey
+        ? mapRiskLabelToPolicyLabel(systemDriverKey, language)
+        : null,
     propagationChainLabel,
     primaryDriver: selectedTransportDriver,
     dominantScenarioDifferenceChannel,

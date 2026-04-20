@@ -69,10 +69,6 @@ const WhyPanel: React.FC<Props> = ({
     selectedActions,
     primaryDriverKey: primaryDriver,
   });
-  console.log("WhyPanel caseType:", caseType);
-  console.log("WhyPanel selectedActions:", selectedActions);
-  console.log("WhyPanel primaryDriver:", primaryDriver);
-  console.log("WhyPanel transport propagation label:", transportInspectorContext?.propagationChainLabel);
   const cascadeChainText =
     caseType === "transport"
       ? transportInspectorContext?.propagationChainLabel ?? null

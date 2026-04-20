@@ -35,6 +35,8 @@ export type TransportDriverDefinition = {
   readableLabel_en?: string;
   // Optional direct bridge to current engine risk-state keys.
   engineRiskKey?: EngineRiskKey;
+  // Optional upstream causal dependencies for inspector explainability.
+  upstreamDependencies?: TransportSystemDriverId[];
   // Deterministic propagation metadata for Inspector/explainability layers.
   propagationChain: EngineRiskKey[];
 };
@@ -89,7 +91,14 @@ export const TRANSPORT_SYSTEM_DRIVERS: Record<
     readableLabel_sv: "Tillgängligheten i transportsystemet",
     readableLabel_en: "Accessibility",
     engineRiskKey: "accessibility",
-    propagationChain: ["accessibility", "demandRisk"],
+    propagationChain: [
+      "accessibility",
+      "demand",
+      "budgetPressure",
+      "implementationPacing",
+      "capacityPressure",
+      "networkEfficiency",
+    ],
   },
   modalAttractiveness: {
     id: "modalAttractiveness",
@@ -105,7 +114,14 @@ export const TRANSPORT_SYSTEM_DRIVERS: Record<
     readableLabel_sv: "Efterfrågerisk i transportsystemet",
     readableLabel_en: "Demand risk",
     engineRiskKey: "demand",
-    propagationChain: ["demand", "budgetPressure"],
+    propagationChain: [
+      "demand",
+      "budgetPressure",
+      "implementationPacing",
+      "capacityPressure",
+      "networkEfficiency",
+    ],
+    upstreamDependencies: ["accessibility"],
   },
   networkEfficiency: {
     id: "networkEfficiency",
@@ -150,6 +166,35 @@ export const TRANSPORT_SYSTEM_DRIVERS: Record<
       "capacityPressure",
       "demand"
     ],
+  },
+};
+
+export const TRANSPORT_POLICY_ACTION_LABELS = {
+  increase_service_frequency: {
+    sv: "Ökad turtäthet",
+    en: "Increase service frequency",
+  },
+  reduce_travel_time: {
+    sv: "Kortare restider",
+    en: "Reduce travel time",
+  },
+  transit_signal_priority: {
+    sv: "Signalprioritering för kollektivtrafik",
+    en: "Transit signal priority",
+  },
+  reduce_parking_supply: {
+    sv: "Minskad parkeringstillgång",
+    en: "Reduce parking supply",
+  },
+
+  improve_accessibility: {
+    sv: "Förbättrad tillgänglighet",
+    en: "Improve accessibility",
+  },
+
+  expand_capacity: {
+    sv: "Kapacitetsutbyggnad",
+    en: "Expand capacity",
   },
 };
 

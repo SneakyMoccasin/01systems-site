@@ -19,6 +19,7 @@ type InterpretationPromptInput = {
   currentMargin: number;
   alternativeMargin: number;
   marginImpact: number;
+  goalDirection?: "toward" | "away" | null;
 };
 
 function buildInterpretationPrompt(input: InterpretationPromptInput): string {
@@ -46,16 +47,20 @@ function buildInterpretationPrompt(input: InterpretationPromptInput): string {
             "Strukturera svaret i fyra delar (behåll rubrikerna):",
           summaryHeader: "Sammanfattning:",
           summaryBody:
-            "Systemet visar ökande strukturellt tryck efter tidig driver-interaktion och constraint-aktivering. Den strukturella marginalen faller tidigt i förloppet, vilket indikerar minskad handlingsfrihet om inga korrigerande beslut tas.",
+            `Systemet utvecklar strukturellt tryck genom påverkan från ${input.primaryDriverText || "centrala systemdrivare"}, vilket minskar handlingsutrymmet ${input.breachText && input.breachText !== "Ej uppskattad" ? `före ${input.breachText}` : "tidigt i simuleringen"} och indikerar att stabiliserande beslut kan krävas i ett tidigt skede.`,
           structuralHeader: "Strukturell analys:",
           structuralBody:
-            "Ingen enskild dominerande driver identifieras. Den fallande marginaltrenden speglar samverkan mellan flera strukturella drivkrafter snarare än en isolerad faktor.",
+            "Den observerade marginaltrenden visar att flera strukturella drivkrafter samverkar och gradvis minskar systemets flexibilitet, vilket innebär att stabilisering sannolikt kräver koordinerade åtgärder snarare än en enskild insats.",
           cascadeHeader: "Kaskaddynamik:",
           cascadeBody:
-            "Kaskadsekvensen börjar med tidig driver-interaktion och fortsätter genom constraint-aktivering. Detta leder till ett strukturellt tipping-läge och vidare propagation genom flera strukturella drivkrafter.",
+            `Den identifierade kaskadsekvensen visar hur förändringar i ${input.primaryDriverText || "systemets centrala drivare"} sprids vidare genom ${(input as any).cascadeDriversText || "flera strukturella drivkrafter"} och skapar ett tidigt tipping-läge, vilket innebär att sena åtgärder får begränsad effekt jämfört med tidiga insatser.`,
           outlookHeader: "Framåtblick:",
           outlookBody:
-            "Systemet närmar sig ett möjligt strukturellt brottstillstånd, men tidpunkten är osäker. Den fallande marginaltrenden indikerar att korrigerande beslut kan krävas för att stabilisera utvecklingen.",
+            `Den fortsatta marginalutvecklingen indikerar att systemet närmar sig ett möjligt strukturellt brottstillstånd ${input.breachText && input.breachText !== "Ej uppskattad" ? `kring ${input.breachText}` : "senare i simuleringen"}, vilket innebär att utvecklingen bör följas och stabiliserande beslut övervägas i tid.${input.goalDirection === "toward"
+  ? " Utvecklingen rör systemet i riktning mot målstrategin, vilket stärker förutsättningarna för strukturell stabilisering."
+  : input.goalDirection === "away"
+  ? " Utvecklingen rör systemet bort från målstrategin, vilket innebär att ytterligare stabiliserande beslut kan krävas tidigt i förloppet."
+  : ""}`,
           footer:
             "Använd tydligt språk anpassat för svenska beslutsfattare.",
         }
@@ -174,7 +179,6 @@ export async function POST(req: Request) {
       selectedActions,
       question: executiveQuestion,
     } = body;
-    console.log("AI interpretation route caseType:", caseType);
     const uiLanguage: InterpretationLanguage = language === "sv" ? "sv" : "en";
     const t = pulseLanguage[uiLanguage] as any;
     const driverLabels = t.driverLabels ?? {};
@@ -241,9 +245,7 @@ export async function POST(req: Request) {
       .join("\n");
     const translatedCascadeText =
       caseType === "transport"
-        ? (console.log("selectedActions:", selectedActions),
-          console.log("primaryDriver:", primaryDriver),
-          resolveTransportInspectorContext({
+        ? resolveTransportInspectorContext({
             language: uiLanguage,
             selectedActions: selectedActions ?? [],
             primaryDriverKey: primaryDriver,
@@ -253,7 +255,19 @@ export async function POST(req: Request) {
               (e: any) =>
                 `${translateRisk(e.sourceRisk)} -> ${translateRisk(e.targetRisk)} (${translateLevel(e.level)})`
             )
-            .join("\n"))
+            .join("\n")
+        : caseType === "municipal"
+          ? resolveMunicipalInspectorContext({
+              language: uiLanguage,
+              selectedActions: selectedActions ?? [],
+              primaryDriverKey: primaryDriver,
+            })?.propagationChainLabel ??
+            (cascadeEvents ?? [])
+              .map(
+                (e: any) =>
+                  `${translateRisk(e.sourceRisk)} -> ${translateRisk(e.targetRisk)} (${translateLevel(e.level)})`
+              )
+              .join("\n")
         : (cascadeEvents ?? [])
             .map(
               (e: any) =>
@@ -356,6 +370,7 @@ ${qaLangInstruction}`;
         language: language === "sv" ? "sv" : "en",
         eventsText: translatedEventsText,
         cascadeText: translatedCascadeText,
+        cascadeDriversText: translatedCascadeText,
         primaryDriverText: translatedPrimaryDriverText,
         systemPressureText: translatedSystemPressureText,
         breachText,
@@ -397,7 +412,6 @@ ${qaLangInstruction}`;
           : "The system shows increasing pressure. The primary driver is weakening the margin and may lead to structural instability if the trend continues.";
     }
 
-    console.log("AI interpretation length:", text.length);
 
     return NextResponse.json({
       text,

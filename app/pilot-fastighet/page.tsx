@@ -326,11 +326,6 @@ export default function PilotFastighetPage() {
   }, [uiLanguage]);
 
   const handleScenarioSubmit = (textA: string, textB: string) => {
-    console.log("SIMULATE CLICKED");
-    console.log("Scenario A preview:", previewScenarioTextA);
-    console.log("Scenario B preview:", previewScenarioTextB);
-    console.log("Scenario A prompt:", scenarioPromptA);
-    console.log("Scenario B prompt:", scenarioPromptB);
 
     const currentRiskStateA = {
       "Interest Rate Exposure": riskStateA.interestRateExposureRisk,
@@ -361,7 +356,6 @@ export default function PilotFastighetPage() {
       "Leverage Level Risk": riskStateB.leverageLevelRisk,
     };
 
-    console.log("Parsing scenarios...");
     const scenarios = getScenarioLibrary(uiLanguage);
     const selectedScenarioA = scenarios.find(
       (s) => s.prompt.trim() === textA.trim()
@@ -649,12 +643,6 @@ export default function PilotFastighetPage() {
       }
     }, 500);
 
-    console.log("[PULSE TRACE] Simulation started", {
-      source: simulationSource,
-      riskStateA: snapshotA,
-      riskStateB: snapshotB,
-      simulationHorizon,
-    });
   }
 
   useEffect(() => {
@@ -977,8 +965,6 @@ export default function PilotFastighetPage() {
       : domain === "real-estate"
         ? "real-estate"
         : null;
-  console.log("cascadeEventsA length:", cascadeEventsA?.length);
-  console.log("cascadeEventsB length:", cascadeEventsB?.length);
   const transportContext =
     caseType === "transport"
       ? resolveTransportInspectorContext({
@@ -990,8 +976,10 @@ export default function PilotFastighetPage() {
           primaryPropagationSignatureB: getPrimaryPropagationSignature(cascadeEventsB),
         })
       : null;
-  console.log("transportContext.primaryDriver:", transportContext?.primaryDriver);
-  const primaryDriver = transportContext?.primaryDriver ?? null;
+  const primaryDriver =
+    transportContext?.policyDriverKey ??
+    transportContext?.primaryDriver ??
+    null;
   const domainEventsForGraph =
     caseType === "transport"
       ? buildDomainPropagationEvents(
@@ -1633,10 +1621,8 @@ export default function PilotFastighetPage() {
                   tippingStepB: tippingMarginIndexB != null ? tippingMarginIndexB + 1 : null,
                 });
                 setExecutiveSummary(summary);
-                console.log("Executive summary", summary);
               } else {
                 setExecutiveSummary(null);
-                console.log("Executive summary", null);
               }
             }}
             style={{
@@ -2271,8 +2257,6 @@ export default function PilotFastighetPage() {
             setScenarioTarget(target);
           }}
           onSelectScenario={(presetId) => {
-            console.log("[PULSE TARGET]", scenarioTarget);
-            console.log("Scenario selected:", presetId);
             const presetLibrary = getScenarioLibrary(uiLanguage);
             const preset = presetLibrary.find((p) => p.id === presetId);
             const prompt = preset?.prompt ?? "";
