@@ -4,6 +4,10 @@ import React from "react";
 import { pulseLanguage } from "@/src/i18n/pulseLanguage";
 import { getScenarioLibrary } from "@/src/pilotFastighet/scenarioLibrary";
 import type { CascadeEvent } from "@/src/pilotFastighet/riskPropagation";
+import {
+  profileCount,
+  profileValue,
+} from "@/src/lib/runtimeProfile";
 
 const EXEC_SUSTAIN_THRESHOLD = 0.8;
 
@@ -86,6 +90,19 @@ function MarginGraph({
   scenarioBLegendDefault,
   inspectionDepth = "executive",
 }: MarginGraphProps) {
+  profileCount("MarginGraph.render");
+  profileValue(
+    "MarginGraph.series.points",
+    Math.max(marginHistoryA.length, displayMarginB.length),
+    "points"
+  );
+  profileValue(
+    "MarginGraph.cascadeEvents",
+    cascadeEventsA.length + cascadeEventsB.length,
+    "events"
+  );
+  profileValue("MarginGraph.driverEvents", driverEvents.length, "events");
+
   const [viewMode, setViewMode] = React.useState<"delta" | "absolute">("delta");
   const [hoveredViewMode, setHoveredViewMode] = React.useState<"delta" | "absolute" | null>(null);
   const [showDriverOverlay, setShowDriverOverlay] = React.useState(false);

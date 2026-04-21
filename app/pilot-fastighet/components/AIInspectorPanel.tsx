@@ -11,6 +11,10 @@ import { resolveTransportInspectorContext } from "@/src/pilotFastighet/transport
 import { buildDomainPropagationEvents } from "./inspector-utils/buildDomainPropagationEvents";
 import { buildPropagationChain } from "./inspector-utils/buildPropagationChain";
 import { mapRiskLabelToPolicyLabel } from "./inspector-utils/mapRiskLabelToPolicyLabel";
+import {
+  profileCount,
+  profileValue,
+} from "@/src/lib/runtimeProfile";
 
 function toReadableLabel(
   driverId: TransportSystemDriverId | string | null | undefined,
@@ -313,6 +317,8 @@ const AIInspectorPanel: React.FC<Props> = ({
   caseType = null,
   dominantScenarioDifferenceChannel = null,
 }) => {
+  profileCount("AIInspectorPanel.render");
+
   const analysisReady =
     primaryDriver !== null ||
     cascadeEventsA?.length > 0 ||
@@ -347,6 +353,11 @@ const AIInspectorPanel: React.FC<Props> = ({
       : cascadeEventsB?.length
         ? cascadeEventsB
         : cascadeEventsA;
+  profileValue(
+    "AIInspectorPanel.cascadeEvents",
+    simulationCascadeEvents.length,
+    "events"
+  );
   const cascadeDriverSequence = simulationCascadeEvents.flatMap((event) => [
     event.sourceRisk,
     event.targetRisk,

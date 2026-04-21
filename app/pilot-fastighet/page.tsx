@@ -49,6 +49,11 @@ import {
   defaultRiskState,
   getRiskStateAfterPreset,
 } from "@/src/pilotFastighet/presetRiskMapping";
+import {
+  profileCount,
+  profileMeasure,
+  profileValue,
+} from "@/src/lib/runtimeProfile";
 
 function toReadableLabel(
   driverId: TransportSystemDriverId,
@@ -171,6 +176,8 @@ function saveSnapshotLabels(labels: Record<string, string>) {
 }
 
 export default function PilotFastighetPage() {
+  profileCount("PilotFastighetPage.render");
+
   type ScenarioId = "A" | "B" | "BOTH";
 
   type FrozenSnapshot = {
@@ -289,6 +296,17 @@ export default function PilotFastighetPage() {
   const lastMarginBRef = useRef<number | null>(null);
   const stableCounterARef = useRef(0);
   const stableCounterBRef = useRef(0);
+
+  profileValue(
+    "PilotFastighetPage.marginSeries.points",
+    Math.max(marginHistoryA.length, marginHistoryB.length),
+    "points"
+  );
+  profileValue(
+    "PilotFastighetPage.cascadeEvents",
+    cascadeEventsA.length + cascadeEventsB.length,
+    "events"
+  );
 
   useEffect(() => {
     setHistoryA(loadHistory(STORAGE_KEY_A));
@@ -508,6 +526,7 @@ export default function PilotFastighetPage() {
     riskOverrideA?: RiskState,
     riskOverrideB?: RiskState
   ) {
+    profileCount("PilotFastighetPage.startSimulation.calls");
     const effectiveRiskStateA = riskOverrideA ?? riskStateA;
     const effectiveRiskStateB = riskOverrideB ?? riskStateB;
     setSimulationSource(source);
@@ -534,113 +553,115 @@ export default function PilotFastighetPage() {
     }
 
     intervalRef.current = window.setInterval(() => {
-      if (!engineARef.current || !engineBRef.current) return;
-      const engineA = engineARef.current;
-      const engineB = engineBRef.current;
-      const engineBaseline = engineBaselineRef.current;
+      profileCount("PilotFastighetPage.intervalTick.calls");
+      profileMeasure("PilotFastighetPage.intervalTick.ms", () => {
+        if (!engineARef.current || !engineBRef.current) return;
+        const engineA = engineARef.current;
+        const engineB = engineBRef.current;
+        const engineBaseline = engineBaselineRef.current;
 
-      engineA.stepForward();
-      engineB.stepForward();
-      if (engineBaseline) engineBaseline.stepForward();
+        engineA.stepForward();
+        engineB.stepForward();
+        if (engineBaseline) engineBaseline.stepForward();
 
-      const sA = engineA.getState();
-      const sB = engineB.getState();
-      const sBaseline = engineBaseline?.getState();
+        const sA = engineA.getState();
+        const sB = engineB.getState();
+        const sBaseline = engineBaseline?.getState();
 
-      marginHistoryARef.current.push(sA.margin);
-      marginHistoryBRef.current.push(sB.margin);
-      if (sA.step <= 3 || sB.step <= 3) {
-      }
-
-      // Keep the UI in sync with the engine (single source of truth).
-      setRiskStateA(structuredClone(sA.riskState as RiskState));
-      setRiskStateB(structuredClone(sB.riskState as RiskState));
-      if (Array.isArray((sA as any).cascadeEvents)) {
-        setCascadeEventsA((sA as any).cascadeEvents);
-      }
-      if (Array.isArray((sB as any).cascadeEvents)) {
-        setCascadeEventsB((sB as any).cascadeEvents);
-      }
-
-      if (sA.step > simulationHorizon && sB.step > simulationHorizon) {
-        if (engineBaselineRef.current) engineBaselineRef.current = null;
-
-        if (intervalRef.current) {
-          window.clearInterval(intervalRef.current);
-          intervalRef.current = null;
+        marginHistoryARef.current.push(sA.margin);
+        marginHistoryBRef.current.push(sB.margin);
+        if (sA.step <= 3 || sB.step <= 3) {
         }
 
+        // Keep the UI in sync with the engine (single source of truth).
+        setRiskStateA(structuredClone(sA.riskState as RiskState));
+        setRiskStateB(structuredClone(sB.riskState as RiskState));
+        if (Array.isArray((sA as any).cascadeEvents)) {
+          setCascadeEventsA((sA as any).cascadeEvents);
+        }
+        if (Array.isArray((sB as any).cascadeEvents)) {
+          setCascadeEventsB((sB as any).cascadeEvents);
+        }
 
-        setHasSimulationCompleted(true);
-        setIsRunning(false);
-        return;
-      }
+        if (sA.step > simulationHorizon && sB.step > simulationHorizon) {
+          if (engineBaselineRef.current) engineBaselineRef.current = null;
 
-      const epsilon = 1e-6;
-
-      if (sA.step > MIN_STEPS_BEFORE_STEADY) {
-        if (lastMarginARef.current !== null) {
-          const isStableA =
-            Math.abs(sA.margin - lastMarginARef.current) < epsilon;
-          if (isStableA) {
-            stableCounterARef.current += 1;
-          } else {
-            stableCounterARef.current = 0;
+          if (intervalRef.current) {
+            window.clearInterval(intervalRef.current);
+            intervalRef.current = null;
           }
-          if (stableCounterARef.current >= REQUIRED_STABLE_TICKS) {
-            setSteadyStateStep(sA.step);
+
+          setHasSimulationCompleted(true);
+          setIsRunning(false);
+          return;
+        }
+
+        const epsilon = 1e-6;
+
+        if (sA.step > MIN_STEPS_BEFORE_STEADY) {
+          if (lastMarginARef.current !== null) {
+            const isStableA =
+              Math.abs(sA.margin - lastMarginARef.current) < epsilon;
+            if (isStableA) {
+              stableCounterARef.current += 1;
+            } else {
+              stableCounterARef.current = 0;
+            }
+            if (stableCounterARef.current >= REQUIRED_STABLE_TICKS) {
+              setSteadyStateStep(sA.step);
+            }
           }
         }
-      }
-      lastMarginARef.current = sA.margin;
+        lastMarginARef.current = sA.margin;
 
-      if (sB.step > MIN_STEPS_BEFORE_STEADY) {
-        if (lastMarginBRef.current !== null) {
-          const isStableB =
-            Math.abs(sB.margin - lastMarginBRef.current) < epsilon;
-          if (isStableB) {
-            stableCounterBRef.current += 1;
-          } else {
-            stableCounterBRef.current = 0;
-          }
-          if (stableCounterBRef.current >= REQUIRED_STABLE_TICKS) {
-            setSteadyStateStep(sB.step);
+        if (sB.step > MIN_STEPS_BEFORE_STEADY) {
+          if (lastMarginBRef.current !== null) {
+            const isStableB =
+              Math.abs(sB.margin - lastMarginBRef.current) < epsilon;
+            if (isStableB) {
+              stableCounterBRef.current += 1;
+            } else {
+              stableCounterBRef.current = 0;
+            }
+            if (stableCounterBRef.current >= REQUIRED_STABLE_TICKS) {
+              setSteadyStateStep(sB.step);
+            }
           }
         }
-      }
-      lastMarginBRef.current = sB.margin;
+        lastMarginBRef.current = sB.margin;
 
-      setMarginHistoryA((prev) => {
-        const idx = prev.length;
-        if (sA.registry?.RefinancingConstraint?.lifecycle === "ACTIVE") {
-          setTippingMarginIndexA((t) => (t === null ? idx : t));
+        setMarginHistoryA((prev) => {
+          const idx = prev.length;
+          if (sA.registry?.RefinancingConstraint?.lifecycle === "ACTIVE") {
+            setTippingMarginIndexA((t) => (t === null ? idx : t));
+          }
+          return [...prev, sA.margin];
+        });
+
+        setMarginHistoryB((prev) => {
+          const idx = prev.length;
+          if (sB.registry?.RefinancingConstraint?.lifecycle === "ACTIVE") {
+            setTippingMarginIndexB((t) => (t === null ? idx : t));
+          }
+          return [...prev, sB.margin];
+        });
+        setDemandHistoryA((prev) => [
+          ...prev,
+          RISK_LEVEL_TO_NUMBER[
+            (sA.riskState.demandRisk as RiskLevel) ?? "MODERATE"
+          ],
+        ]);
+        setDemandHistoryB((prev) => [
+          ...prev,
+          RISK_LEVEL_TO_NUMBER[
+            (sB.riskState.demandRisk as RiskLevel) ?? "MODERATE"
+          ],
+        ]);
+
+        if (sBaseline != null) {
+          setMarginHistoryBaseline((prev) => [...prev, sBaseline.margin]);
         }
-        return [...prev, sA.margin];
       });
-
-      setMarginHistoryB((prev) => {
-        const idx = prev.length;
-        if (sB.registry?.RefinancingConstraint?.lifecycle === "ACTIVE") {
-          setTippingMarginIndexB((t) => (t === null ? idx : t));
-        }
-        return [...prev, sB.margin];
-      });
-      setDemandHistoryA((prev) => [
-        ...prev,
-        RISK_LEVEL_TO_NUMBER[
-          (sA.riskState.demandRisk as RiskLevel) ?? "MODERATE"
-        ],
-      ]);
-      setDemandHistoryB((prev) => [
-        ...prev,
-        RISK_LEVEL_TO_NUMBER[
-          (sB.riskState.demandRisk as RiskLevel) ?? "MODERATE"
-        ],
-      ]);
-
-      if (sBaseline != null) {
-        setMarginHistoryBaseline((prev) => [...prev, sBaseline.margin]);
-      }
     }, 500);
 
   }

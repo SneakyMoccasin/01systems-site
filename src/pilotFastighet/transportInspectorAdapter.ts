@@ -7,6 +7,11 @@ import {
 } from "./transportDomainMapping";
 import type { CascadeEvent } from "./riskPropagation";
 import { mapRiskLabelToPolicyLabel } from "@/app/pilot-fastighet/components/inspector-utils/mapRiskLabelToPolicyLabel";
+import {
+  profileCount,
+  profileMeasure,
+  profileValue,
+} from "@/src/lib/runtimeProfile";
 
 type Language = "sv" | "en";
 
@@ -128,70 +133,86 @@ type ResolveArgs = {
 export function resolveTransportInspectorContext(
   args: ResolveArgs
 ): TransportInspectorContext | null {
-  const {
-    language,
-    selectedActions = [],
-    policyDriverKey,
-    systemDriverKey,
-    primaryDriverKey,
-    cascadeEventsA,
-    cascadeEventsB,
-    primaryPropagationSignatureA,
-    primaryPropagationSignatureB,
-  } = args;
+  profileCount("resolveTransportInspectorContext.calls");
 
-  const latestAction = selectedActions[selectedActions.length - 1];
-  const policyLever = latestAction ? ACTION_TO_POLICY_LEVER[latestAction] : undefined;
-  if (!policyLever) return null;
+  return profileMeasure("resolveTransportInspectorContext.ms", () => {
+    const {
+      language,
+      selectedActions = [],
+      policyDriverKey,
+      systemDriverKey,
+      primaryDriverKey,
+      cascadeEventsA,
+      cascadeEventsB,
+      primaryPropagationSignatureA,
+      primaryPropagationSignatureB,
+    } = args;
 
-  const leverMapping = TRANSPORT_POLICY_LEVER_MAPPINGS[policyLever];
-  if (!leverMapping || leverMapping.influences.length === 0) return null;
+    profileValue(
+      "resolveTransportInspectorContext.cascadeEvents",
+      (cascadeEventsA?.length ?? 0) + (cascadeEventsB?.length ?? 0),
+      "events"
+    );
 
-  const selectedTransportDriver =
-    primaryDriverKey ??
-    (cascadeEventsB && cascadeEventsB.length > 0
-      ? (cascadeEventsB[0].sourceRisk as TransportSystemDriverId)
-      : cascadeEventsA && cascadeEventsA.length > 0
-      ? (cascadeEventsA[0].sourceRisk as TransportSystemDriverId)
-      : null);
-  if (!selectedTransportDriver) return null;
+    const latestAction = selectedActions[selectedActions.length - 1];
+    const policyLever = latestAction ? ACTION_TO_POLICY_LEVER[latestAction] : undefined;
+    if (!policyLever) return null;
 
-  const policyLeverLabel = localizePolicyLeverName(policyLever, language);
-  const systemDriverLabel = selectedTransportDriver
-    ? mapRiskLabelToPolicyLabel(selectedTransportDriver, language)
-    : null;
-  const normalizedSelectedDriver = normalizeTransportDriverKey(selectedTransportDriver);
-  const driverDef =
-    (normalizedSelectedDriver &&
-      TRANSPORT_SYSTEM_DRIVERS[
-        normalizedSelectedDriver as keyof typeof TRANSPORT_SYSTEM_DRIVERS
-      ]) ||
-    null;
+    const leverMapping = TRANSPORT_POLICY_LEVER_MAPPINGS[policyLever];
+    if (!leverMapping || leverMapping.influences.length === 0) return null;
 
-  if (!driverDef) return null;
+    const selectedTransportDriver =
+      primaryDriverKey ??
+      (cascadeEventsB && cascadeEventsB.length > 0
+        ? (cascadeEventsB[0].sourceRisk as TransportSystemDriverId)
+        : cascadeEventsA && cascadeEventsA.length > 0
+        ? (cascadeEventsA[0].sourceRisk as TransportSystemDriverId)
+        : null);
+    if (!selectedTransportDriver) return null;
 
-  const propagationChainLabel = driverDef.propagationChain
-    .map((driverId) => toReadableTransportChainStep(driverId, language))
-    .map((step, index) => (index === 0 ? step : `→ ${step}`))
-    .join("\n");
-  const dominantScenarioDifferenceChannel =
-    primaryPropagationSignatureA &&
-    primaryPropagationSignatureB &&
-    primaryPropagationSignatureA !== primaryPropagationSignatureB
-      ? primaryPropagationSignatureB
+    const policyLeverLabel = localizePolicyLeverName(policyLever, language);
+    const systemDriverLabel = selectedTransportDriver
+      ? mapRiskLabelToPolicyLabel(selectedTransportDriver, language)
       : null;
+    const normalizedSelectedDriver = normalizeTransportDriverKey(selectedTransportDriver);
+    const driverDef =
+      (normalizedSelectedDriver &&
+        TRANSPORT_SYSTEM_DRIVERS[
+          normalizedSelectedDriver as keyof typeof TRANSPORT_SYSTEM_DRIVERS
+        ]) ||
+      null;
 
-  return {
-    policyLeverLabel:
-      policyDriverKey
-        ? mapRiskLabelToPolicyLabel(policyDriverKey, language)
-        : null,
-    systemDriverLabel:
-      systemDriverKey
-        ? mapRiskLabelToPolicyLabel(systemDriverKey, language)
-        : null,
-    propagationChainLabel,
-    primaryDriver: selectedTransportDriver,
-    dominantScenarioDifferenceChannel,
-  };
+    if (!driverDef) return null;
+
+    const propagationChainLabel = driverDef.propagationChain
+      .map((driverId) => toReadableTransportChainStep(driverId, language))
+      .map((step, index) => (index === 0 ? step : `→ ${step}`))
+      .join("\n");
+    const dominantScenarioDifferenceChannel =
+      primaryPropagationSignatureA &&
+      primaryPropagationSignatureB &&
+      primaryPropagationSignatureA !== primaryPropagationSignatureB
+        ? primaryPropagationSignatureB
+        : null;
+
+    profileValue(
+      "resolveTransportInspectorContext.propagationChain.length",
+      driverDef.propagationChain.length,
+      "steps"
+    );
+
+    return {
+      policyLeverLabel:
+        policyDriverKey
+          ? mapRiskLabelToPolicyLabel(policyDriverKey, language)
+          : null,
+      systemDriverLabel:
+        systemDriverKey
+          ? mapRiskLabelToPolicyLabel(systemDriverKey, language)
+          : null,
+      propagationChainLabel,
+      primaryDriver: selectedTransportDriver,
+      dominantScenarioDifferenceChannel,
+    };
+  });
 }

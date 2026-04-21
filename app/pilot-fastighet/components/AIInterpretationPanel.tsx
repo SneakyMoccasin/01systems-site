@@ -2,6 +2,11 @@ import React, { useEffect, useState } from "react";
 import { EVENT_TRANSLATIONS } from "@/src/pilotFastighet/uiText";
 import { pulseLanguage } from "@/src/i18n/pulseLanguage";
 import type { CascadeEvent } from "@/src/pilotFastighet/riskPropagation";
+import {
+  profileCount,
+  profileMeasure,
+  profileValue,
+} from "@/src/lib/runtimeProfile";
 
 type Language = "sv" | "en";
 
@@ -51,6 +56,8 @@ const AIInterpretationPanel: React.FC<Props> = ({
   caseType = null,
   selectedActions = [],
 }) => {
+  profileCount("AIInterpretationPanel.render");
+
   const [aiText, setAiText] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const uiLanguage = language;
@@ -66,30 +73,42 @@ const AIInterpretationPanel: React.FC<Props> = ({
       type: EVENT_TRANSLATIONS[e.type as keyof typeof EVENT_TRANSLATIONS]?.[uiLanguage] ?? e.type,
     }));
 
+    const requestBody = {
+      language: uiLanguage,
+      caseName,
+      tippingQuarter,
+      events: translatedEvents,
+      currentMargin,
+      alternativeMargin,
+      marginImpact,
+      cascadeEvents: [...(cascadeEventsA ?? []), ...(cascadeEventsB ?? [])],
+      primaryDriver,
+      systemPressure,
+      estimatedTimeToBreach,
+      decisionFlowEvents,
+      interpretationMode: "detailed",
+      marginTrend,
+      cascadeDelay,
+      caseType,
+      selectedActions,
+    };
+    profileCount("AIInterpretationPanel.fetch.calls");
+    const serializedBody = profileMeasure(
+      "AIInterpretationPanel.fetch.serialize.ms",
+      () => JSON.stringify(requestBody)
+    );
+    profileValue(
+      "AIInterpretationPanel.fetch.payload.bytes",
+      serializedBody.length,
+      "bytes"
+    );
+
     fetch("/api/ai-interpretation", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        language: uiLanguage,
-        caseName,
-        tippingQuarter,
-        events: translatedEvents,
-        currentMargin,
-        alternativeMargin,
-        marginImpact,
-        cascadeEvents: [...(cascadeEventsA ?? []), ...(cascadeEventsB ?? [])],
-        primaryDriver,
-        systemPressure,
-        estimatedTimeToBreach,
-        decisionFlowEvents,
-        interpretationMode: "detailed",
-        marginTrend,
-        cascadeDelay,
-        caseType,
-        selectedActions,
-      }),
+      body: serializedBody,
     })
       .then((res) => res.json())
       .then((data) => {
@@ -213,4 +232,3 @@ const AIInterpretationPanel: React.FC<Props> = ({
 };
 
 export default AIInterpretationPanel;
-

@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import { pulseLanguage } from "@/src/i18n/pulseLanguage";
 import { EVENT_TRANSLATIONS } from "@/src/pilotFastighet/uiText";
 import { resolveTransportInspectorContext } from "@/src/pilotFastighet/transportInspectorAdapter";
+import {
+  profileCount,
+  profileMeasure,
+  profileMeasureAsync,
+  profileValue,
+} from "@/src/lib/runtimeProfile";
 
 type InterpretationLanguage = "sv" | "en";
 
@@ -160,7 +166,11 @@ ${templates.footer}`;
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    profileCount("ai-interpretation.route.post.calls");
+    const body = await profileMeasureAsync(
+      "ai-interpretation.route.request.json.ms",
+      () => req.json()
+    );
     const {
       language,
       tippingQuarter,
@@ -330,23 +340,41 @@ Executive question: ${executiveQuestion.trim()}
 Answer the executive's question using only the provided system context. Be concise and explain in plain language suitable for executives.
 ${qaLangInstruction}`;
 
-      const response = await fetch("http://localhost:11434/api/generate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "llama3:latest",
-          prompt: qaPrompt,
-          stream: false,
-          options: {
-            num_predict: 200,
-            temperature: 0.2,
-          },
-        }),
-      });
+      const ollamaRequestBody = profileMeasure(
+        "ai-interpretation.route.qa.serialize.ms",
+        () =>
+          JSON.stringify({
+            model: "llama3:latest",
+            prompt: qaPrompt,
+            stream: false,
+            options: {
+              num_predict: 200,
+              temperature: 0.2,
+            },
+          })
+      );
+      profileValue(
+        "ai-interpretation.route.qa.payload.bytes",
+        ollamaRequestBody.length,
+        "bytes"
+      );
 
-      const data = await response.json();
+      const response = await profileMeasureAsync(
+        "ai-interpretation.route.qa.fetch.ms",
+        () =>
+          fetch("http://localhost:11434/api/generate", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: ollamaRequestBody,
+          })
+      );
+
+      const data = await profileMeasureAsync(
+        "ai-interpretation.route.qa.response.json.ms",
+        () => response.json()
+      );
       return NextResponse.json({
         text: data.response ?? "No response.",
       });
@@ -385,23 +413,41 @@ ${qaLangInstruction}`;
       "\n\n" +
       langInstruction;
 
-    const response = await fetch("http://localhost:11434/api/generate", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "llama3:latest",
-        prompt,
-        stream: false,
-        options: {
-          num_predict: 400,
-          temperature: 0.2,
-        },
-      }),
-    });
+    const ollamaRequestBody = profileMeasure(
+      "ai-interpretation.route.summary.serialize.ms",
+      () =>
+        JSON.stringify({
+          model: "llama3:latest",
+          prompt,
+          stream: false,
+          options: {
+            num_predict: 400,
+            temperature: 0.2,
+          },
+        })
+    );
+    profileValue(
+      "ai-interpretation.route.summary.payload.bytes",
+      ollamaRequestBody.length,
+      "bytes"
+    );
 
-    const data = await response.json();
+    const response = await profileMeasureAsync(
+      "ai-interpretation.route.summary.fetch.ms",
+      () =>
+        fetch("http://localhost:11434/api/generate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: ollamaRequestBody,
+        })
+    );
+
+    const data = await profileMeasureAsync(
+      "ai-interpretation.route.summary.response.json.ms",
+      () => response.json()
+    );
 
     let text = (data.response ?? "").trim();
 
@@ -422,5 +468,4 @@ ${qaLangInstruction}`;
     });
   }
 }
-
 
