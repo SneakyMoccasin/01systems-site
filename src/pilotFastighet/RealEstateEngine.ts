@@ -66,7 +66,9 @@ export class RealEstateEngine {
     profileCount("RealEstateEngine.stepForward.calls");
 
     return profileMeasure("RealEstateEngine.stepForward.ms", () => {
-      console.log("ENGINE STEP FORWARD RUNNING");
+      if (process.env.NEXT_PUBLIC_PULSE_PROFILE) {
+        console.log("ENGINE STEP FORWARD RUNNING");
+      }
       const { riskState, margin, registry, step, cascadeEvents } = this.state;
 
       // Minimal stress-triggered escalation so cascades can start during runtime.
@@ -80,16 +82,20 @@ export class RealEstateEngine {
           escalatedRiskState.interestRateExposureRisk = "HIGH";
         }
       }
-      console.log("ESCALATED STATE", {
-        before: riskState.interestRateExposureRisk,
-        after: escalatedRiskState.interestRateExposureRisk,
-        margin,
-      });
+      if (process.env.NEXT_PUBLIC_PULSE_PROFILE) {
+        console.log("ESCALATED STATE", {
+          before: riskState.interestRateExposureRisk,
+          after: escalatedRiskState.interestRateExposureRisk,
+          margin,
+        });
+      }
 
       const { next: propagatedState, events } = propagateRisks(escalatedRiskState);
-      console.log("AFTER PROPAGATION", {
-        interestRateExposureRisk: (propagatedState as RiskState).interestRateExposureRisk,
-      });
+      if (process.env.NEXT_PUBLIC_PULSE_PROFILE) {
+        console.log("AFTER PROPAGATION", {
+          interestRateExposureRisk: (propagatedState as RiskState).interestRateExposureRisk,
+        });
+      }
       const riskStateForTick = propagatedState as RiskState;
 
       const result = simulateConstraintsStep({
@@ -102,8 +108,12 @@ export class RealEstateEngine {
         registry,
       });
 
-      console.log("Engine multiplier input:", this.state.riskState);
-      console.log("riskStateForTick:", riskStateForTick);
+      if (process.env.NEXT_PUBLIC_PULSE_PROFILE) {
+        console.log("Engine multiplier input:", this.state.riskState);
+      }
+      if (process.env.NEXT_PUBLIC_PULSE_PROFILE) {
+        console.log("riskStateForTick:", riskStateForTick);
+      }
       const baseMultipliers = computeDimensionMultipliers(riskStateForTick, step);
 
       const adjustedCost = result.multipliersAfterConstraints.cost;
@@ -130,56 +140,64 @@ export class RealEstateEngine {
 
       const clampedNextMargin = Math.max(-3, Math.min(3, nextMargin));
 
-      console.log("MARGIN INPUT", {
-        demand: (riskStateForTick as RiskState).demandRisk,
-        pricing: (riskStateForTick as RiskState).pricingPowerRisk,
-        tenant: (riskStateForTick as RiskState).tenantStabilityRisk,
-        maintenance: (riskStateForTick as RiskState).maintenanceIntensityRisk,
-        financing: {
-          interestRateExposureRisk: (riskStateForTick as RiskState)
-            .interestRateExposureRisk,
-          leverageLevelRisk: (riskStateForTick as RiskState).leverageLevelRisk,
-          refinancingRisk: (riskStateForTick as RiskState).refinancingRisk,
-        },
-        external: {
-          energyExposureRisk: (riskStateForTick as RiskState).energyExposureRisk,
-          marketVolatilityRisk: (riskStateForTick as RiskState).marketVolatilityRisk,
-          regulatoryPressureRisk: (riskStateForTick as RiskState).regulatoryPressureRisk,
-          capitalCommitmentRigidityRisk: (
-            riskStateForTick as RiskState
-          ).capitalCommitmentRigidityRisk,
-        },
-        // Numeric pieces used by the erosion/margin formula
-        baseMultipliers,
-        adjustedLoad,
-        adjustedCost,
-        adjustedRecovery,
-        loadImpact,
-        riskPressure,
-        erosion,
-        pullToBaseline,
-        margin,
-        step,
-      });
+      if (process.env.NEXT_PUBLIC_PULSE_PROFILE) {
+        console.log("MARGIN INPUT", {
+          demand: (riskStateForTick as RiskState).demandRisk,
+          pricing: (riskStateForTick as RiskState).pricingPowerRisk,
+          tenant: (riskStateForTick as RiskState).tenantStabilityRisk,
+          maintenance: (riskStateForTick as RiskState).maintenanceIntensityRisk,
+          financing: {
+            interestRateExposureRisk: (riskStateForTick as RiskState)
+              .interestRateExposureRisk,
+            leverageLevelRisk: (riskStateForTick as RiskState).leverageLevelRisk,
+            refinancingRisk: (riskStateForTick as RiskState).refinancingRisk,
+          },
+          external: {
+            energyExposureRisk: (riskStateForTick as RiskState).energyExposureRisk,
+            marketVolatilityRisk: (riskStateForTick as RiskState).marketVolatilityRisk,
+            regulatoryPressureRisk: (riskStateForTick as RiskState).regulatoryPressureRisk,
+            capitalCommitmentRigidityRisk: (
+              riskStateForTick as RiskState
+            ).capitalCommitmentRigidityRisk,
+          },
+          // Numeric pieces used by the erosion/margin formula
+          baseMultipliers,
+          adjustedLoad,
+          adjustedCost,
+          adjustedRecovery,
+          loadImpact,
+          riskPressure,
+          erosion,
+          pullToBaseline,
+          margin,
+          step,
+        });
+      }
 
-      console.log("MARGIN OUTPUT BEFORE CLAMP", {
-        rawMargin: nextMargin,
-        step,
-      });
+      if (process.env.NEXT_PUBLIC_PULSE_PROFILE) {
+        console.log("MARGIN OUTPUT BEFORE CLAMP", {
+          rawMargin: nextMargin,
+          step,
+        });
+      }
 
-      console.log("MARGIN OUTPUT FINAL", {
-        finalMargin: clampedNextMargin,
-        step,
-      });
+      if (process.env.NEXT_PUBLIC_PULSE_PROFILE) {
+        console.log("MARGIN OUTPUT FINAL", {
+          finalMargin: clampedNextMargin,
+          step,
+        });
+      }
 
-      console.log({
-        step,
-        margin,
-        baseMultipliers,
-        erosion,
-        pullToBaseline,
-        nextMargin,
-      });
+      if (process.env.NEXT_PUBLIC_PULSE_PROFILE) {
+        console.log({
+          step,
+          margin,
+          baseMultipliers,
+          erosion,
+          pullToBaseline,
+          nextMargin,
+        });
+      }
 
       profileValue(
         "RealEstateEngine.stepForward.cascadeEvents",

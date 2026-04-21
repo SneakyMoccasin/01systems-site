@@ -4,6 +4,7 @@ import React from "react";
 import { pulseLanguage } from "@/src/i18n/pulseLanguage";
 import { getScenarioLibrary } from "@/src/pilotFastighet/scenarioLibrary";
 import type { CascadeEvent } from "@/src/pilotFastighet/riskPropagation";
+import { mapRiskLabelToPolicyLabel } from "./inspector-utils/mapRiskLabelToPolicyLabel";
 import {
   profileCount,
   profileValue,
@@ -26,6 +27,11 @@ export type DomainEvent = {
   month: number;
   label?: string;
   driver?: { readableLabel?: string } | string;
+};
+
+export type ConstraintActivationTimelineMarker = {
+  constraintType: string;
+  monthIndex: number;
 };
 
 export interface MarginGraphProps {
@@ -57,6 +63,12 @@ export interface MarginGraphProps {
   scenarioALegendDefault?: string;
   scenarioBLegendDefault?: string;
   inspectionDepth?: "executive" | "expert";
+  dominantConstraintMessage?: {
+    constraintKey: string;
+    scenarioDirection: "baseline" | "target";
+  };
+  constraintActivationTimeline?: ConstraintActivationTimelineMarker[];
+  divergenceMonthIndex?: number | null;
 }
 
 type CascadeMarker = { index: number; type: string };
@@ -89,6 +101,9 @@ function MarginGraph({
   scenarioALegendDefault,
   scenarioBLegendDefault,
   inspectionDepth = "executive",
+  dominantConstraintMessage,
+  constraintActivationTimeline,
+  divergenceMonthIndex,
 }: MarginGraphProps) {
   profileCount("MarginGraph.render");
   profileValue(
@@ -932,6 +947,81 @@ function MarginGraph({
           </text>
         </>
       )}
+      {dominantConstraintMessage &&
+        constraintActivationTimeline &&
+        constraintActivationTimeline.length > 0 &&
+        (() => {
+          const match = constraintActivationTimeline.find(
+            (entry) =>
+              entry.constraintType === dominantConstraintMessage.constraintKey
+          );
+
+          if (!match) return null;
+
+          const x = scaleX(match.monthIndex);
+
+          return (
+            <g>
+              <line
+                x1={x}
+                x2={x}
+                y1={plotAreaY}
+                y2={plotAreaY + plotAreaH}
+                stroke="#888"
+                strokeDasharray="4 3"
+                strokeWidth={1.5}
+              />
+
+              <text
+                x={x + 6}
+                y={plotAreaY + 12}
+                fontSize="10"
+                fill="#666"
+              >
+                {uiLanguage === "sv"
+                  ? "Dominerande begränsning"
+                  : "Dominant constraint"}
+              </text>
+
+              <text
+                x={x + 6}
+                y={plotAreaY + 24}
+                fontSize="10"
+                fill="#666"
+              >
+                {mapRiskLabelToPolicyLabel(
+                  dominantConstraintMessage.constraintKey,
+                  uiLanguage
+                )}
+              </text>
+            </g>
+          );
+        })()}
+      {divergenceMonthIndex !== null &&
+        divergenceMonthIndex !== undefined && (
+          <g>
+            <line
+              x1={scaleX(divergenceMonthIndex)}
+              x2={scaleX(divergenceMonthIndex)}
+              y1={plotAreaY}
+              y2={plotAreaY + plotAreaH}
+              stroke="#64748b"
+              strokeDasharray="5 4"
+              strokeWidth={1.25}
+              opacity={0.9}
+            />
+            <text
+              x={scaleX(divergenceMonthIndex) + 6}
+              y={plotAreaY + 36}
+              fontSize="10"
+              fill="#666"
+            >
+              {uiLanguage === "sv"
+                ? "Strukturell divergens"
+                : "Structural divergence"}
+            </text>
+          </g>
+        )}
       {demandShiftA !== null && (
         <>
           <line

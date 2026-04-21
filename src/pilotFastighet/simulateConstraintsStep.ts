@@ -35,13 +35,15 @@ export function simulateConstraintsStep(
       input.step
     );
 
-    console.log("BASE", {
-      step: input.step,
-      load: baseMultipliers.load,
-      cost: baseMultipliers.cost,
-      recovery: baseMultipliers.recovery,
-      sensitivity: baseMultipliers.sensitivity,
-    });
+    if (process.env.NEXT_PUBLIC_PULSE_PROFILE) {
+      console.log("BASE", {
+        step: input.step,
+        load: baseMultipliers.load,
+        cost: baseMultipliers.cost,
+        recovery: baseMultipliers.recovery,
+        sensitivity: baseMultipliers.sensitivity,
+      });
+    }
 
     const updatedRegistry = { ...input.registry };
 

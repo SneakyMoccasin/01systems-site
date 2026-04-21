@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
+import type { ConstraintRegistry } from "@/src/pilotFastighet/constraintState";
 import { pulseLanguage } from "@/src/i18n/pulseLanguage";
 import type { CascadeEvent } from "@/src/pilotFastighet/riskPropagation";
 import {
+  getTransportPolicyExplanationLabel,
   TRANSPORT_ENGINE_RISK_LABELS,
   TRANSPORT_POLICY_ACTION_LABELS,
   TRANSPORT_SYSTEM_DRIVERS,
@@ -11,6 +13,19 @@ import { resolveTransportInspectorContext } from "@/src/pilotFastighet/transport
 import { buildDomainPropagationEvents } from "./inspector-utils/buildDomainPropagationEvents";
 import { buildPropagationChain } from "./inspector-utils/buildPropagationChain";
 import { mapRiskLabelToPolicyLabel } from "./inspector-utils/mapRiskLabelToPolicyLabel";
+import { buildConstraintActivationTimeline } from "./inspector-utils/buildConstraintActivationTimeline";
+import { buildConstraintComparisonMessages } from "./inspector-utils/buildConstraintComparisonMessages";
+import { buildConstraintOrderingMessages } from "./inspector-utils/buildConstraintOrderingMessages";
+import { buildPropagationRootComparisonMessages } from "./inspector-utils/buildPropagationRootComparisonMessages";
+import { buildCascadePathwayComparisonMessages } from "./inspector-utils/buildCascadePathwayComparisonMessages";
+import { buildStructuralGoalMessages } from "./inspector-utils/buildStructuralGoalMessages";
+import {
+  GoalType,
+  DEFAULT_GOAL_TYPE
+} from "./inspector-utils/goalTypes";
+import { buildGoalConditionedSystemStatusMessage } from "./inspector-utils/buildGoalConditionedSystemStatusMessage";
+import { buildDominantConstraintMessage } from "./inspector-utils/buildDominantConstraintMessage";
+import { buildStructuralGoalSummaryMessage } from "./inspector-utils/buildStructuralGoalSummaryMessage";
 import {
   profileCount,
   profileValue,
@@ -49,7 +64,11 @@ function toReadableTransportChainStep(
   driverId: TransportSystemDriverId | string | null | undefined,
   language: "sv" | "en"
 ): string {
-  return toReadableLabel(driverId, language);
+  if (!driverId) {
+    return "";
+  }
+
+  return getTransportPolicyExplanationLabel(String(driverId), language);
 }
 
 /** Aligns cascade events to graph month indices (same logic as MarginGraph.mapCascadeToMarkers). */
@@ -266,6 +285,8 @@ type Props = {
   currentMargin: number;
   alternativeMargin: number;
   marginImpact: number;
+  marginHistoryA?: number[];
+  marginHistoryB?: number[];
   cascadeEvents?: CascadeEvent[];
   cascadeEventsA?: CascadeEvent[];
   cascadeEventsB?: CascadeEvent[];
@@ -274,9 +295,20 @@ type Props = {
   simulationHorizon?: number;
   selectedMonthIndex?: number | null;
   primaryDriver?: string | null;
+  primaryDriverA?: string | null;
+  primaryDriverB?: string | null;
   systemPressure?: string | null;
   constraintBreakQuarter?: number | null;
-  constraintRegistry?: { activeConstraintType?: string | null } | null;
+  constraintRegistry?: (Partial<ConstraintRegistry> & {
+    activeConstraintType?: string | null;
+  }) | null;
+  constraintRegistryA?: (Partial<ConstraintRegistry> & {
+    activeConstraintType?: string | null;
+  }) | null;
+  constraintRegistryB?: (Partial<ConstraintRegistry> & {
+    activeConstraintType?: string | null;
+  }) | null;
+
   structuralStatus?: string | null;
   /** Absolute margin at selected month (Scenario B preferred for structural state when set). */
   selectedMarginValueA?: number | null;
@@ -286,6 +318,7 @@ type Props = {
   inspectionMode?: "executive" | "expert";
   firstDivergenceMonth?: number | null;
   caseType?: "transport" | "real-estate" | null;
+  goalType?: GoalType;
   dominantScenarioDifferenceChannel?: string | null;
 };
 
@@ -296,6 +329,8 @@ const AIInspectorPanel: React.FC<Props> = ({
   currentMargin,
   alternativeMargin,
   marginImpact,
+  marginHistoryA = [],
+  marginHistoryB = [],
   cascadeEvents = [],
   cascadeEventsA = [],
   cascadeEventsB = [],
@@ -304,7 +339,11 @@ const AIInspectorPanel: React.FC<Props> = ({
   simulationHorizon,
   selectedMonthIndex = null,
   primaryDriver = null,
+  primaryDriverA = null,
+  primaryDriverB = null,
   systemPressure = null,
+  constraintRegistryA = null,
+  constraintRegistryB = null,
   constraintBreakQuarter = null,
   constraintRegistry = null,
   structuralStatus = null,
@@ -315,10 +354,14 @@ const AIInspectorPanel: React.FC<Props> = ({
   inspectionMode = "executive",
   firstDivergenceMonth = null,
   caseType = null,
+  goalType,
   dominantScenarioDifferenceChannel = null,
 }) => {
   profileCount("AIInspectorPanel.render");
 
+  const [localGoalType, setLocalGoalType] = useState<GoalType>(
+    goalType ?? DEFAULT_GOAL_TYPE
+  );
   const analysisReady =
     primaryDriver !== null ||
     cascadeEventsA?.length > 0 ||
@@ -335,12 +378,48 @@ const AIInspectorPanel: React.FC<Props> = ({
     "transit_signal_priority",
     "budget_pressure",
   ]);
+  const normalizeTransportDriverKey = (key?: string) => {
+    if (!key) return key;
+
+    const compact = key.replace(/\s+/g, "");
+    const mapping: Record<string, string> = {
+      DemandRisk: "demandRisk",
+      CapitalCommitmentRigidityRisk: "capitalCommitmentRigidityRisk",
+      MaintenanceIntensityRisk: "maintenanceIntensityRisk",
+    };
+    const normalized = mapping[compact] ?? compact;
+    return normalized === "modal_attractiveness"
+      ? "modalAttractiveness"
+      : normalized;
+  };
   const getResolvedDriverLabel = (key: string | null) =>
     key
-      ? driverLabels[key] ??
-        riskLabels[key] ??
-        mapRiskLabelToPolicyLabel(key, language)
+      ? caseType === "transport"
+        ? getTransportPolicyExplanationLabel(
+            normalizeTransportDriverKey(key) ?? key,
+            language
+          )
+        : driverLabels[key] ??
+          riskLabels[key] ??
+          mapRiskLabelToPolicyLabel(key, language)
       : null;
+  const getNarrativeDriverLabel = (key: string | null | undefined): string => {
+    if (!key) return "";
+
+    if (caseType === "transport") {
+      const normalizedKey = normalizeTransportDriverKey(key) ?? key;
+      const translated = getTransportPolicyExplanationLabel(
+        normalizedKey,
+        language
+      );
+
+      if (translated && translated !== normalizedKey) {
+        return translated;
+      }
+    }
+
+    return mapRiskLabelToPolicyLabel(key, language);
+  };
   const structuralStateText = getStructuralStateText(
     selectedMarginValueB ?? selectedMarginValueA ?? alternativeMargin,
     language
@@ -403,6 +482,10 @@ const AIInspectorPanel: React.FC<Props> = ({
     primaryPropagationSignatureA: domainPropagation.primaryPropagationSignatureA,
     primaryPropagationSignatureB: domainPropagation.primaryPropagationSignatureB,
   });
+  const dominantScenarioChannelText =
+    dominantScenarioDifferenceChannel ??
+    transportInspectorContext?.dominantScenarioDifferenceChannel ??
+    null;
   const scenarioALabel = language === "sv" ? "Nuläge" : "Baseline";
   const scenarioBLabel = language === "sv" ? "Målstrategi" : "Goal strategy";
   const cascadeStatusText =
@@ -418,10 +501,14 @@ const AIInspectorPanel: React.FC<Props> = ({
   const systemPressureExecutiveLabel =
     systemPressure === "SYSTEMIC"
       ? language === "sv"
-        ? `Flera beroenden påverkas samtidigt via ${toReadableLabel(
-            primaryDriver as TransportSystemDriverId,
-            language
-          ).toLowerCase()}, vilket minskar handlingsutrymmet`
+        ? `Flera beroenden påverkas samtidigt via ${
+            caseType === "transport"
+              ? getNarrativeDriverLabel(primaryDriver as string | null).toLowerCase()
+              : toReadableLabel(
+                  primaryDriver as TransportSystemDriverId,
+                  language
+                ).toLowerCase()
+          }, vilket minskar handlingsutrymmet`
         : "The system is under clear structural pressure"
       : systemPressure === "LOW"
       ? language === "sv"
@@ -451,18 +538,6 @@ const AIInspectorPanel: React.FC<Props> = ({
       : marginImpact;
 
   const decisionEffectText = getDecisionEffectText(selectedDifference, language);
-  const scenarioDifferenceText =
-    firstDivergenceMonth == null
-      ? language === "sv"
-        ? "Scenarierna är strukturellt lika"
-        : "Scenarios remain structurally similar"
-      : firstDivergenceMonth <= 6
-      ? language === "sv"
-        ? "Scenarierna divergerar tydligt"
-        : "Scenarios diverge clearly"
-      : language === "sv"
-      ? "Scenarierna börjar divergera"
-      : "Scenarios begin to diverge";
   const constraintActive = constraintBreakQuarter != null;
   const cascadeDetected = simulationCascadeEvents.length > 0;
   const marginTrend = marginImpact < 0 ? "DECLINING" : "STABLE";
@@ -580,27 +655,20 @@ const AIInspectorPanel: React.FC<Props> = ({
             : []
         ).slice(0, 3).map((event, index) => ({
           month: index,
-          label:
-            language === "sv"
-              ? (
-                  TRANSPORT_SYSTEM_DRIVERS[event.targetRisk as keyof typeof TRANSPORT_SYSTEM_DRIVERS]?.readableLabel_sv ??
-                  TRANSPORT_ENGINE_RISK_LABELS[event.targetRisk]?.readableLabel_sv ??
-                  event.targetRisk
-                )
-              : (
-                  TRANSPORT_SYSTEM_DRIVERS[event.targetRisk as keyof typeof TRANSPORT_SYSTEM_DRIVERS]?.readableLabel_en ??
-                  TRANSPORT_ENGINE_RISK_LABELS[event.targetRisk]?.readableLabel_en ??
-                  event.targetRisk
-                )
+          label: getTransportPolicyExplanationLabel(
+            normalizeTransportDriverKey(event.targetRisk) ?? event.targetRisk,
+            language
+          )
         }));
-  const _dominantScenarioDifferenceChannel =
-    dominantScenarioDifferenceChannel ??
-    transportInspectorContext?.dominantScenarioDifferenceChannel ??
-    null;
   const primaryDriverDisplayLabel =
     (transportInspectorContext as any)?.policyDriverLabel ??
     transportInspectorContext?.systemDriverLabel ??
-    primaryDriver ??
+    (caseType === "transport" && primaryDriver
+      ? getTransportPolicyExplanationLabel(
+          normalizeTransportDriverKey(primaryDriver) ?? primaryDriver,
+          language
+        )
+      : primaryDriver) ??
     t.noActiveDriver;
   const activeDomainEvents =
     selectedMonthIndex != null
@@ -634,14 +702,139 @@ const AIInspectorPanel: React.FC<Props> = ({
     uiLanguage === "sv"
       ? "Marginalen drivs av kombinerat tryck från belastning, kostnad och återhämtningsförmåga."
       : "Margin is driven by combined pressure from load, cost, and recovery capacity.";
-  const structuralPropagationChain = buildPropagationChain(
-    cascadeEventsB ?? cascadeEvents ?? cascadeEventsA,
-    primaryDriver,
-    constraintBreakQuarter,
-    tippingQuarter,
-    language,
-    constraintRegistry?.activeConstraintType ?? null
+  const structuralPropagationChain = React.useMemo(
+    () =>
+      buildPropagationChain(
+        cascadeEventsB ?? cascadeEvents ?? cascadeEventsA,
+        primaryDriver,
+        constraintBreakQuarter,
+        tippingQuarter,
+        language,
+        constraintRegistry?.activeConstraintType ?? null
+      ),
+    [
+      cascadeEvents,
+      cascadeEventsA,
+      cascadeEventsB,
+      primaryDriver,
+      constraintBreakQuarter,
+      tippingQuarter,
+      language,
+      constraintRegistry?.activeConstraintType,
+    ]
   );
+  const constraintActivationTimeline = useMemo(
+    () => buildConstraintActivationTimeline(constraintRegistry),
+    [constraintRegistry]
+  );
+  const constraintActivationTimelineA = useMemo(
+    () => buildConstraintActivationTimeline(constraintRegistryA),
+    [constraintRegistryA]
+  );
+  const constraintActivationTimelineB = useMemo(
+    () => buildConstraintActivationTimeline(constraintRegistryB),
+    [constraintRegistryB]
+  );
+  const constraintComparisonMessages = useMemo(
+    () =>
+      buildConstraintComparisonMessages(
+        constraintActivationTimelineA,
+        constraintActivationTimelineB
+      ),
+    [constraintActivationTimelineA, constraintActivationTimelineB]
+  );
+  const structuralGoalMessages = useMemo(
+    () =>
+      buildStructuralGoalMessages(
+        constraintActivationTimelineA,
+        constraintActivationTimelineB
+      ),
+    [
+      constraintActivationTimelineA,
+      constraintActivationTimelineB
+    ]
+  );
+  const resolvedGoalType = goalType ?? localGoalType;
+  const structuralGoalSummaryMessage = useMemo(
+    () =>
+      buildStructuralGoalSummaryMessage(
+        resolvedGoalType,
+        constraintComparisonMessages,
+        structuralGoalMessages,
+        marginHistoryA,
+        marginHistoryB
+      ),
+    [resolvedGoalType, constraintComparisonMessages, structuralGoalMessages, marginHistoryA, marginHistoryB]
+  );
+  const goalConditionedSystemStatusMessage = useMemo(
+    () =>
+      buildGoalConditionedSystemStatusMessage(
+        resolvedGoalType,
+        structuralGoalSummaryMessage
+      ),
+    [resolvedGoalType, structuralGoalSummaryMessage]
+  );
+  const dominantConstraintMessage = useMemo(
+    () =>
+      buildDominantConstraintMessage(
+        resolvedGoalType,
+        constraintComparisonMessages,
+        structuralGoalMessages
+      ),
+    [
+      resolvedGoalType,
+      constraintComparisonMessages,
+      structuralGoalMessages
+    ]
+  );
+  const constraintOrderingMessages = useMemo(
+    () =>
+      buildConstraintOrderingMessages(
+        constraintActivationTimelineA,
+        constraintActivationTimelineB
+      ),
+    [constraintActivationTimelineA, constraintActivationTimelineB]
+  );
+  const propagationRootComparisonMessage = useMemo(
+    () =>
+      buildPropagationRootComparisonMessages(
+        primaryDriverA,
+        primaryDriverB
+      ),
+    [primaryDriverA, primaryDriverB]
+  );
+  const cascadePathwayComparisonMessage = useMemo(
+    () =>
+      buildCascadePathwayComparisonMessages(
+        cascadeEventsA,
+        cascadeEventsB
+      ),
+    [cascadeEventsA, cascadeEventsB]
+  );
+  const hasStructuralDivergence =
+    firstDivergenceMonth != null ||
+    (primaryDriverA != null &&
+      primaryDriverB != null &&
+      primaryDriverA !== primaryDriverB) ||
+    propagationRootComparisonMessage != null ||
+    cascadePathwayComparisonMessage != null ||
+    Boolean(dominantScenarioChannelText);
+  const scenarioDifferenceText =
+    !hasStructuralDivergence
+      ? language === "sv"
+        ? "Scenarierna är strukturellt lika"
+        : "Scenarios remain structurally similar"
+      : firstDivergenceMonth != null && firstDivergenceMonth <= 6
+      ? language === "sv"
+        ? "Scenarierna divergerar tydligt"
+        : "Scenarios diverge clearly"
+      : firstDivergenceMonth != null
+      ? language === "sv"
+        ? "Scenarierna börjar divergera"
+        : "Scenarios begin to diverge"
+      : language === "sv"
+      ? "Scenarierna divergerar strukturellt genom olika drivkedjor"
+      : "Scenarios diverge structurally through different driver pathways";
   const localizePropagationNodeLabel = (label: string) => {
     if (uiLanguage !== "sv") return label;
     if (label === "Constraint activated") return "Begränsning aktiverad";
@@ -651,20 +844,24 @@ const AIInspectorPanel: React.FC<Props> = ({
       return "Tippingriskfönster inleds";
     return label;
   };
-  const normalizeTransportDriverKey = (key?: string) => {
-    if (!key) return key;
-
-    const compact = key.replace(/\s+/g, "");
-    const mapping: Record<string, string> = {
-      DemandRisk: "demandRisk",
-      CapitalCommitmentRigidityRisk: "capitalCommitmentRigidityRisk",
-      MaintenanceIntensityRisk: "maintenanceIntensityRisk",
-    };
-    const normalized = mapping[compact] ?? compact;
-    return normalized === "modal_attractiveness"
-      ? "modalAttractiveness"
-      : normalized;
-  };
+  const getConstraintLabel = (
+    constraintType: "capital" | "capacity" | "covenant" | "custom"
+  ) =>
+    constraintType === "capital"
+      ? language === "sv"
+        ? "Kapitalbegränsning"
+        : "Capital constraint"
+      : constraintType === "capacity"
+      ? language === "sv"
+        ? "Kapacitetsbegränsning"
+        : "Capacity constraint"
+      : constraintType === "covenant"
+      ? language === "sv"
+        ? "Kovenantbegränsning"
+        : "Covenant constraint"
+      : language === "sv"
+      ? "Anpassad begränsning"
+      : "Custom constraint";
   const getTransportReadableCascadeLine = (
     event: CascadeEvent,
     index: number
@@ -724,6 +921,37 @@ const AIInspectorPanel: React.FC<Props> = ({
       >
         {t.aiInspector}
       </div>
+      {inspectionMode === "executive" &&
+        seriesLengthA > 0 &&
+        seriesLengthB > 0 && (
+        <div
+          style={{
+            fontSize: "11px",
+            opacity: 0.65,
+            marginTop: "2px"
+          }}
+        >
+          {language === "sv"
+            ? `Analysmål: ${
+                resolvedGoalType === "robustness"
+                  ? "Strukturell robusthet"
+                  : resolvedGoalType === "delay"
+                  ? "Fördröj begränsningar"
+                  : resolvedGoalType === "avoidance"
+                  ? "Undvik begränsningar"
+                  : "Bevara marginalnivå"
+              }`
+            : `Analysis goal: ${
+                resolvedGoalType === "robustness"
+                  ? "Structural robustness"
+                  : resolvedGoalType === "delay"
+                  ? "Delay constraints"
+                  : resolvedGoalType === "avoidance"
+                  ? "Avoid constraints"
+                  : "Preserve margin"
+              }`}
+        </div>
+      )}
 
       <div
         style={{
@@ -805,7 +1033,10 @@ const AIInspectorPanel: React.FC<Props> = ({
                 ))}
               </div>
             ) : (
-              toReadableTransportChainStep(primaryDriver, language)
+              getTransportPolicyExplanationLabel(
+                normalizeTransportDriverKey(primaryDriver) ?? primaryDriver,
+                language
+              )
             )}
           </div>
         )}
@@ -814,7 +1045,10 @@ const AIInspectorPanel: React.FC<Props> = ({
             <strong>
               {language === "sv" ? "Systemdrivare:" : "System driver:"}
             </strong>{" "}
-            {toReadableTransportChainStep(primaryDriver, language)}
+            {getTransportPolicyExplanationLabel(
+              normalizeTransportDriverKey(primaryDriver) ?? primaryDriver,
+              language
+            )}
           </div>
         )}
         <div>
@@ -858,7 +1092,10 @@ const AIInspectorPanel: React.FC<Props> = ({
                     .map((step: string, index: number) => (
                       <div key={`upstream-${step}-${index}`}>
                         {index === 0 ? "" : "→ "}
-                        {step}
+                        {getTransportPolicyExplanationLabel(
+                          normalizeTransportDriverKey(step) ?? step,
+                          language
+                        )}
                       </div>
                     ))}
                 </div>
@@ -890,6 +1127,406 @@ const AIInspectorPanel: React.FC<Props> = ({
               <span style={{ color: "#6B7280" }}>—</span>
             )}
           </div>
+          {constraintActivationTimeline.length > 0 && (
+            <div style={{ marginTop: "8px", display: "flex", flexDirection: "column", gap: "2px" }}>
+              {constraintActivationTimeline.map((entry) => {
+                const constraintLabel = getConstraintLabel(
+                  entry.constraintType
+                );
+
+                return (
+                  <div key={`${entry.constraintType}-${entry.activationStep}`}>
+                    {entry.status === "approaching"
+                      ? language === "sv"
+                        ? `${constraintLabel} närmar sig M${entry.activationStep}`
+                        : `${constraintLabel} approaching M${entry.activationStep}`
+                      : language === "sv"
+                      ? `${constraintLabel} aktiveras M${entry.activationStep}`
+                      : `${constraintLabel} activates M${entry.activationStep}`}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {constraintComparisonMessages.length > 0 && (
+            <div style={{ marginTop: "8px", display: "flex", flexDirection: "column", gap: "2px" }}>
+              {constraintComparisonMessages.map((entry) => {
+                const constraintLabel = getConstraintLabel(entry.constraintType);
+
+                return (
+                  <div
+                    key={`${entry.constraintType}-${entry.messageKey}-${entry.scenarioDirection}`}
+                  >
+                    {entry.messageKey === "avoided"
+                      ? language === "sv"
+                        ? `${constraintLabel} undviks i ${
+                            entry.scenarioDirection === "baseline"
+                              ? "nulägesstrategin"
+                              : "målstrategin"
+                          }`
+                        : `${constraintLabel} avoided in ${
+                            entry.scenarioDirection === "baseline"
+                              ? "baseline strategy"
+                              : "target strategy"
+                          }`
+                      : language === "sv"
+                      ? `${constraintLabel} aktiveras ${
+                          entry.differenceMonths
+                        } månader tidigare i ${
+                          entry.scenarioDirection === "baseline"
+                            ? "nulägesstrategin"
+                            : "målstrategin"
+                        }`
+                      : `${constraintLabel} activates ${
+                          entry.differenceMonths
+                        } months earlier in ${
+                          entry.scenarioDirection === "baseline"
+                            ? "baseline strategy"
+                            : "target strategy"
+                        }`}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {structuralGoalMessages.map((entry) => {
+            const constraintLabel =
+              getConstraintLabel(entry.constraintType);
+
+            return (
+              <div key={`${entry.constraintType}-goal`}>
+                {language === "sv"
+                  ? `${constraintLabel} fördröjs ${entry.delayMonths} månader i ${
+                      entry.winningScenario === "target"
+                        ? "målstrategin"
+                        : "nulägesstrategin"
+                    }`
+                  : `${constraintLabel} delayed ${entry.delayMonths} months in ${
+                      entry.winningScenario === "target"
+                        ? "target strategy"
+                        : "baseline strategy"
+                    }`}
+              </div>
+            );
+          })}
+          {inspectionMode === "executive" &&
+            seriesLengthA > 0 &&
+            seriesLengthB > 0 && (
+            <div style={{ marginTop: "8px", marginBottom: "8px" }}>
+              <label style={{ fontSize: "12px", opacity: 0.7 }}>
+                {language === "sv" ? "Analysmål" : "Analysis goal"}
+              </label>
+
+              <select
+                value={resolvedGoalType}
+                onChange={(e) =>
+                  setLocalGoalType(e.target.value as GoalType)
+                }
+                style={{
+                  marginLeft: "8px",
+                  fontSize: "12px"
+                }}
+              >
+                <option value="robustness">
+                  {language === "sv"
+                    ? "Strukturell robusthet"
+                    : "Structural robustness"}
+                </option>
+
+                <option value="delay">
+                  {language === "sv"
+                    ? "Fördröj begränsningar"
+                    : "Delay constraints"}
+                </option>
+
+                <option value="avoidance">
+                  {language === "sv"
+                    ? "Undvik begränsningar"
+                    : "Avoid constraints"}
+                </option>
+
+                <option value="margin-preservation">
+                  {language === "sv"
+                    ? "Bevara marginalnivå"
+                    : "Preserve margin"}
+                </option>
+              </select>
+            </div>
+          )}
+          {structuralGoalSummaryMessage && (
+            <div style={{ marginTop: "8px" }}>
+              {resolvedGoalType === "margin-preservation"
+                ? language === "sv"
+                  ? `${
+                      structuralGoalSummaryMessage.winningScenario === "target"
+                        ? "Målstrategin"
+                        : "Nulägesstrategin"
+                    } bevarar marginalnivån längre innan första kritiska fall`
+                  : `${
+                      structuralGoalSummaryMessage.winningScenario === "target"
+                        ? "Target strategy"
+                        : "Baseline strategy"
+                    } preserves structural margin longer before first critical decline`
+                : language === "sv"
+                ? (() => {
+                    const scenarioLabel =
+                      structuralGoalSummaryMessage.winningScenario === "target"
+                        ? "Målstrategin"
+                        : "Nulägesstrategin";
+                    const avoidedText =
+                      structuralGoalSummaryMessage.avoidedConstraintCount > 0
+                        ? `undvika ${structuralGoalSummaryMessage.avoidedConstraintCount} begränsning${
+                            structuralGoalSummaryMessage.avoidedConstraintCount === 1 ? "" : "ar"
+                          }`
+                        : null;
+                    const delayedText =
+                      structuralGoalSummaryMessage.improvedConstraintCount > 0
+                        ? `fördröja ${structuralGoalSummaryMessage.improvedConstraintCount}`
+                        : null;
+                    const detailText = [avoidedText, delayedText].filter(Boolean).join(" och ");
+                    return `${scenarioLabel} förbättrar strukturell robusthet genom att ${detailText}`;
+                  })()
+                : (() => {
+                    const scenarioLabel =
+                      structuralGoalSummaryMessage.winningScenario === "target"
+                        ? "Target strategy"
+                        : "Baseline strategy";
+                    const avoidedText =
+                      structuralGoalSummaryMessage.avoidedConstraintCount > 0
+                        ? `avoiding ${structuralGoalSummaryMessage.avoidedConstraintCount} constraint${
+                            structuralGoalSummaryMessage.avoidedConstraintCount === 1 ? "" : "s"
+                          }`
+                        : null;
+                    const delayedText =
+                      structuralGoalSummaryMessage.improvedConstraintCount > 0
+                        ? `delaying ${structuralGoalSummaryMessage.improvedConstraintCount}`
+                        : null;
+                    const detailText = [avoidedText, delayedText].filter(Boolean).join(" and ");
+                    return `${scenarioLabel} improves structural robustness by ${detailText}`;
+                  })()}
+            </div>
+          )}
+          {inspectionMode === "executive" &&
+            seriesLengthA > 0 &&
+            seriesLengthB > 0 &&
+            goalConditionedSystemStatusMessage && (
+              <div
+                style={{
+                  marginTop: "4px",
+                  fontSize: "12px",
+                  opacity: 0.8
+                }}
+              >
+                {language === "sv"
+                  ? (() => {
+                      if (
+                        goalConditionedSystemStatusMessage.messageKey ===
+                        "activationTiming"
+                      ) {
+                        return `Utfallet påverkas främst av senare aktivering av systembegränsningar`;
+                      }
+
+                      if (
+                        goalConditionedSystemStatusMessage.messageKey ===
+                        "constraintAvoidance"
+                      ) {
+                        return `Utfallet påverkas främst av vilka begränsningar som helt undviks`;
+                      }
+
+                      if (
+                        goalConditionedSystemStatusMessage.messageKey ===
+                        "marginPreservation"
+                      ) {
+                        return `Utfallet påverkas främst av hur marginalnivån bevaras över tid`;
+                      }
+
+                      return `Utfallet påverkas främst av hur systemets handlingsutrymme bevaras längre`;
+                    })()
+                  : (() => {
+                      if (
+                        goalConditionedSystemStatusMessage.messageKey ===
+                        "activationTiming"
+                      ) {
+                        return `Outcome driven primarily by later constraint activation timing`;
+                      }
+
+                      if (
+                        goalConditionedSystemStatusMessage.messageKey ===
+                        "constraintAvoidance"
+                      ) {
+                        return `Outcome driven primarily by constraints avoided entirely`;
+                      }
+
+                      if (
+                        goalConditionedSystemStatusMessage.messageKey ===
+                        "marginPreservation"
+                      ) {
+                        return `Outcome driven primarily by preservation of structural margin over time`;
+                      }
+
+                      return `Outcome driven primarily by preservation of structural flexibility longer`;
+                    })()}
+              </div>
+            )}
+          {inspectionMode === "executive" &&
+            seriesLengthA > 0 &&
+            seriesLengthB > 0 &&
+            structuralGoalSummaryMessage && (
+            <div
+              style={{
+                marginTop: "6px",
+                fontSize: "12px",
+                opacity: 0.8
+              }}
+            >
+              {language === "sv"
+                ? (() => {
+                    const delayedCount =
+                      structuralGoalSummaryMessage.improvedConstraintCount ?? 0;
+
+                    const avoidedCount =
+                      structuralGoalSummaryMessage.avoidedConstraintCount ?? 0;
+
+                    if (resolvedGoalType === "delay") {
+                      return `Utfallet påverkas främst av hur flera begränsningar aktiveras senare i tidslinjen`;
+                    }
+
+                    if (resolvedGoalType === "avoidance") {
+                      return `Utfallet påverkas främst av vilka begränsningar som helt undviks`;
+                    }
+
+                    if (resolvedGoalType === "margin-preservation") {
+                      return `Utfallet påverkas främst av hur marginalnivån bevaras över tid`;
+                    }
+
+                    return `Utfallet påverkas främst av hur ${delayedCount} begränsningar fördröjs och ${avoidedCount} begränsningar undviks`;
+                  })()
+                : (() => {
+                    const delayedCount =
+                      structuralGoalSummaryMessage.improvedConstraintCount ?? 0;
+
+                    const avoidedCount =
+                      structuralGoalSummaryMessage.avoidedConstraintCount ?? 0;
+
+                    if (resolvedGoalType === "delay") {
+                      return `Outcome driven primarily by later constraint activation timing`;
+                    }
+
+                    if (resolvedGoalType === "avoidance") {
+                      return `Outcome driven primarily by constraints avoided entirely`;
+                    }
+
+                    if (resolvedGoalType === "margin-preservation") {
+                      return `Outcome driven primarily by preservation of structural margin over time`;
+                    }
+
+                    return `Outcome driven primarily by ${delayedCount} delayed constraints and ${avoidedCount} avoided constraints`;
+                  })()}
+            </div>
+          )}
+          {inspectionMode === "executive" &&
+            seriesLengthA > 0 &&
+            seriesLengthB > 0 &&
+            dominantConstraintMessage && (
+            <div
+              style={{
+                marginTop: "4px",
+                fontSize: "12px",
+                opacity: 0.85
+              }}
+            >
+              {language === "sv"
+                ? `Den största strukturella skillnaden drivs främst av ${
+                    getNarrativeDriverLabel(
+                      dominantConstraintMessage.constraintKey
+                    ).toLowerCase()
+                  }`
+                : `Primary structural difference driven by ${
+                    getNarrativeDriverLabel(
+                      dominantConstraintMessage.constraintKey
+                    ).toLowerCase()
+                  }`}
+            </div>
+          )}
+          {constraintOrderingMessages.length > 0 && (
+            <div style={{ marginTop: "8px", display: "flex", flexDirection: "column", gap: "2px" }}>
+              {constraintOrderingMessages.map((entry) => {
+                const earlierConstraintLabel = getConstraintLabel(
+                  entry.earlierConstraint
+                );
+                const laterConstraintLabel = getConstraintLabel(
+                  entry.laterConstraint
+                );
+
+                return (
+                  <div
+                    key={`${entry.earlierConstraint}-${entry.laterConstraint}-${entry.scenarioDirection}`}
+                  >
+                    {language === "sv"
+                      ? `${earlierConstraintLabel} inträffar före ${laterConstraintLabel.toLowerCase()} i ${
+                          entry.scenarioDirection === "target"
+                            ? "målstrategin"
+                            : "nulägesstrategin"
+                        } men efter i ${
+                          entry.scenarioDirection === "target"
+                            ? "nulägesstrategin"
+                            : "målstrategin"
+                        }`
+                      : `${earlierConstraintLabel} occurs before ${laterConstraintLabel.toLowerCase()} in ${
+                          entry.scenarioDirection === "target"
+                            ? "target strategy"
+                            : "baseline strategy"
+                        } but after in ${
+                          entry.scenarioDirection === "target"
+                            ? "baseline strategy"
+                            : "target strategy"
+                        }`}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {propagationRootComparisonMessage && (
+            <div style={{ marginTop: "8px" }}>
+              {(() => {
+                const driverALabel = getNarrativeDriverLabel(
+                  propagationRootComparisonMessage.driverA
+                ).toLowerCase();
+                const driverBLabel = getNarrativeDriverLabel(
+                  propagationRootComparisonMessage.driverB
+                ).toLowerCase();
+
+                return language === "sv"
+                  ? `Systemets primära tryck flyttar från ${driverALabel} till ${driverBLabel} i ${
+                      propagationRootComparisonMessage.scenarioDirection === "target"
+                        ? "målstrategin"
+                        : "nulägesstrategin"
+                    }`
+                  : `Primary system pressure shifts from ${driverALabel} to ${driverBLabel} in the ${
+                      propagationRootComparisonMessage.scenarioDirection === "target"
+                        ? "target strategy"
+                        : "baseline strategy"
+                    }`;
+              })()}
+            </div>
+          )}
+          {cascadePathwayComparisonMessage && (
+            <div style={{ marginTop: "8px" }}>
+              {(() => {
+                const driverALabel = getNarrativeDriverLabel(
+                  cascadePathwayComparisonMessage.driverA
+                ).toLowerCase();
+
+                const driverBLabel = getNarrativeDriverLabel(
+                  cascadePathwayComparisonMessage.driverB
+                ).toLowerCase();
+
+                return language === "sv"
+                  ? `Marginalfallet drivs av ${driverBLabel} i målstrategin men av ${driverALabel} i nulägesstrategin`
+                  : `Margin erosion is driven by ${driverBLabel} in the target strategy but by ${driverALabel} in the baseline strategy`;
+              })()}
+            </div>
+          )}
         </div>
         <div>
           <span style={{ color: "#9CA3AF", marginRight: "6px" }}>
@@ -1032,14 +1669,14 @@ const AIInspectorPanel: React.FC<Props> = ({
             })()}
           </div>
         </div>
-        {_dominantScenarioDifferenceChannel && (
+        {dominantScenarioChannelText && (
           <div>
             <div style={{ color: "#9CA3AF", marginBottom: "4px" }}>
               {language === "sv"
                 ? "Skillnaden mellan strategierna drivs främst via"
                 : "The difference between strategies is primarily driven via"}
             </div>
-            <div>{_dominantScenarioDifferenceChannel}</div>
+            <div>{dominantScenarioChannelText}</div>
           </div>
         )}
 
@@ -1182,8 +1819,12 @@ const AIInspectorPanel: React.FC<Props> = ({
               ? language === "sv"
                 ? `Skillnaden börjar uppstå runt M${firstDivergenceMonth}`
                 : `Difference begins around M${firstDivergenceMonth}`
+              : hasStructuralDivergence
+              ? language === "sv"
+                ? "Strukturell divergens identifierad via olika drivare eller spridningskedjor"
+                : "Structural divergence detected through different drivers or propagation pathways"
               : language === "sv"
-              ? "Ingen strukturell divergence identifierad inom aktuell simuleringshorisont"
+              ? "Ingen strukturell divergens identifierad inom aktuell simuleringshorisont"
               : "No structural divergence detected yet"}
           </div>
         </div>

@@ -56,20 +56,20 @@ export const TRANSPORT_ENGINE_RISK_LABELS: Record<
   { readableLabel_sv: string; readableLabel_en: string }
 > = {
   demandRisk: {
-    readableLabel_sv: "Efterfrågan i transportsystemet",
-    readableLabel_en: "Demand in the transport system",
+    readableLabel_sv: "Efterfrågetryck i transportsystemet",
+    readableLabel_en: "Transport demand pressure",
   },
   budget_pressure: {
-    readableLabel_sv: "Budgettrycket i transportsystemet",
-    readableLabel_en: "Budget pressure in the transport system",
+    readableLabel_sv: "Budgettryck i genomförandet",
+    readableLabel_en: "Budget pressure in implementation",
   },
   capitalCommitmentRigidity: {
     readableLabel_sv: "Investeringsbindning i transportsystemet",
     readableLabel_en: "Capital commitment rigidity in the transport system",
   },
   capitalCommitmentRigidityRisk: {
-    readableLabel_sv: "Investeringsbindning i transportsystemet",
-    readableLabel_en: "Capital commitment rigidity in the transport system",
+    readableLabel_sv: "Ökad kapitalbindning",
+    readableLabel_en: "Increased capital commitment rigidity",
   },
   maintenanceIntensity: {
     readableLabel_sv: "Underhallsintensiteten i transportsystemet",
@@ -79,7 +79,149 @@ export const TRANSPORT_ENGINE_RISK_LABELS: Record<
     readableLabel_sv: "Underhallsintensiteten i transportsystemet",
     readableLabel_en: "Maintenance intensity in the transport system",
   },
+  operational_capacity: {
+    readableLabel_sv: "Genomförandekapacitet",
+    readableLabel_en: "Implementation capacity",
+  },
+  transit_signal_priority: {
+    readableLabel_sv: "Signalprioritering för kollektivtrafik",
+    readableLabel_en: "Transit signal priority",
+  },
+  accessibility: {
+    readableLabel_sv: "Tillgänglighet i nätverket",
+    readableLabel_en: "Network accessibility",
+  },
+  modal_attractiveness: {
+    readableLabel_sv: "Ökad färdmedelsattraktivitet",
+    readableLabel_en: "Improved modal attractiveness",
+  },
+  tenantStabilityRisk: {
+    readableLabel_sv: "Stabilitet i efterfrågebasen",
+    readableLabel_en: "Demand-base stability",
+  },
 };
+
+export const TRANSPORT_POLICY_EXPLANATION_LABELS: Record<
+  string,
+  { sv: string; en: string }
+> = {
+  budgetPressure: {
+    sv: "budgettryck i genomförandet",
+    en: "budget pressure in implementation",
+  },
+  implementationPacing: {
+    sv: "genomförandetakt",
+    en: "implementation pacing",
+  },
+  capacityPressure: {
+    sv: "kapacitetstryck i nätverket",
+    en: "network capacity pressure",
+  },
+  accessibility: {
+    sv: "tillgänglighet i nätverket",
+    en: "network accessibility",
+  },
+  modal_attractiveness: {
+    sv: "ökad färdmedelsattraktivitet",
+    en: "improved modal attractiveness",
+  },
+  demandRisk: {
+    sv: "efterfrågetryck i transportsystemet",
+    en: "transport demand pressure",
+  },
+  demand: {
+    sv: "efterfrågetryck i transportsystemet",
+    en: "transport demand pressure",
+  },
+  budget_pressure: {
+    sv: "budgettryck i genomförandet",
+    en: "budget pressure in implementation",
+  },
+  capitalCommitmentRigidityRisk: {
+    sv: "ökad kapitalbindning",
+    en: "increased capital commitment rigidity",
+  },
+  maintenanceIntensityRisk: {
+    sv: "stigande underhållstryck",
+    en: "rising maintenance pressure",
+  },
+  tenantStabilityRisk: {
+    sv: "försvagad stabilitet i efterfrågebasen",
+    en: "weakened demand-base stability",
+  },
+  operational_capacity: {
+    sv: "genomförandekapacitet",
+    en: "implementation capacity",
+  },
+  transit_signal_priority: {
+    sv: "signalprioritering för kollektivtrafik",
+    en: "transit signal priority",
+  },
+  congestion_pressure: {
+    sv: "kapacitetstryck i nätverket",
+    en: "network capacity pressure",
+  },
+};
+
+export function getTransportPolicyExplanationLabel(
+  key: string,
+  language: "sv" | "en"
+): string {
+  const explicit = TRANSPORT_POLICY_EXPLANATION_LABELS[key];
+  if (explicit) {
+    return explicit[language];
+  }
+
+  const engineLabel = TRANSPORT_ENGINE_RISK_LABELS[key];
+  if (engineLabel) {
+    return language === "sv"
+      ? engineLabel.readableLabel_sv
+      : engineLabel.readableLabel_en;
+  }
+
+  const systemDriver =
+    TRANSPORT_SYSTEM_DRIVERS[key as keyof typeof TRANSPORT_SYSTEM_DRIVERS];
+  if (systemDriver) {
+    return language === "sv"
+      ? systemDriver.readableLabel_sv ?? systemDriver.label
+      : systemDriver.readableLabel_en ?? systemDriver.label;
+  }
+
+  return key
+    .replace(/_/g, " ")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .toLowerCase();
+}
+
+export function buildTransportPolicyPropagationExplanation(
+  chain: string[],
+  language: "sv" | "en"
+): string {
+  const labels = chain
+    .map((step) => getTransportPolicyExplanationLabel(step, language))
+    .filter(Boolean);
+
+  if (labels.length === 0) return "";
+  if (labels.length === 1) return labels[0];
+
+  if (language === "sv") {
+    if (labels.length === 2) {
+      return `${labels[0]} påverkar ${labels[1]}`;
+    }
+
+    return `${labels[0]} påverkar ${labels
+      .slice(1, -1)
+      .join(", ")} och leder vidare till ${labels[labels.length - 1]}`;
+  }
+
+  if (labels.length === 2) {
+    return `${labels[0]} affects ${labels[1]}`;
+  }
+
+  return `${labels[0]} affects ${labels
+    .slice(1, -1)
+    .join(", ")} and ultimately drives ${labels[labels.length - 1]}`;
+}
 
 export const TRANSPORT_SYSTEM_DRIVERS: Record<
   TransportSystemDriverId,
@@ -111,8 +253,8 @@ export const TRANSPORT_SYSTEM_DRIVERS: Record<
   demand: {
     id: "demand",
     label: "Demand",
-    readableLabel_sv: "Efterfrågerisk i transportsystemet",
-    readableLabel_en: "Demand risk",
+    readableLabel_sv: "Efterfrågetryck i transportsystemet",
+    readableLabel_en: "Transport demand pressure",
     engineRiskKey: "demand",
     propagationChain: [
       "demand",
@@ -215,7 +357,7 @@ export const TRANSPORT_POLICY_LEVER_MAPPINGS: Record<
     label: "Service frequency",
     influences: [
       { driver: "accessibility", direction: "increase", weight: 0.9 },
-      { driver: "modalAttractiveness", direction: "increase", weight: 0.7 },
+      { driver: "implementationPacing", direction: "increase", weight: 0.5 },
       { driver: "budgetPressure", direction: "increase", weight: 0.5 },
     ],
   },
@@ -232,7 +374,7 @@ export const TRANSPORT_POLICY_LEVER_MAPPINGS: Record<
     label: "Parking reduction",
     influences: [
       { driver: "modalAttractiveness", direction: "increase", weight: 0.6 },
-      { driver: "capacityPressure", direction: "decrease", weight: 0.5 },
+      { driver: "demand", direction: "decrease", weight: 0.5 },
     ],
   },
   transitCorridorPriority: {

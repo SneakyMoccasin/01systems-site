@@ -1,4 +1,5 @@
 import {
+  getTransportPolicyExplanationLabel,
   TRANSPORT_ENGINE_RISK_LABELS,
   TRANSPORT_SYSTEM_DRIVERS,
   type TransportSystemDriverId,
@@ -40,26 +41,10 @@ export function buildDomainPropagationEvents(
       return {
         events: sourceEvents.slice(0, 3).map((event, index) => ({
           month: index,
-          label:
-            language === "sv"
-              ? TRANSPORT_ENGINE_RISK_LABELS[event.targetRisk]?.readableLabel_sv ??
-                TRANSPORT_SYSTEM_DRIVERS[
-                  event.targetRisk as keyof typeof TRANSPORT_SYSTEM_DRIVERS
-                ]?.readableLabel_sv ??
-                TRANSPORT_ENGINE_RISK_LABELS[event.targetRisk]?.readableLabel_en ??
-                TRANSPORT_SYSTEM_DRIVERS[
-                  event.targetRisk as keyof typeof TRANSPORT_SYSTEM_DRIVERS
-                ]?.readableLabel_en ??
-                event.targetRisk
-              : TRANSPORT_ENGINE_RISK_LABELS[event.targetRisk]?.readableLabel_en ??
-                TRANSPORT_SYSTEM_DRIVERS[
-                  event.targetRisk as keyof typeof TRANSPORT_SYSTEM_DRIVERS
-                ]?.readableLabel_en ??
-                TRANSPORT_ENGINE_RISK_LABELS[event.targetRisk]?.readableLabel_sv ??
-                TRANSPORT_SYSTEM_DRIVERS[
-                  event.targetRisk as keyof typeof TRANSPORT_SYSTEM_DRIVERS
-                ]?.readableLabel_sv ??
-                event.targetRisk,
+          label: getTransportPolicyExplanationLabel(
+            event.targetRisk,
+            language
+          ),
         })),
         primaryPropagationSignatureA,
         primaryPropagationSignatureB,
@@ -84,26 +69,10 @@ export function buildDomainPropagationEvents(
   return {
     events: driverDef.propagationChain.map((driverId, index, chain) => {
       const normalizedDriverId = driverId;
-      const readable =
-        language === "sv"
-          ? TRANSPORT_ENGINE_RISK_LABELS[normalizedDriverId]?.readableLabel_sv ??
-            TRANSPORT_SYSTEM_DRIVERS[
-              normalizedDriverId as keyof typeof TRANSPORT_SYSTEM_DRIVERS
-            ]?.readableLabel_sv ??
-            TRANSPORT_ENGINE_RISK_LABELS[normalizedDriverId]?.readableLabel_en ??
-            TRANSPORT_SYSTEM_DRIVERS[
-              normalizedDriverId as keyof typeof TRANSPORT_SYSTEM_DRIVERS
-            ]?.readableLabel_en ??
-            driverId
-          : TRANSPORT_ENGINE_RISK_LABELS[normalizedDriverId]?.readableLabel_en ??
-            TRANSPORT_SYSTEM_DRIVERS[
-              normalizedDriverId as keyof typeof TRANSPORT_SYSTEM_DRIVERS
-            ]?.readableLabel_en ??
-            TRANSPORT_ENGINE_RISK_LABELS[normalizedDriverId]?.readableLabel_sv ??
-            TRANSPORT_SYSTEM_DRIVERS[
-              normalizedDriverId as keyof typeof TRANSPORT_SYSTEM_DRIVERS
-            ]?.readableLabel_sv ??
-            driverId;
+      const readable = getTransportPolicyExplanationLabel(
+        normalizedDriverId,
+        language
+      );
       const isFirst = index === 0;
       const isLast = index === chain.length - 1;
       const phrase =

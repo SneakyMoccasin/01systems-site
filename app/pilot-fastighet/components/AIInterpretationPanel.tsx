@@ -34,6 +34,10 @@ type Props = {
   cascadeDelay?: number;
   caseType?: "transport" | "real-estate" | null;
   selectedActions?: string[];
+  primaryDriverChanged?: boolean;
+  constraintActivationChanged?: boolean;
+  propagationRootChanged?: boolean;
+  dominantScenarioDifferenceChannel?: string | null;
 };
 
 const AIInterpretationPanel: React.FC<Props> = ({
@@ -55,6 +59,10 @@ const AIInterpretationPanel: React.FC<Props> = ({
   cascadeDelay,
   caseType = null,
   selectedActions = [],
+  primaryDriverChanged,
+  constraintActivationChanged,
+  propagationRootChanged,
+  dominantScenarioDifferenceChannel = null,
 }) => {
   profileCount("AIInterpretationPanel.render");
 
@@ -91,6 +99,10 @@ const AIInterpretationPanel: React.FC<Props> = ({
       cascadeDelay,
       caseType,
       selectedActions,
+      primaryDriverChanged,
+      constraintActivationChanged,
+      propagationRootChanged,
+      dominantScenarioDifferenceChannel,
     };
     profileCount("AIInterpretationPanel.fetch.calls");
     const serializedBody = profileMeasure(
@@ -118,7 +130,19 @@ const AIInterpretationPanel: React.FC<Props> = ({
       .catch(() => {
         setLoading(false);
       });
-  }, [simulationCompleted, uiLanguage ?? "en"]);
+  }, [
+    simulationCompleted,
+    uiLanguage ?? "en",
+    primaryDriverChanged ?? false,
+    constraintActivationChanged ?? false,
+    propagationRootChanged ?? false,
+    dominantScenarioDifferenceChannel ?? null,
+    selectedActions?.join(",") ?? "",
+    marginImpact ?? null,
+    primaryDriver ?? null,
+    cascadeEventsA?.length ?? 0,
+    cascadeEventsB?.length ?? 0,
+  ]);
 
   useEffect(() => {
     if (!simulationCompleted) {

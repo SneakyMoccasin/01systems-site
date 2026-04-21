@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
+import { unstable_batchedUpdates } from "react-dom";
 import { getSystemSnapshot } from "@/src/systemSnapshot/systemSnapshotStore";
 import { RealEstateEngine, type RiskState } from "@/src/pilotFastighet/RealEstateEngine";
 import type { CascadeEvent } from "@/src/pilotFastighet/riskPropagation";
@@ -30,6 +31,11 @@ import {
   buildDomainPropagationEvents,
   getPrimaryPropagationSignature,
 } from "./components/inspector-utils/buildDomainPropagationEvents";
+import { buildConstraintActivationTimeline } from "./components/inspector-utils/buildConstraintActivationTimeline";
+import { buildConstraintComparisonMessages } from "./components/inspector-utils/buildConstraintComparisonMessages";
+import { buildStructuralGoalMessages } from "./components/inspector-utils/buildStructuralGoalMessages";
+import { buildDominantConstraintMessage } from "./components/inspector-utils/buildDominantConstraintMessage";
+import { DEFAULT_GOAL_TYPE } from "./components/inspector-utils/goalTypes";
 import ActionPanel from "./components/ActionPanel";
 import MarginGraph, {
   MarginGraphLegendRow,
@@ -42,6 +48,7 @@ import { parsePreviewScenarioImpact } from "@/src/pilotFastighet/previewScenario
 import { getScenarioLibrary } from "@/src/pilotFastighet/scenarioLibrary";
 import { resolveTransportInspectorContext } from "@/src/pilotFastighet/transportInspectorAdapter";
 import {
+  getTransportPolicyExplanationLabel,
   TRANSPORT_SYSTEM_DRIVERS,
   type TransportSystemDriverId,
 } from "@/src/pilotFastighet/transportDomainMapping";
@@ -74,6 +81,19 @@ function toReadableLabel(
   return withSpaces.charAt(0).toUpperCase() + withSpaces.slice(1);
 }
 
+function areRiskStatesEqual(a: RiskState, b: RiskState): boolean {
+  if (a === b) return true;
+
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+  if (aKeys.length !== bKeys.length) return false;
+
+  for (const key of aKeys) {
+    if (a[key] !== b[key]) return false;
+  }
+  return true;
+}
+
 const STORAGE_KEY_A = "pulse_pilot_fastighet_history_A";
 const STORAGE_KEY_B = "pulse_pilot_fastighet_history_B";
 const SNAPSHOT_LABELS_KEY = "pulse.snapshotLabels.v1";
@@ -101,7 +121,6 @@ const actionEffects = {
     budget_pressure: +0.5,
   },
   reduce_travel_time: {
-    accessibility: +1,
     modal_attractiveness: +1,
   },
   expand_cycling_infrastructure: {
@@ -119,12 +138,10 @@ const actionEffects = {
     capitalCommitmentRigidityRisk: +0.5,
   },
   transit_signal_priority: {
-    modal_attractiveness: +1,
-    accessibility: +1,
+    transit_signal_priority: +1,
   },
   reduce_parking_supply: {
-    modal_attractiveness: +1,
-    demandRisk: -0.5,
+    demandRisk: +1,
   },
   phase_project_starts: {
     capitalCommitmentRigidityRisk: -1,
@@ -573,16 +590,6 @@ export default function PilotFastighetPage() {
         if (sA.step <= 3 || sB.step <= 3) {
         }
 
-        // Keep the UI in sync with the engine (single source of truth).
-        setRiskStateA(structuredClone(sA.riskState as RiskState));
-        setRiskStateB(structuredClone(sB.riskState as RiskState));
-        if (Array.isArray((sA as any).cascadeEvents)) {
-          setCascadeEventsA((sA as any).cascadeEvents);
-        }
-        if (Array.isArray((sB as any).cascadeEvents)) {
-          setCascadeEventsB((sB as any).cascadeEvents);
-        }
-
         if (sA.step > simulationHorizon && sB.step > simulationHorizon) {
           if (engineBaselineRef.current) engineBaselineRef.current = null;
 
@@ -590,9 +597,10 @@ export default function PilotFastighetPage() {
             window.clearInterval(intervalRef.current);
             intervalRef.current = null;
           }
-
-          setHasSimulationCompleted(true);
-          setIsRunning(false);
+          unstable_batchedUpdates(() => {
+            setHasSimulationCompleted(true);
+            setIsRunning(false);
+          });
           return;
         }
 
@@ -600,15 +608,20 @@ export default function PilotFastighetPage() {
 
         if (sA.step > MIN_STEPS_BEFORE_STEADY) {
           if (lastMarginARef.current !== null) {
+            const nextDemandA =
+              RISK_LEVEL_TO_NUMBER[
+                (sA.riskState.demandRisk as RiskLevel) ?? "MODERATE"
+              ];
+            const nextDemandB =
+              RISK_LEVEL_TO_NUMBER[
+                (sB.riskState.demandRisk as RiskLevel) ?? "MODERATE"
+              ];
             const isStableA =
               Math.abs(sA.margin - lastMarginARef.current) < epsilon;
             if (isStableA) {
               stableCounterARef.current += 1;
             } else {
               stableCounterARef.current = 0;
-            }
-            if (stableCounterARef.current >= REQUIRED_STABLE_TICKS) {
-              setSteadyStateStep(sA.step);
             }
           }
         }
@@ -623,44 +636,88 @@ export default function PilotFastighetPage() {
             } else {
               stableCounterBRef.current = 0;
             }
-            if (stableCounterBRef.current >= REQUIRED_STABLE_TICKS) {
-              setSteadyStateStep(sB.step);
-            }
           }
         }
         lastMarginBRef.current = sB.margin;
 
-        setMarginHistoryA((prev) => {
-          const idx = prev.length;
-          if (sA.registry?.RefinancingConstraint?.lifecycle === "ACTIVE") {
-            setTippingMarginIndexA((t) => (t === null ? idx : t));
-          }
-          return [...prev, sA.margin];
-        });
-
-        setMarginHistoryB((prev) => {
-          const idx = prev.length;
-          if (sB.registry?.RefinancingConstraint?.lifecycle === "ACTIVE") {
-            setTippingMarginIndexB((t) => (t === null ? idx : t));
-          }
-          return [...prev, sB.margin];
-        });
-        setDemandHistoryA((prev) => [
-          ...prev,
+        const nextDemandA =
           RISK_LEVEL_TO_NUMBER[
             (sA.riskState.demandRisk as RiskLevel) ?? "MODERATE"
-          ],
-        ]);
-        setDemandHistoryB((prev) => [
-          ...prev,
+          ];
+        const nextDemandB =
           RISK_LEVEL_TO_NUMBER[
             (sB.riskState.demandRisk as RiskLevel) ?? "MODERATE"
-          ],
-        ]);
+          ];
+        const nextCascadeEventsA = Array.isArray((sA as any).cascadeEvents)
+          ? ((sA as any).cascadeEvents as CascadeEvent[])
+          : null;
+        const nextCascadeEventsB = Array.isArray((sB as any).cascadeEvents)
+          ? ((sB as any).cascadeEvents as CascadeEvent[])
+          : null;
+        const shouldMarkTippingA =
+          sA.registry?.RefinancingConstraint?.lifecycle === "ACTIVE";
+        const shouldMarkTippingB =
+          sB.registry?.RefinancingConstraint?.lifecycle === "ACTIVE";
+        const shouldSetSteadyStateA =
+          sA.step > MIN_STEPS_BEFORE_STEADY &&
+          stableCounterARef.current >= REQUIRED_STABLE_TICKS;
+        const shouldSetSteadyStateB =
+          sB.step > MIN_STEPS_BEFORE_STEADY &&
+          stableCounterBRef.current >= REQUIRED_STABLE_TICKS;
 
-        if (sBaseline != null) {
-          setMarginHistoryBaseline((prev) => [...prev, sBaseline.margin]);
-        }
+        unstable_batchedUpdates(() => {
+          // Keep the UI in sync with the engine (single source of truth).
+          setRiskStateA((prev) =>
+            areRiskStatesEqual(prev, sA.riskState as RiskState)
+              ? prev
+              : structuredClone(sA.riskState as RiskState)
+          );
+          setRiskStateB((prev) =>
+            areRiskStatesEqual(prev, sB.riskState as RiskState)
+              ? prev
+              : structuredClone(sB.riskState as RiskState)
+          );
+
+          if (nextCascadeEventsA) {
+            setCascadeEventsA((prev) =>
+              prev.length === nextCascadeEventsA.length ? prev : nextCascadeEventsA
+            );
+          }
+          if (nextCascadeEventsB) {
+            setCascadeEventsB((prev) =>
+              prev.length === nextCascadeEventsB.length ? prev : nextCascadeEventsB
+            );
+          }
+
+          if (shouldSetSteadyStateA) {
+            setSteadyStateStep(sA.step);
+          }
+          if (shouldSetSteadyStateB) {
+            setSteadyStateStep(sB.step);
+          }
+
+          setMarginHistoryA((prev) => {
+            const idx = prev.length;
+            if (shouldMarkTippingA) {
+              setTippingMarginIndexA((t) => (t === null ? idx : t));
+            }
+            return [...prev, sA.margin];
+          });
+
+          setMarginHistoryB((prev) => {
+            const idx = prev.length;
+            if (shouldMarkTippingB) {
+              setTippingMarginIndexB((t) => (t === null ? idx : t));
+            }
+            return [...prev, sB.margin];
+          });
+          setDemandHistoryA((prev) => [...prev, nextDemandA]);
+          setDemandHistoryB((prev) => [...prev, nextDemandB]);
+
+          if (sBaseline != null) {
+            setMarginHistoryBaseline((prev) => [...prev, sBaseline.margin]);
+          }
+        });
       });
     }, 500);
 
@@ -980,23 +1037,113 @@ export default function PilotFastighetPage() {
       : scenarioTarget === "B"
         ? selectedActionsB
         : [];
+  const selectedScenario = scenarioTarget;
+  const resolvedGoalType = DEFAULT_GOAL_TYPE;
+  const constraintActivationTimelineA = useMemo(
+    () =>
+      buildConstraintActivationTimeline(stateA.registry).map((entry) => ({
+        ...entry,
+        monthIndex: entry.activationStep,
+      })),
+    [stateA.registry]
+  );
+  const constraintActivationTimelineB = useMemo(
+    () =>
+      buildConstraintActivationTimeline(stateB.registry).map((entry) => ({
+        ...entry,
+        monthIndex: entry.activationStep,
+      })),
+    [stateB.registry]
+  );
+  const constraintComparisonMessages = useMemo(
+    () =>
+      buildConstraintComparisonMessages(
+        constraintActivationTimelineA,
+        constraintActivationTimelineB
+      ),
+    [constraintActivationTimelineA, constraintActivationTimelineB]
+  );
+  const structuralGoalMessages = useMemo(
+    () =>
+      buildStructuralGoalMessages(
+        constraintActivationTimelineA,
+        constraintActivationTimelineB
+      ),
+    [constraintActivationTimelineA, constraintActivationTimelineB]
+  );
+  const dominantConstraintMessage = useMemo(
+    () =>
+      buildDominantConstraintMessage(
+        resolvedGoalType,
+        constraintComparisonMessages,
+        structuralGoalMessages
+      ),
+    [resolvedGoalType, constraintComparisonMessages, structuralGoalMessages]
+  );
+  const divergenceMonthIndex = useMemo(() => {
+    if (!marginHistoryA?.length || !marginHistoryB?.length) return null;
+
+    const length = Math.min(marginHistoryA.length, marginHistoryB.length);
+
+    for (let i = 0; i < length; i++) {
+      if (marginHistoryA[i] !== marginHistoryB[i]) {
+        return i;
+      }
+    }
+
+    return null;
+  }, [marginHistoryA, marginHistoryB]);
   const caseType =
     domain === "municipal"
       ? "transport"
       : domain === "real-estate"
         ? "real-estate"
         : null;
-  const transportContext =
-    caseType === "transport"
-      ? resolveTransportInspectorContext({
-          language: uiLanguage,
-          selectedActions: selectedActionsForPanel,
-          cascadeEventsA,
-          cascadeEventsB,
-          primaryPropagationSignatureA: getPrimaryPropagationSignature(cascadeEventsA),
-          primaryPropagationSignatureB: getPrimaryPropagationSignature(cascadeEventsB),
-        })
-      : null;
+  const transportContextA = useMemo(() => {
+    if (caseType !== "transport") return null;
+
+    return resolveTransportInspectorContext({
+      language: uiLanguage,
+      selectedActions: selectedActionsA,
+      cascadeEventsA,
+      primaryPropagationSignatureA: getPrimaryPropagationSignature(cascadeEventsA),
+    });
+  }, [caseType, uiLanguage, selectedActionsA, cascadeEventsA]);
+  const transportContextB = useMemo(() => {
+    if (caseType !== "transport") return null;
+
+    return resolveTransportInspectorContext({
+      language: uiLanguage,
+      selectedActions: selectedActionsB,
+      cascadeEventsB,
+      primaryPropagationSignatureB: getPrimaryPropagationSignature(cascadeEventsB),
+    });
+  }, [caseType, uiLanguage, selectedActionsB, cascadeEventsB]);
+  const transportContext = useMemo(() => {
+    if (caseType !== "transport") return null;
+
+    return resolveTransportInspectorContext({
+      language: uiLanguage,
+      selectedActions: selectedActionsForPanel,
+      cascadeEventsA,
+      cascadeEventsB,
+      primaryPropagationSignatureA: getPrimaryPropagationSignature(cascadeEventsA),
+      primaryPropagationSignatureB: getPrimaryPropagationSignature(cascadeEventsB),
+    });
+  }, [caseType, uiLanguage, selectedActionsForPanel, cascadeEventsA, cascadeEventsB]);
+  const primaryDriverA =
+    transportContextA?.primaryDriver ??
+    null;
+  const primaryDriverB =
+    transportContextB?.primaryDriver ??
+    null;
+  const primaryDriverChanged =
+    primaryDriverA != null &&
+    primaryDriverB != null &&
+    primaryDriverA !== primaryDriverB;
+  const constraintActivationChanged =
+    constraintComparisonMessages.length > 0;
+  const propagationRootChanged = primaryDriverChanged;
   const primaryDriver =
     transportContext?.policyDriverKey ??
     transportContext?.primaryDriver ??
@@ -1073,6 +1220,12 @@ export default function PilotFastighetPage() {
     marginHistoryB.length > 0
       ? marginHistoryB[marginHistoryB.length - 1]
       : null;
+
+  const displayMarginB = useMemo(() => {
+    return marginHistoryA.length > 0 && marginHistoryB.length > 0
+      ? [marginHistoryA[0], ...marginHistoryB.slice(1)]
+      : marginHistoryB;
+  }, [marginHistoryA, marginHistoryB]);
 
   const showBaselineOnly = marginHistoryB.length === 0;
   const pilotCase =
@@ -1976,15 +2129,22 @@ export default function PilotFastighetPage() {
                 currentMargin={finalA}
                 alternativeMargin={finalB}
                 marginImpact={finalB - finalA}
+                marginHistoryA={marginHistoryA}
+                marginHistoryB={marginHistoryB}
                 cascadeEvents={cascadeEvents}
                 cascadeEventsA={cascadeEventsA}
                 cascadeEventsB={cascadeEventsB}
                 seriesLengthA={marginHistoryA.length}
                 seriesLengthB={marginHistoryB.length}
                 simulationHorizon={simulationHorizon}
+                primaryDriverA={primaryDriverA}
+                primaryDriverB={primaryDriverB}
                 primaryDriver={primaryDriver}
                 systemPressure={systemPressure}
                 constraintBreakQuarter={estimatedTimeToBreach}
+                constraintRegistryA={stateA.registry}
+                constraintRegistryB={stateB.registry}
+                constraintRegistry={stateB.registry}
                 structuralStatus={t.structuralStatus[structuralStatusKey]}
                 selectedMonthIndex={selectedMonthData?.monthIndex ?? null}
                 selectedMarginValueA={selectedMonthData?.marginA ?? null}
@@ -2028,11 +2188,7 @@ export default function PilotFastighetPage() {
                   driverEvents={
                     caseType === "transport" ? domainEventsForGraph : []
                   }
-                  displayMarginB={
-                    marginHistoryA.length > 0 && marginHistoryB.length > 0
-                      ? [marginHistoryA[0], ...marginHistoryB.slice(1)]
-                      : marginHistoryB
-                  }
+                  displayMarginB={displayMarginB}
                   tippingMarginIndexA={tippingMarginIndexA}
                   tippingMarginIndexB={tippingMarginIndexB}
                   hoverIndex={hoverIndex}
@@ -2049,6 +2205,13 @@ export default function PilotFastighetPage() {
                   onSelectMonth={setSelectedMonthData}
                   selectedMonthIndex={selectedMonthData?.monthIndex}
                   graphTitle={undefined}
+                  dominantConstraintMessage={dominantConstraintMessage}
+                  constraintActivationTimeline={
+                    selectedScenario === "A"
+                      ? constraintActivationTimelineA
+                      : constraintActivationTimelineB
+                  }
+                  divergenceMonthIndex={divergenceMonthIndex}
                   scenarioALabel={scenarioALabel}
                   scenarioBLabel={scenarioBLabel}
                   scenarioALegendDefault={scenarioALabelText}
@@ -2093,12 +2256,16 @@ export default function PilotFastighetPage() {
                     {uiLanguage === "sv"
                     ? `Primär drivare: ${
                         primaryDriver
-                          ? toReadableLabel(primaryDriver as TransportSystemDriverId, language)
+                          ? caseType === "transport"
+                            ? getTransportPolicyExplanationLabel(primaryDriver, uiLanguage)
+                            : toReadableLabel(primaryDriver as TransportSystemDriverId, language)
                           : "—"
                       }`
                     : `Primary driver: ${
                         primaryDriver
-                          ? toReadableLabel(primaryDriver as TransportSystemDriverId, language)
+                          ? caseType === "transport"
+                            ? getTransportPolicyExplanationLabel(primaryDriver, uiLanguage)
+                            : toReadableLabel(primaryDriver as TransportSystemDriverId, language)
                           : "—"
                       }`}
                   </div>
@@ -2135,6 +2302,19 @@ export default function PilotFastighetPage() {
                   cascadeDelay={cascadeDelaySteps}
                   caseType={caseType}
                   selectedActions={selectedActionsForPanel}
+                  primaryDriverChanged={primaryDriverChanged}
+                  constraintActivationChanged={constraintActivationChanged}
+                  propagationRootChanged={propagationRootChanged}
+                  dominantScenarioDifferenceChannel={
+                    transportContext?.dominantScenarioDifferenceChannel ??
+                    (
+                      transportContextA?.primaryDriver &&
+                      transportContextB?.primaryDriver &&
+                      transportContextA.primaryDriver !== transportContextB.primaryDriver
+                        ? `${transportContextA.primaryDriver} → ${transportContextB.primaryDriver}`
+                        : null
+                    )
+                  }
                 />
                 </div>
               </div>

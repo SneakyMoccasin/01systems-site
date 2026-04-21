@@ -1,4 +1,6 @@
 import {
+  buildTransportPolicyPropagationExplanation,
+  getTransportPolicyExplanationLabel,
   TRANSPORT_ENGINE_RISK_LABELS,
   TRANSPORT_POLICY_LEVER_MAPPINGS,
   TRANSPORT_SYSTEM_DRIVERS,
@@ -6,7 +8,6 @@ import {
   type TransportSystemDriverId,
 } from "./transportDomainMapping";
 import type { CascadeEvent } from "./riskPropagation";
-import { mapRiskLabelToPolicyLabel } from "@/app/pilot-fastighet/components/inspector-utils/mapRiskLabelToPolicyLabel";
 import {
   profileCount,
   profileMeasure,
@@ -84,6 +85,11 @@ function normalizeTransportDriverKey(
 }
 
 function toReadableTransportChainStep(stepKey: string, language: Language): string {
+  const translatedLabel = getTransportPolicyExplanationLabel(stepKey, language);
+  if (translatedLabel && translatedLabel !== stepKey) {
+    return translatedLabel;
+  }
+
   const systemDef =
     TRANSPORT_SYSTEM_DRIVERS[
       stepKey as keyof typeof TRANSPORT_SYSTEM_DRIVERS
@@ -101,13 +107,24 @@ function toReadableTransportChainStep(stepKey: string, language: Language): stri
       : engineDef.readableLabel_en;
   }
 
-  const policyLabel = mapRiskLabelToPolicyLabel(stepKey, language);
-  if (policyLabel !== stepKey) return policyLabel;
-
   return stepKey
     .replace(/_/g, " ")
     .replace(/([a-z])([A-Z])/g, "$1 $2")
     .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function translatePropagationSignature(
+  signature: string | null | undefined,
+  language: Language
+): string | null {
+  if (!signature) return null;
+
+  return signature
+    .split("→")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => toReadableTransportChainStep(part, language))
+    .join(" → ");
 }
 
 export type TransportInspectorContext = {
@@ -170,11 +187,16 @@ export function resolveTransportInspectorContext(
         : null);
     if (!selectedTransportDriver) return null;
 
+    const normalizedSelectedDriver =
+      normalizeTransportDriverKey(selectedTransportDriver) ??
+      (selectedTransportDriver as TransportSystemDriverId);
     const policyLeverLabel = localizePolicyLeverName(policyLever, language);
-    const systemDriverLabel = selectedTransportDriver
-      ? mapRiskLabelToPolicyLabel(selectedTransportDriver, language)
+    const systemDriverLabel = normalizedSelectedDriver
+      ? getTransportPolicyExplanationLabel(
+          normalizedSelectedDriver,
+          language
+        )
       : null;
-    const normalizedSelectedDriver = normalizeTransportDriverKey(selectedTransportDriver);
     const driverDef =
       (normalizedSelectedDriver &&
         TRANSPORT_SYSTEM_DRIVERS[
@@ -184,15 +206,18 @@ export function resolveTransportInspectorContext(
 
     if (!driverDef) return null;
 
-    const propagationChainLabel = driverDef.propagationChain
-      .map((driverId) => toReadableTransportChainStep(driverId, language))
-      .map((step, index) => (index === 0 ? step : `→ ${step}`))
-      .join("\n");
+    const propagationChainLabel = buildTransportPolicyPropagationExplanation(
+      driverDef.propagationChain,
+      language
+    );
     const dominantScenarioDifferenceChannel =
       primaryPropagationSignatureA &&
       primaryPropagationSignatureB &&
       primaryPropagationSignatureA !== primaryPropagationSignatureB
-        ? primaryPropagationSignatureB
+        ? translatePropagationSignature(
+            primaryPropagationSignatureB,
+            language
+          )
         : null;
 
     profileValue(
@@ -204,14 +229,14 @@ export function resolveTransportInspectorContext(
     return {
       policyLeverLabel:
         policyDriverKey
-          ? mapRiskLabelToPolicyLabel(policyDriverKey, language)
+          ? getTransportPolicyExplanationLabel(policyDriverKey, language)
           : null,
       systemDriverLabel:
         systemDriverKey
-          ? mapRiskLabelToPolicyLabel(systemDriverKey, language)
+          ? getTransportPolicyExplanationLabel(systemDriverKey, language)
           : null,
       propagationChainLabel,
-      primaryDriver: selectedTransportDriver,
+      primaryDriver: normalizedSelectedDriver,
       dominantScenarioDifferenceChannel,
     };
   });
