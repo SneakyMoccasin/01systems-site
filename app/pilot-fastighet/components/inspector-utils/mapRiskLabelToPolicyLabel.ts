@@ -38,6 +38,14 @@ const POLICY_LABEL_MAP: Record<
     sv: "Budgettryck",
     en: "Budget pressure",
   },
+  capacityPressure: {
+    sv: "Kapacitetstryck",
+    en: "Capacity pressure",
+  },
+  implementationPacing: {
+    sv: "Genomförandetakt",
+    en: "Implementation pacing",
+  },
 };
 
 export function mapRiskLabelToPolicyLabel(
