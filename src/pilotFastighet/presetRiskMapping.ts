@@ -60,6 +60,17 @@ const PRESET_MAPPINGS: Record<string, Record<string, RiskLevel>> = {
     refinancingRisk: "HIGH",
     capitalCommitmentRigidityRisk: "HIGH",
   },
+  "refinancing-window-sensitivity": {
+    refinancingRisk: "HIGH",
+    interestRateExposureRisk: "HIGH",
+    leverageLevelRisk: "HIGH",
+    // liquidityPressure is intentionally omitted here because it is not part of
+    // the current baseline preset contract/defaultRiskState wiring.
+    capitalCommitmentRigidityRisk: "HIGH",
+    tenantStabilityRisk: "MODERATE",
+    demandRisk: "MODERATE",
+    operationalEfficiencyRisk: "MODERATE",
+  },
 };
 
 /** Full risk state after applying a preset (baseline + overrides). Same result as `applyScenarioPreset` updater. */

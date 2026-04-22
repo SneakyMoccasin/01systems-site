@@ -1,4 +1,5 @@
 import { pulseLanguage } from "@/src/i18n/pulseLanguage";
+import type { DomainKey } from "@/src/i18n/pulseLanguage";
 
 export type ScenarioPreset = {
   id: string;
@@ -6,6 +7,7 @@ export type ScenarioPreset = {
   description: string;
   prompt: string;
   group?: "core" | "transport";
+  domain?: DomainKey;
   actionKeys?: string[];
   riskChanges?: Record<string, string>;
 };
@@ -22,6 +24,7 @@ export function getScenarioLibrary(language: ScenarioLanguage = "en"): ScenarioP
     {
       id: "interest-shock",
       group: "core",
+      domain: "realEstate",
       label: labels["interest-shock"] ?? "Interest Rate Shock",
       description:
         descriptions["interest-shock"] ?? "Sharp increase in financing costs.",
@@ -36,6 +39,7 @@ export function getScenarioLibrary(language: ScenarioLanguage = "en"): ScenarioP
     {
       id: "energy-spike",
       group: "core",
+      domain: "realEstate",
       label: labels["energy-spike"] ?? "Energy Cost Spike",
       description:
         descriptions["energy-spike"] ?? "Operating costs increase due to energy prices.",
@@ -45,6 +49,7 @@ export function getScenarioLibrary(language: ScenarioLanguage = "en"): ScenarioP
     {
       id: "tenant-loss",
       group: "core",
+      domain: "realEstate",
       label: labels["tenant-loss"] ?? "Tenant Loss",
       description:
         descriptions["tenant-loss"] ?? "Large tenant leaves the property.",
@@ -54,6 +59,7 @@ export function getScenarioLibrary(language: ScenarioLanguage = "en"): ScenarioP
     {
       id: "maintenance-backlog",
       group: "core",
+      domain: "realEstate",
       label: labels["maintenance-backlog"] ?? "Maintenance Backlog",
       description:
         descriptions["maintenance-backlog"] ??
@@ -65,6 +71,7 @@ export function getScenarioLibrary(language: ScenarioLanguage = "en"): ScenarioP
     {
       id: "refinancing-shock",
       group: "core",
+      domain: "realEstate",
       label: labels["refinancing-shock"] ?? "Refinancing Shock",
       description:
         descriptions["refinancing-shock"] ??
@@ -74,8 +81,24 @@ export function getScenarioLibrary(language: ScenarioLanguage = "en"): ScenarioP
         "Interest rate exposure increases to HIGH.\nThis creates refinancing risk.\nRefinancing pressure increases capital commitment rigidity.\nCapital rigidity increases maintenance pressure.\nMaintenance pressure reduces tenant stability.\nTenant instability reduces demand.",
     },
     {
+      id: "refinancing-window-sensitivity",
+      group: "core",
+      domain: "realEstate",
+      label:
+        language === "sv"
+          ? "Refinansieringsfönster"
+          : "Refinancing window sensitivity",
+      description:
+        language === "sv"
+          ? "Ett tajtare refinansieringsfönster samverkar med belåning, hyresavtal och likviditetsbuffert och minskar portföljens strukturella flexibilitet."
+          : "A tighter refinancing window interacts with leverage, lease quality, and liquidity headroom to reduce structural flexibility.",
+      prompt:
+        "Create a scenario where refinancing sensitivity propagates through leverage, liquidity pressure, capital rigidity, tenant stability, and demand resilience.",
+    },
+    {
       id: "active-maintenance-strategy",
       group: "core",
+      domain: "realEstate",
       label: labels["active-maintenance-strategy"] ?? "Active maintenance strategy",
       description:
         descriptions["active-maintenance-strategy"] ??
@@ -87,6 +110,7 @@ export function getScenarioLibrary(language: ScenarioLanguage = "en"): ScenarioP
     {
       id: "parallelInvestmentStarts",
       group: "core",
+      domain: "realEstate",
       label: labels.parallelInvestmentStarts ?? "Parallel investment starts",
       description:
         descriptions.parallelInvestmentStarts ??
@@ -102,6 +126,7 @@ export function getScenarioLibrary(language: ScenarioLanguage = "en"): ScenarioP
     {
       id: "delayedIntervention",
       group: "core",
+      domain: "realEstate",
       label: labels.delayedIntervention ?? "Delayed intervention",
       description:
         descriptions.delayedIntervention ??
@@ -117,6 +142,7 @@ export function getScenarioLibrary(language: ScenarioLanguage = "en"): ScenarioP
     {
       id: "limitedExecutionCapacity",
       group: "core",
+      domain: "realEstate",
       label: labels.limitedExecutionCapacity ?? "Limited execution capacity",
       description:
         descriptions.limitedExecutionCapacity ??
@@ -132,6 +158,7 @@ export function getScenarioLibrary(language: ScenarioLanguage = "en"): ScenarioP
     {
       id: "transport-baseline",
       group: "transport",
+      domain: "municipal",
       label:
         language === "sv"
           ? "Transport: Baslinje"
@@ -149,6 +176,7 @@ export function getScenarioLibrary(language: ScenarioLanguage = "en"): ScenarioP
     {
       id: "transport-scenario-a",
       group: "transport",
+      domain: "municipal",
       label:
         language === "sv"
           ? "Transport A: Öka turtäthet"
@@ -166,6 +194,7 @@ export function getScenarioLibrary(language: ScenarioLanguage = "en"): ScenarioP
     {
       id: "transport-scenario-b",
       group: "transport",
+      domain: "municipal",
       label:
         language === "sv"
           ? "Transport B: Turtäthet + restid"
@@ -183,6 +212,7 @@ export function getScenarioLibrary(language: ScenarioLanguage = "en"): ScenarioP
     {
       id: "transport-scenario-c",
       group: "transport",
+      domain: "municipal",
       label:
         language === "sv"
           ? "Transport C: + signalprioritering"
@@ -204,6 +234,7 @@ export function getScenarioLibrary(language: ScenarioLanguage = "en"): ScenarioP
     {
       id: "transport-scenario-d",
       group: "transport",
+      domain: "municipal",
       label:
         language === "sv"
           ? "Transport D: + parkeringsreduktion"
@@ -226,6 +257,7 @@ export function getScenarioLibrary(language: ScenarioLanguage = "en"): ScenarioP
     {
       id: "transport-scenario-e",
       group: "transport",
+      domain: "municipal",
       label:
         language === "sv"
           ? "Transport E: + korridorprioritering"

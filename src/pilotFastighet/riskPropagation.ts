@@ -14,13 +14,24 @@ export const RISK_PROPAGATION: Record<
     { target: "leverageLevelRisk", level: "HIGH" },
   ],
   leverageLevelRisk: [
+    { target: "liquidityPressure", level: "HIGH" },
     { target: "capitalCommitmentRigidityRisk", level: "HIGH" },
   ],
   refinancingRisk: [
+    { target: "leverageLevelRisk", level: "HIGH" },
+    { target: "liquidityPressure", level: "HIGH" },
+    { target: "capitalCommitmentRigidityRisk", level: "HIGH" },
+  ],
+  liquidityPressure: [
     { target: "capitalCommitmentRigidityRisk", level: "HIGH" },
   ],
   capitalCommitmentRigidityRisk: [
+    { target: "operationalEfficiencyRisk", level: "HIGH" },
     { target: "maintenanceIntensityRisk", level: "HIGH" },
+  ],
+  operationalEfficiencyRisk: [
+    { target: "maintenanceIntensityRisk", level: "HIGH" },
+    { target: "tenantStabilityRisk", level: "HIGH" },
   ],
   maintenanceIntensityRisk: [
     { target: "tenantStabilityRisk", level: "HIGH" },

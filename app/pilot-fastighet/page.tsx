@@ -147,6 +147,26 @@ const actionEffects = {
     capitalCommitmentRigidityRisk: -1,
     refinancingRisk: -0.5,
   },
+  stagger_project_starts: {
+    capitalCommitmentRigidityRisk: -1,
+    implementationPacingRisk: -1,
+  },
+  increase_liquidity_buffer: {
+    liquidityPressure: -1,
+    refinancingRisk: -1,
+  },
+  reduce_leverage: {
+    refinancingRisk: -1,
+    interestRateExposureRisk: -1,
+  },
+  secure_long_term_leases: {
+    tenantStabilityRisk: -1,
+    demandRisk: -1,
+  },
+  energy_retrofit_program: {
+    energyExposureRisk: -1,
+    operationalEfficiencyRisk: +1,
+  },
   delay_maintenance: {
     maintenanceIntensityRisk: +1,
     tenantStabilityRisk: +0.5,
@@ -158,9 +178,39 @@ const actionEffects = {
 } as const;
 const domainTitles = {
   realEstate: "Real Estate Portfolio",
-  municipal: "Municipal System",
+  municipal: "Transport System",
   consulting: "Decision Environment",
 };
+
+const TOP_LEVEL_GOAL_LABELS = {
+  transport: {
+    accessibility: { sv: "Öka tillgänglighet", en: "Increase accessibility" },
+    congestion: { sv: "Minska trängsel", en: "Reduce congestion" },
+    margin_stability: {
+      sv: "Behåll marginalstabilitet",
+      en: "Maintain margin stability",
+    },
+    avoid_tipping: { sv: "Undvik tipping-risk", en: "Avoid tipping risk" },
+  },
+  "real-estate": {
+    accessibility: {
+      sv: "Stärk uthyrningsattraktivitet",
+      en: "Strengthen leasing attractiveness",
+    },
+    congestion: {
+      sv: "Minska operativ belastning",
+      en: "Reduce operational strain",
+    },
+    margin_stability: {
+      sv: "Bevara portföljflexibilitet",
+      en: "Preserve portfolio flexibility",
+    },
+    avoid_tipping: {
+      sv: "Undvik refinansieringsrisk",
+      en: "Avoid refinancing risk",
+    },
+  },
+} as const;
 
 function loadHistory(key: string) {
   if (typeof window === "undefined") return [];
@@ -1096,9 +1146,28 @@ export default function PilotFastighetPage() {
   const caseType =
     domain === "municipal"
       ? "transport"
-      : domain === "real-estate"
+      : domain === "realEstate"
         ? "real-estate"
         : null;
+  const visiblePilotCases = useMemo(
+    () => VISIBLE_PILOT_CASES.filter((c) => c.domain === domain),
+    [domain]
+  );
+  const resolveTopLevelGoalLabel = (
+    goal:
+      | "accessibility"
+      | "congestion"
+      | "margin_stability"
+      | "avoid_tipping",
+    currentCaseType?: "transport" | "real-estate" | null
+  ) => {
+    const labels =
+      currentCaseType === "real-estate"
+        ? TOP_LEVEL_GOAL_LABELS["real-estate"]
+        : TOP_LEVEL_GOAL_LABELS.transport;
+
+    return uiLanguage === "sv" ? labels[goal].sv : labels[goal].en;
+  };
   const transportContextA = useMemo(() => {
     if (caseType !== "transport") return null;
 
@@ -1623,7 +1692,7 @@ export default function PilotFastighetPage() {
             }}
           >
             <option value="">Custom</option>
-            {VISIBLE_PILOT_CASES.map((c) => (
+            {visiblePilotCases.map((c) => (
               <option key={c.id} value={c.id}>
                 {CASE_TRANSLATIONS[c.title as keyof typeof CASE_TRANSLATIONS]?.[uiLanguage] ?? c.title}
               </option>
@@ -1637,21 +1706,18 @@ export default function PilotFastighetPage() {
             onChange={(e) => setSelectedGoal(e.target.value as any)}
             className="px-2 py-1 rounded border bg-gray-800 text-gray-200"
           >
-            {uiLanguage === "sv" ? (
-              <>
-                <option value="accessibility">Öka tillgänglighet</option>
-                <option value="congestion">Minska trängsel</option>
-                <option value="margin_stability">Behåll marginalstabilitet</option>
-                <option value="avoid_tipping">Undvik tipping-risk</option>
-              </>
-            ) : (
-              <>
-                <option value="accessibility">Increase accessibility</option>
-                <option value="congestion">Reduce congestion</option>
-                <option value="margin_stability">Maintain margin stability</option>
-                <option value="avoid_tipping">Avoid tipping risk</option>
-              </>
-            )}
+            <option value="accessibility">
+              {resolveTopLevelGoalLabel("accessibility", caseType)}
+            </option>
+            <option value="congestion">
+              {resolveTopLevelGoalLabel("congestion", caseType)}
+            </option>
+            <option value="margin_stability">
+              {resolveTopLevelGoalLabel("margin_stability", caseType)}
+            </option>
+            <option value="avoid_tipping">
+              {resolveTopLevelGoalLabel("avoid_tipping", caseType)}
+            </option>
           </select>
           <button
             type="button"
@@ -1914,6 +1980,7 @@ export default function PilotFastighetPage() {
           <div style={{ marginBottom: "24px" }}>
             <ActionPanel
               language={uiLanguage}
+              domain={domain}
               selectedActions={selectedActionsForPanel}
               applyAction={applyAction}
             />
@@ -2445,13 +2512,14 @@ export default function PilotFastighetPage() {
             borderRadius: "4px",
           }}
         >
-          <option value="realEstate">Real Estate</option>
-          <option value="municipal">Municipal</option>
-          <option value="consulting">Consulting</option>
+          <option value="realEstate">{domainTitles.realEstate}</option>
+          <option value="municipal">{domainTitles.municipal}</option>
+          <option value="consulting">{domainTitles.consulting}</option>
         </select>
         <div>
         <ScenarioLibrary
           debugTag="PILOT_FASTIGHET_PAGE"
+          domain={domain}
           language={uiLanguage}
           scenarioTarget={scenarioTarget}
           onScenarioTargetChange={(target) => {

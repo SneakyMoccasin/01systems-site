@@ -24,7 +24,9 @@ const ScenarioLibrary: React.FC<Props> = ({
   }
   const uiLanguage = language;
   const t = pulseLanguage[uiLanguage];
-  const scenarios = getScenarioLibrary(language);
+  const scenarios = getScenarioLibrary(language).filter(
+    (scenario) => scenario.domain === domain
+  );
   const groupTitles = {
     municipal: uiLanguage === "sv" ? "Transportscenarier" : "Transport scenarios",
     realEstate: uiLanguage === "sv" ? "Portföljscenarier" : "Portfolio scenarios",
@@ -84,6 +86,19 @@ const ScenarioLibrary: React.FC<Props> = ({
             />
           </label>
           <span>{(t as any).alternativeStrategy ?? "Alternative strategy"}</span>
+        </div>
+      )}
+      {scenarios.length === 0 && (
+        <div
+          style={{
+            fontSize: "12px",
+            color: "#9CA3AF",
+            lineHeight: 1.4,
+          }}
+        >
+          {uiLanguage === "sv"
+            ? "Inga scenarier definierade för denna domän ännu."
+            : "No scenarios defined for this domain yet."}
         </div>
       )}
       {Object.entries(groupedScenarios).map(([groupName, list]) => (
