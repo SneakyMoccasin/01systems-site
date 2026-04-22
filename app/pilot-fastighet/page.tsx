@@ -985,20 +985,20 @@ export default function PilotFastighetPage() {
         ? prev.filter((a) => a !== action)
         : [...prev, action];
 
-    if (activeScenario === "A") {
+    if (scenarioTarget === "A") {
       setSelectedActionsA(toggleAction);
-    } else if (activeScenario === "B") {
+    } else if (scenarioTarget === "B") {
       setSelectedActionsB(toggleAction);
     }
 
     const effects = actionEffects[action as keyof typeof actionEffects];
     if (!effects) return;
-    if (activeScenario === "A") {
+    if (scenarioTarget === "A") {
       Object.entries(effects).forEach(([driver, delta]) => {
         handleParameterChangeScenarioA(driver, delta, true);
       });
     }
-    if (activeScenario === "B") {
+    if (scenarioTarget === "B") {
       Object.entries(effects).forEach(([driver, delta]) => {
         handleParameterChangeScenarioB(driver, delta, true);
       });
