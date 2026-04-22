@@ -21,10 +21,15 @@ import { buildCascadePathwayComparisonMessages } from "./inspector-utils/buildCa
 import { buildStructuralGoalMessages } from "./inspector-utils/buildStructuralGoalMessages";
 import {
   GoalType,
-  DEFAULT_GOAL_TYPE
+  DEFAULT_GOAL_TYPE,
+  TRANSPORT_GOAL_LABELS,
+  REAL_ESTATE_GOAL_LABELS,
 } from "./inspector-utils/goalTypes";
+import { buildGoalDirectionIndicatorMessage } from "./inspector-utils/buildGoalDirectionIndicatorMessage";
+import { buildDecisionEffectSummaryMessage } from "./inspector-utils/buildDecisionEffectSummaryMessage";
 import { buildGoalConditionedSystemStatusMessage } from "./inspector-utils/buildGoalConditionedSystemStatusMessage";
 import { buildDominantConstraintMessage } from "./inspector-utils/buildDominantConstraintMessage";
+import { buildExecutiveSummaryMessage } from "./inspector-utils/buildExecutiveSummaryMessage";
 import { buildStructuralGoalSummaryMessage } from "./inspector-utils/buildStructuralGoalSummaryMessage";
 import {
   profileCount,
@@ -420,6 +425,17 @@ const AIInspectorPanel: React.FC<Props> = ({
 
     return mapRiskLabelToPolicyLabel(key, language);
   };
+  const resolveGoalLabel = (goal: GoalType, currentCaseType?: string | null) => {
+    if (currentCaseType === "real-estate") {
+      return language === "sv"
+        ? REAL_ESTATE_GOAL_LABELS[goal].sv
+        : REAL_ESTATE_GOAL_LABELS[goal].en;
+    }
+
+    return language === "sv"
+      ? TRANSPORT_GOAL_LABELS[goal].sv
+      : TRANSPORT_GOAL_LABELS[goal].en;
+  };
   const structuralStateText = getStructuralStateText(
     selectedMarginValueB ?? selectedMarginValueA ?? alternativeMargin,
     language
@@ -664,10 +680,7 @@ const AIInspectorPanel: React.FC<Props> = ({
     (transportInspectorContext as any)?.policyDriverLabel ??
     transportInspectorContext?.systemDriverLabel ??
     (caseType === "transport" && primaryDriver
-      ? getTransportPolicyExplanationLabel(
-          normalizeTransportDriverKey(primaryDriver) ?? primaryDriver,
-          language
-        )
+      ? getNarrativeDriverLabel(primaryDriver)
       : primaryDriver) ??
     t.noActiveDriver;
   const activeDomainEvents =
@@ -774,6 +787,15 @@ const AIInspectorPanel: React.FC<Props> = ({
       ),
     [resolvedGoalType, structuralGoalSummaryMessage]
   );
+  const goalDirectionIndicatorMessage = useMemo(
+    () =>
+      buildGoalDirectionIndicatorMessage(
+        goalConditionedSystemStatusMessage,
+        language,
+        caseType
+      ),
+    [goalConditionedSystemStatusMessage, language, caseType]
+  );
   const dominantConstraintMessage = useMemo(
     () =>
       buildDominantConstraintMessage(
@@ -787,6 +809,43 @@ const AIInspectorPanel: React.FC<Props> = ({
       structuralGoalMessages
     ]
   );
+  const executiveSummaryConstraintLabel = dominantConstraintMessage
+    ? caseType === "transport"
+      ? (() => {
+          switch (dominantConstraintMessage.constraintKey) {
+            case "capital":
+              return mapRiskLabelToPolicyLabel(
+                "budget_pressure",
+                language
+              ).toLowerCase();
+            case "capacity":
+              return mapRiskLabelToPolicyLabel(
+                "capacityPressure",
+                language
+              ).toLowerCase();
+            case "covenant":
+              return mapRiskLabelToPolicyLabel(
+                "implementationPacing",
+                language
+              ).toLowerCase();
+            default:
+              return getConstraintLabel(
+                dominantConstraintMessage.constraintKey as
+                  | "capital"
+                  | "capacity"
+                  | "covenant"
+                  | "custom"
+              ).toLowerCase();
+          }
+        })()
+      : getConstraintLabel(
+          dominantConstraintMessage.constraintKey as
+            | "capital"
+            | "capacity"
+            | "covenant"
+            | "custom"
+        ).toLowerCase()
+    : null;
   const constraintOrderingMessages = useMemo(
     () =>
       buildConstraintOrderingMessages(
@@ -803,6 +862,27 @@ const AIInspectorPanel: React.FC<Props> = ({
       ),
     [primaryDriverA, primaryDriverB]
   );
+  const decisionEffectSummaryMessage = useMemo(
+    () =>
+      buildDecisionEffectSummaryMessage(
+        caseType === "transport"
+          ? getNarrativeDriverLabel(primaryDriver)
+          : primaryDriver,
+        executiveSummaryConstraintLabel,
+        goalConditionedSystemStatusMessage,
+        propagationRootComparisonMessage,
+        language,
+        caseType
+      ),
+    [
+      primaryDriver,
+      executiveSummaryConstraintLabel,
+      goalConditionedSystemStatusMessage,
+      propagationRootComparisonMessage,
+      language,
+      caseType,
+    ]
+  );
   const cascadePathwayComparisonMessage = useMemo(
     () =>
       buildCascadePathwayComparisonMessages(
@@ -810,6 +890,45 @@ const AIInspectorPanel: React.FC<Props> = ({
         cascadeEventsB
       ),
     [cascadeEventsA, cascadeEventsB]
+  );
+  const executiveSummaryPrimaryDriver =
+    caseType === "transport"
+      ? primaryDriver
+        ? mapRiskLabelToPolicyLabel(primaryDriver, language)
+        : ""
+      : primaryDriver;
+  const executiveSummaryPropagationRootDifference =
+    caseType === "transport" && propagationRootComparisonMessage
+      ? {
+          ...propagationRootComparisonMessage,
+          driverA: mapRiskLabelToPolicyLabel(
+            propagationRootComparisonMessage.driverA,
+            language
+          ).toLowerCase(),
+          driverB: mapRiskLabelToPolicyLabel(
+            propagationRootComparisonMessage.driverB,
+            language
+          ).toLowerCase(),
+        }
+      : propagationRootComparisonMessage;
+  const executiveSummaryMessage = useMemo(
+    () =>
+      buildExecutiveSummaryMessage(
+        executiveSummaryPrimaryDriver,
+        executiveSummaryConstraintLabel,
+        executiveSummaryPropagationRootDifference,
+        goalConditionedSystemStatusMessage,
+        language,
+        caseType
+      ),
+    [
+      executiveSummaryPrimaryDriver,
+      executiveSummaryConstraintLabel,
+      executiveSummaryPropagationRootDifference,
+      goalConditionedSystemStatusMessage,
+      language,
+      caseType,
+    ]
   );
   const hasStructuralDivergence =
     firstDivergenceMonth != null ||
@@ -932,24 +1051,32 @@ const AIInspectorPanel: React.FC<Props> = ({
           }}
         >
           {language === "sv"
-            ? `Analysmål: ${
-                resolvedGoalType === "robustness"
-                  ? "Strukturell robusthet"
-                  : resolvedGoalType === "delay"
-                  ? "Fördröj begränsningar"
-                  : resolvedGoalType === "avoidance"
-                  ? "Undvik begränsningar"
-                  : "Bevara marginalnivå"
-              }`
-            : `Analysis goal: ${
-                resolvedGoalType === "robustness"
-                  ? "Structural robustness"
-                  : resolvedGoalType === "delay"
-                  ? "Delay constraints"
-                  : resolvedGoalType === "avoidance"
-                  ? "Avoid constraints"
-                  : "Preserve margin"
-              }`}
+            ? `Analysmål: ${resolveGoalLabel(resolvedGoalType, caseType)}`
+            : `Analysis goal: ${resolveGoalLabel(resolvedGoalType, caseType)}`}
+        </div>
+      )}
+      {caseType === "transport" && goalDirectionIndicatorMessage && (
+        <div
+          style={{
+            fontSize: "11px",
+            opacity: 0.8,
+            marginTop: "2px",
+            color: "#cbd5e1",
+          }}
+        >
+          {goalDirectionIndicatorMessage}
+        </div>
+      )}
+      {caseType === "transport" && decisionEffectSummaryMessage && (
+        <div
+          style={{
+            fontSize: "11px",
+            opacity: 0.78,
+            marginTop: "2px",
+            color: "#cbd5e1",
+          }}
+        >
+          {decisionEffectSummaryMessage}
         </div>
       )}
 
@@ -966,7 +1093,7 @@ const AIInspectorPanel: React.FC<Props> = ({
           <span style={{ color: "#9CA3AF", marginRight: "6px" }}>{t.caseLabel}</span>
           <span>{caseName || "Strukturell systemanalys aktiv"}</span>
         </div>
-        {inspectionMode === "expert" && (
+        {analysisReady && inspectionMode === "expert" && (
           <>
             {resolvedPolicyDriver && (
               <div>
@@ -1018,7 +1145,7 @@ const AIInspectorPanel: React.FC<Props> = ({
             )}
           </>
         )}
-        {caseType === "transport" && primaryDriver && (
+        {analysisReady && caseType === "transport" && primaryDriver && (
           <div className="mb-2">
             <strong>
               {language === "sv" ? "Policy-drivare:" : "Policy driver:"}
@@ -1040,7 +1167,7 @@ const AIInspectorPanel: React.FC<Props> = ({
             )}
           </div>
         )}
-        {caseType === "transport" && primaryDriver && (
+        {analysisReady && caseType === "transport" && primaryDriver && (
           <div className="mb-2">
             <strong>
               {language === "sv" ? "Systemdrivare:" : "System driver:"}
@@ -1051,19 +1178,37 @@ const AIInspectorPanel: React.FC<Props> = ({
             )}
           </div>
         )}
-        <div>
-          {language === "sv"
-            ? `Primär drivare: ${
-                primaryDriverDisplayLabel
-                  ? `${primaryDriverDisplayLabel} ↓`
-                  : t.noActiveDriver
-              }`
-            : `Primary driver: ${
-                primaryDriverDisplayLabel
-                  ? `${primaryDriverDisplayLabel} ↓`
-                  : t.noActiveDriver
-              }`}
-        </div>
+        {analysisReady && (
+          <div>
+            {language === "sv"
+              ? `Primär drivare: ${
+                  primaryDriverDisplayLabel
+                    ? `${primaryDriverDisplayLabel} ↓`
+                    : t.noActiveDriver
+                }`
+              : `Primary driver: ${
+                  primaryDriverDisplayLabel
+                    ? `${primaryDriverDisplayLabel} ↓`
+                    : t.noActiveDriver
+                }`}
+          </div>
+        )}
+        {analysisReady && caseType === "transport" && executiveSummaryMessage && (
+          <div
+            style={{
+              marginTop: "6px",
+              marginBottom: "2px",
+              padding: "8px 10px",
+              border: "1px solid rgba(148, 163, 184, 0.2)",
+              borderRadius: "6px",
+              background: "rgba(15, 23, 42, 0.35)",
+              color: "#dbe4ee",
+              lineHeight: 1.45,
+            }}
+          >
+            {executiveSummaryMessage}
+          </div>
+        )}
         {!analysisReady ? (
           <div style={{ opacity: 0.7 }}>
             Ingen simulering körd ännu
@@ -1228,27 +1373,19 @@ const AIInspectorPanel: React.FC<Props> = ({
                 }}
               >
                 <option value="robustness">
-                  {language === "sv"
-                    ? "Strukturell robusthet"
-                    : "Structural robustness"}
+                  {resolveGoalLabel("robustness", caseType)}
                 </option>
 
                 <option value="delay">
-                  {language === "sv"
-                    ? "Fördröj begränsningar"
-                    : "Delay constraints"}
+                  {resolveGoalLabel("delay", caseType)}
                 </option>
 
                 <option value="avoidance">
-                  {language === "sv"
-                    ? "Undvik begränsningar"
-                    : "Avoid constraints"}
+                  {resolveGoalLabel("avoidance", caseType)}
                 </option>
 
                 <option value="margin-preservation">
-                  {language === "sv"
-                    ? "Bevara marginalnivå"
-                    : "Preserve margin"}
+                  {resolveGoalLabel("margin-preservation", caseType)}
                 </option>
               </select>
             </div>
