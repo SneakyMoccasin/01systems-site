@@ -1,11 +1,12 @@
 import React from "react";
 import { getScenarioLibrary } from "@/src/pilotFastighet/scenarioLibrary";
-import { pulseLanguage } from "@/src/i18n/pulseLanguage";
+import { pulseLanguage, type DomainKey } from "@/src/i18n/pulseLanguage";
 
 type Language = "sv" | "en";
 
 type Props = {
   onSelectScenario: (presetId: string) => void;
+  domain?: DomainKey;
   scenarioTarget?: "A" | "B";
   onScenarioTargetChange?: (target: "A" | "B") => void;
   language?: Language;
@@ -13,6 +14,7 @@ type Props = {
 
 const ScenarioLibrary: React.FC<Props> = ({
   onSelectScenario,
+  domain = "realEstate",
   scenarioTarget = "A",
   onScenarioTargetChange,
   language = "en",
@@ -23,6 +25,11 @@ const ScenarioLibrary: React.FC<Props> = ({
   const uiLanguage = language;
   const t = pulseLanguage[uiLanguage];
   const scenarios = getScenarioLibrary(language);
+  const groupTitles = {
+    municipal: uiLanguage === "sv" ? "Transportscenarier" : "Transport scenarios",
+    realEstate: uiLanguage === "sv" ? "Portföljscenarier" : "Portfolio scenarios",
+    consulting: uiLanguage === "sv" ? "Scenariopresetar" : "Scenario presets",
+  } as const;
   const groupedScenarios = scenarios.reduce(
     (acc, scenario) => {
       const key = scenario.group ?? "core";
@@ -82,9 +89,10 @@ const ScenarioLibrary: React.FC<Props> = ({
       {Object.entries(groupedScenarios).map(([groupName, list]) => (
         <div key={groupName} style={{ marginBottom: "10px" }}>
           <div style={{ fontSize: "11px", color: "#6B7280", marginBottom: "6px" }}>
-            {groupName === "transport"
-              ? (uiLanguage === "sv" ? "Transportscenarier" : "Transport scenarios")
-              : (uiLanguage === "sv" ? "Kärnscenarier" : "Core scenarios")}
+            {groupTitles[domain] ??
+              (groupName === "transport"
+                ? (uiLanguage === "sv" ? "Transportscenarier" : "Transport scenarios")
+                : (uiLanguage === "sv" ? "Kärnscenarier" : "Core scenarios"))}
           </div>
           <div
             style={{
