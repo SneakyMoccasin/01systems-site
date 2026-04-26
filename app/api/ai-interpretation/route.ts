@@ -3,6 +3,7 @@ import { pulseLanguage } from "@/src/i18n/pulseLanguage";
 import { EVENT_TRANSLATIONS } from "@/src/pilotFastighet/uiText";
 import { getTransportPolicyExplanationLabel } from "@/src/pilotFastighet/transportDomainMapping";
 import { resolveTransportInspectorContext } from "@/src/pilotFastighet/transportInspectorAdapter";
+import { mapRiskLabelToPolicyLabel } from "@/app/pilot-fastighet/components/inspector-utils/mapRiskLabelToPolicyLabel";
 import {
   profileCount,
   profileMeasure,
@@ -14,7 +15,7 @@ type InterpretationLanguage = "sv" | "en";
 
 type InterpretationPromptInput = {
   language: InterpretationLanguage;
-  interpretationMode?: "generic" | "transport";
+  interpretationMode?: "generic" | "transport" | "real-estate";
   eventsText: string;
   cascadeText: string;
   transportSummaryCascadeText?: string;
@@ -34,13 +35,15 @@ type InterpretationPromptInput = {
 };
 
 function buildInterpretationPrompt(input: InterpretationPromptInput): string {
+  const isTransport = input.interpretationMode === "transport";
+  const isRealEstate = input.interpretationMode === "real-estate";
   const cascadeSegments = input.cascadeText
     .split("→")
     .map((segment) => segment.trim())
     .filter(Boolean);
   if (
     input.language === "sv" &&
-    input.interpretationMode === "transport" &&
+    isTransport &&
     cascadeSegments[0] === input.primaryDriverText
   ) {
     cascadeSegments.shift();
@@ -85,42 +88,56 @@ function buildInterpretationPrompt(input: InterpretationPromptInput): string {
           intro: "Du analyserar en deterministisk systemsimulering.",
           data: "Data:",
           events: "Händelser",
-          cascade: "Kaskad",
-          primaryDriver: "Primär drivare",
-          systemPressure: "Systemtryck",
-          breach: "Uppskattad tid till strukturellt brott",
-          marginTrend: "Margintrend",
-          structuralDivergence: "Strukturell divergens",
-          cascadeDelay: "Kaskadfördröjning",
+          cascade: isRealEstate ? "Påverkanskedja" : "Kaskad",
+          primaryDriver: isRealEstate ? "Viktigaste affärsfaktor" : "Primär drivare",
+          systemPressure: isRealEstate
+            ? "Påverkan på kassaflöde och handlingsutrymme"
+            : "Systemtryck",
+          breach: isRealEstate
+            ? "Tid tills handlingsutrymmet pressas tydligt"
+            : "Uppskattad tid till strukturellt brott",
+          marginTrend: isRealEstate ? "Trend i handlingsutrymme" : "Margintrend",
+          structuralDivergence: isRealEstate
+            ? "Skillnad mellan strategierna"
+            : "Strukturell divergens",
+          cascadeDelay: isRealEstate ? "Tid tills påverkan slår igenom" : "Kaskadfördröjning",
           decisionFlow: "Beslutsflöde",
-          tipping: "Tippingpunkt",
+          tipping: isRealEstate ? "Tidpunkt med störst press" : "Tippingpunkt",
           currentMargin: "Nuvarande marginal",
           alternativeMargin: "Alternativ marginal",
           difference: "Skillnad",
-          noData: "Inga",
+          noData: isRealEstate ? "Ingen tydlig kedja" : "Inga",
           noFlow: "—",
           noTipping: "Ingen",
           structureHeader:
             "Strukturera svaret i fyra delar (behåll rubrikerna):",
           summaryHeader: "Sammanfattning:",
           summaryBody:
-            input.interpretationMode === "transport"
+            isTransport
               ? `Transportnätverket utvecklar ett strukturellt tryck genom ${input.primaryDriverText || "centrala policydrivare"}, vilket påverkar systemets utvecklingsriktning${transportSummaryCascadeText ? ` via följande spridningskedja: ${transportSummaryCascadeText}` : input.structuralDivergenceText ? ` genom ${input.structuralDivergenceText}` : " tidigt i simuleringen"}.`
+              : isRealEstate
+                ? `Portföljen påverkas främst av ${input.primaryDriverText || "refinansiering, kapitalbindning och beläggning"}, vilket minskar handlingsutrymmet ${input.breachText && input.breachText !== "Ej uppskattad" ? `före ${input.breachText}` : "tidigt i simuleringen"} och signalerar att stabiliserande beslut kan behövas i ett tidigt skede.`
               : `Systemet utvecklar strukturellt tryck genom påverkan från ${input.primaryDriverText || "centrala systemdrivare"}, vilket minskar handlingsutrymmet ${input.breachText && input.breachText !== "Ej uppskattad" ? `före ${input.breachText}` : "tidigt i simuleringen"} och indikerar att stabiliserande beslut kan krävas i ett tidigt skede.`,
-          structuralHeader: "Strukturell analys:",
+          structuralHeader: isRealEstate ? "Affärsanalys:" : "Strukturell analys:",
           structuralBody:
-            input.interpretationMode === "transport"
+            isTransport
               ? `Den observerade utvecklingen drivs av ${input.primaryDriverText || "transportpolitiska drivkrafter"} och visar hur policyval omformas till strukturella följdeffekter i systemet. ${input.structuralDivergenceText}`
+              : isRealEstate
+                ? `Utvecklingen formas av samspelet mellan refinansiering, kapitalbindning, likviditet, beläggning och underhållsstrategi. ${input.structuralDivergenceText}`
               : "Den observerade marginaltrenden visar att flera strukturella drivkrafter samverkar och gradvis minskar systemets flexibilitet, vilket innebär att stabilisering sannolikt kräver koordinerade åtgärder snarare än en enskild insats.",
-          cascadeHeader: "Kaskaddynamik:",
+          cascadeHeader: isRealEstate ? "Påverkan i portföljen:" : "Kaskaddynamik:",
           cascadeBody:
-            input.interpretationMode === "transport"
+            isTransport
               ? swedishTransportCascadeBodyText
-              : `Den identifierade kaskadsekvensen visar hur förändringar i ${input.primaryDriverText || "systemets centrala drivare"} sprids vidare genom ${input.cascadeDriversText || "flera strukturella drivkrafter"} och skapar ett tidigt tipping-läge, vilket innebär att sena åtgärder får begränsad effekt jämfört med tidiga insatser.`,
+              : isRealEstate
+                ? `Påverkanskedjan visar hur ${input.primaryDriverText || "det tydligaste affärstrycket"} får följdeffekter via ${input.cascadeDriversText || "kapitalstruktur, kassaflöde, beläggning och underhållsstrategi"}, vilket successivt begränsar portföljens handlingsutrymme.`
+                : `Den identifierade kaskadsekvensen visar hur förändringar i ${input.primaryDriverText || "systemets centrala drivare"} sprids vidare genom ${input.cascadeDriversText || "flera strukturella drivkrafter"} och skapar ett tidigt tipping-läge, vilket innebär att sena åtgärder får begränsad effekt jämfört med tidiga insatser.`,
           outlookHeader: "Framåtblick:",
           outlookBody:
-            `${input.interpretationMode === "transport"
+            `${isTransport
               ? "Transportsystemets fortsatta utveckling bör bedömas utifrån vilken policykedja som nu dominerar och hur detta påverkar genomförbarhet och kapacitetsflexibilitet."
+              : isRealEstate
+                ? "Portföljens fortsatta utveckling bör bedömas utifrån hur refinansieringsförmåga, kassaflöde, beläggning och kapitalbindning påverkar handlingsutrymmet de kommande stegen."
               : `Den fortsatta marginalutvecklingen indikerar att systemet närmar sig ett möjligt strukturellt brottstillstånd ${input.breachText && input.breachText !== "Ej uppskattad" ? `kring ${input.breachText}` : "senare i simuleringen"}, vilket innebär att utvecklingen bör följas och stabiliserande beslut övervägas i tid.`}${input.goalDirection === "toward"
   ? " Utvecklingen rör systemet i riktning mot målstrategin, vilket stärker förutsättningarna för strukturell stabilisering."
   : input.goalDirection === "away"
@@ -134,42 +151,52 @@ function buildInterpretationPrompt(input: InterpretationPromptInput): string {
             "You are an analyst explaining simulation results to executives. Use clear, non-technical language.",
           data: "Data:",
           events: "Events",
-          cascade: "System cascade",
-          primaryDriver: "Primary driver",
-          systemPressure: "System pressure",
-          breach: "Estimated time to structural breach",
-          marginTrend: "Margin trend (alternative strategy)",
-          structuralDivergence: "Structural divergence",
-          cascadeDelay: "Cascade delay",
+          cascade: isRealEstate ? "Impact chain" : "System cascade",
+          primaryDriver: isRealEstate ? "Main business factor" : "Primary driver",
+          systemPressure: isRealEstate ? "Cash-flow and flexibility impact" : "System pressure",
+          breach: isRealEstate
+            ? "Estimated time until flexibility narrows materially"
+            : "Estimated time to structural breach",
+          marginTrend: isRealEstate ? "Flexibility trend" : "Margin trend (alternative strategy)",
+          structuralDivergence: isRealEstate ? "Difference between strategies" : "Structural divergence",
+          cascadeDelay: isRealEstate ? "Time before the impact spreads" : "Cascade delay",
           decisionFlow: "Decision flow",
-          tipping: "Tipping point",
+          tipping: isRealEstate ? "Peak pressure point" : "Tipping point",
           currentMargin: "Current margin",
           alternativeMargin: "Alternative margin",
           difference: "Difference",
-          noData: "None",
+          noData: isRealEstate ? "No clear chain" : "None",
           noFlow: "—",
           noTipping: "None",
           structureHeader:
             "Write your analysis in exactly this structure (keep the headings):",
           summaryHeader: "Executive Summary:",
           summaryBody:
-            input.interpretationMode === "transport"
+            isTransport
               ? `The transport system shows structural pressure through ${input.primaryDriverText || "policy-driven system change"}, with divergence emerging through ${input.structuralDivergenceText || "a distinct propagation pathway"}.`
+              : isRealEstate
+                ? `The portfolio is primarily pressured by ${input.primaryDriverText || "refinancing, capital lock-in, occupancy, and cash flow"}, which reduces decision flexibility early in the horizon.`
               : "The system shows increasing structural pressure following early driver interaction and constraint activation. The structural margin declines early in the trajectory, indicating reduced flexibility if no corrective action is taken.",
-          structuralHeader: "Structural Analysis:",
+          structuralHeader: isRealEstate ? "Business Analysis:" : "Structural Analysis:",
           structuralBody:
-            input.interpretationMode === "transport"
+            isTransport
               ? `The observed system behaviour is driven by ${input.primaryDriverText || "transport policy levers"} and translated through ${input.cascadeText || "a policy propagation chain"}.`
+              : isRealEstate
+                ? "The observed development reflects interaction between refinancing conditions, leverage, liquidity, occupancy, and maintenance choices rather than one isolated issue."
               : "No single dominant driver is identified. The declining margin trend reflects interaction between several structural drivers rather than one isolated factor.",
-          cascadeHeader: "Cascade Dynamics:",
+          cascadeHeader: isRealEstate ? "Portfolio Impact:" : "Cascade Dynamics:",
           cascadeBody:
-            input.interpretationMode === "transport"
+            isTransport
               ? `The propagation chain shows how ${input.primaryDriverText || "the selected policy lever"} affects subsequent transport-system conditions. ${input.structuralDivergenceText}`
+              : isRealEstate
+                ? `The impact chain shows how ${input.primaryDriverText || "the most visible business pressure"} spreads into capital lock-in, cash flow, occupancy, or maintenance capacity.`
               : "The cascade sequence begins with early driver interaction and continues through constraint activation. This leads to a structural tipping condition and propagation across multiple structural drivers.",
           outlookHeader: "Forward Outlook:",
           outlookBody:
-            input.interpretationMode === "transport"
+            isTransport
               ? "Future interpretation should prioritise which policy pathway is now dominant, even when margin deltas remain small."
+              : isRealEstate
+                ? "Forward-looking assessment should focus on whether refinancing capacity, occupancy, cash flow, and maintenance choices preserve room to act."
               : "The system approaches a potential structural breach condition, although the timing remains uncertain. The declining margin trend indicates that corrective decisions may be required to stabilise the trajectory.",
           footer: "Be concise and avoid technical jargon.",
         };
@@ -268,11 +295,25 @@ export async function POST(req: Request) {
     const riskLabels = t.riskLabels ?? {};
     const unknownText = uiLanguage === "sv" ? "okänd" : "Unknown";
     const notEstimatedText = uiLanguage === "sv" ? "Ej uppskattad" : "Not estimated";
-    const noCascadeText = uiLanguage === "sv" ? "Inga" : "None";
+    const noCascadeText =
+      caseType === "real-estate"
+        ? uiLanguage === "sv"
+          ? "Ingen tydlig kedja"
+          : "No clear chain"
+        : uiLanguage === "sv"
+          ? "Inga"
+          : "None";
+    const noDominantFactorText =
+      caseType === "real-estate"
+        ? uiLanguage === "sv"
+          ? "ej tydligt identifierad"
+          : "not clearly identified"
+        : unknownText;
     const noDecisionFlowText = uiLanguage === "sv" ? "Inget" : "None";
     const translateRisk = (key: string) =>
       driverLabels[key] ??
       riskLabels[key] ??
+      mapRiskLabelToPolicyLabel(key, uiLanguage) ??
       EVENT_TRANSLATIONS[key as keyof typeof EVENT_TRANSLATIONS]?.[uiLanguage] ??
       key;
     const translateTransportRisk = (key: string) =>
@@ -337,7 +378,12 @@ export async function POST(req: Request) {
               .map((part: string) => translateTransportRisk(part.trim()))
               .join(" → ")
           : transportContext?.dominantScenarioDifferenceChannel ?? null
-        : dominantScenarioDifferenceChannel ?? null;
+        : dominantScenarioDifferenceChannel
+          ? String(dominantScenarioDifferenceChannel)
+              .split("→")
+              .map((part: string) => translateRisk(part.trim()))
+              .join(" → ")
+          : null;
     const translatedEventsText = (events ?? [])
       .map((e: any) => {
         const translatedType =
@@ -366,7 +412,9 @@ export async function POST(req: Request) {
           (primaryDriver ? translateTransportRisk(primaryDriver) : unknownText)
         : primaryDriver
           ? translateRisk(primaryDriver)
-          : unknownText;
+          : cascadeEvents && cascadeEvents.length > 0
+            ? translateRisk(cascadeEvents[0].sourceRisk)
+            : noDominantFactorText;
     const hasStructuralDivergence = Boolean(
       (typeof marginImpact === "number" && marginImpact !== 0) ||
         primaryDriverChanged ||
@@ -376,18 +424,22 @@ export async function POST(req: Request) {
     );
     const translatedStructuralDivergenceText = hasStructuralDivergence
       ? translatedDominantScenarioDifferenceChannel ??
-        (uiLanguage === "sv"
-          ? "en förändrad primär drivare eller spridningskedja"
-          : "a shifted primary driver or propagation chain")
+        (caseType === "real-estate"
+          ? uiLanguage === "sv"
+            ? "en annan kombination av refinansiering, kassaflöde, beläggning och kapitalbindning"
+            : "a different combination of refinancing, cash flow, occupancy, and capital lock-in"
+          : uiLanguage === "sv"
+            ? "en förändrad primär drivare eller spridningskedja"
+            : "a shifted primary driver or propagation chain")
       : uiLanguage === "sv"
         ? "ingen tydlig strukturell divergens identifierad ännu"
         : "no clear structural divergence identified yet";
     const translatedSystemPressureText = systemPressure
       ? translateSystemPressure(systemPressure)
-      : unknownText;
+      : noDominantFactorText;
     const translatedMarginTrendText = marginTrend
       ? translateMarginTrend(marginTrend)
-      : unknownText;
+      : noDominantFactorText;
 
     if (executiveQuestion && typeof executiveQuestion === "string") {
       const breachText =
@@ -407,12 +459,12 @@ export async function POST(req: Request) {
           ? `Du analyserar en deterministisk systemsimulering.
 
 Systemkontext:
-- Kaskadhändelser: ${translatedCascadeText || noCascadeText}
-- Primär drivare: ${translatedPrimaryDriverText}
-- Systemtryck: ${translatedSystemPressureText}
-- Uppskattad tid till strukturellt brott: ${breachText}
-- Marginaltrend: ${translatedMarginTrendText}
-- Kaskadfördröjning: ${cascadeDelaySteps} steg efter beslut
+- ${caseType === "real-estate" ? "Påverkanskedja" : "Kaskadhändelser"}: ${translatedCascadeText || noCascadeText}
+- ${caseType === "real-estate" ? "Viktigaste affärsfaktor" : "Primär drivare"}: ${translatedPrimaryDriverText}
+- ${caseType === "real-estate" ? "Påverkan på kassaflöde och handlingsutrymme" : "Systemtryck"}: ${translatedSystemPressureText}
+- ${caseType === "real-estate" ? "Tid tills handlingsutrymmet pressas tydligt" : "Uppskattad tid till strukturellt brott"}: ${breachText}
+- ${caseType === "real-estate" ? "Trend i handlingsutrymme" : "Marginaltrend"}: ${translatedMarginTrendText}
+- ${caseType === "real-estate" ? "Tid tills påverkan slår igenom" : "Kaskadfördröjning"}: ${cascadeDelaySteps} steg efter beslut
 - Beslutsflöde: ${decisionFlowText || noDecisionFlowText}
 
 Beslutsfattarens fråga: ${executiveQuestion.trim()}
@@ -422,12 +474,12 @@ ${qaLangInstruction}`
           : `You are analyzing a deterministic system simulation.
 
 System context:
-- Cascade events: ${translatedCascadeText || noCascadeText}
-- Primary driver: ${translatedPrimaryDriverText}
-- System pressure: ${translatedSystemPressureText}
-- Estimated time to structural breach: ${breachText}
-- Margin trend: ${translatedMarginTrendText}
-- Cascade delay: ${cascadeDelaySteps} timestep(s) after decision
+- ${caseType === "real-estate" ? "Impact chain" : "Cascade events"}: ${translatedCascadeText || noCascadeText}
+- ${caseType === "real-estate" ? "Main business factor" : "Primary driver"}: ${translatedPrimaryDriverText}
+- ${caseType === "real-estate" ? "Cash-flow and flexibility impact" : "System pressure"}: ${translatedSystemPressureText}
+- ${caseType === "real-estate" ? "Estimated time until flexibility narrows materially" : "Estimated time to structural breach"}: ${breachText}
+- ${caseType === "real-estate" ? "Flexibility trend" : "Margin trend"}: ${translatedMarginTrendText}
+- ${caseType === "real-estate" ? "Time before the impact spreads" : "Cascade delay"}: ${cascadeDelaySteps} timestep(s) after decision
 - Decision flow: ${decisionFlowText || noDecisionFlowText}
 
 Executive question: ${executiveQuestion.trim()}
@@ -510,7 +562,11 @@ ${qaLangInstruction}`;
         alternativeMargin,
         marginImpact,
         interpretationMode:
-          caseType === "transport" ? "transport" : "generic",
+          caseType === "transport"
+            ? "transport"
+            : caseType === "real-estate"
+              ? "real-estate"
+              : "generic",
       }) +
       "\n\n" +
       langInstruction;
@@ -564,8 +620,12 @@ ${qaLangInstruction}`;
               ? `The transport system shows structural divergence through ${translatedStructuralDivergenceText}. The dominant policy driver is ${translatedPrimaryDriverText}.`
               : `The transport system does not yet show a large margin delta, but the dominant policy driver is ${translatedPrimaryDriverText} and the propagation chain is ${translatedCascadeText || noCascadeText}.`
           : language === "sv"
-            ? "Systemet visar ökande systemtryck. Den primära drivaren påverkar marginalen negativt och kan leda till strukturell instabilitet om utvecklingen fortsätter."
-            : "The system shows increasing pressure. The primary driver is weakening the margin and may lead to structural instability if the trend continues.";
+            ? caseType === "real-estate"
+              ? "Portföljen visar ökande press på kassaflöde och handlingsutrymme. Refinansiering, kapitalbindning och beläggning behöver följas nära om utvecklingen fortsätter."
+              : "Systemet visar ökande systemtryck. Den primära drivaren påverkar marginalen negativt och kan leda till strukturell instabilitet om utvecklingen fortsätter."
+            : caseType === "real-estate"
+              ? "The portfolio shows rising pressure on cash flow and strategic flexibility. Refinancing, capital lock-in, and occupancy should be monitored closely if the trajectory continues."
+              : "The system shows increasing pressure. The primary driver is weakening the margin and may lead to structural instability if the trend continues.";
     }
 
 

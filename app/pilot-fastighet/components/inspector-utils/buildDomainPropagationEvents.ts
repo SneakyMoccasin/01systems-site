@@ -1,10 +1,9 @@
 import {
-  getTransportPolicyExplanationLabel,
-  TRANSPORT_ENGINE_RISK_LABELS,
   TRANSPORT_SYSTEM_DRIVERS,
   type TransportSystemDriverId,
 } from "@/src/pilotFastighet/transportDomainMapping";
 import type { CascadeEvent } from "@/src/pilotFastighet/riskPropagation";
+import { mapRiskLabelToPolicyLabel } from "./mapRiskLabelToPolicyLabel";
 
 export function getPrimaryPropagationSignature(events?: CascadeEvent[]) {
   if (!events || events.length === 0) return null;
@@ -41,10 +40,7 @@ export function buildDomainPropagationEvents(
       return {
         events: sourceEvents.slice(0, 3).map((event, index) => ({
           month: index,
-          label: getTransportPolicyExplanationLabel(
-            event.targetRisk,
-            language
-          ),
+          label: mapRiskLabelToPolicyLabel(event.targetRisk, language),
         })),
         primaryPropagationSignatureA,
         primaryPropagationSignatureB,
@@ -69,24 +65,21 @@ export function buildDomainPropagationEvents(
   return {
     events: driverDef.propagationChain.map((driverId, index, chain) => {
       const normalizedDriverId = driverId;
-      const readable = getTransportPolicyExplanationLabel(
-        normalizedDriverId,
-        language
-      );
+      const readable = mapRiskLabelToPolicyLabel(normalizedDriverId, language);
       const isFirst = index === 0;
       const isLast = index === chain.length - 1;
       const phrase =
         language === "sv"
           ? isFirst
-            ? "börjar förändras"
+            ? "är första tecknet på hur förändringen sprids"
             : isLast
-            ? "börjar påverkas"
-            : "börjar förändras"
+            ? "påverkas senare när effekten sprids vidare"
+            : "påverkas när effekten sprids vidare"
           : isFirst
-          ? "begins shifting"
+          ? "is the first sign of how the effect spreads"
           : isLast
-          ? "begins adjusting"
-          : "starts changing";
+          ? "is affected later as the effect spreads"
+          : "is affected as the effect spreads";
 
       return {
         month: index,

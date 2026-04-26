@@ -3,12 +3,16 @@ const POLICY_LABEL_MAP: Record<
   { sv: string; en: string }
 > = {
   accessibility: {
-    sv: "Tillgänglighet",
+    sv: "Tillgänglighet i nätverket",
     en: "Accessibility",
   },
   demandRisk: {
     sv: "Efterfrågan",
     en: "Demand",
+  },
+  demand: {
+    sv: "Efterfrågetryck i transportsystemet",
+    en: "Transport demand pressure",
   },
   maintenanceIntensityRisk: {
     sv: "Underhållstryck",
@@ -34,13 +38,21 @@ const POLICY_LABEL_MAP: Record<
     sv: "Belåningsnivå",
     en: "Leverage level",
   },
+  liquidityPressure: {
+    sv: "Likviditetspress",
+    en: "Liquidity pressure",
+  },
   budget_pressure: {
     sv: "Budgettryck",
     en: "Budget pressure",
   },
+  budgetPressure: {
+    sv: "Budgettryck i genomförandet",
+    en: "Budget pressure in implementation",
+  },
   capacityPressure: {
-    sv: "Kapacitetstryck",
-    en: "Capacity pressure",
+    sv: "Kapacitetstryck i nätverket",
+    en: "Network capacity pressure",
   },
   implementationPacing: {
     sv: "Genomförandetakt",

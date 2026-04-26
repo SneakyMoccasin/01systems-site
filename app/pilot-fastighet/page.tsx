@@ -27,6 +27,8 @@ import SystemDriversPanel from "./components/SystemDriversPanel";
 import DecisionExplanationPanel from "./components/DecisionExplanationPanel";
 import ScenarioPreviewPanel from "./components/ScenarioPreviewPanel";
 import AIInspectorPanel from "./components/AIInspectorPanel";
+import ScenarioPresetsPanel from "@/app/pilot-fastighet/components/ScenarioPresetsPanel";
+import { mapRiskLabelToPolicyLabel } from "@/app/pilot-fastighet/components/inspector-utils/mapRiskLabelToPolicyLabel";
 import {
   buildDomainPropagationEvents,
   getPrimaryPropagationSignature,
@@ -39,6 +41,7 @@ import { DEFAULT_GOAL_TYPE } from "./components/inspector-utils/goalTypes";
 import ActionPanel from "./components/ActionPanel";
 import MarginGraph, {
   MarginGraphLegendRow,
+  type DomainEvent,
   type MarginGraphSelectMonthPayload,
 } from "./components/MarginGraph";
 import { UI_TEXT, type Language, CASE_TRANSLATIONS, EVENT_TRANSLATIONS } from "@/src/pilotFastighet/uiText";
@@ -79,6 +82,78 @@ function toReadableLabel(
   const withSpaces = driverId.replace(/([a-z])([A-Z])/g, "$1 $2");
 
   return withSpaces.charAt(0).toUpperCase() + withSpaces.slice(1);
+}
+
+function buildScenarioTargetPolicyEvents(
+  scenarioTarget: string | null | undefined,
+  language: "sv" | "en"
+): DomainEvent[] {
+  if (!scenarioTarget) return [];
+
+  const labels =
+    language === "sv"
+      ? {
+          increase_accessibility: [
+            "Tillgänglighet i nätverket",
+            "Restidsreduktion",
+            "Systemkopplingar stärks",
+          ],
+          increase_modal_attractiveness: [
+            "Kollektivtrafikens attraktivitet",
+            "Prioritering i nätverket",
+            "Upplevd tillgänglighet stärks",
+          ],
+          reduce_capacity_pressure: [
+            "Kapacitetstryck i nätverket",
+            "Flödesavlastning",
+            "Genomförandetakt stabiliseras",
+          ],
+          margin_stability: [
+            "Systemets marginalnivå",
+            "Begränsningar skjuts fram",
+            "Handlingsutrymmet stabiliseras",
+          ],
+          avoid_tipping: [
+            "Tipping-risk",
+            "Kritiska begränsningar undviks",
+            "Systemet håller avstånd till brytpunkter",
+          ],
+        }
+      : {
+          increase_accessibility: [
+            "Network accessibility",
+            "Travel time reduction",
+            "System connections strengthen",
+          ],
+          increase_modal_attractiveness: [
+            "Modal attractiveness",
+            "Network priority",
+            "Perceived accessibility improves",
+          ],
+          reduce_capacity_pressure: [
+            "Network capacity pressure",
+            "Flow relief",
+            "Implementation pacing stabilises",
+          ],
+          margin_stability: [
+            "System margin level",
+            "Constraints are delayed",
+            "Room to act stabilises",
+          ],
+          avoid_tipping: [
+            "Tipping risk",
+            "Critical constraints are avoided",
+            "The system keeps distance from tipping points",
+          ],
+        };
+
+  const sequence = labels[scenarioTarget as keyof typeof labels];
+  if (!sequence) return [];
+
+  return sequence.map((label, index) => ({
+    month: index * 2,
+    label,
+  }));
 }
 
 function areRiskStatesEqual(a: RiskState, b: RiskState): boolean {
@@ -303,6 +378,8 @@ export default function PilotFastighetPage() {
   const [selectedGoal, setSelectedGoal] = useState<
     "accessibility" | "congestion" | "margin_stability" | "avoid_tipping"
   >("accessibility");
+  const [transportScenarioTarget, setTransportScenarioTarget] = useState<string | null>(null);
+  const [showDriverActivations, setShowDriverActivations] = useState(false);
   const [freezeFlash, setFreezeFlash] = useState<"A" | "B" | null>(null);
   const [uiTheme, setUiTheme] = useState<"dark" | "light">("dark");
   const [uiLanguage, setUiLanguage] = useState<Language>("sv");
@@ -1220,11 +1297,42 @@ export default function PilotFastighetPage() {
   const domainEventsForGraph =
     caseType === "transport"
       ? buildDomainPropagationEvents(
-          primaryDriver as TransportSystemDriverId | null,
+          resolveTransportInspectorContext({
+            language: uiLanguage,
+            selectedActions: selectedActionsForPanel,
+            primaryDriverKey: transportScenarioTarget,
+            cascadeEventsA,
+            cascadeEventsB,
+            primaryPropagationSignatureA: getPrimaryPropagationSignature(cascadeEventsA),
+            primaryPropagationSignatureB: getPrimaryPropagationSignature(cascadeEventsB),
+          })?.primaryDriver ?? null,
           uiLanguage,
-          cascadeEventsA,
-          cascadeEventsB
+          undefined,
+          undefined
         ).events
+      : [];
+  const scenarioTargetDriverEvents =
+    caseType === "transport"
+      ? [
+          ...buildDomainPropagationEvents(
+            resolveTransportInspectorContext({
+              language: uiLanguage,
+              selectedActions: selectedActionsForPanel,
+              primaryDriverKey: transportScenarioTarget,
+              cascadeEventsA,
+              cascadeEventsB,
+              primaryPropagationSignatureA: getPrimaryPropagationSignature(cascadeEventsA),
+              primaryPropagationSignatureB: getPrimaryPropagationSignature(cascadeEventsB),
+            })?.primaryDriver ?? null,
+            uiLanguage,
+            undefined,
+            undefined
+          ).events,
+          ...buildScenarioTargetPolicyEvents(
+            transportScenarioTarget,
+            uiLanguage
+          ),
+        ]
       : [];
   const systemStatusCascadeChainText =
     caseType === "transport"
@@ -1295,6 +1403,10 @@ export default function PilotFastighetPage() {
       ? [marginHistoryA[0], ...marginHistoryB.slice(1)]
       : marginHistoryB;
   }, [marginHistoryA, marginHistoryB]);
+  const selectedScenarioALabel =
+    getScenarioLibrary(uiLanguage).find((p) => p.id === scenarioALabel)?.label;
+  const selectedScenarioBLabel =
+    getScenarioLibrary(uiLanguage).find((p) => p.id === scenarioBLabel)?.label;
 
   const showBaselineOnly = marginHistoryB.length === 0;
   const pilotCase =
@@ -1971,12 +2083,15 @@ export default function PilotFastighetPage() {
         style={{
           marginTop: "24px",
           display: "grid",
-          gridTemplateColumns: "420px 1fr",
+          gridTemplateColumns: "minmax(0, 420px) minmax(0, 1fr)",
           gap: "24px",
           alignItems: "start",
+          minWidth: 0,
+          maxWidth: "100%",
+          overflowX: "hidden",
         }}
       >
-        <div style={{ position: "sticky", top: "16px" }}>
+        <div style={{ position: "sticky", top: "16px", minWidth: 0, maxWidth: "100%" }}>
           <div style={{ marginBottom: "24px" }}>
             <ActionPanel
               language={uiLanguage}
@@ -2060,7 +2175,7 @@ export default function PilotFastighetPage() {
           </div>
         </div>
 
-        <div>
+        <div style={{ minWidth: 0, maxWidth: "100%", overflowX: "hidden" }}>
           {/* Impact panel – margins above graph */}
           <div
             style={{
@@ -2154,10 +2269,51 @@ export default function PilotFastighetPage() {
           setIsDragging(false);
         }}
       >
+        <div className="flex flex-col gap-2">
+          <div className="text-sm font-medium text-slate-200">
+            Strukturellt handlingsutrymme över tid
+          </div>
+          <div className="text-xs text-slate-500">
+            {caseType === "real-estate"
+              ? "Fokus: Hur refinansiering, kapitalbindning, beläggning och kassaflöde påverkar portföljens handlingsutrymme"
+              : `Fokus: ${
+                  transportScenarioTarget === "avoid_tipping"
+                    ? "Tipping-risk och strukturella divergenspunkter"
+                    : transportScenarioTarget === "stabilize_margin"
+                    ? "Strukturell marginalnivå över tid"
+                    : transportScenarioTarget === "reduce_capacity_pressure"
+                    ? "Kapacitetstryckets påverkan på systemets handlingsutrymme"
+                    : transportScenarioTarget === "increase_modal_attractiveness"
+                    ? "Attraktivitetsdriven spridning i transportsystemet"
+                    : "Tillgänglighetsdriven strukturell utveckling"
+                }`}
+          </div>
+
+          <div className="text-xs text-slate-400 leading-relaxed max-w-xl">
+            {caseType === "real-estate"
+              ? "Grafen visar hur portföljens handlingsutrymme förändras över tid när refinansiering, kapitalbindning, kassaflöde, beläggning och underhållsstrategi utvecklas tillsammans."
+              : "Grafen visar hur systemets strukturella handlingsutrymme förändras över tid beroende på vilka beslut som kombineras. Den visar inte optimal lösning — utan hur beslut påverkar stabilitet, begränsningar och tipping-risk."}
+          </div>
+          <button
+            onClick={() => setShowDriverActivations(prev => !prev)}
+            className="text-xs text-slate-400 hover:text-slate-200"
+            style={{ alignSelf: "flex-start" }}
+          >
+            {caseType === "real-estate"
+              ? showDriverActivations
+                ? "Dölj tidiga påverkanspunkter"
+                : "Visa tidiga påverkanspunkter"
+              : showDriverActivations
+                ? "Dölj driveraktiveringar"
+                : "Visa driveraktiveringar"}
+          </button>
+        </div>
         <MarginGraphLegendRow
           uiLanguage={uiLanguage}
           scenarioALabelText={scenarioALabelText}
           scenarioBLabelText={scenarioBLabelText}
+          selectedScenarioALabel={selectedScenarioALabel}
+          selectedScenarioBLabel={selectedScenarioBLabel}
         />
         {breachDifference !== null && (
           <div
@@ -2175,16 +2331,33 @@ export default function PilotFastighetPage() {
                   : String(pulseLanguage[uiLanguage].scenarioBDelaysBreachBy))}
           </div>
         )}
-        <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 16,
+            alignItems: "flex-start",
+            minWidth: 0,
+            maxWidth: "100%",
+            overflowX: "hidden",
+          }}
+        >
           <div
             style={{
               flex: 1,
               background: "#111827",
               borderRadius: 8,
               padding: 12,
-              minWidth: 260,
+              minWidth: 0,
+              maxWidth: "100%",
+              overflowX: "hidden",
             }}
           >
+              {caseType === "transport" && (
+                <ScenarioPresetsPanel
+                  scenarioTarget={transportScenarioTarget}
+                  setScenarioTarget={setTransportScenarioTarget}
+                />
+              )}
               <AIInspectorPanel
                 language={uiLanguage}
                 caseName={
@@ -2217,6 +2390,7 @@ export default function PilotFastighetPage() {
                 selectedMarginValueA={selectedMonthData?.marginA ?? null}
                 selectedMarginValueB={selectedMonthData?.marginB ?? null}
                 selectedGoal={selectedGoal}
+                scenarioTarget={transportScenarioTarget}
                 selectedActions={selectedActionsForPanel}
                 inspectionMode={uiMode}
                 caseType={caseType}
@@ -2229,11 +2403,12 @@ export default function PilotFastighetPage() {
             <div
               style={{
                 width: "100%",
-                overflowX: "auto",
+                maxWidth: "100%",
+                overflowX: "hidden",
                 overflowY: "hidden",
               }}
             >
-              <div style={{ minWidth: 720 }}>
+              <div style={{ width: "100%", maxWidth: "100%" }}>
                 {isDirty && (
                   <div
                     style={{
@@ -2255,6 +2430,7 @@ export default function PilotFastighetPage() {
                   driverEvents={
                     caseType === "transport" ? domainEventsForGraph : []
                   }
+                  scenarioTargetDriverEvents={scenarioTargetDriverEvents}
                   displayMarginB={displayMarginB}
                   tippingMarginIndexA={tippingMarginIndexA}
                   tippingMarginIndexB={tippingMarginIndexB}
@@ -2283,6 +2459,8 @@ export default function PilotFastighetPage() {
                   scenarioBLabel={scenarioBLabel}
                   scenarioALegendDefault={scenarioALabelText}
                   scenarioBLegendDefault={scenarioBLabelText}
+                  scenarioTarget={transportScenarioTarget}
+                  showDriverActivations={showDriverActivations}
                 />
                 <div
                   style={{
@@ -2321,20 +2499,32 @@ export default function PilotFastighetPage() {
 
                   <div style={{ marginTop: "6px" }}>
                     {uiLanguage === "sv"
-                    ? `Primär drivare: ${
-                        primaryDriver
-                          ? caseType === "transport"
-                            ? getTransportPolicyExplanationLabel(primaryDriver, uiLanguage)
-                            : toReadableLabel(primaryDriver as TransportSystemDriverId, language)
-                          : "—"
-                      }`
-                    : `Primary driver: ${
-                        primaryDriver
-                          ? caseType === "transport"
-                            ? getTransportPolicyExplanationLabel(primaryDriver, uiLanguage)
-                            : toReadableLabel(primaryDriver as TransportSystemDriverId, language)
-                          : "—"
-                      }`}
+                      ? caseType === "real-estate"
+                        ? `Viktigaste påverkansfaktor: ${
+                            primaryDriver
+                              ? mapRiskLabelToPolicyLabel(primaryDriver, uiLanguage)
+                              : "—"
+                          }`
+                        : `Primär drivare: ${
+                            primaryDriver
+                              ? caseType === "transport"
+                                ? getTransportPolicyExplanationLabel(primaryDriver, uiLanguage)
+                                : toReadableLabel(primaryDriver as TransportSystemDriverId, language)
+                              : "—"
+                          }`
+                      : caseType === "real-estate"
+                        ? `Main influencing factor: ${
+                            primaryDriver
+                              ? mapRiskLabelToPolicyLabel(primaryDriver, uiLanguage)
+                              : "—"
+                          }`
+                        : `Primary driver: ${
+                            primaryDriver
+                              ? caseType === "transport"
+                                ? getTransportPolicyExplanationLabel(primaryDriver, uiLanguage)
+                                : toReadableLabel(primaryDriver as TransportSystemDriverId, language)
+                              : "—"
+                          }`}
                   </div>
                 </div>
                 <AIInterpretationPanel

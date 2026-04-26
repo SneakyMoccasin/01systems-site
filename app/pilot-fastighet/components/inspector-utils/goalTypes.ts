@@ -10,7 +10,7 @@ export const TRANSPORT_GOAL_LABELS: Record<
   GoalType,
   { sv: string; en: string }
 > = {
-  robustness: { sv: "Strukturell robusthet", en: "Structural robustness" },
+  robustness: { sv: "Systemets stabilitet över tid", en: "Structural robustness" },
   delay: { sv: "Fördröj begränsningar", en: "Delay constraints" },
   avoidance: { sv: "Undvik begränsningar", en: "Avoid constraints" },
   "margin-preservation": { sv: "Bevara marginalnivå", en: "Preserve margin" },

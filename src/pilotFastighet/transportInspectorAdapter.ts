@@ -1,5 +1,4 @@
 import {
-  buildTransportPolicyPropagationExplanation,
   getTransportPolicyExplanationLabel,
   TRANSPORT_ENGINE_RISK_LABELS,
   TRANSPORT_POLICY_LEVER_MAPPINGS,
@@ -8,6 +7,7 @@ import {
   type TransportSystemDriverId,
 } from "./transportDomainMapping";
 import type { CascadeEvent } from "./riskPropagation";
+import { mapRiskLabelToPolicyLabel } from "@/app/pilot-fastighet/components/inspector-utils/mapRiskLabelToPolicyLabel";
 import {
   profileCount,
   profileMeasure,
@@ -85,6 +85,11 @@ function normalizeTransportDriverKey(
 }
 
 function toReadableTransportChainStep(stepKey: string, language: Language): string {
+  const mappedPolicyLabel = mapRiskLabelToPolicyLabel(stepKey, language);
+  if (mappedPolicyLabel && mappedPolicyLabel !== stepKey) {
+    return mappedPolicyLabel;
+  }
+
   const translatedLabel = getTransportPolicyExplanationLabel(stepKey, language);
   if (translatedLabel && translatedLabel !== stepKey) {
     return translatedLabel;
@@ -206,10 +211,29 @@ export function resolveTransportInspectorContext(
 
     if (!driverDef) return null;
 
-    const propagationChainLabel = buildTransportPolicyPropagationExplanation(
-      driverDef.propagationChain,
-      language
-    );
+    const propagationChainSteps = driverDef.propagationChain
+      .map((step) => mapRiskLabelToPolicyLabel(step, language))
+      .filter(Boolean);
+    const propagationChainLabel =
+      propagationChainSteps.length === 0
+        ? ""
+        : propagationChainSteps.length === 1
+        ? propagationChainSteps[0]
+        : language === "sv"
+        ? propagationChainSteps.length === 2
+          ? `${propagationChainSteps[0]} påverkar ${propagationChainSteps[1]}`
+          : `${propagationChainSteps[0]} påverkar ${propagationChainSteps
+              .slice(1, -1)
+              .join(", ")} och leder vidare till ${
+              propagationChainSteps[propagationChainSteps.length - 1]
+            }`
+        : propagationChainSteps.length === 2
+        ? `${propagationChainSteps[0]} affects ${propagationChainSteps[1]}`
+        : `${propagationChainSteps[0]} affects ${propagationChainSteps
+            .slice(1, -1)
+            .join(", ")} and ultimately drives ${
+            propagationChainSteps[propagationChainSteps.length - 1]
+          }`;
     const dominantScenarioDifferenceChannel =
       primaryPropagationSignatureA &&
       primaryPropagationSignatureB &&

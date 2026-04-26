@@ -154,10 +154,30 @@ const AIInterpretationPanel: React.FC<Props> = ({
   const sectionTitleMap: Record<string, string> = {
     sammanfattning: t.aiSummary,
     summary: t.aiSummary,
-    "strukturell analys": t.aiStructuralAnalysis,
-    "structural analysis": t.aiStructuralAnalysis,
-    kaskaddynamik: t.aiCascadeDynamics,
-    "cascade dynamics": t.aiCascadeDynamics,
+    "strukturell analys":
+      caseType === "real-estate"
+        ? uiLanguage === "sv"
+          ? "Affärsanalys"
+          : "Business analysis"
+        : t.aiStructuralAnalysis,
+    "structural analysis":
+      caseType === "real-estate"
+        ? uiLanguage === "sv"
+          ? "Affärsanalys"
+          : "Business analysis"
+        : t.aiStructuralAnalysis,
+    kaskaddynamik:
+      caseType === "real-estate"
+        ? uiLanguage === "sv"
+          ? "Påverkan i portföljen"
+          : "Portfolio impact"
+        : t.aiCascadeDynamics,
+    "cascade dynamics":
+      caseType === "real-estate"
+        ? uiLanguage === "sv"
+          ? "Påverkan i portföljen"
+          : "Portfolio impact"
+        : t.aiCascadeDynamics,
     framtidsblick: t.aiOutlook,
     outlook: t.aiOutlook,
   };

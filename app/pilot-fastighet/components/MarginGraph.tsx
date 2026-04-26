@@ -40,6 +40,7 @@ export interface MarginGraphProps {
   demandHistoryA?: number[];
   demandHistoryB?: number[];
   driverEvents?: DomainEvent[];
+  scenarioTargetDriverEvents?: DomainEvent[];
   displayMarginB: number[];
   tippingMarginIndexA: number | null;
   tippingMarginIndexB: number | null;
@@ -62,6 +63,8 @@ export interface MarginGraphProps {
   scenarioBLabel?: string;
   scenarioALegendDefault?: string;
   scenarioBLegendDefault?: string;
+  scenarioTarget?: string | null;
+  showDriverActivations?: boolean;
   inspectionDepth?: "executive" | "expert";
   dominantConstraintMessage?: {
     constraintKey: string;
@@ -79,6 +82,7 @@ function MarginGraph({
   demandHistoryA = [],
   demandHistoryB = [],
   driverEvents = [],
+  scenarioTargetDriverEvents = [],
   displayMarginB,
   tippingMarginIndexA,
   tippingMarginIndexB,
@@ -100,6 +104,8 @@ function MarginGraph({
   scenarioBLabel,
   scenarioALegendDefault,
   scenarioBLegendDefault,
+  scenarioTarget,
+  showDriverActivations = false,
   inspectionDepth = "executive",
   dominantConstraintMessage,
   constraintActivationTimeline,
@@ -117,10 +123,21 @@ function MarginGraph({
     "events"
   );
   profileValue("MarginGraph.driverEvents", driverEvents.length, "events");
+  profileValue(
+    "MarginGraph.scenarioTargetDriverEvents",
+    scenarioTargetDriverEvents.length,
+    "events"
+  );
 
   const [viewMode, setViewMode] = React.useState<"delta" | "absolute">("delta");
   const [hoveredViewMode, setHoveredViewMode] = React.useState<"delta" | "absolute" | null>(null);
   const [showDriverOverlay, setShowDriverOverlay] = React.useState(false);
+  const [scrollOffset, setScrollOffset] = React.useState(0);
+  const [scrollLeft, setScrollLeft] = React.useState(0);
+  const [containerWidth, setContainerWidth] = React.useState(0);
+  const scrollContainerRef = React.useRef<HTMLDivElement | null>(null);
+  const sliderTrackRef = React.useRef<HTMLDivElement | null>(null);
+  const isSliderDraggingRef = React.useRef(false);
 
   const t = pulseLanguage[uiLanguage];
   const marginLabel =
@@ -145,10 +162,24 @@ function MarginGraph({
   const labelB =
     scenarioLibrary.find((p) => p.id === scenarioBLabel)?.label ?? "";
 
-  const comparisonLegend =
-    labelA && labelB
-      ? `${labelA} vs ${labelB}`
-      : `${scenarioALegendDefault ?? t.currentStrategy} vs ${scenarioBLegendDefault ?? t.alternativeStrategy}`;
+  const highlightedSeries =
+    scenarioTarget === "reduce_capacity_pressure"
+      ? "capacityPressure"
+      : scenarioTarget === "increase_accessibility"
+      ? "accessibility"
+      : scenarioTarget === "increase_modal_attractiveness"
+      ? "modalAttractiveness"
+      : scenarioTarget === "stabilize_margins"
+      ? "margin"
+      : scenarioTarget === "avoid_tipping"
+      ? "tippingRisk"
+      : null;
+  const emphasisOpacity = (seriesName: string) =>
+    highlightedSeries === null
+      ? 1
+      : seriesName === highlightedSeries
+      ? 1
+      : 0.35;
   const graphBackground =
     inspectionDepth === "executive"
       ? "#0B1220"
@@ -183,18 +214,36 @@ function MarginGraph({
   const RIGHT_PADDING = 10;
   const totalSteps = Math.max(marginHistoryA.length, marginHistoryB.length, 1);
   const height = 300;
-  const graphWidth = 600 - LEFT_PADDING - RIGHT_PADDING;
+  const monthPixelWidth = 60;
+  const timelineMonths = Array.from({ length: totalSteps }, (_, i) => i + 1);
+  const totalTimelineWidth = timelineMonths.length * monthPixelWidth;
+  const chartWidth = Math.max(monthPixelWidth, totalTimelineWidth);
+  const graphWidth = Math.max(
+    monthPixelWidth,
+    Math.max(totalSteps - 1, 0) * monthPixelWidth
+  );
+  const visibleMonths = Math.max(1, Math.floor(containerWidth / monthPixelWidth) || 1);
+  const maxScrollOffset = Math.max(0, timelineMonths.length - visibleMonths);
+  const maxScrollLeft = Math.max(0, totalTimelineWidth - containerWidth);
+  const visibleRatio =
+    totalTimelineWidth > 0 ? Math.min(1, containerWidth / totalTimelineWidth) : 1;
+  const thumbWidth = Math.max(
+    24,
+    Math.min(containerWidth, visibleRatio * containerWidth || 24)
+  );
+  const thumbTravel = Math.max(0, containerWidth - thumbWidth);
+  const thumbLeft =
+    maxScrollLeft > 0 ? (Math.min(scrollLeft, maxScrollLeft) / maxScrollLeft) * thumbTravel : 0;
 
   const resolveIndexFromClientX = (
     svg: SVGSVGElement,
     clientX: number
   ): number | null => {
     const rect = svg.getBoundingClientRect();
-    const viewBoxX = ((clientX - rect.left) / rect.width) * 600;
+    const viewBoxX = ((clientX - rect.left) / rect.width) * chartWidth;
     const x = viewBoxX - LEFT_PADDING;
-    const quarterWidth = graphWidth / Math.max(marginHistoryA.length - 1, 1);
     const clampedX = Math.max(0, Math.min(x, graphWidth));
-    const index = Math.round(clampedX / quarterWidth);
+    const index = Math.round(clampedX / monthPixelWidth);
     if (index >= 0 && index < marginHistoryA.length) return index;
     return null;
   };
@@ -220,24 +269,27 @@ function MarginGraph({
   };
 
   const scaleX = (index: number) => {
-    if (totalSteps <= 1) return LEFT_PADDING;
-    return LEFT_PADDING + (index / (totalSteps - 1)) * graphWidth;
+    return LEFT_PADDING + index * monthPixelWidth;
   };
 
   const normalizedValues =
     [...normalizedA, ...normalizedB].length > 0
       ? [...normalizedA, ...normalizedB]
       : [0];
-  const dataMin = Math.min(...normalizedValues);
-  const dataMax = Math.max(...normalizedValues);
-  const maxAbs = Math.max(
-    Math.abs(Math.min(...normalizedValues)),
-    Math.abs(Math.max(...normalizedValues)),
-    0.05
-  );
-
-  const yMin = -maxAbs;
-  const yMax = maxAbs;
+  const rawMin = Math.min(...normalizedValues);
+  const rawMax = Math.max(...normalizedValues);
+  const yMin =
+    viewMode === "delta"
+      ? Math.min(rawMin, 0)
+      : rawMin === rawMax
+      ? rawMin - 0.05
+      : rawMin;
+  const yMax =
+    viewMode === "delta"
+      ? Math.max(rawMax, 0)
+      : rawMin === rawMax
+      ? rawMax + 0.05
+      : rawMax;
 
   const TOP_PADDING = 12;
   const BOTTOM_PADDING = 8;
@@ -248,6 +300,87 @@ function MarginGraph({
   const scaleY = (value: number) =>
     TOP_PADDING +
     ((yMax - value) / range) * (300 - TOP_PADDING - BOTTOM_PADDING);
+
+  React.useEffect(() => {
+    const node = scrollContainerRef.current;
+    if (!node) return;
+
+    const updateWidth = () => {
+      setContainerWidth(node.clientWidth);
+    };
+
+    updateWidth();
+
+    if (typeof ResizeObserver !== "undefined") {
+      const observer = new ResizeObserver(() => {
+        updateWidth();
+      });
+      observer.observe(node);
+      return () => observer.disconnect();
+    }
+
+    window.addEventListener("resize", updateWidth);
+    return () => window.removeEventListener("resize", updateWidth);
+  }, []);
+
+  React.useEffect(() => {
+    setScrollOffset((prev) => Math.min(prev, maxScrollOffset));
+  }, [maxScrollOffset]);
+
+  React.useEffect(() => {
+    if (!scrollContainerRef.current) return;
+    const nextScrollLeft = Math.min(scrollOffset * monthPixelWidth, maxScrollLeft);
+    scrollContainerRef.current.scrollLeft = nextScrollLeft;
+    setScrollLeft(nextScrollLeft);
+  }, [scrollOffset, monthPixelWidth, maxScrollLeft]);
+
+  const syncScrollPosition = React.useCallback(
+    (nextScrollLeft: number) => {
+      const clamped = Math.max(0, Math.min(nextScrollLeft, maxScrollLeft));
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollLeft = clamped;
+      }
+      setScrollLeft(clamped);
+      setScrollOffset(Math.round(clamped / monthPixelWidth));
+    },
+    [maxScrollLeft, monthPixelWidth]
+  );
+
+  const updateScrollFromSliderClientX = React.useCallback(
+    (clientX: number) => {
+      const track = sliderTrackRef.current;
+      if (!track) return;
+
+      const rect = track.getBoundingClientRect();
+      const relativeX = clientX - rect.left;
+      const nextThumbLeft = Math.max(
+        0,
+        Math.min(relativeX - thumbWidth / 2, thumbTravel)
+      );
+      const ratio = thumbTravel > 0 ? nextThumbLeft / thumbTravel : 0;
+      syncScrollPosition(ratio * maxScrollLeft);
+    },
+    [thumbTravel, thumbWidth, maxScrollLeft, syncScrollPosition]
+  );
+
+  React.useEffect(() => {
+    const handleMouseMove = (event: MouseEvent) => {
+      if (!isSliderDraggingRef.current) return;
+      updateScrollFromSliderClientX(event.clientX);
+    };
+
+    const handleMouseUp = () => {
+      isSliderDraggingRef.current = false;
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [updateScrollFromSliderClientX]);
 
   function renderMarkerShape(
     x: number,
@@ -460,7 +593,6 @@ function MarginGraph({
     tippingIndex !== null ? Math.max(0, tippingIndex - 2) : null;
   const plotAreaX = LEFT_PADDING;
   const plotAreaWidth = graphWidth;
-  const chartWidth = 600;
   const plotAreaLeftPercent = (plotAreaX / chartWidth) * 100;
   const plotAreaWidthPercent = (plotAreaWidth / chartWidth) * 100;
   const plotAreaY = TOP_PADDING;
@@ -506,7 +638,8 @@ function MarginGraph({
             e.quarter <= Math.max(marginHistoryA.length, marginHistoryB.length)
         )
       : [];
-  const driverActivationMarkers = driverEvents
+  const mapDomainEventsToMarkers = (events: DomainEvent[]) =>
+    events
     .map((event) => {
       const rawLabel =
         event.label ??
@@ -515,7 +648,7 @@ function MarginGraph({
           : event.driver?.readableLabel);
       return {
         month: event.month,
-        label: rawLabel ?? (uiLanguage === "sv" ? "Drivaraktivering" : "Driver activation"),
+        label: rawLabel ?? (uiLanguage === "sv" ? "Påverkanspunkt" : "Impact point"),
       };
     })
     .filter(
@@ -524,6 +657,18 @@ function MarginGraph({
         event.month >= 0 &&
         event.month < totalSteps
     );
+  const driverActivationMarkers = mapDomainEventsToMarkers(driverEvents);
+  const scenarioTargetDriverActivationMarkers = mapDomainEventsToMarkers(
+    scenarioTargetDriverEvents
+  );
+  const driverActivationLineMarkers = driverActivationMarkers;
+  const scenarioTargetDriverActivationLineMarkers =
+    scenarioTargetDriverActivationMarkers;
+  // const driverActivationLineMarkers = driverActivationMarkers.filter(
+  //   (event) =>
+  //     event.month !== tippingIndex &&
+  //     event.month !== tippingTriggerIndex
+  // );
   const driverActivationOverlayMarkers = (() => {
     const occurrenceByMonth = new Map<number, number>();
     return driverActivationMarkers.map((event) => {
@@ -623,7 +768,13 @@ function MarginGraph({
   ];
 
   return (
-    <div>
+    <div
+      style={{
+        width: "100%",
+        maxWidth: "100%",
+        overflowX: "hidden",
+      }}
+    >
       <style jsx>{`
         .driver-marker-wrapper {
           position: absolute;
@@ -703,7 +854,7 @@ function MarginGraph({
             }}
           >
             {(t as any).viewChangeFromBaseline ?? (uiLanguage === "sv"
-              ? "Förändring från nuläge"
+              ? "Utveckling av handlingsutrymme"
               : "Change from baseline")}
           </button>
 
@@ -744,18 +895,34 @@ function MarginGraph({
         </label>
       </div>
       <div
+        ref={scrollContainerRef}
         style={{
+          width: "100%",
           overflowX: "auto",
-          maxWidth: "100%",
           overflowY: "hidden",
-          position: "relative",
+          background: "transparent",
+        }}
+        onScroll={(e) => {
+          setScrollLeft(e.currentTarget.scrollLeft);
+          const nextOffset = Math.round(
+            e.currentTarget.scrollLeft / monthPixelWidth
+          );
+          setScrollOffset((prev) =>
+            prev === nextOffset ? prev : Math.min(nextOffset, maxScrollOffset)
+          );
         }}
       >
+        <div
+          style={{
+            minWidth: chartWidth,
+            position: "relative",
+          }}
+        >
       <svg
         ref={svgRef}
-        viewBox="0 0 600 300"
+        viewBox={`0 0 ${chartWidth} 300`}
         preserveAspectRatio="none"
-        width="100%"
+        width={chartWidth}
         height={480}
         style={{
           display: "block",
@@ -763,6 +930,7 @@ function MarginGraph({
           border: "1px solid #e5e7eb",
           borderRadius: "4px",
           minHeight: 480,
+          minWidth: chartWidth,
         }}
         onMouseMove={(e) => {
           const idx = resolveIndexFromClientX(e.currentTarget, e.clientX);
@@ -776,17 +944,7 @@ function MarginGraph({
         }}
         onMouseLeave={() => setHoverIndex(null)}
       >
-      <rect x={0} y={0} width={600} height={300} fill={graphBackground} />
-      <text
-        x={600 - RIGHT_PADDING - 6}
-        y={TOP_PADDING + 12}
-        fill="#374151"
-        fontSize={11}
-        fontWeight={600}
-        textAnchor="end"
-      >
-        {comparisonLegend}
-      </text>
+      <rect x={0} y={0} width={chartWidth} height={300} fill={graphBackground} />
       <text
         x={14}
         y={150}
@@ -813,12 +971,12 @@ function MarginGraph({
           <line
             key={`grid-${i}`}
             x1={LEFT_PADDING}
-            x2={600}
+            x2={chartWidth}
             y1={y}
             y2={y}
             stroke={value === 0 ? "#6b7280" : "#e5e7eb"}
             strokeWidth={value === 0 ? 1.6 : 1}
-            strokeOpacity={value === 0 ? 0.6 : 0.35}
+            strokeOpacity={value === 0 ? 0.6 : 0.4}
           />
         );
       })}
@@ -839,7 +997,7 @@ function MarginGraph({
       {inspectionDepth === "expert" && (
         <line
           x1={LEFT_PADDING}
-          x2={600}
+          x2={chartWidth}
           y1={scaleY(EXEC_SUSTAIN_THRESHOLD)}
           y2={scaleY(EXEC_SUSTAIN_THRESHOLD)}
           stroke="#9CA3AF"
@@ -849,14 +1007,29 @@ function MarginGraph({
         />
       )}
       {zeroBetween && (
-        <line
-          x1={LEFT_PADDING}
-          y1={scaleY(0)}
-          x2={600}
-          y2={scaleY(0)}
-          stroke={theme.graphBg === "#0b0f14" ? "#E5E7EB" : "#4B5563"}
-          strokeWidth={2}
-        />
+        <>
+          <line
+            x1={LEFT_PADDING}
+            y1={scaleY(0)}
+            x2={chartWidth}
+            y2={scaleY(0)}
+            stroke={theme.graphBg === "#0b0f14" ? "#E5E7EB" : "#4B5563"}
+            strokeWidth={2}
+          />
+          {viewMode === "absolute" && (
+            <text
+              x={LEFT_PADDING + 8}
+              y={scaleY(0) - 8}
+              fill="#9CA3AF"
+              fontSize={10}
+              fontWeight={500}
+              textAnchor="start"
+              opacity={0.9}
+            >
+              {uiLanguage === "sv" ? "Stabil nivå (0%)" : "Stable level (0%)"}
+            </text>
+          )}
+        </>
       )}
 
       {/* Zone threshold lines (no background fills) */}
@@ -910,6 +1083,7 @@ function MarginGraph({
             fill="rgba(239, 68, 68, 0.16)"
             stroke="rgba(220, 38, 38, 0.35)"
             strokeWidth={1}
+            opacity={emphasisOpacity("tippingRisk")}
           />
           <text
             x={tippingBandCenterX}
@@ -918,6 +1092,7 @@ function MarginGraph({
             fontSize={9}
             fontWeight={600}
             textAnchor="middle"
+            opacity={emphasisOpacity("tippingRisk")}
           >
             {tippingWindowLabel}
           </text>
@@ -933,7 +1108,7 @@ function MarginGraph({
             stroke="#dc2626"
             strokeWidth={1.25}
             strokeDasharray="5 4"
-            opacity={0.92}
+            opacity={0.92 * emphasisOpacity("tippingRisk")}
           />
           <text
             x={xTippingTrigger + 4}
@@ -942,6 +1117,7 @@ function MarginGraph({
             fontSize={9}
             fontWeight={500}
             textAnchor="start"
+            opacity={emphasisOpacity("tippingRisk")}
           >
             {tippingTriggerLabel}
           </text>
@@ -1165,7 +1341,7 @@ function MarginGraph({
         ) : (
           renderMarkerShape(scaleX(0), scaleY(normalizedA[0]), "white", "baseline")
         ))}
-      {normalizedA.length > 0 && (
+      {viewMode === "delta" && normalizedA.length > 0 && (
         <text
           x={scaleX(0) + 8}
           y={scaleY(0) - 10}
@@ -1176,15 +1352,17 @@ function MarginGraph({
           {baselineText}
         </text>
       )}
-      <line
-        x1={scaleX(0)}
-        y1={0}
-        x2={scaleX(0)}
-        y2={height}
-        stroke="#9CA3AF"
-        strokeWidth={1}
-        strokeOpacity={0.25}
-      />
+      {viewMode === "delta" && (
+        <line
+          x1={scaleX(0)}
+          y1={0}
+          x2={scaleX(0)}
+          y2={height}
+          stroke="#9CA3AF"
+          strokeWidth={2.4}
+          strokeOpacity={0.4}
+        />
+      )}
       // Control visibility of scenarios (A/B) via showA/showB
       {/* Scenario A margin line (blue) */}
       {showA && marginHistoryA.length > 0 && (
@@ -1193,7 +1371,13 @@ function MarginGraph({
             d={buildSmoothPath(normalizedA, scaleX, scaleY)}
             fill="none"
             stroke="#3b82f6"
-            strokeWidth={2}
+            strokeWidth={highlightedSeries === "margin" ? 3 : 2}
+            opacity={emphasisOpacity("margin")}
+            filter={
+              highlightedSeries === "margin"
+                ? "drop-shadow(0 0 6px rgba(59,130,246,0.6))"
+                : "none"
+            }
           />
         </>
       )}
@@ -1203,8 +1387,14 @@ function MarginGraph({
           d={buildSmoothPath(normalizedB, scaleX, scaleY)}
           fill="none"
           stroke="#ef4444"
-          strokeWidth={2}
+          strokeWidth={highlightedSeries === "margin" ? 3 : 2}
           strokeDasharray="6 4"
+          opacity={emphasisOpacity("margin")}
+          filter={
+            highlightedSeries === "margin"
+              ? "drop-shadow(0 0 6px rgba(59,130,246,0.6))"
+              : "none"
+          }
         />
       )}
       {selectedMonthIndex !== undefined &&
@@ -1342,35 +1532,118 @@ function MarginGraph({
             );
           });
         })()}
-      </svg>
-      {showDriverOverlay &&
-        driverActivationOverlayMarkers.map((event, index) => (
-          <React.Fragment key={`driver-activation-overlay-${index}`}>
-            <div
-              className="driver-marker-wrapper"
-              style={{
-                left: `calc(${plotAreaLeftPercent}% + (${event.xPercent} * ${plotAreaWidthPercent} / 100)%)`,
-                top: `${event.yTopPercent}%`,
-                height: `${event.yHeightPercent}%`,
-              }}
-            >
-              <div className="driver-marker-tooltip">
-                {event.label ?? (uiLanguage === "sv" ? "Drivaraktivering" : "Driver activation")}
-              </div>
-              <div className="driver-marker-line" />
-            </div>
-            <div
-              className="driver-marker-inline-label"
-              style={{
-                left: `calc(${plotAreaLeftPercent}% + (${event.xPercent} * ${plotAreaWidthPercent} / 100)%)`,
-                transform: "translateX(calc(-50% + 1px))",
-                top: `calc(${event.yTopPercent}% + ${42 + event.sameMonthIndex * 18}px)`,
-              }}
-            >
-              {event.label ?? (uiLanguage === "sv" ? "Drivaraktivering" : "Driver activation")}
-            </div>
-          </React.Fragment>
+      {driverActivationLineMarkers.map((event, index) => {
+          console.log("driverEvent object:", event);
+          return (
+            <line
+              key={`driver-activation-line-${index}-${event.month}`}
+              x1={scaleX((event as any).timeIndex ?? event.month ?? (event as any).index)}
+              x2={scaleX((event as any).timeIndex ?? event.month ?? (event as any).index)}
+              y1={plotAreaY}
+              y2={plotAreaY + plotAreaH}
+              stroke="rgba(120,180,255,0.35)"
+              strokeWidth={1}
+              strokeDasharray="3 3"
+            />
+          );
+        })}
+      {scenarioTargetDriverActivationLineMarkers.map((event, index) => {
+          const adjustedIndex =
+            ((event as any).timeIndex ?? event.month ?? (event as any).index ?? 0) + 1;
+          const x = scaleX(adjustedIndex) + 6;
+
+          return (
+            <line
+              key={`scenario-target-driver-activation-line-${index}-${event.month}`}
+              x1={x}
+              x2={x}
+              y1={plotAreaY}
+              y2={plotAreaY + plotAreaH}
+              stroke="rgba(120,180,255,0.35)"
+              strokeWidth={1}
+              strokeDasharray="2,2"
+              opacity={0.6}
+            />
+          );
+        })}
+      {timelineMonths.map((month, i) => (
+          <text
+            key={`month-label-${month}`}
+            x={scaleX(i)}
+            y={height - 6}
+            textAnchor="middle"
+            fontSize={10}
+            fill="#9CA3AF"
+            opacity={0.8}
+          >
+            {`M${i + 1}`}
+          </text>
         ))}
+      </svg>
+          {showDriverOverlay &&
+            driverActivationOverlayMarkers.map((event, index) => (
+              <React.Fragment key={`driver-activation-overlay-${index}`}>
+                <div
+                  className="driver-marker-wrapper"
+                  style={{
+                    left: `calc(${plotAreaLeftPercent}% + (${event.xPercent} * ${plotAreaWidthPercent} / 100)%)`,
+                    top: `${event.yTopPercent}%`,
+                    height: `${event.yHeightPercent}%`,
+                  }}
+                >
+                  <div className="driver-marker-tooltip">
+                    {event.label ?? (uiLanguage === "sv" ? "Drivaraktivering" : "Driver activation")}
+                  </div>
+                  <div className="driver-marker-line" />
+                </div>
+                <div
+                  className="driver-marker-inline-label"
+                  style={{
+                    left: `calc(${plotAreaLeftPercent}% + (${event.xPercent} * ${plotAreaWidthPercent} / 100)%)`,
+                    transform: "translateX(calc(-50% + 1px))",
+                    top: `calc(${event.yTopPercent}% + ${42 + event.sameMonthIndex * 18}px)`,
+                  }}
+                >
+                  {event.label ?? (uiLanguage === "sv" ? "Drivaraktivering" : "Driver activation")}
+                </div>
+              </React.Fragment>
+            ))}
+        </div>
+      </div>
+      <div style={{ width: "100%", marginTop: "6px" }}>
+        <div
+          ref={sliderTrackRef}
+          onMouseDown={(event) => {
+            isSliderDraggingRef.current = true;
+            updateScrollFromSliderClientX(event.clientX);
+          }}
+          style={{
+            width: "100%",
+            height: 6,
+            borderRadius: 4,
+            background: "rgba(59, 130, 246, 0.24)",
+            position: "relative",
+            cursor: "pointer",
+            overflow: "hidden",
+          }}
+        >
+          <div
+            onMouseDown={(event) => {
+              event.stopPropagation();
+              isSliderDraggingRef.current = true;
+            }}
+            style={{
+              position: "absolute",
+              left: thumbLeft,
+              top: 0,
+              width: thumbWidth,
+              height: 6,
+              borderRadius: 4,
+              background: "rgba(96, 165, 250, 0.9)",
+              boxShadow: "0 0 0 1px rgba(147, 197, 253, 0.45)",
+            }}
+          />
+        </div>
       </div>
     </div>
   );
@@ -1381,10 +1654,14 @@ export function MarginGraphLegendRow({
   uiLanguage,
   scenarioALabelText,
   scenarioBLabelText,
+  selectedScenarioALabel,
+  selectedScenarioBLabel,
 }: {
   uiLanguage: "sv" | "en";
   scenarioALabelText?: string;
   scenarioBLabelText?: string;
+  selectedScenarioALabel?: string;
+  selectedScenarioBLabel?: string;
 }) {
   const t = pulseLanguage[uiLanguage];
   const structuralReferencePointsLabel =
@@ -1403,55 +1680,64 @@ export function MarginGraphLegendRow({
     flexWrap: "wrap",
     marginBottom: "8px",
   } as const;
+  const scenarioComparisonLabel =
+    `${selectedScenarioALabel ?? scenarioALabelText ?? "Scenario A"} vs ${
+      selectedScenarioBLabel ?? scenarioBLabelText ?? "Scenario B"
+    }`;
 
   return (
-    <div style={rowStyle}>
-      <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-        <span style={{ width: "10px", height: "2px", background: "#3B82F6" }} />
-        <span style={labelStyle}>{scenarioALabelText ?? t.currentStrategy}</span>
-      </span>
-      <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-        <span style={{ width: "10px", height: "2px", background: "#F59E0B" }} />
-        <span style={labelStyle}>{scenarioBLabelText ?? t.alternativeStrategy}</span>
-      </span>
-      <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-        <svg width={14} height={14} viewBox="0 0 14 14" aria-hidden style={{ display: "block" }}>
-          <circle cx={7} cy={7} r={4} fill="white" stroke="#9ca3af" strokeWidth={1} />
-        </svg>
-        <span style={labelStyle}>{t.baseline}</span>
-      </span>
-      <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-        <svg width={14} height={14} viewBox="0 0 14 14" aria-hidden style={{ display: "block" }}>
-          <polygon points="7,1 1,13 13,13" fill="#2563eb" />
-        </svg>
-        <span style={labelStyle}>{t.selectedTimePoint}</span>
-      </span>
-      <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-        <svg width={14} height={14} viewBox="0 0 14 14" aria-hidden style={{ display: "block" }}>
-          <polygon points="7,1 1,7 7,13 13,7" fill="#3b82f6" />
-        </svg>
-        <span style={labelStyle}>{t.tippingPoint}</span>
-      </span>
-      <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-        <svg width={14} height={14} viewBox="0 0 14 14" aria-hidden style={{ display: "block" }}>
-          <rect x={2} y={2} width={10} height={10} fill="#22c55e" />
-        </svg>
-        <span style={labelStyle}>{structuralReferencePointsLabel}</span>
-      </span>
-      <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-        <svg width={16} height={14} viewBox="0 0 16 14" aria-hidden style={{ display: "block" }}>
-          <line
-            x1={1}
-            y1={7}
-            x2={15}
-            y2={7}
-            stroke="#ef4444"
-            strokeWidth={1.5}
-            strokeDasharray="5 3"
-          />
-        </svg>
-        <span style={labelStyle}>{stabilizedStructuralMarginLabel}</span>
-      </span>
+    <div>
+      <div style={rowStyle}>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+          <span style={{ width: "10px", height: "2px", background: "#3B82F6" }} />
+          <span style={labelStyle}>{scenarioALabelText ?? t.currentStrategy}</span>
+        </span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+          <span style={{ width: "10px", height: "2px", background: "#F59E0B" }} />
+          <span style={labelStyle}>{scenarioBLabelText ?? t.alternativeStrategy}</span>
+        </span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+          <svg width={14} height={14} viewBox="0 0 14 14" aria-hidden style={{ display: "block" }}>
+            <circle cx={7} cy={7} r={4} fill="white" stroke="#9ca3af" strokeWidth={1} />
+          </svg>
+          <span style={labelStyle}>{t.baseline}</span>
+        </span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+          <svg width={14} height={14} viewBox="0 0 14 14" aria-hidden style={{ display: "block" }}>
+            <polygon points="7,1 1,13 13,13" fill="#2563eb" />
+          </svg>
+          <span style={labelStyle}>{t.selectedTimePoint}</span>
+        </span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+          <svg width={14} height={14} viewBox="0 0 14 14" aria-hidden style={{ display: "block" }}>
+            <polygon points="7,1 1,7 7,13 13,7" fill="#3b82f6" />
+          </svg>
+          <span style={labelStyle}>{t.tippingPoint}</span>
+        </span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+          <svg width={14} height={14} viewBox="0 0 14 14" aria-hidden style={{ display: "block" }}>
+            <rect x={2} y={2} width={10} height={10} fill="#22c55e" />
+          </svg>
+          <span style={labelStyle}>{structuralReferencePointsLabel}</span>
+        </span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+          <svg width={16} height={14} viewBox="0 0 16 14" aria-hidden style={{ display: "block" }}>
+            <line
+              x1={1}
+              y1={7}
+              x2={15}
+              y2={7}
+              stroke="#ef4444"
+              strokeWidth={1.5}
+              strokeDasharray="5 3"
+            />
+          </svg>
+          <span style={labelStyle}>{stabilizedStructuralMarginLabel}</span>
+        </span>
+      </div>
+      <div style={{ marginBottom: "6px", fontSize: "12px", opacity: 0.85 }}>
+        {scenarioComparisonLabel}
+      </div>
     </div>
   );
 }
