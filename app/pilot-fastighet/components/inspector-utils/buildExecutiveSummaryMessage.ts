@@ -50,7 +50,7 @@ export function buildExecutiveSummaryMessage(
   ) {
     if (uiMode === "executive") {
       return uiLanguage === "sv"
-        ? `${propagationRootDifference.driverB} blir den viktigaste påverkande faktorn i den valda strategin, vilket förskjuter när begränsningar börjar påverka genomförandet och begränsar hur snabbt åtgärder kan få genomslag i transportsystemet.`
+        ? `${propagationRootDifference.driverB} påverkar genomförandekapaciteten tidigt i strategin, vilket förskjuter när begränsningar börjar påverka genomförandet och begränsar hur snabbt åtgärder kan få genomslag i transportsystemet.`
         : `${propagationRootDifference.driverB} becomes the main factor influencing implementation in the selected strategy, which shifts when limitations begin to matter and slows how quickly actions can take effect in the transport system.`;
     }
 
@@ -62,7 +62,7 @@ export function buildExecutiveSummaryMessage(
   if (propagationRootDifference) {
     if (uiMode === "executive") {
       return uiLanguage === "sv"
-        ? `${propagationRootDifference.driverB} blir den viktigaste påverkande faktorn i den valda strategin och förändrar hur effekten sprids i systemet och var begränsningar först byggs upp.`
+        ? `${propagationRootDifference.driverB} påverkar hur effekten sprids i systemet och var begränsningar börjar byggas upp.`
         : `${propagationRootDifference.driverB} becomes the main factor influencing implementation in the selected strategy and changes how the effect spreads through the system and where limitations build first.`;
     }
 

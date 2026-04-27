@@ -150,7 +150,10 @@ const AIInterpretationPanel: React.FC<Props> = ({
     }
   }, [simulationCompleted]);
 
-  const helperText = t.systemInterpretationHelper;
+  const helperText =
+    caseType === "real-estate" && uiLanguage === "sv"
+      ? "Vad detta betyder för portföljen"
+      : t.systemInterpretationHelper;
   const sectionTitleMap: Record<string, string> = {
     sammanfattning: t.aiSummary,
     summary: t.aiSummary,

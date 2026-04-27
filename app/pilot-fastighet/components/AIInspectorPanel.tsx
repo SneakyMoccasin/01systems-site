@@ -238,7 +238,7 @@ function getScenarioDifferenceText(
 
   if (absImpact < 0.5) {
     return uiLanguage === "sv"
-      ? "Scenarierna är strukturellt lika"
+      ? "Strategierna ger liknande utvecklingsförlopp inom analysperioden"
       : "Scenarios remain structurally similar";
   }
 
@@ -285,7 +285,6 @@ function getCascadeEventLabel(
 
 type Props = {
   language: "sv" | "en";
-  caseName: string;
   tippingQuarter: number | null;
   currentMargin: number;
   alternativeMargin: number;
@@ -326,11 +325,14 @@ type Props = {
   caseType?: "transport" | "real-estate" | null;
   goalType?: GoalType;
   dominantScenarioDifferenceChannel?: string | null;
+  scenarioALabel?: string;
+  scenarioBLabel?: string;
 };
 
 const AIInspectorPanel: React.FC<Props> = ({
   language = "en",
-  caseName,
+  scenarioALabel,
+  scenarioBLabel,
   tippingQuarter,
   currentMargin,
   alternativeMargin,
@@ -433,6 +435,28 @@ const AIInspectorPanel: React.FC<Props> = ({
 
     return mapRiskLabelToPolicyLabel(key, uiLanguage);
   };
+  const REAL_ESTATE_PRIMARY_RISK_PRIORITY = [
+    "refinancingRisk",
+    "interestRateExposureRisk",
+    "leverageLevelRisk",
+    "liquidityPressureRisk",
+    "liquidityPressure",
+  ];
+  const resolveRealEstatePrimaryRiskLabel = (label: string) => {
+    if (caseType !== "real-estate" || !label.includes("|")) {
+      return label;
+    }
+
+    const riskKeys = label
+      .split("|")
+      .map((part) => part.trim())
+      .filter(Boolean);
+    const primaryRiskKey =
+      REAL_ESTATE_PRIMARY_RISK_PRIORITY.find((key) => riskKeys.includes(key)) ??
+      riskKeys[0];
+
+    return mapRiskLabelToPolicyLabel(primaryRiskKey, uiLanguage);
+  };
   const toNarrativeCase = (label: string) =>
     label.length > 0
       ? label.charAt(0).toLocaleLowerCase(
@@ -514,10 +538,14 @@ const AIInspectorPanel: React.FC<Props> = ({
   const isRealEstate = caseType === "real-estate";
   const policyDriverLabel = language === "sv" ? "Policydrivare" : "Policy driver";
   const systemDriverLabel = language === "sv" ? "Systemdrivare" : "System driver";
-  const noActiveBusinessFactorText =
-    uiLanguage === "sv"
-      ? "Ingen tydlig huvudfaktor ännu"
-      : "No dominant business factor yet";
+  const firstCascadeSourceEvent = simulationCascadeEvents[0] as
+    | (CascadeEvent & { sourceRiskLabel?: string })
+    | undefined;
+  const fallbackDriver =
+    firstCascadeSourceEvent?.sourceRiskLabel ||
+    (firstCascadeSourceEvent?.sourceRisk
+      ? mapRiskLabelToPolicyLabel(firstCascadeSourceEvent.sourceRisk, uiLanguage)
+      : null);
   const primaryDriverFallbackText =
     primaryDriver == null && policyDriver && systemDriver
       ? isRealEstate
@@ -549,8 +577,15 @@ const AIInspectorPanel: React.FC<Props> = ({
     dominantScenarioDifferenceChannel ??
     transportInspectorContext?.dominantScenarioDifferenceChannel ??
     null;
-  const scenarioALabel = language === "sv" ? "Nuläge" : "Baseline";
-  const scenarioBLabel = language === "sv" ? "Målstrategi" : "Goal strategy";
+  const scenarioALegendLabel = language === "sv" ? "Nuläge" : "Baseline";
+  const scenarioBLegendLabel = language === "sv" ? "Målstrategi" : "Goal strategy";
+  const scenarioHeader =
+    scenarioALabel && scenarioBLabel
+      ? `${scenarioALabel} vs ${scenarioBLabel}`
+      : scenarioALabel
+        ? scenarioALabel
+        : "Analys av vald strategi";
+  const shouldShowCaseHeader = caseType !== "real-estate";
   const cascadeStatusText =
     simulationCascadeEvents.length > 0
       ? isRealEstate
@@ -851,8 +886,14 @@ const AIInspectorPanel: React.FC<Props> = ({
       ? getNarrativeDriverLabel(primaryDriver)
       : primaryDriver
         ? mapRiskLabelToPolicyLabel(primaryDriver, uiLanguage)
-        : null) ??
-    (isRealEstate ? noActiveBusinessFactorText : t.noActiveDriver);
+        : fallbackDriver);
+  const primaryDriverInfluenceText = primaryDriverDisplayLabel
+    ? uiLanguage === "sv"
+      ? `${primaryDriverDisplayLabel} påverkar utvecklingen tidigt`
+      : `${primaryDriverDisplayLabel} influences development early`
+    : uiLanguage === "sv"
+      ? "Påverkan byggs upp gradvis över flera faktorer"
+      : "Impact builds gradually across multiple factors";
   const activeDomainEvents =
     selectedMonthIndex != null
       ? domainEvents.filter((e) => e.month === selectedMonthIndex)
@@ -1157,7 +1198,7 @@ const AIInspectorPanel: React.FC<Props> = ({
   const scenarioDifferenceText =
     !hasStructuralDivergence
       ? language === "sv"
-        ? "Scenarierna är strukturellt lika"
+        ? "Strategierna ger liknande utvecklingsförlopp inom analysperioden"
         : "Scenarios remain structurally similar"
       : firstDivergenceMonth != null && firstDivergenceMonth <= 6
       ? language === "sv"
@@ -1171,7 +1212,17 @@ const AIInspectorPanel: React.FC<Props> = ({
       ? "Scenarierna divergerar strukturellt genom olika drivkedjor"
       : "Scenarios diverge structurally through different driver pathways";
   const localizePropagationNodeLabel = (label: string) => {
+    const domainLabel = resolveRealEstatePrimaryRiskLabel(label);
+    if (domainLabel !== label) return domainLabel;
     if (uiLanguage !== "sv") return label;
+    if (
+      caseType === "real-estate" &&
+      (label === "Structural margin affected" ||
+        label === "Strukturell marginal påverkas" ||
+        label === "Strukturell marginal påverkad")
+    ) {
+      return "portföljens handlingsutrymme förändras";
+    }
     if (label === "Constraint activated") return "Begränsning aktiverad";
     if (label === "Structural margin affected")
       return "Strukturell marginal påverkad";
@@ -1285,6 +1336,34 @@ const AIInspectorPanel: React.FC<Props> = ({
             : `Analysis goal: ${resolvedAnalysisGoalLabel}`}
         </div>
       )}
+      {caseType === "real-estate" && scenarioALabel && scenarioBLabel && (
+        <div
+          style={{
+            fontSize: "11px",
+            opacity: 0.9,
+            marginTop: "6px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "2px"
+          }}
+        >
+          <div style={{ color: "#9CA3AF", fontWeight: 600 }}>
+            {language === "sv" ? "Strategier" : "Strategies"}
+          </div>
+          <div>
+            <span style={{ color: "#9CA3AF", marginRight: "6px" }}>
+              {language === "sv" ? "Baslinje: " : "Baseline: "}
+            </span>
+            <span>{scenarioALabel}</span>
+          </div>
+          <div>
+            <span style={{ color: "#9CA3AF", marginRight: "6px" }}>
+              {language === "sv" ? "Målstrategi: " : "Target strategy: "}
+            </span>
+            <span>{scenarioBLabel}</span>
+          </div>
+        </div>
+      )}
       {caseType === "transport" && goalDirectionIndicatorMessage && (
         <div
           style={{
@@ -1319,10 +1398,12 @@ const AIInspectorPanel: React.FC<Props> = ({
           color: "#e5e7eb",
         }}
       >
-        <div>
-          <span style={{ color: "#9CA3AF", marginRight: "6px" }}>{t.caseLabel}</span>
-          <span>{caseName || "Analys av vald strategi"}</span>
-        </div>
+        {shouldShowCaseHeader && (
+          <div>
+            <span style={{ color: "#9CA3AF", marginRight: "6px" }}>{t.caseLabel}</span>
+            <span>{scenarioHeader}</span>
+          </div>
+        )}
         {analysisReady &&
           caseType === "transport" &&
           executiveInspectorSummaryLines.length > 0 && (
@@ -1438,16 +1519,8 @@ const AIInspectorPanel: React.FC<Props> = ({
           <div>
             {isRealEstate
               ? language === "sv"
-                ? `Viktigaste påverkansfaktor: ${
-                    primaryDriverDisplayLabel
-                      ? `${primaryDriverDisplayLabel} ↓`
-                      : noActiveBusinessFactorText
-                  }`
-                : `Main influencing factor: ${
-                    primaryDriverDisplayLabel
-                      ? `${primaryDriverDisplayLabel} ↓`
-                      : noActiveBusinessFactorText
-                  }`
+                ? `Viktigaste påverkansfaktor: ${primaryDriverInfluenceText}`
+                : `Main influencing factor: ${primaryDriverInfluenceText}`
               : language === "sv"
                 ? `Primär drivare: ${
                     primaryDriverDisplayLabel
@@ -1576,24 +1649,28 @@ const AIInspectorPanel: React.FC<Props> = ({
                   >
                     {entry.messageKey === "avoided"
                       ? language === "sv"
-                        ? `${constraintLabel} undviks i ${
-                            entry.scenarioDirection === "baseline"
-                              ? "nulägesstrategin"
-                              : "målstrategin"
-                          }`
+                        ? caseType === "real-estate"
+                          ? "ett strukturellt finansieringshinder undviks"
+                          : `${constraintLabel} undviks i ${
+                              entry.scenarioDirection === "baseline"
+                                ? "nulägesstrategin"
+                                : "målstrategin"
+                            }`
                         : `${constraintLabel} avoided in ${
                             entry.scenarioDirection === "baseline"
                               ? "baseline strategy"
                               : "target strategy"
                           }`
                       : language === "sv"
-                      ? `${constraintLabel} aktiveras ${
-                          entry.differenceMonths
-                        } månader tidigare i ${
-                          entry.scenarioDirection === "baseline"
-                            ? "nulägesstrategin"
-                            : "målstrategin"
-                        }`
+                      ? caseType === "real-estate"
+                        ? "inga kritiska hinder aktiveras tidigt"
+                        : `${constraintLabel} aktiveras ${
+                            entry.differenceMonths
+                          } månader tidigare i ${
+                            entry.scenarioDirection === "baseline"
+                              ? "nulägesstrategin"
+                              : "målstrategin"
+                          }`
                       : `${constraintLabel} activates ${
                           entry.differenceMonths
                         } months earlier in ${
@@ -1613,11 +1690,13 @@ const AIInspectorPanel: React.FC<Props> = ({
             return (
               <div key={`${entry.constraintType}-goal`}>
                 {language === "sv"
-                  ? `${constraintLabel} fördröjs ${entry.delayMonths} månader i ${
-                      entry.winningScenario === "target"
-                        ? "målstrategin"
-                        : "nulägesstrategin"
-                    }`
+                  ? caseType === "real-estate"
+                    ? "inga kritiska hinder aktiveras tidigt"
+                    : `${constraintLabel} fördröjs ${entry.delayMonths} månader i ${
+                        entry.winningScenario === "target"
+                          ? "målstrategin"
+                          : "nulägesstrategin"
+                      }`
                   : `${constraintLabel} delayed ${entry.delayMonths} months in ${
                       entry.winningScenario === "target"
                         ? "target strategy"
@@ -1626,7 +1705,8 @@ const AIInspectorPanel: React.FC<Props> = ({
               </div>
             );
           })}
-          {inspectionMode === "executive" &&
+          {caseType !== "real-estate" &&
+            inspectionMode === "executive" &&
             seriesLengthA > 0 &&
             seriesLengthB > 0 && (
             <div style={{ marginTop: "8px", marginBottom: "8px" }}>
@@ -1678,6 +1758,12 @@ const AIInspectorPanel: React.FC<Props> = ({
                     } preserves structural margin longer before first critical decline`
                 : language === "sv"
                 ? (() => {
+                    if (caseType === "real-estate") {
+                      return structuralGoalSummaryMessage.winningScenario === "target"
+                        ? "Målstrategin undviker ett kritiskt finansieringshinder"
+                        : "Nulägesstrategin undviker ett kritiskt finansieringshinder";
+                    }
+
                     const scenarioLabel =
                       structuralGoalSummaryMessage.winningScenario === "target"
                         ? "Målstrategin"
@@ -1753,7 +1839,7 @@ const AIInspectorPanel: React.FC<Props> = ({
                           return `Utfallet påverkas främst av hur beläggning, likviditet och refinansieringsförmåga bevarar handlingsutrymmet över tid`;
                         }
 
-                        return `Utfallet påverkas främst av kapitalstruktur, beläggning och refinansieringsförmåga över tid`;
+                        return `Utfallet formas främst av kapitalstruktur, beläggning och refinansieringsförmåga över tid`;
                       }
 
                       if (
@@ -1853,18 +1939,30 @@ const AIInspectorPanel: React.FC<Props> = ({
                       structuralGoalSummaryMessage.avoidedConstraintCount ?? 0;
 
                     if (resolvedGoalType === "delay") {
-                      return `Utfallet påverkas främst av hur flera begränsningar aktiveras senare i tidslinjen`;
+                      return caseType === "real-estate"
+                        ? "inga kritiska hinder aktiveras tidigt"
+                        : `Utfallet påverkas främst av hur flera begränsningar aktiveras senare i tidslinjen`;
                     }
 
                     if (resolvedGoalType === "avoidance") {
-                      return `Utfallet påverkas främst av vilka begränsningar som helt undviks`;
+                      return caseType === "real-estate"
+                        ? "ett strukturellt finansieringshinder undviks"
+                        : `Utfallet påverkas främst av vilka begränsningar som helt undviks`;
                     }
 
                     if (resolvedGoalType === "margin-preservation") {
-                      return `Utfallet påverkas främst av hur marginalnivån bevaras över tid`;
+                      return caseType === "real-estate"
+                        ? "portföljens handlingsutrymme förändras"
+                        : `Utfallet påverkas främst av hur marginalnivån bevaras över tid`;
                     }
 
-                    return `Utfallet påverkas främst av hur ${delayedCount} begränsningar fördröjs och ${avoidedCount} begränsningar undviks`;
+                    return caseType === "real-estate"
+                      ? delayedCount > 0
+                        ? "inga kritiska hinder aktiveras tidigt"
+                        : avoidedCount > 0
+                          ? "ett finansieringshinder undviks"
+                          : "portföljens handlingsutrymme förändras"
+                      : `Utfallet påverkas främst av hur ${delayedCount} begränsningar fördröjs och ${avoidedCount} begränsningar undviks`;
                   })()
                 : (() => {
                     const delayedCount =
@@ -2007,14 +2105,21 @@ const AIInspectorPanel: React.FC<Props> = ({
         </div>
         <div>
           <span style={{ color: "#9CA3AF", marginRight: "6px" }}>
-            {language === "sv" ? "Påverkan i systemet" : t.systemPressure}:
+            {language === "sv"
+              ? caseType === "real-estate"
+                ? "Påverkan i portföljen"
+                : "Påverkan i systemet"
+              : t.systemPressure}
+            :
           </span>
           <span>{systemPressureExecutiveLabel}</span>
         </div>
         <div>
           <span style={{ color: "#9CA3AF", marginRight: "6px" }}>
             {language === "sv"
-              ? "Risk att systemet tappar handlingsutrymme"
+              ? caseType === "real-estate"
+                ? "Risk att portföljen tappar handlingsutrymme"
+                : "Risk att systemet tappar handlingsutrymme"
               : "Estimated structural breach"}
             :
           </span>
@@ -2023,7 +2128,9 @@ const AIInspectorPanel: React.FC<Props> = ({
         <div>
           <div style={{ color: "#9CA3AF", marginBottom: "4px" }}>
             {language === "sv"
-              ? "Hur förändringen sprids i systemet"
+              ? caseType === "real-estate"
+                ? "Hur förändringen sprids i portföljen"
+                : "Hur förändringen sprids i systemet"
               : "How the change spreads through the system"}
           </div>
           <div>
@@ -2035,30 +2142,17 @@ const AIInspectorPanel: React.FC<Props> = ({
                 if (transportEventLabels.length === 0) {
                   return <span style={{ color: "#6B7280" }}>—</span>;
                 }
-                const transportCascadeLines = transportEventLabels.map((label, index) =>
-                  index === 0 ? label : `→ ${label}`
-                );
                 const primaryChannelLine = transportEventLabels.join(" → ");
-                const firstPropagationStep = transportEventLabels[0] ?? "";
-                const shouldShowPrimaryChannel =
-                  primaryChannelLine.trim() !== firstPropagationStep.trim();
 
                 return (
-                  <>
-                    {transportCascadeLines.map((line, index) => (
-                      <div key={index}>{line}</div>
-                    ))}
-                    {shouldShowPrimaryChannel && (
-                      <div style={{ marginTop: "8px", opacity: 0.9 }}>
-                        <strong>
-                          {language === "sv"
-                            ? "Förändringen sprids vidare genom"
-                            : "Primary propagation channel"}
-                        </strong>
-                        <div>{primaryChannelLine}</div>
-                      </div>
-                    )}
-                  </>
+                  <div style={{ marginTop: "8px", opacity: 0.9 }}>
+                    <strong>
+                      {language === "sv"
+                        ? "Förändringen sprids vidare genom"
+                        : "Primary propagation channel"}
+                    </strong>
+                    <div>{primaryChannelLine}</div>
+                  </div>
                 );
               }
 
@@ -2081,16 +2175,17 @@ const AIInspectorPanel: React.FC<Props> = ({
                 <>
                   {chainSteps.map((step, index) => {
                     const normalizedStep = step.trim();
-                    const readableStep = mapRiskLabelToPolicyLabel(
-                      normalizedStep,
-                      uiLanguage
+                    const readableStep = resolveRealEstatePrimaryRiskLabel(
+                      mapRiskLabelToPolicyLabel(normalizedStep, uiLanguage)
                     );
                     return (
                       <div key={index}>
                         {index === 0
                           ? primaryDriver
-                            ? mapRiskLabelToPolicyLabel(primaryDriver, uiLanguage)
-                            : noActiveBusinessFactorText
+                            ? resolveRealEstatePrimaryRiskLabel(
+                                mapRiskLabelToPolicyLabel(primaryDriver, uiLanguage)
+                              )
+                            : primaryDriverInfluenceText
                           : `→ ${readableStep}`}
                       </div>
                     );
@@ -2100,15 +2195,19 @@ const AIInspectorPanel: React.FC<Props> = ({
                       chainSteps.length > 0
                         ? chainSteps
                             .map((step) =>
-                              mapRiskLabelToPolicyLabel(step.trim(), uiLanguage)
+                              resolveRealEstatePrimaryRiskLabel(
+                                mapRiskLabelToPolicyLabel(step.trim(), uiLanguage)
+                              )
                             )
                             .join(" → ")
                         : "";
                     const firstPropagationStep =
                       chainSteps.length > 0
-                        ? mapRiskLabelToPolicyLabel(
-                            chainSteps[0].trim(),
-                            uiLanguage
+                        ? resolveRealEstatePrimaryRiskLabel(
+                            mapRiskLabelToPolicyLabel(
+                              chainSteps[0].trim(),
+                              uiLanguage
+                            )
                           )
                         : "";
                     const shouldShowPrimaryChannel =
@@ -2195,10 +2294,10 @@ const AIInspectorPanel: React.FC<Props> = ({
           <div style={{ color: "#9CA3AF", marginBottom: "4px" }}>{t.margins}</div>
           <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
             <span>
-              {scenarioALabel}: {typeof currentMargin === "number" ? currentMargin.toFixed(2) : currentMargin}
+              {scenarioALegendLabel}: {typeof currentMargin === "number" ? currentMargin.toFixed(2) : currentMargin}
             </span>
             <span>
-              {`${scenarioBLabel}:`}{" "}
+              {`${scenarioBLegendLabel}:`}{" "}
               {typeof alternativeMargin === "number"
                 ? alternativeMargin.toFixed(2)
                 : alternativeMargin}
@@ -2227,7 +2326,9 @@ const AIInspectorPanel: React.FC<Props> = ({
                 ? "Ökar över tid"
                 : "Increasing over time"
               : language === "sv"
-              ? "Systemets flexibilitet bedöms vara stabil inom analysperioden"
+              ? caseType === "real-estate"
+                ? "Portföljens handlingsutrymme bedöms vara stabilt inom analysperioden"
+                : "Systemets flexibilitet bedöms vara stabil inom analysperioden"
               : "Stable"}
           </div>
         </div>

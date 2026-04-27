@@ -116,35 +116,37 @@ function buildInterpretationPrompt(input: InterpretationPromptInput): string {
             isTransport
               ? `Transportnätverket utvecklar ett strukturellt tryck genom ${input.primaryDriverText || "centrala policydrivare"}, vilket påverkar systemets utvecklingsriktning${transportSummaryCascadeText ? ` via följande spridningskedja: ${transportSummaryCascadeText}` : input.structuralDivergenceText ? ` genom ${input.structuralDivergenceText}` : " tidigt i simuleringen"}.`
               : isRealEstate
-                ? `Portföljen påverkas främst av ${input.primaryDriverText || "refinansiering, kapitalbindning och beläggning"}, vilket minskar handlingsutrymmet ${input.breachText && input.breachText !== "Ej uppskattad" ? `före ${input.breachText}` : "tidigt i simuleringen"} och signalerar att stabiliserande beslut kan behövas i ett tidigt skede.`
+                ? `Portföljen påverkas främst av ${input.primaryDriverText || "refinansiering, kapitalbindning och beläggning"}. Detta minskar portföljens handlingsutrymme tidigt i simuleringen.`
               : `Systemet utvecklar strukturellt tryck genom påverkan från ${input.primaryDriverText || "centrala systemdrivare"}, vilket minskar handlingsutrymmet ${input.breachText && input.breachText !== "Ej uppskattad" ? `före ${input.breachText}` : "tidigt i simuleringen"} och indikerar att stabiliserande beslut kan krävas i ett tidigt skede.`,
-          structuralHeader: isRealEstate ? "Affärsanalys:" : "Strukturell analys:",
+          structuralHeader: isRealEstate ? "Vad utvecklingen styrs av:" : "Strukturell analys:",
           structuralBody:
             isTransport
               ? `Den observerade utvecklingen drivs av ${input.primaryDriverText || "transportpolitiska drivkrafter"} och visar hur policyval omformas till strukturella följdeffekter i systemet. ${input.structuralDivergenceText}`
               : isRealEstate
-                ? `Utvecklingen formas av samspelet mellan refinansiering, kapitalbindning, likviditet, beläggning och underhållsstrategi. ${input.structuralDivergenceText}`
+                ? `Utvecklingen styrs främst av refinansiering, kapitalbindning, likviditet, beläggning och underhållsstrategi. ${input.structuralDivergenceText}`
               : "Den observerade marginaltrenden visar att flera strukturella drivkrafter samverkar och gradvis minskar systemets flexibilitet, vilket innebär att stabilisering sannolikt kräver koordinerade åtgärder snarare än en enskild insats.",
           cascadeHeader: isRealEstate ? "Påverkan i portföljen:" : "Kaskaddynamik:",
           cascadeBody:
             isTransport
               ? swedishTransportCascadeBodyText
               : isRealEstate
-                ? `Påverkanskedjan visar hur ${input.primaryDriverText || "det tydligaste affärstrycket"} får följdeffekter via ${input.cascadeDriversText || "kapitalstruktur, kassaflöde, beläggning och underhållsstrategi"}, vilket successivt begränsar portföljens handlingsutrymme.`
+                ? `${input.primaryDriverText || "Ränteexponering"} driver ökade risker via refinansieringsrisk och belåningsnivå.`
                 : `Den identifierade kaskadsekvensen visar hur förändringar i ${input.primaryDriverText || "systemets centrala drivare"} sprids vidare genom ${input.cascadeDriversText || "flera strukturella drivkrafter"} och skapar ett tidigt tipping-läge, vilket innebär att sena åtgärder får begränsad effekt jämfört med tidiga insatser.`,
           outlookHeader: "Framåtblick:",
           outlookBody:
             `${isTransport
               ? "Transportsystemets fortsatta utveckling bör bedömas utifrån vilken policykedja som nu dominerar och hur detta påverkar genomförbarhet och kapacitetsflexibilitet."
               : isRealEstate
-                ? "Portföljens fortsatta utveckling bör bedömas utifrån hur refinansieringsförmåga, kassaflöde, beläggning och kapitalbindning påverkar handlingsutrymmet de kommande stegen."
+                ? "Refinansieringsförmåga, kassaflöde och beläggning påverkar portföljens handlingsutrymme framåt."
               : `Den fortsatta marginalutvecklingen indikerar att systemet närmar sig ett möjligt strukturellt brottstillstånd ${input.breachText && input.breachText !== "Ej uppskattad" ? `kring ${input.breachText}` : "senare i simuleringen"}, vilket innebär att utvecklingen bör följas och stabiliserande beslut övervägas i tid.`}${input.goalDirection === "toward"
   ? " Utvecklingen rör systemet i riktning mot målstrategin, vilket stärker förutsättningarna för strukturell stabilisering."
   : input.goalDirection === "away"
   ? " Utvecklingen rör systemet bort från målstrategin, vilket innebär att ytterligare stabiliserande beslut kan krävas tidigt i förloppet."
   : ""}`,
           footer:
-            "Använd tydligt språk anpassat för svenska beslutsfattare.",
+            isRealEstate
+              ? "Använd tydligt språk anpassat för svenska beslutsfattare. Använd kort, beslutsnära formuleringar. Undvik formuleringar som: 'det är viktigt att övervaka' 'detta kan signalera att stabiliserande beslut behövs' eller andra generella rådgivningsformuleringar. Beskriv istället direkt hur handlingsutrymmet förändras."
+              : "Använd tydligt språk anpassat för svenska beslutsfattare.",
         }
       : {
           intro:
@@ -202,6 +204,28 @@ function buildInterpretationPrompt(input: InterpretationPromptInput): string {
         };
 
   return `${templates.intro}
+
+${input.language === "sv" && isRealEstate
+  ? `BESLUTSREGEL (FASTIGHET):
+Beskriv endast observerade strukturella konsekvenser.
+Ge inga rekommendationer.
+Formulera inte vad användaren bör göra.
+Beskriv endast hur handlingsutrymmet förändras.
+Beskriv direkt hur handlingsutrymmet förändras.
+Undvik rådgivande formuleringar som:
+'det är viktigt att övervaka'
+'detta kan signalera att stabiliserande beslut behövs'.
+Formulera istället konsekvenser direkt.
+Om handlingsutrymmet förbättras:
+skriv "detta minskar handlingsutrymmet".
+
+Om handlingsutrymmet minskar:
+skriv "detta minskar handlingsutrymmet".
+
+Skriv aldrig formuleringar om att beslut "kan behövas".
+Beskriv istället konsekvensen direkt.
+`
+  : ""}
 
 IMPORTANT LANGUAGE RULE:
 
@@ -426,7 +450,7 @@ export async function POST(req: Request) {
       ? translatedDominantScenarioDifferenceChannel ??
         (caseType === "real-estate"
           ? uiLanguage === "sv"
-            ? "en annan kombination av refinansiering, kassaflöde, beläggning och kapitalbindning"
+            ? "en annan kombination av refinansiering, kassaflöde och beläggning kan behövas för att minska riskerna"
             : "a different combination of refinancing, cash flow, occupancy, and capital lock-in"
           : uiLanguage === "sv"
             ? "en förändrad primär drivare eller spridningskedja"

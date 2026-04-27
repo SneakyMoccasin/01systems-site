@@ -42,6 +42,10 @@ const POLICY_LABEL_MAP: Record<
     sv: "Likviditetspress",
     en: "Liquidity pressure",
   },
+  liquidityPressureRisk: {
+    sv: "Likviditetspress",
+    en: "Liquidity pressure",
+  },
   budget_pressure: {
     sv: "Budgettryck",
     en: "Budget pressure",

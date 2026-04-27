@@ -52,8 +52,6 @@ import { getScenarioLibrary } from "@/src/pilotFastighet/scenarioLibrary";
 import { resolveTransportInspectorContext } from "@/src/pilotFastighet/transportInspectorAdapter";
 import {
   getTransportPolicyExplanationLabel,
-  TRANSPORT_SYSTEM_DRIVERS,
-  type TransportSystemDriverId,
 } from "@/src/pilotFastighet/transportDomainMapping";
 import {
   defaultRiskState,
@@ -64,25 +62,6 @@ import {
   profileMeasure,
   profileValue,
 } from "@/src/lib/runtimeProfile";
-
-function toReadableLabel(
-  driverId: TransportSystemDriverId,
-  language: "sv" | "en"
-): string {
-  const driverDef = TRANSPORT_SYSTEM_DRIVERS[driverId];
-
-  if (language === "sv" && driverDef?.readableLabel_sv) {
-    return driverDef.readableLabel_sv;
-  }
-
-  if (language === "en" && driverDef?.readableLabel_en) {
-    return driverDef.readableLabel_en;
-  }
-
-  const withSpaces = driverId.replace(/([a-z])([A-Z])/g, "$1 $2");
-
-  return withSpaces.charAt(0).toUpperCase() + withSpaces.slice(1);
-}
 
 function buildScenarioTargetPolicyEvents(
   scenarioTarget: string | null | undefined,
@@ -1380,7 +1359,6 @@ export default function PilotFastighetPage() {
   } as const;
 
   const theme = THEME[uiTheme];
-  const language = uiLanguage;
   const t = UI_TEXT[uiLanguage];
   const pt = pulseLanguage[uiLanguage];
   const scenarioALabelText = uiLanguage === "sv" ? "Nuläge" : "Baseline";
@@ -1403,10 +1381,17 @@ export default function PilotFastighetPage() {
       ? [marginHistoryA[0], ...marginHistoryB.slice(1)]
       : marginHistoryB;
   }, [marginHistoryA, marginHistoryB]);
+  const scenarioLibraryForInspector = getScenarioLibrary(uiLanguage).filter((p) =>
+    caseType === "real-estate"
+      ? p.domain === "realEstate"
+      : caseType === "transport"
+        ? p.domain === "municipal"
+        : true
+  );
   const selectedScenarioALabel =
-    getScenarioLibrary(uiLanguage).find((p) => p.id === scenarioALabel)?.label;
+    scenarioLibraryForInspector.find((p) => p.id === scenarioALabel)?.label;
   const selectedScenarioBLabel =
-    getScenarioLibrary(uiLanguage).find((p) => p.id === scenarioBLabel)?.label;
+    scenarioLibraryForInspector.find((p) => p.id === scenarioBLabel)?.label;
 
   const showBaselineOnly = marginHistoryB.length === 0;
   const pilotCase =
@@ -1509,6 +1494,47 @@ export default function PilotFastighetPage() {
       : cascadeEventsA;
   const cascadeEvents =
     cascadeEventsB.length > 0 ? cascadeEventsB : cascadeEventsA;
+  const firstSystemStatusCascadeEvent = cascadeEvents[0] as
+    | (CascadeEvent & { sourceRiskLabel?: string })
+    | undefined;
+  const firstSystemStatusCascadeEventB = cascadeEventsB[0] as
+    | (CascadeEvent & { sourceRiskLabel?: string })
+    | undefined;
+  const firstSystemStatusCascadeEventA = cascadeEventsA[0] as
+    | (CascadeEvent & { sourceRiskLabel?: string })
+    | undefined;
+  const systemStatusPrimaryDriver =
+    primaryDriver ??
+    firstSystemStatusCascadeEvent?.sourceRiskLabel ??
+    firstSystemStatusCascadeEvent?.sourceRisk ??
+    firstSystemStatusCascadeEventB?.sourceRiskLabel ??
+    firstSystemStatusCascadeEventB?.sourceRisk ??
+    firstSystemStatusCascadeEventA?.sourceRiskLabel ??
+    firstSystemStatusCascadeEventA?.sourceRisk ??
+    null;
+  const systemStatusPrimaryDriverLabel = systemStatusPrimaryDriver
+    ? caseType === "transport"
+      ? getTransportPolicyExplanationLabel(systemStatusPrimaryDriver, uiLanguage)
+      : mapRiskLabelToPolicyLabel(systemStatusPrimaryDriver, uiLanguage)
+    : null;
+  const resolvedSystemStatusPrimaryDriver =
+    caseType === "real-estate"
+      ? mapRiskLabelToPolicyLabel(
+          systemStatusPrimaryDriver ??
+            firstSystemStatusCascadeEventB?.sourceRiskLabel ??
+            firstSystemStatusCascadeEventA?.sourceRiskLabel ??
+            "",
+          uiLanguage
+        ) || null
+      : systemStatusPrimaryDriverLabel;
+  const systemStatusPrimaryDriverDisplayText =
+    caseType === "real-estate"
+      ? resolvedSystemStatusPrimaryDriver
+        ? uiLanguage === "sv"
+          ? `${resolvedSystemStatusPrimaryDriver} påverkar utvecklingen tidigt`
+          : `${resolvedSystemStatusPrimaryDriver} influences development early`
+        : "—"
+      : systemStatusPrimaryDriverLabel ?? "—";
 
   const driverLabels = (pt as any).driverLabels ?? {};
   const riskLabels = (pt as any).riskLabels ?? {};
@@ -2292,7 +2318,7 @@ export default function PilotFastighetPage() {
           <div className="text-xs text-slate-400 leading-relaxed max-w-xl">
             {caseType === "real-estate"
               ? "Grafen visar hur portföljens handlingsutrymme förändras över tid när refinansiering, kapitalbindning, kassaflöde, beläggning och underhållsstrategi utvecklas tillsammans."
-              : "Grafen visar hur systemets strukturella handlingsutrymme förändras över tid beroende på vilka beslut som kombineras. Den visar inte optimal lösning — utan hur beslut påverkar stabilitet, begränsningar och tipping-risk."}
+              : "Grafen visar hur systemets strukturella handlingsutrymme förändras över tid beroende på vilka beslut som kombineras. Den visar inte optimal lösning — utan hur beslut påverkar stabilitet, begränsningar och risk för tipping över tid."}
           </div>
           <button
             onClick={() => setShowDriverActivations(prev => !prev)}
@@ -2360,9 +2386,8 @@ export default function PilotFastighetPage() {
               )}
               <AIInspectorPanel
                 language={uiLanguage}
-                caseName={
-                  PILOT_CASES.find((c) => c.id === selectedPilotCaseId)?.title ?? ""
-                }
+                scenarioALabel={selectedScenarioALabel}
+                scenarioBLabel={selectedScenarioBLabel}
                 tippingQuarter={
                   tippingMarginIndexB != null ? tippingMarginIndexB + 1 : null
                 }
@@ -2501,29 +2526,17 @@ export default function PilotFastighetPage() {
                     {uiLanguage === "sv"
                       ? caseType === "real-estate"
                         ? `Viktigaste påverkansfaktor: ${
-                            primaryDriver
-                              ? mapRiskLabelToPolicyLabel(primaryDriver, uiLanguage)
-                              : "—"
+                            systemStatusPrimaryDriverDisplayText
                           }`
                         : `Primär drivare: ${
-                            primaryDriver
-                              ? caseType === "transport"
-                                ? getTransportPolicyExplanationLabel(primaryDriver, uiLanguage)
-                                : toReadableLabel(primaryDriver as TransportSystemDriverId, language)
-                              : "—"
+                            systemStatusPrimaryDriverDisplayText
                           }`
                       : caseType === "real-estate"
                         ? `Main influencing factor: ${
-                            primaryDriver
-                              ? mapRiskLabelToPolicyLabel(primaryDriver, uiLanguage)
-                              : "—"
+                            systemStatusPrimaryDriverDisplayText
                           }`
                         : `Primary driver: ${
-                            primaryDriver
-                              ? caseType === "transport"
-                                ? getTransportPolicyExplanationLabel(primaryDriver, uiLanguage)
-                                : toReadableLabel(primaryDriver as TransportSystemDriverId, language)
-                              : "—"
+                            systemStatusPrimaryDriverDisplayText
                           }`}
                   </div>
                 </div>
