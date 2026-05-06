@@ -28,29 +28,29 @@ export default function Page() {
       </div>
 
       {/* HERO */}
-      <section style={{ marginBottom: "64px" }}>
-        <h1 style={{ fontSize: "40px", marginBottom: "20px" }}>
+      <section style={{ marginBottom: "72px" }}>
+        <h1 style={{ fontSize: "42px", lineHeight: 1.15, marginBottom: "28px", maxWidth: "760px" }}>
           {(lang as "sv" | "en") === "sv"
-            ? "Simulera konsekvenser av beslut innan de inträffar."
-            : "Simulate the consequences of decisions before they occur."}
+            ? "Organisationer får sällan problem av ett enskilt beslut."
+            : "Organizations rarely fail because of a single decision."}
         </h1>
-        <p style={{ fontSize: "20px", marginBottom: "12px", maxWidth: "680px" }}>
+        <p style={{ fontSize: "21px", lineHeight: 1.5, marginBottom: "20px", maxWidth: "700px" }}>
   {(lang as "sv" | "en") === "sv"
-    ? "Förstå hur beslut påverkar varandra innan du genomför dem."
-    : "Understand how decisions influence each other before they are implemented."
+    ? "Problemen uppstår när beslut, prioriteringar och begränsningar börjar påverka varandra över tid."
+    : "Problems emerge when decisions, priorities and constraints begin influencing each other over time."
   }
 </p>
        {(lang as "sv" | "en") === "sv" ? (
-          <p style={{ fontSize: "18px", color: "#555", maxWidth: "680px" }}>
-            Cascade Engine är en deterministisk decision-flow-simuleringsmotor som gör det möjligt att testa alternativa beslut och se hur konsekvenser sprids genom beroenden, resurser och begränsningar innan besluten genomförs i verkligheten.
+          <p style={{ fontSize: "18px", lineHeight: 1.65, color: "#555", maxWidth: "660px", marginBottom: 0 }}>
+            Cascade Engine hjälper organisationer förstå hur beslut gradvis påverkar genomförande, prioriteringar och framtida möjligheter innan problemen blivit synliga i verkligheten.
           </p>
         ) : (
           <>
-            <div style={{ maxWidth: "720px", lineHeight: "1.6", marginTop: "24px" }}>
-              <p style={{ fontSize: "18px", color: "#555", maxWidth: "680px" }}>
-              Cascade Engine is a deterministic decision-flow simulation engine that allows organizations to test alternative decisions and observe how consequences propagate through dependencies, resources and constraints before decisions are implemented in reality.
+            <div style={{ maxWidth: "720px", lineHeight: "1.65", marginTop: "28px" }}>
+              <p style={{ fontSize: "18px", color: "#555", maxWidth: "660px", marginBottom: 0 }}>
+              Cascade Engine helps organizations understand how decisions gradually affect execution, priorities and future possibilities before problems become visible in the real world.
               </p>
-              <p style={{ fontSize: "18px", color: "#555", maxWidth: "680px", marginTop: "16px" }}>
+              <p style={{ fontSize: "18px", color: "#555", maxWidth: "660px", marginTop: "18px", marginBottom: 0 }}>
     {(lang as "sv" | "en") === "sv"
       ? "Utvecklad för organisationer där beslut påverkar många delar av verksamheten — inom fastighet, infrastruktur och offentlig sektor."
       : "Designed for organizations where decisions affect many parts of the organization — including real estate, infrastructure and the public sector."
@@ -60,8 +60,9 @@ export default function Page() {
                 style={{
                   fontSize: "18px",
                   color: "#555",
-                  maxWidth: "680px",
-                  marginTop: "16px",
+                  maxWidth: "660px",
+                  marginTop: "18px",
+                  marginBottom: 0,
                 }}
               >
                 We model how capacity, system load and structural margin evolve over time — and how decisions create cascade effects across interconnected factors.
@@ -143,120 +144,149 @@ export default function Page() {
           </>
         )}
         <p style={{ marginTop: "15px", fontWeight: 500, maxWidth: "680px" }}>
-        Decision Flow Simulation · Cascade Propagation · Constraint Dynamics · Deterministic Modeling
+          {(lang as "sv" | "en") === "sv"
+            ? "Beslutssamverkan · Genomföranderisk · Begränsningsanalys · Scenarioanalys"
+            : "Decision Interaction · Implementation Risk · Constraint Awareness · Scenario Analysis"}
         </p>
       </section>
 
-      {/* GRAPH PLACEHOLDER */}
+      {/* WORKFLOW OVERVIEW */}
       <section style={{ marginBottom: "64px" }}>
         <h2 style={{ fontSize: "22px", marginBottom: "10px", lineHeight: 1.3, fontWeight: 600 }}>
           {(lang as "sv" | "en") === "sv"
-            ? "Testa olika beslut i samma system"
-            : "Test different decisions in the same system"}
+            ? "Cascade Engine i beslutsflödet"
+            : "Cascade Engine in the decision workflow"}
         </h2>
         <p style={{ color: "#666", marginBottom: "20px", maxWidth: "680px" }}>
           {(lang as "sv" | "en") === "sv"
-            ? "Ändra parametrar och se hur systemet utvecklas över tid."
-            : "Adjust parameters and see how the system evolves over time."}
+            ? "Plattformen används uppströms för att strukturera beslut innan genomförandet låser framtida alternativ."
+            : "The platform is used upstream to structure decisions before implementation locks future options."}
         </p>
 
-        <p style={{ color: "#666", marginBottom: "20px", maxWidth: "680px" }}>
-          {(lang as "sv" | "en") === "sv"
-            ? "Den här simuleringen visar hur två olika beslut utvecklas över tid i samma system. Modellen gör det möjligt att jämföra alternativa strategier innan beslut genomförs i verkligheten."
-            : "This simulation shows how two different decisions evolve over time within the same system. The model allows leadership teams to compare alternative strategies before decisions are implemented in reality."}
-        </p>
-
-        <p style={{ color: "#666", marginBottom: "20px", maxWidth: "680px" }}>
-          {(lang as "sv" | "en") === "sv"
-            ? "Du kan själv testa hur olika beslut påverkar utvecklingen genom att ändra inställningarna i modellen."
-            : "You can test how different decisions impact the system by adjusting the parameters in the model."}
-        </p>
-
-        <iframe
-          src="https://pulse-demo-red.vercel.app/stress-test"
+        <div
           style={{
             width: "100%",
-            height: "500px",
-            border: "none",
+            maxWidth: "900px",
+            border: "1px solid #e5e5e5",
             borderRadius: "8px",
+            padding: "28px 24px",
             background: "#fff",
           }}
-        />
-      </section>
-
-      <section style={{ marginBottom: "64px" }}>
-        <h2 style={{ fontSize: "22px", marginBottom: "20px", lineHeight: 1.3, fontWeight: 600 }}>
-          {(lang as "sv" | "en") === "sv" ? "En förenklad modell" : "A simplified model"}
-        </h2>
-
-        <p style={{ color: "#555", marginBottom: "15px", maxWidth: "680px" }}>
-          {(lang as "sv" | "en") === "sv"
-            ? "Det här är en förenklad, publik modell som visar grundprincipen: hur beslut kan skapa kaskader i komplexa system över tid."
-            : "This is a simplified public model showing the core principle: how decisions can create cascades in complex systems over time."}
-        </p>
-
-        <p style={{ color: "#555", maxWidth: "680px" }}>
-          {(lang as "sv" | "en") === "sv"
-            ? "Bakom den finns en mer utvecklad modell med fler lager, fler scenarier och djupare analys."
-            : "Behind it sits a more developed model with additional layers, richer scenarios, and deeper analysis."}
-        </p>
-      </section>
-
-      <section style={{ marginBottom: "64px" }}>
-        <h2 style={{ fontSize: "22px", marginBottom: "30px", lineHeight: 1.3, fontWeight: 600 }}>
-          {(lang as "sv" | "en") === "sv" ? "Hur modellen fungerar" : "How the model works"}
-        </h2>
-
-        <p style={{ marginBottom: "20px", maxWidth: "680px" }}>
-          {(lang as "sv" | "en") === "sv"
-            ? "Modellen består av flera lager som tillsammans beskriver hur systemet beter sig över tid."
-            : "The model consists of multiple layers that together describe how the system behaves over time."}
-        </p>
-
-        <div style={{ display: "grid", gap: "25px" }}>
-          <div>
-            <h3>AI</h3>
-            <p style={{ maxWidth: "680px" }}>
-              {(lang as "sv" | "en") === "sv"
-                ? "AI används för att tolka och förklara resultatet, men påverkar inte själva simuleringen. Det gör att analysen kan vara flexibel utan att förändra systemets logik."
-                : "AI is used to interpret and explain results, but does not influence the simulation itself. This allows flexible analysis without changing system behavior."}
-            </p>
-          </div>
-
-          <div>
-            <h3>Simulation</h3>
-            <p style={{ maxWidth: "680px" }}>
-              {(lang as "sv" | "en") === "sv"
-                ? "Systemet simuleras steg för steg över tid. Varje beslut påverkar nästa tillstånd och bygger vidare på tidigare förändringar. Simuleringen kan även köras headless för att analysera större mängder scenarier automatiskt utan det visuella gränssnittet."
-                : "The system is simulated step by step over time. Each decision affects the next state and builds on previous changes. The simulation can also run headless to analyze large scenario sets automatically without the visual interface."}
-            </p>
-          </div>
-
-          <div>
-            <h3>Cascades</h3>
-            <p style={{ maxWidth: "680px" }}>
-              {(lang as "sv" | "en") === "sv"
-                ? "När du ändrar en variabel i systemet kan du se exakt hur påverkan sprider sig vidare – vilka delar som påverkas först, vad som triggas därefter och hur effekten förstärks över tid. Det gör det möjligt att förstå vilka beslut som faktiskt driver en negativ eller positiv utveckling."
-                : "When you change a variable in the system, you can see exactly how the impact propagates — which parts are affected first, what gets triggered next, and how the effect amplifies over time. This makes it possible to understand which decisions actually drive negative or positive outcomes."}
-            </p>
-          </div>
-
-          <div>
-            <h3>Determinism</h3>
-            <p style={{ maxWidth: "680px" }}>
-              {(lang as "sv" | "en") === "sv"
-                ? "Samma input ger alltid samma resultat. Det gör modellen testbar, repeterbar och möjlig att använda för beslutsanalys."
-                : "The same input always produces the same result. This makes the model testable, repeatable, and reliable for decision analysis."}
-            </p>
+        >
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+              gap: "16px",
+              alignItems: "stretch",
+            }}
+          >
+            {[
+              {
+                svTitle: "Beslutsläge",
+                enTitle: "Decision context",
+                svText: "Mål, begränsningar och beroenden tydliggörs innan riktning väljs.",
+                enText: "Goals, constraints and dependencies are clarified before direction is chosen.",
+              },
+              {
+                svTitle: "Struktur",
+                enTitle: "Structural mapping",
+                svText: "Systemets kopplingar och känsliga punkter synliggörs tidigt.",
+                enText: "System relationships and sensitive pressure points are surfaced early.",
+              },
+              {
+                svTitle: "Scenarioanalys",
+                enTitle: "Scenario analysis",
+                svText: "Alternativa vägar jämförs innan resurser binds upp i genomförandet.",
+                enText: "Alternative paths are compared before resources are committed to execution.",
+              },
+              {
+                svTitle: "Beslutsunderlag",
+                enTitle: "Decision guidance",
+                svText: "Ledningen får en tydligare bild av följdverkningar innan problem uppstår.",
+                enText: "Leadership gets a clearer view of downstream effects before problems emerge.",
+              },
+            ].map((step, index) => (
+              <div
+                key={index}
+                style={{
+                  padding: "18px 16px",
+                  border: "1px solid #e5e5e5",
+                  borderRadius: "8px",
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: "13px",
+                    color: "#666",
+                    marginBottom: "10px",
+                    letterSpacing: "0.04em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {index + 1}
+                </p>
+                <h3 style={{ fontSize: "18px", marginBottom: "10px", lineHeight: 1.3 }}>
+                  {(lang as "sv" | "en") === "sv" ? step.svTitle : step.enTitle}
+                </h3>
+                <p style={{ fontSize: "16px", color: "#555", lineHeight: 1.6, margin: 0 }}>
+                  {(lang as "sv" | "en") === "sv" ? step.svText : step.enText}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      <p style={{ marginBottom: "80px", color: "#555", maxWidth: "680px" }}>
-        {(lang as "sv" | "en") === "sv"
-          ? "Simuleringen är deterministisk i grunden, medan AI fungerar som ett tolkningslager ovanpå modellen."
-          : "The simulation is deterministic at its core, while AI acts as an interpretation layer on top of the model."}
-      </p>
+      <section style={{ marginBottom: "64px" }}>
+        <h2 style={{ fontSize: "22px", marginBottom: "30px", lineHeight: 1.3, fontWeight: 600 }}>
+          {(lang as "sv" | "en") === "sv" ? "Hur plattformen stödjer beslutsarbetet" : "How the platform supports decision work"}
+        </h2>
+
+        <p style={{ marginBottom: "20px", maxWidth: "680px" }}>
+          {(lang as "sv" | "en") === "sv"
+            ? "Cascade Engine skapar struktur i komplexa beslut genom att göra avvägningar, beroenden och följdeffekter lättare att analysera."
+            : "Cascade Engine brings structure to complex decisions by making trade-offs, dependencies and downstream effects easier to examine."}
+        </p>
+
+        <div style={{ display: "grid", gap: "25px" }}>
+          <div>
+            <h3>{(lang as "sv" | "en") === "sv" ? "Tolkning" : "Interpretation"}</h3>
+            <p style={{ maxWidth: "680px" }}>
+              {(lang as "sv" | "en") === "sv"
+                ? "AI hjälper till att sammanfatta mönster och förklara konsekvenser i ett tydligt språk för ledningsgrupper och rådgivare."
+                : "AI helps summarize patterns and explain implications in clear language for leadership teams and advisors."}
+            </p>
+          </div>
+
+          <div>
+            <h3>{(lang as "sv" | "en") === "sv" ? "Beslutsspår" : "Decision paths"}</h3>
+            <p style={{ maxWidth: "680px" }}>
+              {(lang as "sv" | "en") === "sv"
+                ? "Olika vägval kan analyseras innan genomförande, så att team kan jämföra sannolika konsekvenser och tidseffekter."
+                : "Alternative choices can be explored before implementation, so teams can compare likely consequences and timing."}
+            </p>
+          </div>
+
+          <div>
+            <h3>{(lang as "sv" | "en") === "sv" ? "Följdeffekter" : "Downstream effects"}</h3>
+            <p style={{ maxWidth: "680px" }}>
+              {(lang as "sv" | "en") === "sv"
+                ? "Plattformen synliggör hur ett beslut kan påverka prioriteringar, resurser och framtida handlingsutrymme i organisationen."
+                : "The platform helps reveal how one decision can influence priorities, resources and future options across the organization."}
+            </p>
+          </div>
+
+          <div>
+            <h3>{(lang as "sv" | "en") === "sv" ? "Konsistens" : "Consistency"}</h3>
+            <p style={{ maxWidth: "680px" }}>
+              {(lang as "sv" | "en") === "sv"
+                ? "Analysen är strukturerad och repeterbar, vilket gör det lättare att återkomma till antaganden och jämföra alternativ med större trygghet."
+                : "The analysis is structured and repeatable, which makes it easier to revisit assumptions and compare alternatives with confidence."}
+            </p>
+          </div>
+        </div>
+      </section>
 
       {/* CASCADE EXPLANATION */}
       <section style={{ marginBottom: "64px" }}>
@@ -268,8 +298,8 @@ export default function Page() {
 
         <p style={{ marginBottom: "15px", maxWidth: "680px" }}>
           {(lang as "sv" | "en") === "sv"
-            ? "När ett beslut förändrar en del av systemet påverkar det hur nästa del reagerar. Detta fortsätter steg för steg och skapar en kaskad. Det är inte en enskild händelse som orsakar problem – utan hur systemet utvecklas över tid."
-            : "When one decision changes part of a system, it affects how the next part responds. This continues step by step and creates a cascade. Problems are not caused by a single event — but by how the system evolves over time."}
+            ? "När ett beslut förändrar en del av systemet påverkar det hur nästa del reagerar. Detta fortsätter steg för steg och skapar följdeffekter genom organisationen. Det är inte en enskild händelse som orsakar problem – utan hur systemet utvecklas över tid."
+            : "When one decision changes part of a system, it affects how the next part responds. This continues step by step and creates downstream effects across the organization. Problems are not caused by a single event — but by how the system evolves over time."}
         </p>
       </section>
 
@@ -294,69 +324,12 @@ export default function Page() {
         </ul>
       </section>
 
-      <section style={{ marginBottom: "64px" }}>
-        <h2 style={{ fontSize: "22px", marginBottom: "20px", lineHeight: 1.3, fontWeight: 600 }}>
-          {(lang as "sv" | "en") === "sv" ? "Den fulla modellen" : "The full model"}
-        </h2>
-
-        <p style={{ color: "#555", marginBottom: "20px", maxWidth: "680px" }}>
-          {(lang as "sv" | "en") === "sv"
-            ? "Exempel från den utökade modellen med fler variabler, scenarier och systeminsikter."
-            : "Examples from the extended model with more variables, scenarios, and system insight."}
-        </p>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-            gap: "16px",
-          }}
-        >
-
-          <img
-            src="/images/pulse-ui-1.jpg"
-            style={{
-              width: "100%",
-              borderRadius: "12px",
-              boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
-            }}
-          />
-
-          <img
-            src="/images/pulse-ui-2.jpg"
-            style={{
-              width: "100%",
-              borderRadius: "12px",
-              boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
-            }}
-          />
-
-          <img
-            src="/images/pulse-ui-3.jpg"
-            style={{
-              width: "100%",
-              borderRadius: "12px",
-              boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
-            }}
-          />
-
-          <img
-            src="/images/pulse-ui-4.jpg"
-            style={{
-              width: "100%",
-              borderRadius: "12px",
-              boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
-            }}
-          />
-
-        </div>
-      </section>
 
       <section style={{ marginBottom: "64px" }}>
         <h2 style={{ fontSize: "22px", marginBottom: "20px", lineHeight: 1.3, fontWeight: 600 }}>
           {(lang as "sv" | "en") === "sv"
-            ? "Vad du faktiskt kan se i modellen"
-            : "What you can actually see in the model"}
+            ? "Vad plattformen hjälper dig att se"
+            : "What the platform helps you see"}
         </h2>
 
         <ul style={{ paddingLeft: "20px", display: "grid", gap: "12px" }}>
@@ -406,8 +379,8 @@ export default function Page() {
         <ul style={{ paddingLeft: "20px" }}>
           <li>
             {(lang as "sv" | "en") === "sv"
-              ? "Beslutsfattare som arbetar med komplexa fastighetsportföljer"
-              : "Real estate companies managing real estate property portfolios"}
+              ? "Ledningsgrupper som ansvarar för komplexa portföljer och långsiktiga investeringar"
+              : "Leadership teams overseeing complex portfolios and long-term investments"}
           </li>
           <li>
             {(lang as "sv" | "en") === "sv"
@@ -433,14 +406,14 @@ export default function Page() {
       >
         <h2 style={{ fontSize: "22px", marginBottom: "10px", lineHeight: 1.3, fontWeight: 600 }}>
           {(lang as "sv" | "en") === "sv"
-            ? "Vill du se detta på din egen verklighet?"
-            : "Want to see this on your own system?"}
+            ? "Vill du utforska detta i din egen organisation?"
+            : "Want to explore this in your own organization?"}
         </h2>
 
         <p style={{ color: "#666", marginBottom: "20px", maxWidth: "680px" }}>
           {(lang as "sv" | "en") === "sv"
-            ? "Jag visar hur era beslut påverkar utvecklingen över tid – baserat på er verklighet."
-            : "I’ll show how your decisions impact outcomes over time — based on your real system."}
+            ? "Vi hjälper team att analysera hur större beslut kan påverka genomförande, prioriteringar och framtida möjligheter i deras egen kontext."
+            : "We help teams examine how major decisions may affect execution, priorities and future options in their specific context."}
         </p>
 
         <button
@@ -456,7 +429,7 @@ export default function Page() {
           }}
           onClick={() => (window.location.href = "mailto:christian@01systems.se")}
         >
-          {(lang as "sv" | "en") === "sv" ? "Boka genomgång" : "Book a walkthrough"}{" "}
+          {(lang as "sv" | "en") === "sv" ? "Boka samtal" : "Book a conversation"}{" "}
         </button>
 
         <p style={{ fontSize: "14px", color: "#999" }}>christian@01systems.se</p>

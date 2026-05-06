@@ -39,6 +39,7 @@ export default function RootLayout({
           justifyContent: "space-between"
         }}>
           <Image
+            className="site-logo"
             src="/images/Logo-01.svg"
             alt="01 Systems"
             width={180}
@@ -58,6 +59,7 @@ export default function RootLayout({
           }}
         >
           <Image
+            className="site-logo"
             src="/images/Logo-01.svg"
             alt="01 Systems"
             width={160}
