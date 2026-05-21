@@ -12,7 +12,7 @@ import {
 import { resolveTransportInspectorContext } from "@/src/pilotFastighet/transportInspectorAdapter";
 import { buildDomainPropagationEvents } from "./inspector-utils/buildDomainPropagationEvents";
 import { buildPropagationChain } from "./inspector-utils/buildPropagationChain";
-import { mapRiskLabelToPolicyLabel } from "./inspector-utils/mapRiskLabelToPolicyLabel";
+import { mapDominantPortfolioConstraintKeyToPolicyLabel, mapRiskLabelToPolicyLabel } from "./inspector-utils/mapRiskLabelToPolicyLabel";
 import { buildConstraintActivationTimeline } from "./inspector-utils/buildConstraintActivationTimeline";
 import { buildConstraintComparisonMessages } from "./inspector-utils/buildConstraintComparisonMessages";
 import { buildConstraintOrderingMessages } from "./inspector-utils/buildConstraintOrderingMessages";
@@ -35,6 +35,11 @@ import {
   profileCount,
   profileValue,
 } from "@/src/lib/runtimeProfile";
+import { surfaceOrgDemoText } from "@/src/pilotFastighet/executiveDemoTransformation";
+import {
+  getExecutiveDemoInspectorDecisionAnalytic,
+  getExecutiveDemoInspectorSignalBlocks,
+} from "@/src/pilotFastighet/executiveDemoPlaybackScenario";
 
 function toReadableLabel(
   driverId: TransportSystemDriverId | string | null | undefined,
@@ -146,21 +151,51 @@ function getStructuralStateText(
 function getTippingWindowText(
   selectedMonthIndex: number | null | undefined,
   tippingMarginIndexB: number | null | undefined,
-  uiLanguage: "sv" | "en"
+  uiLanguage: "sv" | "en",
+  executiveDemo?: boolean
 ): string {
   if (tippingMarginIndexB == null) {
-    return uiLanguage === "sv"
-      ? "Ingen strukturell försvagning identifierad inom analysperioden"
-      : "No structural weakening identified within the analysis horizon";
+    return executiveDemo
+      ? uiLanguage === "sv"
+        ? "Ingen större förlust av genomföringsflexibilitet"
+        : "No major loss of execution flexibility detected"
+      : uiLanguage === "sv"
+        ? "Ingen väsentlig minskning av framtida handlingsutrymme inom planeringsperioden"
+        : "No material loss of future room to act identified in this planning window";
   }
 
   if (selectedMonthIndex == null) {
-    return uiLanguage === "sv"
-      ? "Ingen strukturell försvagning identifierad inom analysperioden"
-      : "No structural weakening identified within the analysis horizon";
+    return executiveDemo
+      ? uiLanguage === "sv"
+        ? "Ingen större förlust av genomföringsflexibilitet"
+        : "No major loss of execution flexibility detected"
+      : uiLanguage === "sv"
+        ? "Ingen väsentlig minskning av framtida handlingsutrymme inom planeringsperioden"
+        : "No material loss of future room to act identified in this planning window";
   }
 
   const distance = tippingMarginIndexB - selectedMonthIndex;
+
+  if (executiveDemo) {
+    if (distance >= 2) {
+      return uiLanguage === "sv"
+        ? "Genomföringsflexibiliteten urholkas längre fram i spåret"
+        : "Execution flexibility erodes further out along the track";
+    }
+    if (distance === 1) {
+      return uiLanguage === "sv"
+        ? "Inne i fönstret där flexibiliteten snävas åt"
+        : "Inside the window where flexibility tightens";
+    }
+    if (distance === 0) {
+      return uiLanguage === "sv"
+        ? "Tröskel för genomföringsflexibilitet nås"
+        : "Execution flexibility threshold reached";
+    }
+    return uiLanguage === "sv"
+      ? "Spåret stabiliseras efter ett flexibilitetsförskjutningssteg"
+      : "Track stabilizes after a flexibility shift";
+  }
 
   if (distance >= 2) {
     return uiLanguage === "sv"
@@ -187,7 +222,8 @@ function getTippingWindowText(
 
 function getDecisionEffectText(
   marginImpact: number | null | undefined,
-  uiLanguage: "sv" | "en"
+  uiLanguage: "sv" | "en",
+  executiveDemo?: boolean
 ): string {
   if (marginImpact == null) {
     return uiLanguage === "sv"
@@ -195,16 +231,42 @@ function getDecisionEffectText(
       : "No impact data";
   }
 
+  if (executiveDemo) {
+    if (marginImpact > 2) {
+      return uiLanguage === "sv"
+        ? "Tydligt bättre för genomföringsflexibiliteten"
+        : "Clearly improves execution flexibility";
+    }
+    if (marginImpact > 0.5) {
+      return uiLanguage === "sv"
+        ? "Stärker genomföringsflexibiliteten"
+        : "Improves execution flexibility";
+    }
+    if (marginImpact >= -0.5) {
+      return uiLanguage === "sv"
+        ? "Begränsad påverkan på flexibiliteten"
+        : "Limited effect on flexibility";
+    }
+    if (marginImpact >= -2) {
+      return uiLanguage === "sv"
+        ? "Minskar genomföringsflexibiliteten"
+        : "Reduces execution flexibility";
+    }
+    return uiLanguage === "sv"
+      ? "Minskar genomföringsflexibiliteten tydligt"
+      : "Clearly reduces execution flexibility";
+  }
+
   if (marginImpact > 2) {
     return uiLanguage === "sv"
-      ? "Beslutet förbättrar strukturell marginal tydligt"
-      : "Decision clearly improves structural margin";
+      ? "Beslutet stärker det framtida handlingsutrymmet tydligt"
+      : "Decision clearly improves future room to act";
   }
 
   if (marginImpact > 0.5) {
     return uiLanguage === "sv"
-      ? "Beslutet förbättrar strukturell marginal"
-      : "Decision improves structural margin";
+      ? "Beslutet stärker det framtida handlingsutrymmet"
+      : "Decision improves future room to act";
   }
 
   if (marginImpact >= -0.5) {
@@ -215,18 +277,19 @@ function getDecisionEffectText(
 
   if (marginImpact >= -2) {
     return uiLanguage === "sv"
-      ? "Beslutet försämrar strukturell marginal"
-      : "Decision reduces structural margin";
+      ? "Beslutet minskar det framtida handlingsutrymmet"
+      : "Decision reduces future room to act";
   }
 
   return uiLanguage === "sv"
-    ? "Beslutet försämrar strukturell marginal tydligt"
-    : "Decision clearly reduces structural margin";
+    ? "Beslutet minskar det framtida handlingsutrymmet tydligt"
+    : "Decision clearly reduces future room to act";
 }
 
 function getScenarioDifferenceText(
   marginImpact: number | null | undefined,
-  uiLanguage: "sv" | "en"
+  uiLanguage: "sv" | "en",
+  executiveDemo?: boolean
 ): string {
   if (marginImpact == null) {
     return uiLanguage === "sv"
@@ -236,10 +299,31 @@ function getScenarioDifferenceText(
 
   const absImpact = Math.abs(marginImpact);
 
+  if (executiveDemo) {
+    if (absImpact < 0.5) {
+      return uiLanguage === "sv"
+        ? "Strukturellt liknande utfall inom fönstret"
+        : "Structurally similar outcomes within the window";
+    }
+    if (absImpact < 2) {
+      return uiLanguage === "sv"
+        ? "Beslutsspåren börjar divergera i takt"
+        : "The decision paths begin to diverge in pacing";
+    }
+    if (absImpact < 5) {
+      return uiLanguage === "sv"
+        ? "Beslutsspåren divergerar strukturellt över tid"
+        : "The decision paths diverge structurally over time";
+    }
+    return uiLanguage === "sv"
+      ? "Beslutsspåren divergerar kraftigt i struktur över tid"
+      : "The decision paths diverge sharply in structure over time";
+  }
+
   if (absImpact < 0.5) {
     return uiLanguage === "sv"
-      ? "Strategierna ger liknande utvecklingsförlopp inom analysperioden"
-      : "Scenarios remain structurally similar";
+      ? "Strategierna ger fortsatt liknande påverkan"
+      : "Scenarios remain similar in impact";
   }
 
   if (absImpact < 2) {
@@ -281,6 +365,51 @@ function getCascadeEventLabel(
   return language === "sv"
     ? "Stabiliserande respons"
     : "Stabilizing response";
+}
+
+function ExecutiveDemoSection({
+  title,
+  children,
+  isLast = false,
+}: {
+  title: string;
+  children: React.ReactNode;
+  isLast?: boolean;
+}) {
+  return (
+    <section
+      style={{
+        marginBottom: isLast ? 0 : 14,
+        paddingBottom: isLast ? 0 : 13,
+        borderBottom: isLast ? "none" : "1px solid rgba(51, 65, 85, 0.65)",
+      }}
+    >
+      <h3
+        style={{
+          fontSize: 11,
+          fontWeight: 700,
+          color: "#cbd5e1",
+          textTransform: "uppercase",
+          letterSpacing: "0.065em",
+          margin: "0 0 8px",
+        }}
+      >
+        {title}
+      </h3>
+      <div
+        style={{
+          fontSize: 13,
+          color: "#e2e8f0",
+          lineHeight: 1.55,
+          display: "flex",
+          flexDirection: "column",
+          gap: 8,
+        }}
+      >
+        {children}
+      </div>
+    </section>
+  );
 }
 
 type Props = {
@@ -327,6 +456,8 @@ type Props = {
   dominantScenarioDifferenceChannel?: string | null;
   scenarioALabel?: string;
   scenarioBLabel?: string;
+  /** Compact 4-section layout for internal executive demos only. */
+  executiveDemoMode?: boolean;
 };
 
 const AIInspectorPanel: React.FC<Props> = ({
@@ -365,6 +496,7 @@ const AIInspectorPanel: React.FC<Props> = ({
   caseType = null,
   goalType,
   dominantScenarioDifferenceChannel = null,
+  executiveDemoMode = false,
 }) => {
   profileCount("AIInspectorPanel.render");
 
@@ -401,6 +533,23 @@ const AIInspectorPanel: React.FC<Props> = ({
       ? "modalAttractiveness"
       : normalized;
   };
+  const resolvedPolicyKey = (key: string): string => {
+    if (executiveDemoMode && caseType === "real-estate") {
+      const execP = mapRiskLabelToPolicyLabel(key, uiLanguage, { executiveDemo: true });
+      const defP = mapRiskLabelToPolicyLabel(key, uiLanguage);
+      if (execP !== defP) return execP;
+    }
+    return (
+      driverLabels[key] ??
+      riskLabels[key] ??
+      mapRiskLabelToPolicyLabel(
+        key,
+        uiLanguage,
+        executiveDemoMode ? { executiveDemo: true } : undefined
+      ) ??
+      key
+    );
+  };
   const getResolvedDriverLabel = (key: string | null) =>
     key
       ? caseType === "transport"
@@ -410,9 +559,7 @@ const AIInspectorPanel: React.FC<Props> = ({
               normalizeTransportDriverKey(key) ?? key,
               uiLanguage
             )
-        : driverLabels[key] ??
-          riskLabels[key] ??
-          mapRiskLabelToPolicyLabel(key, uiLanguage)
+        : resolvedPolicyKey(key)
       : null;
   const getNarrativeDriverLabel = (key: string | null | undefined): string => {
     if (!key) return "";
@@ -431,9 +578,17 @@ const AIInspectorPanel: React.FC<Props> = ({
       if (translated && translated !== normalizedKey) {
         return translated;
       }
+
+      return (
+        mapRiskLabelToPolicyLabel(
+          key,
+          uiLanguage,
+          executiveDemoMode ? { executiveDemo: true } : undefined
+        ) || key
+      );
     }
 
-    return mapRiskLabelToPolicyLabel(key, uiLanguage);
+    return resolvedPolicyKey(key) || key;
   };
   const REAL_ESTATE_PRIMARY_RISK_PRIORITY = [
     "refinancingRisk",
@@ -455,7 +610,11 @@ const AIInspectorPanel: React.FC<Props> = ({
       REAL_ESTATE_PRIMARY_RISK_PRIORITY.find((key) => riskKeys.includes(key)) ??
       riskKeys[0];
 
-    return mapRiskLabelToPolicyLabel(primaryRiskKey, uiLanguage);
+    return (
+      mapRiskLabelToPolicyLabel(primaryRiskKey ?? "", uiLanguage, {
+        executiveDemo: executiveDemoMode && caseType === "real-estate",
+      }) || label
+    );
   };
   const toNarrativeCase = (label: string) =>
     label.length > 0
@@ -544,7 +703,7 @@ const AIInspectorPanel: React.FC<Props> = ({
   const fallbackDriver =
     firstCascadeSourceEvent?.sourceRiskLabel ||
     (firstCascadeSourceEvent?.sourceRisk
-      ? mapRiskLabelToPolicyLabel(firstCascadeSourceEvent.sourceRisk, uiLanguage)
+      ? resolvedPolicyKey(String(firstCascadeSourceEvent.sourceRisk))
       : null);
   const primaryDriverFallbackText =
     primaryDriver == null && policyDriver && systemDriver
@@ -560,7 +719,8 @@ const AIInspectorPanel: React.FC<Props> = ({
     primaryDriver as TransportSystemDriverId | null,
     language,
     cascadeEventsA,
-    cascadeEventsB
+    cascadeEventsB,
+    executiveDemoMode
   );
   const transportInspectorContext = resolveTransportInspectorContext({
     language: uiLanguage,
@@ -614,10 +774,9 @@ const AIInspectorPanel: React.FC<Props> = ({
     systemPressure === "SYSTEMIC"
       ? language === "sv"
         ? isRealEstate
-          ? `Flera affärsberoenden påverkas samtidigt via ${mapRiskLabelToPolicyLabel(
-              primaryDriver as string,
-              uiLanguage
-            ).toLowerCase()}, vilket minskar portföljens handlingsutrymme`
+          ? `Flera ${executiveDemoMode ? "verksamhetsberoenden" : "affärsberoenden"} påverkas samtidigt via ${getNarrativeDriverLabel(
+              primaryDriver != null ? String(primaryDriver) : null
+            ).toLowerCase()}, vilket minskar ${executiveDemoMode ? "initiativportföljens" : "portföljens"} handlingsutrymme`
           : `Flera beroenden påverkas samtidigt via ${
               caseType === "transport"
                 ? getNarrativeDriverLabel(primaryDriver as string | null).toLowerCase()
@@ -630,26 +789,38 @@ const AIInspectorPanel: React.FC<Props> = ({
       : systemPressure === "LOW"
         ? language === "sv"
           ? isRealEstate
-            ? "Begränsad påverkan på kassaflöde och handlingsutrymme"
+            ? executiveDemoMode
+              ? "Begränsad påverkan på genomföringsflexibilitet"
+              : "Begränsad påverkan på kassaflöde och handlingsutrymme"
             : "Systemet är under lågt strukturellt tryck"
           : isRealEstate
-            ? "Limited impact on cash flow and strategic flexibility"
+            ? executiveDemoMode
+              ? "Limited structural strain on execution flexibility"
+              : "Limited impact on cash flow and strategic flexibility"
             : "The system is under low structural pressure"
         : systemPressure === "MODERATE"
           ? language === "sv"
             ? isRealEstate
-              ? "Märkbar påverkan på kassaflöde och handlingsutrymme"
+              ? executiveDemoMode
+                ? "Märkbar påverkan på genomföringsflexibilitet och delad kapacitet"
+                : "Märkbar påverkan på kassaflöde och handlingsutrymme"
               : "Systemet påverkas tydligt men är fortfarande hanterbart"
             : isRealEstate
-              ? "Noticeable impact on cash flow and strategic flexibility"
+              ? executiveDemoMode
+                ? "Noticeable strain on execution flexibility and shared capacity"
+                : "Noticeable impact on cash flow and strategic flexibility"
               : "The system is experiencing manageable pressure"
           : systemPressure === "HIGH"
             ? language === "sv"
               ? isRealEstate
-                ? "Hög påverkan på kassaflöde, beläggning och handlingsutrymme"
+                ? executiveDemoMode
+                  ? "Hög påverkan på genomföringskapacitetsposition och handlingsutrymme"
+                  : "Hög påverkan på kassaflöde, beläggning och handlingsutrymme"
                 : "Systemet är under högt strukturellt tryck"
               : isRealEstate
-                ? "High impact on cash flow, occupancy, and strategic flexibility"
+                ? executiveDemoMode
+                  ? "High strain on execution capacity positioning and room to act"
+                  : "High impact on cash flow, occupancy, and strategic flexibility"
                 : "The system is under high structural pressure"
             : systemPressure;
   const breachEstimate =
@@ -657,24 +828,33 @@ const AIInspectorPanel: React.FC<Props> = ({
   const breachEstimateExecutiveLabel =
     breachEstimate === null || breachEstimate === undefined
       ? language === "sv"
-        ? "Inga kritiska begränsningar förväntas aktiveras inom analysperioden"
-        : "No structural breach risk detected within the analysis horizon"
+        ? executiveDemoMode
+          ? "Ingen större tryckkoncentration identifieras i detta fönster."
+          : "Ingen kritisk begränsning förväntas slå igenom inom planeringsperioden"
+        : executiveDemoMode
+          ? "No major pressure concentration detected in this window."
+          : "No critical constraint breach risk detected in this planning window"
       : breachEstimate;
   const tippingWindowText = getTippingWindowText(
     selectedMonthIndex,
     tippingQuarter ? tippingQuarter - 1 : null,
-    language
+    language,
+    executiveDemoMode
   );
   const tippingWindowHeading =
     language === "sv"
-      ? "Tidig indikation på minskat handlingsutrymme"
-      : "Structural weakening risk window";
+      ? "Tidig varning om minskad beslutsflexibilitet"
+      : "Early warning window for reduced decision flexibility";
   const selectedDifference =
     selectedMarginValueA != null && selectedMarginValueB != null
       ? selectedMarginValueB - selectedMarginValueA
       : marginImpact;
 
-  const decisionEffectText = getDecisionEffectText(selectedDifference, language);
+  const decisionEffectText = getDecisionEffectText(
+    selectedDifference,
+    language,
+    executiveDemoMode
+  );
   const constraintActive = constraintBreakQuarter != null;
   const cascadeDetected = simulationCascadeEvents.length > 0;
   const marginTrend = marginImpact < 0 ? "DECLINING" : "STABLE";
@@ -682,6 +862,26 @@ const AIInspectorPanel: React.FC<Props> = ({
     if (!selectedGoal) return null;
 
     if (caseType === "real-estate") {
+      if (executiveDemoMode) {
+        switch (selectedGoal) {
+          case "accessibility":
+            return uiLanguage === "sv"
+              ? "Resurspostur och genomföringskapacitetsposition stärks strukturellt i målstrategin."
+              : "Resource posture and execution capacity positioning strengthen structurally in the goal strategy.";
+          case "congestion":
+            return uiLanguage === "sv"
+              ? "Sekvens- och beroendetryck samt resurslåsning minskar i målstrategin."
+              : "Dependency sequencing load and resource lock-in decrease in the goal strategy.";
+          case "margin_stability":
+            return uiLanguage === "sv"
+              ? "Operativ flexibilitet, positionering och sekvensutrymme stabiliseras över analysperioden."
+              : "Operational flexibility, positioning, and sequencing headroom stabilize across the analysis horizon.";
+          case "avoid_tipping":
+            return uiLanguage === "sv"
+              ? "Ingen större koncentration av genomföringsstress identifieras inom analysperioden."
+              : "No major execution stress concentration is identified within the analysis horizon.";
+        }
+      }
       switch (selectedGoal) {
         case "accessibility":
           return uiLanguage === "sv"
@@ -742,20 +942,32 @@ const AIInspectorPanel: React.FC<Props> = ({
 
       if (selectedGoal === "margin_stability" && marginTrend === "DECLINING") {
         return uiLanguage === "sv"
-          ? "Kassaflöde och handlingsutrymme försvagas över analysperioden."
-          : "Cash flow and strategic flexibility weaken across the analysis horizon.";
+          ? executiveDemoMode
+            ? "Resurstillförsel till förändring och handlingsutrymme försvagas över analysperioden."
+            : "Kassaflöde och handlingsutrymme försvagas över analysperioden."
+          : executiveDemoMode
+            ? "Resource flow to change work and room to act weaken across the analysis horizon."
+            : "Cash flow and strategic flexibility weaken across the analysis horizon.";
       }
 
       if (selectedGoal === "accessibility" && constraintActive) {
         return uiLanguage === "sv"
-          ? "Beläggning och kassaflöde påverkas av aktiva begränsningar i portföljen."
-          : "Occupancy and cash flow are affected by active portfolio constraints.";
+          ? executiveDemoMode
+            ? "Genomföringskapacitetsposition och resurstillförsel påverkas av aktiva begränsningar i portföljen."
+            : "Beläggning och kassaflöde påverkas av aktiva begränsningar i portföljen."
+          : executiveDemoMode
+            ? "Execution capacity positioning and resource flow are affected by active portfolio constraints."
+            : "Occupancy and cash flow are affected by active portfolio constraints.";
       }
 
       if (selectedGoal === "congestion" && cascadeDetected) {
         return uiLanguage === "sv"
-          ? "Refinansiering och kapitalbindning påverkas av att flera beroenden slår igenom samtidigt."
-          : "Refinancing and capital lock-in are affected as several dependencies compound at once.";
+          ? executiveDemoMode
+            ? "Sekvensering och resurslåsning påverkas när flera beroenden slår igenom samtidigt."
+            : "Refinansiering och kapitalbindning påverkas av att flera beroenden slår igenom samtidigt."
+          : executiveDemoMode
+            ? "Dependency sequencing and resource lock-in shift as several dependencies compound at once."
+            : "Refinancing and capital lock-in are affected as several dependencies compound at once.";
       }
     }
 
@@ -799,16 +1011,24 @@ const AIInspectorPanel: React.FC<Props> = ({
     if (caseType === "real-estate") {
       if (selectedGoal === "accessibility" && marginTrend === "DECLINING") {
         return uiLanguage === "sv"
-          ? "Beläggningen förbättras men kassaflöde och handlingsutrymme försvagas senare i simuleringen."
-          : "Occupancy improves, but cash flow and strategic flexibility weaken later in the simulation.";
+          ? executiveDemoMode
+            ? "Positioneringen av genomföringskapacitet förbättras men resurstillförsel och handlingsutrymme försvagas senare i simuleringen."
+            : "Beläggningen förbättras men kassaflöde och handlingsutrymme försvagas senare i simuleringen."
+          : executiveDemoMode
+            ? "Execution capacity positioning improves, but resource flow to change and room to act weaken later in the simulation."
+            : "Occupancy improves, but cash flow and strategic flexibility weaken later in the simulation.";
       }
     }
 
     if (caseType === "real-estate") {
       if (selectedGoal === "congestion" && constraintActive) {
         return uiLanguage === "sv"
-          ? "Refinansieringstrycket minskar först, men kapitalbindning och andra begränsningar ökar senare."
-          : "Refinancing pressure eases at first, but capital lock-in and other constraints rise later.";
+          ? executiveDemoMode
+            ? "Sekvens- och beroendetryck minskar först, men resurslåsning och andra begränsningar ökar senare."
+            : "Refinansieringstrycket minskar först, men kapitalbindning och andra begränsningar ökar senare."
+          : executiveDemoMode
+            ? "Dependency sequencing load eases at first, but resource lock-in and other constraints rise later."
+            : "Refinancing pressure eases at first, but capital lock-in and other constraints rise later.";
       }
     }
 
@@ -823,8 +1043,12 @@ const AIInspectorPanel: React.FC<Props> = ({
     if (caseType === "real-estate") {
       if (selectedGoal === "avoid_tipping" && cascadeDetected) {
         return uiLanguage === "sv"
-          ? "Portföljen undviker tidig stress men senare effekter kan fortfarande pressa kassaflöde och beläggning."
-          : "The portfolio avoids early stress, but later effects may still pressure cash flow and occupancy.";
+          ? executiveDemoMode
+            ? "Initiativportföljen undviker tidig stress men senare effekter kan fortfarande pressa resurstillförsel och kapacitetsposition."
+            : "Portföljen undviker tidig stress men senare effekter kan fortfarande pressa kassaflöde och beläggning."
+          : executiveDemoMode
+            ? "The initiative portfolio avoids early stress, but later effects may still strain resource flow and capacity positioning."
+            : "The portfolio avoids early stress, but later effects may still pressure cash flow and occupancy.";
       }
     }
 
@@ -885,7 +1109,7 @@ const AIInspectorPanel: React.FC<Props> = ({
     (caseType === "transport" && primaryDriver
       ? getNarrativeDriverLabel(primaryDriver)
       : primaryDriver
-        ? mapRiskLabelToPolicyLabel(primaryDriver, uiLanguage)
+        ? getNarrativeDriverLabel(primaryDriver)
         : fallbackDriver);
   const primaryDriverInfluenceText = primaryDriverDisplayLabel
     ? uiLanguage === "sv"
@@ -934,7 +1158,8 @@ const AIInspectorPanel: React.FC<Props> = ({
         constraintBreakQuarter,
         tippingQuarter,
         language,
-        constraintRegistry?.activeConstraintType ?? null
+        constraintRegistry?.activeConstraintType ?? null,
+        executiveDemoMode
       ),
     [
       cascadeEvents,
@@ -945,6 +1170,7 @@ const AIInspectorPanel: React.FC<Props> = ({
       tippingQuarter,
       language,
       constraintRegistry?.activeConstraintType,
+      executiveDemoMode,
     ]
   );
   const constraintActivationTimeline = useMemo(
@@ -1033,41 +1259,47 @@ const AIInspectorPanel: React.FC<Props> = ({
       structuralGoalMessages
     ]
   );
+  const getConstraintLabel = (
+    constraintType: "capital" | "capacity" | "covenant" | "custom"
+  ) => {
+    const ed = executiveDemoMode && caseType === "real-estate";
+    if (constraintType === "capital") {
+      return language === "sv"
+        ? ed
+          ? "Resursbindningsbegränsning"
+          : "Kapitalbegränsning"
+        : ed
+          ? "Resource commitment constraint"
+          : "Capital constraint";
+    }
+    if (constraintType === "capacity") {
+      return language === "sv"
+        ? ed
+          ? "Begränsning i operativ flexibilitet"
+          : "Kapacitetsbegränsning"
+        : ed
+          ? "Operational flexibility constraint"
+          : "Capacity constraint";
+    }
+    if (constraintType === "covenant") {
+      return language === "sv"
+        ? ed
+          ? "Begränsning via delad genomföringsregel"
+          : "Kovenantbegränsning"
+        : ed
+          ? "Shared execution-rule constraint"
+          : "Covenant constraint";
+    }
+    return language === "sv" ? "Anpassad begränsning" : "Custom constraint";
+  };
   const executiveSummaryConstraintLabel = dominantConstraintMessage
-    ? caseType === "transport"
-      ? (() => {
-          switch (dominantConstraintMessage.constraintKey) {
-            case "capital":
-              return toNarrativeCase(
-                mapRiskLabelToPolicyLabel("budget_pressure", uiLanguage)
-              );
-            case "capacity":
-              return toNarrativeCase(
-                mapRiskLabelToPolicyLabel("capacityPressure", uiLanguage)
-              );
-            case "covenant":
-              return toNarrativeCase(
-                mapRiskLabelToPolicyLabel("implementationPacing", uiLanguage)
-              );
-            default:
-              return toNarrativeCase(
-                getConstraintLabel(
-                  dominantConstraintMessage.constraintKey as
-                    | "capital"
-                    | "capacity"
-                    | "covenant"
-                    | "custom"
-                )
-              );
-          }
-        })()
+    ? dominantConstraintMessage.constraintKey === "custom"
+      ? toNarrativeCase(getConstraintLabel("custom"))
       : toNarrativeCase(
-          getConstraintLabel(
-            dominantConstraintMessage.constraintKey as
-              | "capital"
-              | "capacity"
-              | "covenant"
-              | "custom"
+          mapDominantPortfolioConstraintKeyToPolicyLabel(
+            dominantConstraintMessage.constraintKey,
+            uiLanguage,
+            executiveDemoMode ? { executiveDemo: true } : undefined
           )
         )
     : null;
@@ -1084,9 +1316,10 @@ const AIInspectorPanel: React.FC<Props> = ({
       buildPropagationRootComparisonMessages(
         primaryDriverA,
         primaryDriverB,
-        uiLanguage
+        uiLanguage,
+        executiveDemoMode
       ),
-    [primaryDriverA, primaryDriverB, uiLanguage]
+    [primaryDriverA, primaryDriverB, uiLanguage, executiveDemoMode]
   );
   const decisionEffectSummaryMessage = useMemo(
     () =>
@@ -1122,7 +1355,11 @@ const AIInspectorPanel: React.FC<Props> = ({
   const executiveSummaryPrimaryDriver =
     caseType === "transport"
       ? primaryDriver
-        ? mapRiskLabelToPolicyLabel(primaryDriver, uiLanguage)
+        ? mapRiskLabelToPolicyLabel(
+            primaryDriver,
+            uiLanguage,
+            executiveDemoMode ? { executiveDemo: true } : undefined
+          )
         : ""
       : primaryDriver;
   const executiveSummaryPropagationRootDifference =
@@ -1132,13 +1369,15 @@ const AIInspectorPanel: React.FC<Props> = ({
           driverA: toNarrativeCase(
             mapRiskLabelToPolicyLabel(
               propagationRootComparisonMessage.driverA,
-              uiLanguage
+              uiLanguage,
+              executiveDemoMode ? { executiveDemo: true } : undefined
             )
           ),
           driverB: toNarrativeCase(
             mapRiskLabelToPolicyLabel(
               propagationRootComparisonMessage.driverB,
-              uiLanguage
+              uiLanguage,
+              executiveDemoMode ? { executiveDemo: true } : undefined
             )
           ),
         }
@@ -1153,7 +1392,7 @@ const AIInspectorPanel: React.FC<Props> = ({
         uiLanguage,
         caseType,
         inspectionMode,
-        scenarioTarget
+        scenarioTarget ?? undefined
       ),
     [
       executiveSummaryPrimaryDriver,
@@ -1211,7 +1450,34 @@ const AIInspectorPanel: React.FC<Props> = ({
       : language === "sv"
       ? "Scenarierna divergerar strukturellt genom olika drivkedjor"
       : "Scenarios diverge structurally through different driver pathways";
+  const scenarioDifferenceDisplayText = executiveDemoMode
+    ? getScenarioDifferenceText(marginImpact, language, true)
+    : scenarioDifferenceText;
   const localizePropagationNodeLabel = (label: string) => {
+    if (
+      executiveDemoMode &&
+      caseType === "real-estate" &&
+      (label === "Structural margin affected" ||
+        label === "Strukturell marginal påverkas" ||
+        label === "Strukturell marginal påverkad" ||
+        label === "Execution flexibility begins narrowing through shared dependencies" ||
+        label === "Genomföringsflexibiliteten börjar smalna via delade beroenden")
+    ) {
+      return uiLanguage === "sv"
+        ? "Genomföringsflexibiliteten börjar smalna via delade beroenden"
+        : "Execution flexibility begins narrowing through shared dependencies";
+    }
+    if (
+      executiveDemoMode &&
+      caseType === "real-estate" &&
+      (label === "Tipping risk window begins" ||
+        label === "Window where execution flexibility tightens" ||
+        label === "Fönster där genomföringsflexibiliteten snävas åt")
+    ) {
+      return uiLanguage === "sv"
+        ? "Fönster där genomföringsflexibiliteten snävas åt"
+        : "Window where execution flexibility tightens";
+    }
     const domainLabel = resolveRealEstatePrimaryRiskLabel(label);
     if (domainLabel !== label) return domainLabel;
     if (uiLanguage !== "sv") return label;
@@ -1230,24 +1496,6 @@ const AIInspectorPanel: React.FC<Props> = ({
       return "Tippingriskfönster inleds";
     return label;
   };
-  const getConstraintLabel = (
-    constraintType: "capital" | "capacity" | "covenant" | "custom"
-  ) =>
-    constraintType === "capital"
-      ? language === "sv"
-        ? "Kapitalbegränsning"
-        : "Capital constraint"
-      : constraintType === "capacity"
-      ? language === "sv"
-        ? "Kapacitetsbegränsning"
-        : "Capacity constraint"
-      : constraintType === "covenant"
-      ? language === "sv"
-        ? "Kovenantbegränsning"
-        : "Covenant constraint"
-      : language === "sv"
-      ? "Anpassad begränsning"
-      : "Custom constraint";
   const getTransportReadableCascadeLine = (
     event: CascadeEvent,
     index: number
@@ -1286,6 +1534,354 @@ const AIInspectorPanel: React.FC<Props> = ({
       ? `${sourceReadable} affects ${targetReadable}`
       : `→ which affects ${targetReadable}`;
   };
+
+  if (executiveDemoMode && inspectionMode === "executive") {
+    const orgSurface = (value: string | null | undefined) =>
+      surfaceOrgDemoText(value, language);
+
+    const demoDecisionCombo = getExecutiveDemoInspectorDecisionAnalytic(language);
+
+    const demoHeadings =
+      language === "sv"
+        ? {
+            main: "Genomföringstryck",
+            spread: "Hur tryck sprider sig",
+            early: "Varning i tid",
+            forward: "Tryckets utveckling",
+          }
+        : {
+            main: "Execution pressure",
+            spread: "How pressure spreads",
+            early: "Early warning",
+            forward: "Pressure evolution",
+          };
+
+    const noStructPhrase =
+      language === "sv" ? "Ingen aktiv struktur" : "No active structure";
+
+    const executiveDemoSpreadSummary =
+      caseType === "transport"
+        ? (domainEvents.length > 0
+            ? domainEvents
+                .slice(0, 5)
+                .map((e) => e.label)
+                .join(" → ")
+            : null) ||
+          transportInspectorContext?.propagationChainLabel ||
+          (cascadeStructureText !== noStructPhrase ? cascadeStructureText : null) ||
+          (language === "sv"
+            ? "Ingen spridningskedja synlig."
+            : "No propagation chain visible.")
+        : structuralPropagationChain.length > 0
+          ? structuralPropagationChain
+              .slice(0, 5)
+              .map((node) => localizePropagationNodeLabel(node.label))
+              .join(" → ")
+          : transportInspectorContext?.propagationChainLabel ||
+            (language === "sv"
+              ? "Ingen spridningskedja synlig."
+              : "No propagation chain visible.");
+
+    const shortSystemProfile =
+      systemPressure === "SYSTEMIC"
+        ? language === "sv"
+          ? "Samordningstrycket löper genom flera sammankopplade beroenden."
+          : "Coordination pressure runs through several linked dependencies."
+        : systemPressure === "HIGH"
+          ? language === "sv"
+            ? "Genomföringstrycket koncentreras tydligt."
+            : "Execution pressure is concentrating visibly."
+          : systemPressure === "MODERATE"
+            ? language === "sv"
+              ? "Samordningstryck börjar koncentreras."
+              : "Coordination pressure is beginning to concentrate."
+            : systemPressure === "LOW"
+              ? language === "sv"
+                ? "Strukturellt uthålligt mot genomföringstryck."
+                : "Structurally resilient to execution pressure so far."
+              : systemPressure
+                ? String(systemPressure)
+                : "";
+
+    const mainLead =
+      caseType === "transport" && executiveSummaryMessage
+        ? executiveSummaryMessage
+        : isRealEstate
+          ? primaryDriverInfluenceText
+          : `${primaryDriverDisplayLabel || t.noActiveDriver}`;
+
+    const mainSecondaryParts: string[] = [];
+    if (!(caseType === "transport" && executiveSummaryMessage) && shortSystemProfile) {
+      mainSecondaryParts.push(orgSurface(shortSystemProfile));
+    }
+    if (dominantConstraintMessage && executiveSummaryConstraintLabel) {
+      mainSecondaryParts.push(
+        orgSurface(
+          language === "sv"
+            ? `Var trycket sitter starkast: ${toNarrativeCase(executiveSummaryConstraintLabel)}`
+            : `Where pressure concentrates: ${toNarrativeCase(executiveSummaryConstraintLabel)}`
+        )
+      );
+    }
+    const mainSecondary =
+      mainSecondaryParts.length > 0 ? mainSecondaryParts.join(" ") : null;
+
+    const spreadSecond = dominantScenarioChannelText
+      ? orgSurface(
+          language === "sv"
+            ? `Skillnad mellan spår främst via: ${dominantScenarioChannelText}`
+            : `Difference between tracks mainly via: ${dominantScenarioChannelText}`
+        )
+      : null;
+
+    const earlyLines: string[] = [];
+    const earlyPressureSummary =
+      constraintBreakQuarter == null
+        ? language === "sv"
+          ? "Ingen större tryckkoncentration identifieras i detta fönster."
+          : "No major pressure concentration detected in this window."
+        : language === "sv"
+          ? `Större tryckkoncentration: ${breachEstimateExecutiveLabel}`
+          : `Major pressure concentration: ${breachEstimateExecutiveLabel}`;
+    earlyLines.push(orgSurface(earlyPressureSummary));
+    earlyLines.push(
+      orgSurface(
+        language === "sv"
+          ? `Tidig signal: ${tippingWindowText}`
+          : `Early signal: ${tippingWindowText}`
+      )
+    );
+    if (domainEvents.length > 0) {
+      domainEvents.slice(0, 2).forEach((e) => {
+        earlyLines.push(orgSurface(`M${e.month + 1} — ${e.label}`));
+      });
+    }
+
+    const forwardFlex =
+      marginTrend === "DECLINING"
+        ? language === "sv"
+          ? "Genomföringsflexibiliteten smalnar över tid i spåret."
+          : "Execution flexibility narrows over time along this track."
+        : language === "sv"
+          ? "Genomföringsflexibiliteten förblir strukturellt intakt över horisonten."
+          : "Execution flexibility remains structurally intact across the horizon.";
+
+    const deltaStr =
+      typeof marginImpact === "number" ? marginImpact.toFixed(2) : String(marginImpact);
+
+    if (!analysisReady) {
+      return (
+        <div
+          style={{
+            background: "#0f172a",
+            border: "1px solid #1f2937",
+            borderRadius: "8px",
+            padding: "16px",
+            marginTop: 0,
+          }}
+        >
+          <div
+            style={{
+              fontSize: 15,
+              fontWeight: 700,
+              color: "#f1f5f9",
+              marginBottom: 8,
+            }}
+          >
+            {t.aiInspector}
+          </div>
+          <div style={{ fontSize: 13, color: "#94a3b8" }}>
+            {language === "sv"
+              ? "Ingen simulering körd ännu."
+              : "No simulation run yet."}
+          </div>
+        </div>
+      );
+    }
+
+    if (caseType === "real-estate") {
+      const blocks = getExecutiveDemoInspectorSignalBlocks(language);
+      const narrativeAccents = ["#38bdf8", "#a78bfa", "#34d399", "#fbbf24"] as const;
+
+      return (
+        <div
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(15,23,42,0.99) 0%, rgba(10,16,28,0.995) 100%)",
+            border: "1px solid rgba(71,85,105,0.45)",
+            borderRadius: "12px",
+            padding: "17px 19px 19px",
+            marginTop: 0,
+            boxShadow:
+              "inset 0 1px 0 rgba(148,163,184,0.065), 0 0 0 1px rgba(15,23,42,0.35), 0 20px 48px rgba(0,0,0,0.38)",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "15px",
+              fontWeight: 700,
+              color: "#f8fafc",
+              marginBottom: "16px",
+              letterSpacing: "-0.028em",
+              paddingBottom: "14px",
+              borderBottom: "1px solid rgba(148,163,184,0.18)",
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+            }}
+          >
+            <span
+              aria-hidden
+              style={{
+                width: "9px",
+                height: "9px",
+                borderRadius: "999px",
+                background: "linear-gradient(135deg, #38bdf8 0%, #818cf8 100%)",
+                boxShadow: "0 0 14px rgba(56,189,248,0.45)",
+              }}
+            />
+            {t.aiInspector}
+          </div>
+          {blocks.map((block, i) => (
+            <section
+              key={block.title}
+              style={{
+                marginBottom: i === blocks.length - 1 ? 0 : 26,
+                paddingBottom: i === blocks.length - 1 ? 0 : 22,
+                paddingLeft: "13px",
+                marginLeft: "3px",
+                borderLeft: `3px solid ${narrativeAccents[i % narrativeAccents.length]}`,
+                borderBottom:
+                  i === blocks.length - 1
+                    ? "none"
+                    : "1px solid rgba(148,163,184,0.09)",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  color: "#f8fafc",
+                  letterSpacing: "0.05em",
+                  textTransform: "uppercase",
+                  marginBottom: 10,
+                }}
+              >
+                {block.title}
+              </div>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: "13.5px",
+                  color: "#eef2f7",
+                  lineHeight: 1.62,
+                  fontWeight: 400,
+                }}
+              >
+                {block.body}
+              </p>
+            </section>
+          ))}
+          <div
+            style={{
+              marginTop: 17,
+              paddingTop: 15,
+              borderTop: "1px solid rgba(148,163,184,0.12)",
+              fontSize: "11.5px",
+              color: "#94a3b8",
+              lineHeight: 1.52,
+            }}
+          >
+            <span style={{ color: "#e2e8f0", fontWeight: 600 }}>
+              {language === "sv" ? "Fokus:" : "Focus:"}
+            </span>{" "}
+            {orgSurface(resolvedAnalysisGoalLabel)}
+            <span style={{ marginLeft: 8 }}>
+              Δ {deltaStr}
+            </span>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div
+        style={{
+          background: "#0f172a",
+          border: "1px solid #1f2937",
+          borderRadius: "8px",
+          padding: "16px 18px",
+          marginTop: 0,
+        }}
+      >
+        <div
+          style={{
+            fontSize: 15,
+            fontWeight: 700,
+            color: "#f1f5f9",
+            marginBottom: 6,
+          }}
+        >
+          {t.aiInspector}
+        </div>
+        {seriesLengthA > 0 && seriesLengthB > 0 && (
+          <div
+            style={{
+              fontSize: 12,
+              color: "#94a3b8",
+              marginBottom: 16,
+            }}
+          >
+            <strong style={{ color: "#cbd5e1" }}>
+              {language === "sv" ? "Analysfokus:" : "Analysis focus:"}
+            </strong>{" "}
+            {orgSurface(resolvedAnalysisGoalLabel)}
+          </div>
+        )}
+
+        <ExecutiveDemoSection title={demoHeadings.main}>
+          <p style={{ margin: 0, fontWeight: 600 }}>{orgSurface(mainLead)}</p>
+          {mainSecondary && <p style={{ margin: 0 }}>{mainSecondary}</p>}
+        </ExecutiveDemoSection>
+
+        <ExecutiveDemoSection title={demoHeadings.spread}>
+          <p style={{ margin: 0 }}>{orgSurface(executiveDemoSpreadSummary)}</p>
+          {spreadSecond && (
+            <p style={{ margin: 0, color: "#cbd5e1" }}>{spreadSecond}</p>
+          )}
+        </ExecutiveDemoSection>
+
+        <ExecutiveDemoSection title={demoDecisionCombo.heading}>
+          <p style={{ margin: 0, lineHeight: 1.55 }}>{orgSurface(demoDecisionCombo.body)}</p>
+        </ExecutiveDemoSection>
+
+        <ExecutiveDemoSection title={demoHeadings.early}>
+          {earlyLines.map((line, i) => (
+            <p key={i} style={{ margin: 0 }}>
+              {line}
+            </p>
+          ))}
+        </ExecutiveDemoSection>
+
+        <ExecutiveDemoSection title={demoHeadings.forward} isLast>
+          <p style={{ margin: 0 }}>{orgSurface(decisionEffectText)}</p>
+          <p style={{ margin: 0 }}>{orgSurface(scenarioDifferenceDisplayText)}</p>
+          <p style={{ margin: 0 }}>
+            <strong>
+              {language === "sv" ? "Genomföringsflexibilitet:" : "Execution flexibility:"}
+            </strong>{" "}
+            {forwardFlex}
+          </p>
+          <p style={{ margin: 0, fontSize: 12, color: "#94a3b8" }}>
+            {language === "sv"
+              ? "Handlingsmarginal, skillnad (mål − nuläge):"
+              : "Decision margin delta (target − baseline):"}{" "}
+            {deltaStr}
+          </p>
+        </ExecutiveDemoSection>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -1492,7 +2088,9 @@ const AIInspectorPanel: React.FC<Props> = ({
                 {selectedActions.map((action) => (
                   <div key={action}>
                     •{" "}
-                    {TRANSPORT_POLICY_ACTION_LABELS[action]?.[language] ?? action}
+                    {TRANSPORT_POLICY_ACTION_LABELS[
+                      action as keyof typeof TRANSPORT_POLICY_ACTION_LABELS
+                    ]?.[language] ?? action}
                   </div>
                 ))}
               </div>
@@ -1552,7 +2150,9 @@ const AIInspectorPanel: React.FC<Props> = ({
         )}
         {!analysisReady ? (
           <div style={{ opacity: 0.7 }}>
-            Ingen simulering körd ännu
+            {language === "sv"
+              ? "Ingen simulering körd ännu"
+              : "No simulation run yet"}
           </div>
         ) : (
         <>
@@ -1760,8 +2360,12 @@ const AIInspectorPanel: React.FC<Props> = ({
                 ? (() => {
                     if (caseType === "real-estate") {
                       return structuralGoalSummaryMessage.winningScenario === "target"
-                        ? "Målstrategin undviker ett kritiskt finansieringshinder"
-                        : "Nulägesstrategin undviker ett kritiskt finansieringshinder";
+                        ? executiveDemoMode
+                          ? "Målstrategin undviker ett kritiskt genomföringshinder"
+                          : "Målstrategin undviker ett kritiskt finansieringshinder"
+                        : executiveDemoMode
+                          ? "Nulägesstrategin undviker ett kritiskt genomföringshinder"
+                          : "Nulägesstrategin undviker ett kritiskt finansieringshinder";
                     }
 
                     const scenarioLabel =
@@ -1782,6 +2386,15 @@ const AIInspectorPanel: React.FC<Props> = ({
                     return `${scenarioLabel} förbättrar strukturell robusthet genom att ${detailText}`;
                   })()
                 : (() => {
+                    if (caseType === "real-estate") {
+                      return structuralGoalSummaryMessage.winningScenario === "target"
+                        ? executiveDemoMode
+                          ? "Target strategy avoids a critical execution bottleneck."
+                          : "Target strategy avoids a critical financing constraint."
+                        : executiveDemoMode
+                          ? "Baseline strategy avoids a critical execution bottleneck."
+                          : "Baseline strategy avoids a critical financing constraint.";
+                    }
                     const scenarioLabel =
                       structuralGoalSummaryMessage.winningScenario === "target"
                         ? "Target strategy"
@@ -1818,6 +2431,27 @@ const AIInspectorPanel: React.FC<Props> = ({
                         goalConditionedSystemStatusMessage.narrativeFocus ===
                         "real-estate"
                       ) {
+                        if (executiveDemoMode) {
+                          if (
+                            goalConditionedSystemStatusMessage.messageKey ===
+                            "activationTiming"
+                          ) {
+                            return `Utfallet påverkas främst av sekvenseringstidpunkt och hur delad genomföringskapacitet absorberar tryck`;
+                          }
+                          if (
+                            goalConditionedSystemStatusMessage.messageKey ===
+                            "constraintAvoidance"
+                          ) {
+                            return `Utfallet påverkas främst av vilka beroende-, kapacitetspositions- och resursbindningskrav som kan undvikas`;
+                          }
+                          if (
+                            goalConditionedSystemStatusMessage.messageKey ===
+                            "marginPreservation"
+                          ) {
+                            return `Utfallet påverkas främst av hur kapacitetsposition, operativ flexibilitet och sekvensutrymme bevarar handlingsutrymmet över tid`;
+                          }
+                          return `Utfallet formas främst av genomföringsstruktur, kapacitetsposition och sekvensutrymme över tid`;
+                        }
                         if (
                           goalConditionedSystemStatusMessage.messageKey ===
                           "activationTiming"
@@ -1870,6 +2504,27 @@ const AIInspectorPanel: React.FC<Props> = ({
                         goalConditionedSystemStatusMessage.narrativeFocus ===
                         "real-estate"
                       ) {
+                        if (executiveDemoMode) {
+                          if (
+                            goalConditionedSystemStatusMessage.messageKey ===
+                            "activationTiming"
+                          ) {
+                            return `Outcome is shaped mainly by sequencing timing and how shared execution capacity absorbs pressure.`;
+                          }
+                          if (
+                            goalConditionedSystemStatusMessage.messageKey ===
+                            "constraintAvoidance"
+                          ) {
+                            return `Outcome is shaped mainly by which dependency, capacity-positioning, and resource-lock-in limits can be avoided.`;
+                          }
+                          if (
+                            goalConditionedSystemStatusMessage.messageKey ===
+                            "marginPreservation"
+                          ) {
+                            return `Outcome is shaped mainly by how capacity positioning, operational flexibility, and sequencing headroom preserve room to act over time.`;
+                          }
+                          return `Outcome is shaped mainly by execution structure, capacity positioning, and sequencing headroom over time.`;
+                        }
                         if (
                           goalConditionedSystemStatusMessage.messageKey ===
                           "activationTiming"
@@ -2176,14 +2831,30 @@ const AIInspectorPanel: React.FC<Props> = ({
                   {chainSteps.map((step, index) => {
                     const normalizedStep = step.trim();
                     const readableStep = resolveRealEstatePrimaryRiskLabel(
-                      mapRiskLabelToPolicyLabel(normalizedStep, uiLanguage)
+                      mapRiskLabelToPolicyLabel(
+                        normalizedStep,
+                        uiLanguage,
+                        executiveDemoMode && caseType === "real-estate"
+                          ? { executiveDemo: true }
+                          : executiveDemoMode
+                            ? { executiveDemo: true }
+                            : undefined
+                      )
                     );
                     return (
                       <div key={index}>
                         {index === 0
                           ? primaryDriver
                             ? resolveRealEstatePrimaryRiskLabel(
-                                mapRiskLabelToPolicyLabel(primaryDriver, uiLanguage)
+                                mapRiskLabelToPolicyLabel(
+                                  primaryDriver,
+                                  uiLanguage,
+                                  executiveDemoMode && caseType === "real-estate"
+                                    ? { executiveDemo: true }
+                                    : executiveDemoMode
+                                      ? { executiveDemo: true }
+                                      : undefined
+                                )
                               )
                             : primaryDriverInfluenceText
                           : `→ ${readableStep}`}
@@ -2196,7 +2867,15 @@ const AIInspectorPanel: React.FC<Props> = ({
                         ? chainSteps
                             .map((step) =>
                               resolveRealEstatePrimaryRiskLabel(
-                                mapRiskLabelToPolicyLabel(step.trim(), uiLanguage)
+                                mapRiskLabelToPolicyLabel(
+                                  step.trim(),
+                                  uiLanguage,
+                                  executiveDemoMode && caseType === "real-estate"
+                                    ? { executiveDemo: true }
+                                    : executiveDemoMode
+                                      ? { executiveDemo: true }
+                                      : undefined
+                                )
                               )
                             )
                             .join(" → ")
@@ -2206,7 +2885,12 @@ const AIInspectorPanel: React.FC<Props> = ({
                         ? resolveRealEstatePrimaryRiskLabel(
                             mapRiskLabelToPolicyLabel(
                               chainSteps[0].trim(),
-                              uiLanguage
+                              uiLanguage,
+                              executiveDemoMode && caseType === "real-estate"
+                                ? { executiveDemo: true }
+                                : executiveDemoMode
+                                  ? { executiveDemo: true }
+                                  : undefined
                             )
                           )
                         : "";
@@ -2317,14 +3001,10 @@ const AIInspectorPanel: React.FC<Props> = ({
               : "Forward decision flexibility"}
           </div>
           <div>
-            {marginTrend === "down"
+            {marginTrend === "DECLINING"
               ? language === "sv"
                 ? "Minskar över tid"
                 : "Decreasing over time"
-              : marginTrend === "up"
-              ? language === "sv"
-                ? "Ökar över tid"
-                : "Increasing over time"
               : language === "sv"
               ? caseType === "real-estate"
                 ? "Portföljens handlingsutrymme bedöms vara stabilt inom analysperioden"
@@ -2379,7 +3059,7 @@ const AIInspectorPanel: React.FC<Props> = ({
               ? "Skillnad mellan strategierna"
               : "Difference between strategies"}
           </div>
-          <div>{scenarioDifferenceText}</div>
+          <div>{scenarioDifferenceDisplayText}</div>
           <div>
             {firstDivergenceMonth != null
               ? language === "sv"
@@ -2390,8 +3070,8 @@ const AIInspectorPanel: React.FC<Props> = ({
                 ? "Strategierna utvecklas olika eftersom de påverkar olika delar av systemet"
                 : "Structural divergence detected through different drivers or propagation pathways"
               : language === "sv"
-              ? "Ingen strukturell divergens identifierad inom aktuell simuleringshorisont"
-              : "No structural divergence detected yet"}
+              ? "Ingen tydlig skillnad i påverkan identifierad ännu"
+              : "No meaningful difference in decision flexibility detected yet"}
           </div>
         </div>
         {inspectionMode === "expert" && (

@@ -38,7 +38,8 @@ export type TransportDriverDefinition = {
   // Optional upstream causal dependencies for inspector explainability.
   upstreamDependencies?: TransportSystemDriverId[];
   // Deterministic propagation metadata for Inspector/explainability layers.
-  propagationChain: EngineRiskKey[];
+  /** Ordered steps for inspector/graph (engine keys and/or transport driver ids). */
+  propagationChain: (EngineRiskKey | TransportSystemDriverId)[];
 };
 
 export type TransportPolicyLeverMapping = {
@@ -255,7 +256,7 @@ export const TRANSPORT_SYSTEM_DRIVERS: Record<
     label: "Demand",
     readableLabel_sv: "Efterfrågetryck i transportsystemet",
     readableLabel_en: "Transport demand pressure",
-    engineRiskKey: "demand",
+    engineRiskKey: "demandRisk",
     propagationChain: [
       "demand",
       "budgetPressure",
@@ -400,6 +401,6 @@ export function getTransportDriverMappingForLever(
 
 export function getTransportPropagationChain(
   driver: TransportSystemDriverId
-): EngineRiskKey[] {
+): (EngineRiskKey | TransportSystemDriverId)[] {
   return TRANSPORT_SYSTEM_DRIVERS[driver].propagationChain;
 }

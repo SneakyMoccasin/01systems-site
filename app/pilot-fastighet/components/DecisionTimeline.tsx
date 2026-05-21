@@ -243,7 +243,9 @@ const DecisionTimeline: React.FC<Props> = ({
                     }}
                   >
                     {`Q${event.quarter} – ${
-                      EVENT_TRANSLATIONS[event.type]?.[language] ?? event.type
+                      EVENT_TRANSLATIONS[
+                        event.type as keyof typeof EVENT_TRANSLATIONS
+                      ]?.[language] ?? event.type
                     }`}
                   </div>
                 )}
@@ -260,7 +262,9 @@ const DecisionTimeline: React.FC<Props> = ({
                   pointerEvents: "none",
                 }}
               >
-                {EVENT_TRANSLATIONS[event.type]?.[language] ?? event.type}
+                {EVENT_TRANSLATIONS[event.type as keyof typeof EVENT_TRANSLATIONS]?.[
+                  language
+                ] ?? event.type}
               </span>
             </React.Fragment>
           );

@@ -18,7 +18,8 @@ export function buildDomainPropagationEvents(
   primaryDriver?: TransportSystemDriverId | null,
   language: "sv" | "en" = "en",
   cascadeEventsA?: CascadeEvent[],
-  cascadeEventsB?: CascadeEvent[]
+  cascadeEventsB?: CascadeEvent[],
+  executiveDemo?: boolean
 ): {
   events: {
     month: number;
@@ -27,6 +28,7 @@ export function buildDomainPropagationEvents(
   primaryPropagationSignatureA: string | null;
   primaryPropagationSignatureB: string | null;
 } {
+  const labelOpts = executiveDemo ? { executiveDemo: true as const } : undefined;
   const primaryPropagationSignatureA = getPrimaryPropagationSignature(cascadeEventsA);
   const primaryPropagationSignatureB = getPrimaryPropagationSignature(cascadeEventsB);
   if (!primaryDriver) {
@@ -40,7 +42,7 @@ export function buildDomainPropagationEvents(
       return {
         events: sourceEvents.slice(0, 3).map((event, index) => ({
           month: index,
-          label: mapRiskLabelToPolicyLabel(event.targetRisk, language),
+          label: mapRiskLabelToPolicyLabel(event.targetRisk, language, labelOpts),
         })),
         primaryPropagationSignatureA,
         primaryPropagationSignatureB,
@@ -65,7 +67,7 @@ export function buildDomainPropagationEvents(
   return {
     events: driverDef.propagationChain.map((driverId, index, chain) => {
       const normalizedDriverId = driverId;
-      const readable = mapRiskLabelToPolicyLabel(normalizedDriverId, language);
+      const readable = mapRiskLabelToPolicyLabel(normalizedDriverId, language, labelOpts);
       const isFirst = index === 0;
       const isLast = index === chain.length - 1;
       const phrase =

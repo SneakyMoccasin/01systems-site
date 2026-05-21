@@ -28,6 +28,7 @@ function localizeSystemDriverName(driver: TransportSystemDriverId, language: Lan
   const sv: Record<TransportSystemDriverId, string> = {
     accessibility: "tillgänglighet",
     modalAttractiveness: "färdmedelsattraktivitet",
+    demand: "efterfrågan",
     networkEfficiency: "nätverkseffektivitet",
     capacityPressure: "kapacitetstryck",
     implementationPacing: "genomförandetakt",
@@ -36,6 +37,7 @@ function localizeSystemDriverName(driver: TransportSystemDriverId, language: Lan
   const en: Record<TransportSystemDriverId, string> = {
     accessibility: "accessibility",
     modalAttractiveness: "modal attractiveness",
+    demand: "demand",
     networkEfficiency: "network efficiency",
     capacityPressure: "capacity pressure",
     implementationPacing: "implementation pacing",
@@ -133,8 +135,8 @@ function translatePropagationSignature(
 }
 
 export type TransportInspectorContext = {
-  policyLeverLabel: string;
-  systemDriverLabel: string;
+  policyLeverLabel: string | null;
+  systemDriverLabel: string | null;
   propagationChainLabel: string;
   primaryDriver: TransportSystemDriverId;
   dominantScenarioDifferenceChannel?: string | null;

@@ -118,8 +118,8 @@ export function getScenarioLibrary(language: ScenarioLanguage = "en"): ScenarioP
       prompt:
         prompts.parallelInvestmentStarts ??
         "Multiple investment programs are launched in parallel.\nCoordination pressure increases.\nExecution complexity increases before benefits are realized.",
-      impact: {
-        capitalCommitmentRigidity: "HIGH",
+      riskChanges: {
+        capitalCommitmentRigidityRisk: "HIGH",
         refinancingRisk: "HIGH",
       },
     },
@@ -134,9 +134,9 @@ export function getScenarioLibrary(language: ScenarioLanguage = "en"): ScenarioP
       prompt:
         prompts.delayedIntervention ??
         "Intervention decisions are delayed.\nStructural pressure accumulates before action is taken.\nSystem response starts later than planned.",
-      impact: {
-        maintenanceIntensity: "HIGH",
-        operationalEfficiency: "LOW",
+      riskChanges: {
+        maintenanceIntensityRisk: "HIGH",
+        operationalEfficiencyRisk: "LOW",
       },
     },
     {
@@ -150,9 +150,9 @@ export function getScenarioLibrary(language: ScenarioLanguage = "en"): ScenarioP
       prompt:
         prompts.limitedExecutionCapacity ??
         "Execution capacity is constrained.\nOperational follow-through is slower.\nImprovements are implemented gradually with higher delivery friction.",
-      impact: {
-        operationalEfficiency: "LOW",
-        capitalCommitmentRigidity: "MODERATE",
+      riskChanges: {
+        operationalEfficiencyRisk: "LOW",
+        capitalCommitmentRigidityRisk: "MODERATE",
       },
     },
     {

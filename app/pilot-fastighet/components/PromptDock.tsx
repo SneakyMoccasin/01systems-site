@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { pulseLanguage } from "@/src/i18n/pulseLanguage";
 import type { CascadeEvent } from "@/src/pilotFastighet/riskPropagation";
+import { logPulseCaughtRejection } from "@/src/pilotFastighet/pulseTraceUnhandledRejection";
 
 type Language = "sv" | "en";
 
@@ -62,7 +63,8 @@ const PromptDock: React.FC<Props> = ({
         setAnswer(data.text ?? t.noResponse);
         setLoading(false);
       })
-      .catch(() => {
+      .catch((err) => {
+        logPulseCaughtRejection("PromptDock.fetch", err);
         setAnswer(t.unableToAnswer);
         setLoading(false);
       });

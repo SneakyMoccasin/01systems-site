@@ -1,3 +1,5 @@
+import { getExecutiveDemoInterventionLabel } from "@/src/pilotFastighet/executiveDemoTransformation";
+
 type ActionKey =
   | "increase_service_frequency"
   | "reduce_travel_time"
@@ -85,6 +87,7 @@ interface Props {
   domain?: DomainKey;
   selectedActions: string[];
   applyAction: (action: ActionKey) => void;
+  executiveDemoMode?: boolean;
 }
 
 export default function ActionPanel({
@@ -92,6 +95,7 @@ export default function ActionPanel({
   domain = "consulting",
   selectedActions,
   applyAction,
+  executiveDemoMode = false,
 }: Props) {
   const interventionSectionTitles = {
     realEstate: { sv: "Interventioner", en: "Interventions" },
@@ -136,7 +140,11 @@ export default function ActionPanel({
   return (
     <div className="mb-6">
       <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-2">
-        {interventionSectionTitles[domain]?.[language] ?? "Decisions"}
+        {executiveDemoMode
+          ? language === "sv"
+            ? "Transformationsinitiativ"
+            : "Transformation initiatives"
+          : interventionSectionTitles[domain]?.[language] ?? "Decisions"}
       </h3>
 
       <div className="flex flex-col gap-2">
@@ -150,7 +158,9 @@ export default function ActionPanel({
             }`}
             onClick={() => applyAction(action)}
           >
-            {interventionLabels[action][language]}
+            {executiveDemoMode
+              ? getExecutiveDemoInterventionLabel(action, language)
+              : interventionLabels[action][language]}
           </button>
         ))}
       </div>

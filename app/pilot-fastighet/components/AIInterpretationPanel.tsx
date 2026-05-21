@@ -1,24 +1,124 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { EVENT_TRANSLATIONS } from "@/src/pilotFastighet/uiText";
 import { pulseLanguage } from "@/src/i18n/pulseLanguage";
 import type { CascadeEvent } from "@/src/pilotFastighet/riskPropagation";
+import { surfaceOrgDemoText, tightenExecOutlookStripBodyForDisplay } from "@/src/pilotFastighet/executiveDemoTransformation";
 import {
   profileCount,
   profileMeasure,
   profileValue,
 } from "@/src/lib/runtimeProfile";
+import { logPulseCaughtRejection } from "@/src/pilotFastighet/pulseTraceUnhandledRejection";
 
 type Language = "sv" | "en";
 
-type Event = {
+/** Timeline row for interpretation payload (not a DOM Event — avoids shadowing global Event). */
+type QuarterEvent = {
   quarter: number;
   type: string;
 };
 
+function parseInterpretationSections(aiText: string): { title: string; content: string }[] {
+  const lines = aiText.split("\n").map((s) => s.trim()).filter(Boolean);
+  const sections: { title: string; content: string }[] = [];
+  const sectionHeader = /^([A-Za-zÅÄÖåäö0-9][A-Za-zÅÄÖåäö0-9\s\-/]+):\s*$/;
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(sectionHeader);
+    if (m) {
+      const title = m[1].trim();
+      const contentLines: string[] = [];
+      let j = i + 1;
+      while (j < lines.length && !lines[j].match(sectionHeader)) {
+        contentLines.push(lines[j]);
+        j++;
+      }
+      sections.push({ title, content: contentLines.join(" ").trim() });
+    }
+  }
+  return sections;
+}
+
+/** Robust split for Swedish/English exec real-estate strip headings returned by `/api/ai-interpretation`. */
+function parseExecRealEstateStripSections(
+  aiText: string,
+  lang: Language
+): { title: string; content: string }[] {
+  const text = aiText.replace(/\*\*/g, "").replace(/\r\n/g, "\n");
+  const markers =
+    lang === "sv"
+      ? ([
+          { title: "Sammanfattning", rx: /\bSammanfattning\s*:/gi },
+          { title: "Strukturella drivkrafter", rx: /\bStrukturella\s+drivkrafter\s*:/gi },
+          { title: "Hur beroenden sprider sig", rx: /\bHur\s+beroenden\s+sprider\s+sig\s*:/gi },
+          { title: "Tryckets utveckling", rx: /\bTryckets\s+utveckling\s*:/gi },
+        ] as const)
+      : ([
+          { title: "Overview", rx: /\bOverview\s*:/gi },
+          { title: "Structural drivers", rx: /\bStructural\s+drivers\s*:/gi },
+          {
+            title: "Dependency propagation",
+            rx: /\bDependency\s+propagation\s*:/gi,
+          },
+          {
+            title: "How pressure evolves",
+            rx: /\bHow\s+pressure\s+evolves\s*:/gi,
+          },
+        ] as const);
+
+  const hits: { idx: number; end: number; title: string }[] = [];
+
+  for (const { title, rx } of markers) {
+    rx.lastIndex = 0;
+    const match = rx.exec(text);
+    if (match?.index !== undefined) {
+      hits.push({ idx: match.index, end: match.index + match[0].length, title });
+    }
+  }
+
+  hits.sort((a, b) => a.idx - b.idx);
+
+  const out: { title: string; content: string }[] = [];
+  for (let i = 0; i < hits.length; i++) {
+    const startBody = hits[i].end;
+    const endSlice = i + 1 < hits.length ? hits[i + 1].idx : text.length;
+    const raw = text.slice(startBody, endSlice).trim();
+    if (!raw && i > 0) continue;
+    out.push({ title: hits[i].title, content: raw });
+  }
+
+  return out;
+}
+
+/** Preferred on-screen ordering for exec strip regardless of LLM emission order */
+function reorderExecStripSections(
+  sections: { title: string; content: string }[],
+  lang: Language
+): { title: string; content: string }[] {
+  const orderSv = [
+    "sammanfattning",
+    "strukturella drivkrafter",
+    "hur beroenden sprider sig",
+    "tryckets utveckling",
+  ];
+  const orderEn = ["overview", "structural drivers", "dependency propagation", "how pressure evolves"];
+  const order = lang === "sv" ? orderSv : orderEn;
+  const norm = (s: string) => s.trim().toLowerCase();
+
+  return [...sections].sort((a, b) => {
+    const ia = order.indexOf(norm(a.title));
+    const ib = order.indexOf(norm(b.title));
+    if (ia === -1 && ib === -1) return 0;
+    if (ia === -1) return 1;
+    if (ib === -1) return -1;
+    return ia - ib;
+  });
+}
+
 type Props = {
   language: Language;
+  executiveDemoMode?: boolean;
   tippingQuarter: number | null;
-  events: Event[];
+  events: QuarterEvent[];
   simulationCompleted: boolean;
   currentMargin: number;
   alternativeMargin: number;
@@ -38,10 +138,13 @@ type Props = {
   constraintActivationChanged?: boolean;
   propagationRootChanged?: boolean;
   dominantScenarioDifferenceChannel?: string | null;
+  /** Below-graph horizontal synthesis layout (executive demo real-estate only). */
+  executiveInterpretationStrip?: boolean;
 };
 
 const AIInterpretationPanel: React.FC<Props> = ({
   language,
+  executiveDemoMode = false,
   tippingQuarter,
   events,
   simulationCompleted,
@@ -63,17 +166,21 @@ const AIInterpretationPanel: React.FC<Props> = ({
   constraintActivationChanged,
   propagationRootChanged,
   dominantScenarioDifferenceChannel = null,
+  executiveInterpretationStrip = false,
 }) => {
   profileCount("AIInterpretationPanel.render");
 
   const [aiText, setAiText] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const fetchGenerationRef = useRef(0);
   const uiLanguage = language;
   const t = pulseLanguage[uiLanguage];
 
   useEffect(() => {
     if (!simulationCompleted) return;
 
+    const ac = new AbortController();
+    const generation = ++fetchGenerationRef.current;
     setLoading(true);
 
     const translatedEvents = events.map((e) => ({
@@ -83,6 +190,12 @@ const AIInterpretationPanel: React.FC<Props> = ({
 
     const requestBody = {
       language: uiLanguage,
+      interpretationMode:
+        caseType === "transport"
+          ? "transport"
+          : caseType === "real-estate"
+            ? "real-estate"
+            : "generic",
       caseName,
       tippingQuarter,
       events: translatedEvents,
@@ -94,7 +207,6 @@ const AIInterpretationPanel: React.FC<Props> = ({
       systemPressure,
       estimatedTimeToBreach,
       decisionFlowEvents,
-      interpretationMode: "detailed",
       marginTrend,
       cascadeDelay,
       caseType,
@@ -103,45 +215,86 @@ const AIInterpretationPanel: React.FC<Props> = ({
       constraintActivationChanged,
       propagationRootChanged,
       dominantScenarioDifferenceChannel,
+      executiveDemoMode,
     };
     profileCount("AIInterpretationPanel.fetch.calls");
-    const serializedBody = profileMeasure(
-      "AIInterpretationPanel.fetch.serialize.ms",
-      () => JSON.stringify(requestBody)
-    );
+
+    let serializedBody: string;
+    try {
+      serializedBody = profileMeasure(
+        "AIInterpretationPanel.fetch.serialize.ms",
+        () => JSON.stringify(requestBody)
+      );
+    } catch {
+      if (fetchGenerationRef.current === generation) {
+        setLoading(false);
+      }
+      return () => ac.abort();
+    }
     profileValue(
       "AIInterpretationPanel.fetch.payload.bytes",
       serializedBody.length,
       "bytes"
     );
 
-    fetch("/api/ai-interpretation", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: serializedBody,
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        setAiText(data.text);
-        setLoading(false);
-      })
-      .catch(() => {
-        setLoading(false);
-      });
+    void (async () => {
+      try {
+        const res = await fetch("/api/ai-interpretation", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: serializedBody,
+          signal: ac.signal,
+        });
+        let data: { text?: unknown } = {};
+        try {
+          data = (await res.json()) as { text?: unknown };
+        } catch (parseErr) {
+          logPulseCaughtRejection("AIInterpretationPanel.res.json", parseErr);
+          data = {};
+        }
+        if (fetchGenerationRef.current !== generation) return;
+        const text = data?.text;
+        setAiText(typeof text === "string" ? text : null);
+      } catch (err: unknown) {
+        logPulseCaughtRejection("AIInterpretationPanel.fetch", err);
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        if (fetchGenerationRef.current !== generation) return;
+        setAiText(null);
+      } finally {
+        if (fetchGenerationRef.current === generation) {
+          setLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      ac.abort();
+    };
   }, [
     simulationCompleted,
     uiLanguage ?? "en",
+    caseType,
+    caseName,
+    tippingQuarter,
+    currentMargin,
+    alternativeMargin,
+    marginImpact,
+    systemPressure,
+    estimatedTimeToBreach,
+    marginTrend,
+    cascadeDelay,
+    events.map((e) => `${e.quarter}:${e.type}`).join("|"),
     primaryDriverChanged ?? false,
     constraintActivationChanged ?? false,
     propagationRootChanged ?? false,
     dominantScenarioDifferenceChannel ?? null,
     selectedActions?.join(",") ?? "",
-    marginImpact ?? null,
-    primaryDriver ?? null,
     cascadeEventsA?.length ?? 0,
     cascadeEventsB?.length ?? 0,
+    executiveDemoMode,
+    primaryDriver ?? null,
   ]);
 
   useEffect(() => {
@@ -151,24 +304,83 @@ const AIInterpretationPanel: React.FC<Props> = ({
   }, [simulationCompleted]);
 
   const helperText =
-    caseType === "real-estate" && uiLanguage === "sv"
+    executiveDemoMode
+      ? uiLanguage === "sv"
+        ? "Kort tolkning av hur flexibiliteten utvecklas"
+        : "A plain-language read of how flexibility evolves"
+      : caseType === "real-estate" && uiLanguage === "sv"
       ? "Vad detta betyder för portföljen"
       : t.systemInterpretationHelper;
   const sectionTitleMap: Record<string, string> = {
-    sammanfattning: t.aiSummary,
+    sammanfattning:
+      executiveInterpretationStrip
+        ? uiLanguage === "sv"
+          ? "Sammanfattning"
+          : "Overview"
+        : t.aiSummary,
     summary: t.aiSummary,
+    overview:
+      executiveDemoMode && caseType === "real-estate"
+        ? uiLanguage === "sv"
+          ? "Överblick"
+          : "Overview"
+        : t.aiSummary,
     "strukturell analys":
-      caseType === "real-estate"
+      executiveDemoMode && caseType === "real-estate"
         ? uiLanguage === "sv"
-          ? "Affärsanalys"
-          : "Business analysis"
-        : t.aiStructuralAnalysis,
+          ? "Strukturell tolkning"
+          : "Structural read"
+        : caseType === "real-estate"
+          ? uiLanguage === "sv"
+            ? "Affärsanalys"
+            : "Business analysis"
+          : t.aiStructuralAnalysis,
     "structural analysis":
-      caseType === "real-estate"
+      executiveDemoMode && caseType === "real-estate"
         ? uiLanguage === "sv"
+          ? "Strukturell tolkning"
+          : "Structural read"
+        : caseType === "real-estate"
+          ? uiLanguage === "sv"
+            ? "Affärsanalys"
+            : "Business analysis"
+          : t.aiStructuralAnalysis,
+    "structural drivers":
+      executiveInterpretationStrip
+        ? uiLanguage === "sv"
+          ? "Strukturella drivkrafter"
+          : "Structural drivers"
+        : executiveDemoMode && caseType === "real-estate"
+          ? uiLanguage === "sv"
+            ? "Strukturella drivkrafter"
+            : "Structural drivers"
+          : caseType === "real-estate"
+            ? uiLanguage === "sv"
+              ? "Affärsanalys"
+              : "Business analysis"
+            : t.aiStructuralAnalysis,
+    "strukturella drivkrafter":
+      executiveInterpretationStrip
+        ? uiLanguage === "sv"
+          ? "Strukturella drivkrafter"
+          : "Structural drivers"
+        : executiveDemoMode && caseType === "real-estate"
+          ? uiLanguage === "sv"
+            ? "Strukturella drivkrafter"
+            : "Structural drivers"
+          : caseType === "real-estate"
+            ? uiLanguage === "sv"
+              ? "Affärsanalys"
+              : "Business analysis"
+            : t.aiStructuralAnalysis,
+    affärsanalys:
+      executiveDemoMode && caseType === "real-estate"
+        ? uiLanguage === "sv"
+          ? "Strukturell tolkning"
+          : "Structural read"
+        : uiLanguage === "sv"
           ? "Affärsanalys"
-          : "Business analysis"
-        : t.aiStructuralAnalysis,
+          : "Business analysis",
     kaskaddynamik:
       caseType === "real-estate"
         ? uiLanguage === "sv"
@@ -181,9 +393,279 @@ const AIInterpretationPanel: React.FC<Props> = ({
           ? "Påverkan i portföljen"
           : "Portfolio impact"
         : t.aiCascadeDynamics,
+    "dependency propagation":
+      executiveDemoMode && caseType === "real-estate"
+        ? uiLanguage === "sv"
+          ? "Hur beroenden sprider sig"
+          : "Dependency propagation"
+        : caseType === "real-estate"
+          ? uiLanguage === "sv"
+            ? "Påverkan i portföljen"
+            : "Portfolio impact"
+          : t.aiCascadeDynamics,
+    "how cascade effects spread":
+      caseType === "real-estate"
+        ? uiLanguage === "sv"
+          ? "Påverkan i portföljen"
+          : "Portfolio impact"
+        : t.aiCascadeDynamics,
+    "hur beroenden sprider sig":
+      executiveDemoMode && caseType === "real-estate"
+        ? uiLanguage === "sv"
+          ? "Hur beroenden sprider sig"
+          : "Dependency propagation"
+        : caseType === "real-estate"
+          ? uiLanguage === "sv"
+            ? "Påverkan i portföljen"
+            : "Portfolio impact"
+          : t.aiCascadeDynamics,
+    "hur kaskadeffekter sprider sig":
+      caseType === "real-estate"
+        ? uiLanguage === "sv"
+          ? "Påverkan i portföljen"
+          : "Portfolio impact"
+        : t.aiCascadeDynamics,
     framtidsblick: t.aiOutlook,
     outlook: t.aiOutlook,
+    "forward outlook":
+      executiveDemoMode && caseType === "real-estate"
+        ? uiLanguage === "sv"
+          ? "Tryckets utveckling"
+          : "Pressure evolution"
+        : t.aiOutlook,
+    "how pressure evolves":
+      executiveDemoMode && caseType === "real-estate"
+        ? uiLanguage === "sv"
+          ? "Tryckets utveckling"
+          : "Pressure evolution"
+        : t.aiOutlook,
+    "tryckets utveckling":
+      executiveDemoMode && caseType === "real-estate"
+        ? uiLanguage === "sv"
+          ? "Tryckets utveckling"
+          : "Pressure evolution"
+        : t.aiOutlook,
   };
+
+  const surfaceLine = (s: string) =>
+    executiveDemoMode ? surfaceOrgDemoText(s, uiLanguage) : s;
+
+  const parsedSections = useMemo(
+    () => (aiText ? parseInterpretationSections(aiText) : []),
+    [aiText]
+  );
+
+  const execStripParsedSections = useMemo(() => {
+    if (!executiveInterpretationStrip || !aiText) return [];
+    const byMarkers = parseExecRealEstateStripSections(aiText, uiLanguage);
+    const byLines = parsedSections;
+    const raw =
+      byMarkers.length >= 2 ? byMarkers : byLines.length > 0 ? byLines : byMarkers;
+    return reorderExecStripSections(raw, uiLanguage).slice(0, 4);
+  }, [
+    aiText,
+    executiveInterpretationStrip,
+    uiLanguage,
+    parsedSections,
+  ]);
+
+  const stripAccentColors = ["#38bdf8", "#a78bfa", "#34d399", "#fbbf24"] as const;
+
+  const stripIdleHint =
+    uiLanguage === "sv"
+      ? "Kör simulering för att generera syntes."
+      : "Run simulation to generate synthesis.";
+  const stripEmptyHint =
+    uiLanguage === "sv"
+      ? "Ingen syntes tillgänglig ännu."
+      : "No synthesis available yet.";
+  const stripHeadline =
+    uiLanguage === "sv" ? "AI-tolkning" : "AI interpretation";
+  const stripSub =
+    uiLanguage === "sv"
+      ? "Exekutiv syntes av strukturläget"
+      : "Executive synthesis — structural posture";
+
+  const fallbackOverviewTitle =
+    uiLanguage === "sv" ? "Överblick" : "Overview";
+
+  if (executiveInterpretationStrip) {
+    const stripCards =
+      execStripParsedSections.length > 0
+        ? execStripParsedSections
+        : aiText?.trim()
+          ? [{ title: fallbackOverviewTitle, content: aiText.replace(/\s+/g, " ").trim() }]
+          : [];
+
+    return (
+      <div
+        style={{
+          marginTop: "0px",
+          padding: "8px 16px 8px 15px",
+          borderRadius: "12px",
+          background:
+            "linear-gradient(165deg, rgba(15,23,42,0.96) 0%, rgba(10,15,26,0.99) 100%)",
+          border: "1px solid rgba(71,85,105,0.4)",
+          boxShadow:
+            "inset 0 1px 0 rgba(148,163,184,0.055), 0 16px 44px rgba(0,0,0,0.34)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "baseline",
+            justifyContent: "space-between",
+            gap: "8px",
+            marginBottom:
+              loading || stripCards.length > 0 || !simulationCompleted ? "6px" : "0",
+          }}
+        >
+          <div>
+            <div
+              style={{
+                fontSize: "13px",
+                fontWeight: 600,
+                color: "#f8fafc",
+                letterSpacing: "-0.02em",
+              }}
+            >
+              {stripHeadline}
+            </div>
+            <div
+              style={{
+                fontSize: "11px",
+                color: "#64748b",
+                marginTop: "3px",
+                fontWeight: 500,
+                lineHeight: 1.42,
+              }}
+            >
+              {stripSub}
+            </div>
+          </div>
+        </div>
+
+        {loading && (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.07fr)",
+              gap: "16px",
+              minWidth: 0,
+            }}
+          >
+            {[0, 1, 2, 3].map((i) => (
+              <div
+                key={i}
+                style={{
+                  height: "88px",
+                  borderRadius: "11px",
+                  background: "rgba(30,41,59,0.48)",
+                  border: "1px solid rgba(51,65,85,0.32)",
+                  borderLeftWidth: "3px",
+                  borderLeftColor: stripAccentColors[i % stripAccentColors.length],
+                }}
+              />
+            ))}
+          </div>
+        )}
+
+        {!loading && !simulationCompleted && (
+          <div style={{ fontSize: "11px", color: "#64748b", lineHeight: 1.45 }}>
+            {stripIdleHint}
+          </div>
+        )}
+
+        {!loading && simulationCompleted && !aiText && (
+          <div style={{ fontSize: "11px", color: "#64748b" }}>{stripEmptyHint}</div>
+        )}
+
+        {!loading && aiText && stripCards.length > 0 && (
+          <div
+            style={{
+              width: "100%",
+              overflow: "visible",
+              paddingBottom: "1px",
+              paddingRight: "4px",
+              marginRight: "0px",
+              boxSizing: "border-box",
+            }}
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns:
+                  "minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.07fr)",
+                gap: "16px",
+                width: "100%",
+                minWidth: 0,
+                boxSizing: "border-box",
+              }}
+            >
+              {stripCards.map((sec, index) => (
+                <div
+                  key={`${sec.title}-${index}`}
+                  style={{
+                    padding:
+                      index === 3 ? "11px 17px 11px 14px" : "11px 16px 11px 14px",
+                    borderRadius: "11px",
+                    background: "rgba(11,16,26,0.68)",
+                    border: "1px solid rgba(71,85,105,0.34)",
+                    borderLeft: `3px solid ${stripAccentColors[index % stripAccentColors.length]}`,
+                    minHeight: "90px",
+                    minWidth: 0,
+                    boxShadow:
+                      "inset 0 1px 0 rgba(148,163,184,0.05), 0 12px 32px rgba(0,0,0,0.3)",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "9.25px",
+                      fontWeight: 700,
+                      letterSpacing: "0.095em",
+                      textTransform: "uppercase",
+                      color: "#aebdd4",
+                      marginBottom: "7px",
+                    }}
+                  >
+                    {(() => {
+                      const label =
+                        sectionTitleMap[sec.title.toLowerCase()] ?? sec.title;
+                      return surfaceLine(label);
+                    })()}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      lineHeight: 1.56,
+                      color: "#e9eef6",
+                      fontWeight: 400,
+                      overflowWrap: "break-word",
+                      wordBreak: "break-word",
+                    }}
+                  >
+                    {(() => {
+                      const label =
+                        sectionTitleMap[sec.title.toLowerCase()] ?? sec.title;
+                      const mapped = surfaceLine(label);
+                      const body = surfaceLine(sec.content);
+                      return tightenExecOutlookStripBodyForDisplay(
+                        body,
+                        uiLanguage,
+                        mapped
+                      );
+                    })()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div
@@ -233,45 +715,28 @@ const AIInterpretationPanel: React.FC<Props> = ({
             lineHeight: "1.4",
           }}
         >
-          {(() => {
-            const lines = aiText.split("\n").map((s) => s.trim()).filter(Boolean);
-            const sections: { title: string; content: string }[] = [];
-            const sectionHeader = /^([A-Za-z\s]+):\s*$/;
-            for (let i = 0; i < lines.length; i++) {
-              const m = lines[i].match(sectionHeader);
-              if (m) {
-                const title = m[1].trim();
-                const contentLines: string[] = [];
-                let j = i + 1;
-                while (j < lines.length && !lines[j].match(sectionHeader)) {
-                  contentLines.push(lines[j]);
-                  j++;
-                }
-                sections.push({ title, content: contentLines.join(" ").trim() });
-              }
-            }
-            if (sections.length === 0) {
-              return aiText.split("\n").map((line, index) => (
+          {parsedSections.length === 0
+            ? aiText.split("\n").map((line, index) => (
                 <div key={index} style={{ color: "#E5E7EB", gridColumn: "1 / -1" }}>
-                  {line}
+                  {surfaceLine(line)}
                 </div>
-              ));
-            }
-            return sections.map((sec, index) => (
-              <React.Fragment key={index}>
-                <div
-                  style={{
-                    fontWeight: 600,
-                    color: "#9CA3AF",
-                    marginTop: index > 0 ? "10px" : 0,
-                  }}
-                >
-                  {sectionTitleMap[sec.title.toLowerCase()] ?? sec.title}
-                </div>
-                <div style={{ color: "#E5E7EB" }}>{sec.content}</div>
-              </React.Fragment>
-            ));
-          })()}
+              ))
+            : parsedSections.map((sec, index) => (
+                <React.Fragment key={`${sec.title}-${index}`}>
+                  <div
+                    style={{
+                      fontWeight: 600,
+                      color: "#9CA3AF",
+                      marginTop: index > 0 ? "10px" : 0,
+                    }}
+                  >
+                    {surfaceLine(
+                      sectionTitleMap[sec.title.toLowerCase()] ?? sec.title
+                    )}
+                  </div>
+                  <div style={{ color: "#E5E7EB" }}>{surfaceLine(sec.content)}</div>
+                </React.Fragment>
+              ))}
         </div>
       )}
     </div>

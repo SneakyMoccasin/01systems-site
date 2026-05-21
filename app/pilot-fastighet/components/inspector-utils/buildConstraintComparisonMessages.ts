@@ -15,7 +15,7 @@ export function buildConstraintComparisonMessages(
   timelineB: ConstraintActivationTimelineEntry[]
 ): ConstraintComparisonMessage[] {
   return compareConstraintActivationTimelines(timelineA, timelineB).flatMap(
-    (entry) => {
+    (entry): ConstraintComparisonMessage[] => {
       if (entry.stepA == null && entry.stepB == null) {
         return [];
       }

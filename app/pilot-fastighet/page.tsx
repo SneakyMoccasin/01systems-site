@@ -62,6 +62,26 @@ import {
   profileMeasure,
   profileValue,
 } from "@/src/lib/runtimeProfile";
+import {
+  getExecutiveDemoGoalOptionLabel,
+  getExecutiveDemoGoalPickerLabel,
+  getExecutiveDemoGraphFraming,
+  getExecutiveDemoGraphTimelineMarkers,
+  getExecutiveDemoHero,
+  getExecutiveDemoMarginStripLabels,
+  getExecutiveDemoPlaybackInitiativesNote,
+  getExecutiveDemoScenarioComparisonStrip,
+} from "@/src/pilotFastighet/executiveDemoFraming";
+import {
+  EXEC_DEMO_PLAYBACK_PRESET_ID,
+  getExecutiveDemoPlaybackPresetTitle,
+  getExecutiveDemoPlaybackRiskStates,
+} from "@/src/pilotFastighet/executiveDemoPlaybackScenario";
+import { surfaceOrgDemoText } from "@/src/pilotFastighet/executiveDemoTransformation";
+import {
+  installPulseUnhandledRejectionTracer,
+  logPulseCaughtRejection,
+} from "@/src/pilotFastighet/pulseTraceUnhandledRejection";
 
 function buildScenarioTargetPolicyEvents(
   scenarioTarget: string | null | undefined,
@@ -230,11 +250,6 @@ const actionEffects = {
     interestRateExposureRisk: -0.5,
   },
 } as const;
-const domainTitles = {
-  realEstate: "Real Estate Portfolio",
-  municipal: "Transport System",
-  consulting: "Decision Environment",
-};
 
 const TOP_LEVEL_GOAL_LABELS = {
   transport: {
@@ -363,6 +378,7 @@ export default function PilotFastighetPage() {
   const [uiTheme, setUiTheme] = useState<"dark" | "light">("dark");
   const [uiLanguage, setUiLanguage] = useState<Language>("sv");
   const [uiMode, setUiMode] = useState<"executive" | "expert">("executive");
+  const [executiveDemoMode, setExecutiveDemoMode] = useState(false);
 
   // NOTE: Cascades/escalation are computed by RealEstateEngine during ticks.
   // We intentionally avoid running propagateRisks in the UI layer.
@@ -376,6 +392,10 @@ export default function PilotFastighetPage() {
   const [isDragging, setIsDragging] = useState(false);
   const isDraggingRef = useRef(false);
   const svgRef = useRef<SVGSVGElement | null>(null);
+
+  useEffect(() => {
+    return installPulseUnhandledRejectionTracer();
+  }, []);
 
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewChangesA, setPreviewChangesA] = useState<ScenarioChange[]>([]);
@@ -447,6 +467,38 @@ export default function PilotFastighetPage() {
       window.localStorage.setItem(UI_MODE_KEY, uiMode);
     }
   }, [uiMode]);
+
+  useEffect(() => {
+    if (!executiveDemoMode) {
+      return;
+    }
+    setShowHelp(false);
+    setUiMode("executive");
+    setActiveDomain("realEstate");
+    setDomain("realEstate");
+    setSelectedPilotCaseId("");
+    const demo = getExecutiveDemoPlaybackRiskStates();
+    setRiskStateA(structuredClone(demo.riskStateA));
+    setRiskStateB(structuredClone(demo.riskStateB));
+    setSelectedActionsA([]);
+    setSelectedActionsB([]);
+    setScenarioALabel("");
+    setScenarioBLabel("");
+    setAppliedScenarioAId(EXEC_DEMO_PLAYBACK_PRESET_ID);
+    setAppliedScenarioBId(EXEC_DEMO_PLAYBACK_PRESET_ID);
+    setSelectedGoal("margin_stability");
+    setShowA(true);
+    setShowB(true);
+    setActiveScenario("BOTH");
+    setSimulationHorizon(36);
+    setCustomHorizon(null);
+    setIsDirty(false);
+
+    const runId = window.setTimeout(() => {
+      startSimulation("manual", demo.riskStateA, demo.riskStateB);
+    }, 0);
+    return () => window.clearTimeout(runId);
+  }, [executiveDemoMode]);
 
   useEffect(() => {
     const scenarioLibrary = getScenarioLibrary(uiLanguage);
@@ -676,6 +728,7 @@ export default function PilotFastighetPage() {
     }
 
     intervalRef.current = window.setInterval(() => {
+      try {
       profileCount("PilotFastighetPage.intervalTick.calls");
       profileMeasure("PilotFastighetPage.intervalTick.ms", () => {
         if (!engineARef.current || !engineBRef.current) return;
@@ -825,6 +878,10 @@ export default function PilotFastighetPage() {
           }
         });
       });
+      } catch (err) {
+        logPulseCaughtRejection("PilotFastighetPage.intervalTick", err);
+        throw err;
+      }
     }, 500);
 
   }
@@ -1269,10 +1326,7 @@ export default function PilotFastighetPage() {
   const constraintActivationChanged =
     constraintComparisonMessages.length > 0;
   const propagationRootChanged = primaryDriverChanged;
-  const primaryDriver =
-    transportContext?.policyDriverKey ??
-    transportContext?.primaryDriver ??
-    null;
+  const primaryDriver = transportContext?.primaryDriver ?? null;
   const domainEventsForGraph =
     caseType === "transport"
       ? buildDomainPropagationEvents(
@@ -1361,8 +1415,20 @@ export default function PilotFastighetPage() {
   const theme = THEME[uiTheme];
   const t = UI_TEXT[uiLanguage];
   const pt = pulseLanguage[uiLanguage];
-  const scenarioALabelText = uiLanguage === "sv" ? "Nuläge" : "Baseline";
-  const scenarioBLabelText = uiLanguage === "sv" ? "Målstrategi" : "Goal strategy";
+  const scenarioALabelText = executiveDemoMode
+    ? uiLanguage === "sv"
+      ? "Nuvarande strategi"
+      : "Current strategy"
+    : uiLanguage === "sv"
+      ? "Nuläge"
+      : "Baseline";
+  const scenarioBLabelText = executiveDemoMode
+    ? uiLanguage === "sv"
+      ? "Alternativ strategi"
+      : "Alternative strategy"
+    : uiLanguage === "sv"
+      ? "Målstrategi"
+      : "Goal strategy";
   const scenarioStatusSuffix = uiLanguage === "sv" ? "status" : "status";
   const scenarioMarginSuffix = uiLanguage === "sv" ? "marginal" : "margin";
 
@@ -1484,6 +1550,13 @@ export default function PilotFastighetPage() {
       })()
     : "";
 
+  const displayInterpretation = executiveDemoMode
+    ? surfaceOrgDemoText(interpretation, uiLanguage)
+    : interpretation;
+  const displayNarrativeText = executiveDemoMode
+    ? surfaceOrgDemoText(narrativeText, uiLanguage)
+    : narrativeText;
+
   const expertMinimumMargin = executiveSummary?.minimumMargin ?? null;
   const expertSteps = Math.max(marginHistoryA.length, marginHistoryB.length);
   const expertTippingStep = executiveSummary?.tippingStep ?? null;
@@ -1512,10 +1585,14 @@ export default function PilotFastighetPage() {
     firstSystemStatusCascadeEventA?.sourceRiskLabel ??
     firstSystemStatusCascadeEventA?.sourceRisk ??
     null;
+  const pageExecDemoRiskLabels =
+    executiveDemoMode && caseType === "real-estate"
+      ? ({ executiveDemo: true } as const)
+      : undefined;
   const systemStatusPrimaryDriverLabel = systemStatusPrimaryDriver
     ? caseType === "transport"
       ? getTransportPolicyExplanationLabel(systemStatusPrimaryDriver, uiLanguage)
-      : mapRiskLabelToPolicyLabel(systemStatusPrimaryDriver, uiLanguage)
+      : mapRiskLabelToPolicyLabel(systemStatusPrimaryDriver, uiLanguage, pageExecDemoRiskLabels)
     : null;
   const resolvedSystemStatusPrimaryDriver =
     caseType === "real-estate"
@@ -1524,7 +1601,8 @@ export default function PilotFastighetPage() {
             firstSystemStatusCascadeEventB?.sourceRiskLabel ??
             firstSystemStatusCascadeEventA?.sourceRiskLabel ??
             "",
-          uiLanguage
+          uiLanguage,
+          pageExecDemoRiskLabels
         ) || null
       : systemStatusPrimaryDriverLabel;
   const systemStatusPrimaryDriverDisplayText =
@@ -1694,6 +1772,12 @@ export default function PilotFastighetPage() {
   // 6️⃣ UI
   // ==================================================
 
+  const executiveScenarioComparisonStrip = executiveDemoMode
+    ? getExecutiveDemoScenarioComparisonStrip(uiLanguage)
+    : null;
+
+  const execRealEstateLayout = executiveDemoMode && caseType === "real-estate";
+
   return (
     <div
       style={{
@@ -1702,94 +1786,359 @@ export default function PilotFastighetPage() {
         maxWidth: "100%",
         marginLeft: "0",
         marginRight: "0",
-        paddingLeft: "24px",
-        paddingRight: "24px",
+        background: theme.pageBg,
+        paddingLeft: execRealEstateLayout
+          ? "clamp(20px, 3vw, 36px)"
+          : executiveDemoMode
+            ? "10px"
+            : "24px",
+        paddingRight: execRealEstateLayout
+          ? "clamp(20px, 3vw, 36px)"
+          : executiveDemoMode
+            ? "10px"
+            : "24px",
+        ...(execRealEstateLayout
+          ? {
+              minHeight: "100dvh",
+              display: "flex",
+              flexDirection: "column",
+              boxSizing: "border-box",
+            }
+          : {}),
       }}
     >
-      <div style={{ padding: "32px", background: theme.pageBg, color: theme.text }}>
-        <h1 style={{ fontSize: "22px", marginBottom: "24px" }}>
-          {domainTitles[domain]} — Decision Impact Simulation
-        </h1>
-
       <div
         style={{
-          display: "flex",
-          justifyContent: "flex-end",
-          gap: "8px",
-          marginBottom: "8px",
-          flexWrap: "wrap",
+          padding: execRealEstateLayout
+            ? "4px 0 11px"
+            : executiveDemoMode
+              ? "3px 10px 3px"
+              : "32px",
+          background: theme.pageBg,
+          color: theme.text,
+          ...(execRealEstateLayout
+            ? {
+                flex: "1 1 auto",
+                display: "flex",
+                flexDirection: "column",
+                minHeight: 0,
+              }
+            : {}),
         }}
       >
-        <button
-          type="button"
-          onClick={() => setUiLanguage((l) => (l === "sv" ? "en" : "sv"))}
-          style={{
-            padding: "6px 12px",
-            borderRadius: "6px",
-            border: "1px solid #374151",
-            background: "#111827",
-            color: "#E5E7EB",
-            fontSize: "12px",
-            cursor: "pointer",
-          }}
-        >
-          {uiLanguage === "sv" ? "SV" : "EN"}
-        </button>
-        <button
-          type="button"
-          onClick={() => setUiTheme((t) => (t === "dark" ? "light" : "dark"))}
-          style={{
-            padding: "6px 12px",
-            borderRadius: "6px",
-            border: "1px solid #374151",
-            background: "#111827",
-            color: "#E5E7EB",
-            fontSize: "12px",
-            cursor: "pointer",
-          }}
-        >
-          {uiTheme === "dark" ? "Theme: Dark" : "Theme: Light"}
-        </button>
-        <button
-          type="button"
-          onClick={() => setShowHelp(!showHelp)}
-          style={{
-            padding: "6px 12px",
-            borderRadius: "6px",
-            border: "1px solid #374151",
-            background: "#111827",
-            color: "#E5E7EB",
-            fontSize: "12px",
-            cursor: "pointer",
-          }}
-        >
-          Help
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setUiMode((m) => (m === "executive" ? "expert" : "executive"));
-          }}
-          style={{
-            padding: "6px 12px",
-            borderRadius: "6px",
-            border: "1px solid #374151",
-            background: "#111827",
-            color: "#E5E7EB",
-            fontSize: "12px",
-            cursor: "pointer",
-          }}
-        >
-          {uiMode === "executive" ? pt.expertMode : pt.executiveMode}
-        </button>
-      </div>
+        {executiveDemoMode ? (
+          <div
+            style={{
+              marginBottom: execRealEstateLayout ? "15px" : "2px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              gap: execRealEstateLayout ? "10px" : "6px",
+              flexWrap: "wrap",
+            }}
+          >
+            <div
+              style={{
+                flex: execRealEstateLayout ? "1 1 min(1400px, 100%)" : "1 1 min(560px, 100%)",
+                minWidth: 0,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: execRealEstateLayout ? "9.5px" : "9px",
+                  letterSpacing: execRealEstateLayout ? "0.12em" : "0.08em",
+                  color: theme.subtext,
+                  marginBottom: execRealEstateLayout ? "7px" : "2px",
+                  textTransform: "uppercase",
+                  fontWeight: execRealEstateLayout ? 600 : 400,
+                }}
+              >
+                {getExecutiveDemoHero(uiLanguage).eyebrow}
+              </div>
+              <h1
+                style={{
+                  fontSize: execRealEstateLayout ? "18px" : "15px",
+                  fontWeight: 700,
+                  margin: execRealEstateLayout ? "0 0 10px 0" : "0 0 2px 0",
+                  lineHeight: execRealEstateLayout ? 1.08 : 1.12,
+                  color: theme.text,
+                  letterSpacing: execRealEstateLayout ? "-0.028em" : undefined,
+                }}
+              >
+                {getExecutiveDemoHero(uiLanguage).title}
+              </h1>
+              <p
+                style={{
+                  fontSize: execRealEstateLayout ? "12px" : "11px",
+                  margin: execRealEstateLayout ? "0 0 5px 0" : "0 0 2px 0",
+                  color: theme.text,
+                  lineHeight: execRealEstateLayout ? 1.32 : 1.26,
+                  fontWeight: 600,
+                  maxWidth: execRealEstateLayout ? "min(1280px, 96%)" : "920px",
+                }}
+              >
+                {getExecutiveDemoHero(uiLanguage).problemStatement}
+              </p>
+              <p
+                style={{
+                  fontSize: execRealEstateLayout ? "11px" : "10px",
+                  margin: execRealEstateLayout ? "5px 0 0 0" : "0 0 1px 0",
+                  color: theme.subtext,
+                  lineHeight: execRealEstateLayout ? 1.38 : 1.28,
+                  maxWidth: execRealEstateLayout ? "min(1240px, 94%)" : "920px",
+                }}
+              >
+                {getExecutiveDemoHero(uiLanguage).subtitle}{" "}
+                <span style={{ color: theme.subtext, opacity: 0.9 }}>
+                  {getExecutiveDemoHero(uiLanguage).valueLine}
+                </span>
+              </p>
+              {!execRealEstateLayout && (
+              <p
+                style={{
+                  margin: execRealEstateLayout ? "1px 0 0" : "2px 0 0",
+                  fontSize: "9.5px",
+                  color: theme.subtext,
+                  lineHeight: execRealEstateLayout ? 1.25 : 1.3,
+                }}
+              >
+                <span style={{ fontWeight: 700, color: "#93c5fd" }}>
+                  {uiLanguage === "sv" ? "Spår:" : "Preset:"}
+                </span>{" "}
+                {getExecutiveDemoPlaybackPresetTitle(uiLanguage)}
+              </p>
+              )}
+            </div>
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: execRealEstateLayout ? "6px" : "6px",
+                justifyContent: "flex-end",
+                alignItems: "flex-start",
+                flexShrink: 0,
+                paddingTop: execRealEstateLayout ? "2px" : undefined,
+                opacity: execRealEstateLayout ? 0.62 : 1,
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setUiLanguage((l) => (l === "sv" ? "en" : "sv"))}
+                style={{
+                  borderRadius: "5px",
+                  cursor: "pointer",
+                  ...(execRealEstateLayout
+                    ? {
+                        padding: "4px 8px",
+                        fontSize: "10px",
+                        color: "#94a3b8",
+                        border: "1px solid rgba(55,65,81,0.45)",
+                        background: "rgba(15,23,42,0.55)",
+                      }
+                    : {
+                        padding: "5px 9px",
+                        fontSize: "11px",
+                        border: "1px solid #374151",
+                        background: "#111827",
+                        color: "#E5E7EB",
+                      }),
+                }}
+              >
+                {uiLanguage === "sv" ? "SV" : "EN"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setUiTheme((t) => (t === "dark" ? "light" : "dark"))}
+                style={{
+                  borderRadius: "5px",
+                  cursor: "pointer",
+                  ...(execRealEstateLayout
+                    ? {
+                        padding: "4px 8px",
+                        fontSize: "10px",
+                        color: "#94a3b8",
+                        border: "1px solid rgba(55,65,81,0.45)",
+                        background: "rgba(15,23,42,0.55)",
+                      }
+                    : {
+                        padding: "5px 9px",
+                        fontSize: "11px",
+                        border: "1px solid #374151",
+                        background: "#111827",
+                        color: "#E5E7EB",
+                      }),
+                }}
+              >
+                {uiTheme === "dark" ? "Theme: Dark" : "Theme: Light"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setUiMode((m) => (m === "executive" ? "expert" : "executive"));
+                }}
+                style={{
+                  borderRadius: "5px",
+                  cursor: "pointer",
+                  ...(execRealEstateLayout
+                    ? {
+                        padding: "4px 8px",
+                        fontSize: "10px",
+                        color: "#94a3b8",
+                        border: "1px solid rgba(55,65,81,0.45)",
+                        background: "rgba(15,23,42,0.55)",
+                      }
+                    : {
+                        padding: "5px 9px",
+                        fontSize: "11px",
+                        border: "1px solid #374151",
+                        background: "#111827",
+                        color: "#E5E7EB",
+                      }),
+                }}
+              >
+                {uiMode === "executive" ? pt.expertMode : pt.executiveMode}
+              </button>
+              <button
+                type="button"
+                onClick={() => setExecutiveDemoMode((v) => !v)}
+                style={{
+                  borderRadius: "5px",
+                  cursor: "pointer",
+                  ...(execRealEstateLayout
+                    ? {
+                        padding: "4px 8px",
+                        fontSize: "10px",
+                        color: "#a8b4c4",
+                        border: "1px solid rgba(59,130,246,0.32)",
+                        background: "rgba(30,58,95,0.35)",
+                      }
+                    : {
+                        padding: "5px 9px",
+                        fontSize: "11px",
+                        border: "1px solid #3b82f6",
+                        background: "#1e3a5f",
+                        color: "#E5E7EB",
+                      }),
+                }}
+                title={pt.executiveDemoPresentationExit}
+              >
+                {pt.executiveDemoPresentationExit}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <h1 style={{ fontSize: "22px", marginBottom: "24px" }}>
+              {pt.pilotDomainTitle[domain]} — {pt.pilotPageTitleSuffix}
+            </h1>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "8px",
+                marginBottom: "8px",
+                flexWrap: "wrap",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setUiLanguage((l) => (l === "sv" ? "en" : "sv"))}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: "6px",
+                  border: "1px solid #374151",
+                  background: "#111827",
+                  color: "#E5E7EB",
+                  fontSize: "12px",
+                  cursor: "pointer",
+                }}
+              >
+                {uiLanguage === "sv" ? "SV" : "EN"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setUiTheme((t) => (t === "dark" ? "light" : "dark"))}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: "6px",
+                  border: "1px solid #374151",
+                  background: "#111827",
+                  color: "#E5E7EB",
+                  fontSize: "12px",
+                  cursor: "pointer",
+                }}
+              >
+                {uiTheme === "dark" ? "Theme: Dark" : "Theme: Light"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowHelp(!showHelp)}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: "6px",
+                  border: "1px solid #374151",
+                  background: "#111827",
+                  color: "#E5E7EB",
+                  fontSize: "12px",
+                  cursor: "pointer",
+                }}
+              >
+                Help
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setUiMode((m) => (m === "executive" ? "expert" : "executive"));
+                }}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: "6px",
+                  border: "1px solid #374151",
+                  background: "#111827",
+                  color: "#E5E7EB",
+                  fontSize: "12px",
+                  cursor: "pointer",
+                }}
+              >
+                {uiMode === "executive" ? pt.expertMode : pt.executiveMode}
+              </button>
+              <button
+                type="button"
+                onClick={() => setExecutiveDemoMode((v) => !v)}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: "6px",
+                  border: executiveDemoMode ? "1px solid #3b82f6" : "1px solid #374151",
+                  background: executiveDemoMode ? "#1e3a5f" : "#111827",
+                  color: "#E5E7EB",
+                  fontSize: "12px",
+                  cursor: "pointer",
+                }}
+                title={executiveDemoMode ? pt.executiveDemoPresentationExit : pt.executiveDemoPresentation}
+              >
+                {executiveDemoMode ? pt.executiveDemoPresentationExit : pt.executiveDemoPresentation}
+              </button>
+            </div>
+          </>
+        )}
       <div
         style={{
-          marginBottom: "16px",
+          marginBottom:
+            executiveDemoMode
+              ? execRealEstateLayout
+                ? "8px"
+                : "3px"
+              : "16px",
+          paddingTop: executiveDemoMode && execRealEstateLayout ? "10px" : undefined,
+          borderTop:
+            executiveDemoMode && execRealEstateLayout
+              ? "1px solid rgba(148,163,184,0.14)"
+              : undefined,
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          gap: "12px",
+          gap: executiveDemoMode ? (execRealEstateLayout ? "8px" : "5px") : "8px",
           flexWrap: "wrap",
         }}
       >
@@ -1797,64 +2146,90 @@ export default function PilotFastighetPage() {
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "12px",
+            gap: executiveDemoMode ? (execRealEstateLayout ? "7px" : "6px") : "12px",
             flexWrap: "wrap",
           }}
         >
-          <label style={{ fontSize: "13px", marginRight: "6px", color: theme.subtext }}>Case</label>
-          <select
-            value={selectedPilotCaseId}
-            onChange={(e) => {
-              const id = e.target.value;
-              setSelectedPilotCaseId(id);
-              setSimulationSource("case");
-              if (id === "") return;
-              const pilotCase = PILOT_CASES.find((c) => c.id === id);
-              if (pilotCase) {
-                setRiskStateA(structuredClone(pilotCase.riskStateA));
-                setRiskStateB(structuredClone(pilotCase.riskStateB));
-                setIsDirty(true);
-                setHasSimulationCompleted(false);
-                setIsRunning(false);
-                resetRunState();
-              }
-            }}
+          {!executiveDemoMode && (
+            <>
+              <label style={{ fontSize: "13px", marginRight: "6px", color: theme.subtext }}>Case</label>
+              <select
+                value={selectedPilotCaseId}
+                onChange={(e) => {
+                  const id = e.target.value;
+                  setSelectedPilotCaseId(id);
+                  setSimulationSource("case");
+                  if (id === "") return;
+                  const pilotCase = PILOT_CASES.find((c) => c.id === id);
+                  if (pilotCase) {
+                    setRiskStateA(structuredClone(pilotCase.riskStateA));
+                    setRiskStateB(structuredClone(pilotCase.riskStateB));
+                    setIsDirty(true);
+                    setHasSimulationCompleted(false);
+                    setIsRunning(false);
+                    resetRunState();
+                  }
+                }}
+                style={{
+                  background: "#0e1117",
+                  color: "#e6edf3",
+                  border: "1px solid #2f333a",
+                  borderRadius: "6px",
+                  padding: "6px 10px",
+                  fontSize: "13px",
+                  marginRight: "16px",
+                }}
+              >
+                <option value="">Custom</option>
+                {visiblePilotCases.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {CASE_TRANSLATIONS[c.title as keyof typeof CASE_TRANSLATIONS]?.[uiLanguage] ?? c.title}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
+          <label
             style={{
-              background: "#0e1117",
-              color: "#e6edf3",
-              border: "1px solid #2f333a",
-              borderRadius: "6px",
-              padding: "6px 10px",
-              fontSize: "13px",
-              marginRight: "16px",
+              fontSize: executiveDemoMode ? "11px" : "13px",
+              marginRight: executiveDemoMode ? "4px" : "6px",
+              color: theme.subtext,
             }}
           >
-            <option value="">Custom</option>
-            {visiblePilotCases.map((c) => (
-              <option key={c.id} value={c.id}>
-                {CASE_TRANSLATIONS[c.title as keyof typeof CASE_TRANSLATIONS]?.[uiLanguage] ?? c.title}
-              </option>
-            ))}
-          </select>
-          <label style={{ fontSize: "13px", marginRight: "6px", color: theme.subtext }}>
-            {uiLanguage === "sv" ? "Mål:" : "Goal:"}
+            {executiveDemoMode
+              ? getExecutiveDemoGoalPickerLabel(uiLanguage)
+              : uiLanguage === "sv"
+                ? "Mål:"
+                : "Goal:"}
           </label>
           <select
             value={selectedGoal}
             onChange={(e) => setSelectedGoal(e.target.value as any)}
-            className="px-2 py-1 rounded border bg-gray-800 text-gray-200"
+            className={
+              executiveDemoMode
+                ? "px-1.5 py-0.5 text-[11px] rounded border bg-gray-800 text-gray-200"
+                : "px-2 py-1 rounded border bg-gray-800 text-gray-200"
+            }
           >
             <option value="accessibility">
-              {resolveTopLevelGoalLabel("accessibility", caseType)}
+              {executiveDemoMode
+                ? getExecutiveDemoGoalOptionLabel("accessibility", uiLanguage)
+                : resolveTopLevelGoalLabel("accessibility", caseType)}
             </option>
             <option value="congestion">
-              {resolveTopLevelGoalLabel("congestion", caseType)}
+              {executiveDemoMode
+                ? getExecutiveDemoGoalOptionLabel("congestion", uiLanguage)
+                : resolveTopLevelGoalLabel("congestion", caseType)}
             </option>
             <option value="margin_stability">
-              {resolveTopLevelGoalLabel("margin_stability", caseType)}
+              {executiveDemoMode
+                ? getExecutiveDemoGoalOptionLabel("margin_stability", uiLanguage)
+                : resolveTopLevelGoalLabel("margin_stability", caseType)}
             </option>
             <option value="avoid_tipping">
-              {resolveTopLevelGoalLabel("avoid_tipping", caseType)}
+              {executiveDemoMode
+                ? getExecutiveDemoGoalOptionLabel("avoid_tipping", uiLanguage)
+                : resolveTopLevelGoalLabel("avoid_tipping", caseType)}
             </option>
           </select>
           <button
@@ -1866,10 +2241,11 @@ export default function PilotFastighetPage() {
               setActiveScenario("A");
             }}
             style={{
-              padding: "8px 16px",
+              padding: executiveDemoMode ? "5px 11px" : "8px 16px",
+              fontSize: executiveDemoMode ? "11px" : undefined,
               background: showA && !showB ? "#2f333a" : "#1a1a1a",
               border: "1px solid #2f333a",
-              borderRadius: "6px",
+              borderRadius: executiveDemoMode ? "5px" : "6px",
               color: "#e6edf3",
               cursor: "pointer",
             }}
@@ -1885,10 +2261,11 @@ export default function PilotFastighetPage() {
               setActiveScenario("B");
             }}
             style={{
-              padding: "8px 16px",
+              padding: executiveDemoMode ? "5px 11px" : "8px 16px",
+              fontSize: executiveDemoMode ? "11px" : undefined,
               background: showB && !showA ? "#2f333a" : "#1a1a1a",
               border: "1px solid #2f333a",
-              borderRadius: "6px",
+              borderRadius: executiveDemoMode ? "5px" : "6px",
               color: "#e6edf3",
               cursor: "pointer",
             }}
@@ -1904,64 +2281,69 @@ export default function PilotFastighetPage() {
               setActiveScenario("BOTH");
             }}
             style={{
-              padding: "8px 16px",
+              padding: executiveDemoMode ? "5px 11px" : "8px 16px",
+              fontSize: executiveDemoMode ? "11px" : undefined,
               background: showA && showB ? "#2f333a" : "#1a1a1a",
               border: "1px solid #2f333a",
-              borderRadius: "6px",
+              borderRadius: executiveDemoMode ? "5px" : "6px",
               color: "#e6edf3",
               cursor: "pointer",
             }}
           >
             {pulseLanguage[uiLanguage].both}
           </button>
-          <button
-            type="button"
-            onClick={freezeScenarioA}
-            style={{
-              padding: "8px 16px",
-              background: "#1a1a1a",
-              border: "1px solid #2f333a",
-              borderRadius: "6px",
-              color: "#e6edf3",
-              cursor: "pointer",
-            }}
-          >
-            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <span
+          {!executiveDemoMode && (
+            <>
+              <button
+                type="button"
+                onClick={freezeScenarioA}
                 style={{
-                  opacity: freezeFlash === "A" ? 0.6 : 1,
-                  transition: "opacity 0.2s ease",
+                  padding: "8px 16px",
+                  background: "#1a1a1a",
+                  border: "1px solid #2f333a",
+                  borderRadius: "6px",
+                  color: "#e6edf3",
+                  cursor: "pointer",
                 }}
               >
-                {freezeFlash === "A" ? "✓" : "✚"}
-              </span>
-              {`${uiLanguage === "sv" ? "Frys" : "Freeze"} ${scenarioALabelText}`}
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={freezeScenarioB}
-            style={{
-              padding: "8px 16px",
-              background: "#1a1a1a",
-              border: "1px solid #2f333a",
-              borderRadius: "6px",
-              color: "#e6edf3",
-              cursor: "pointer",
-            }}
-          >
-            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <span
+                <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span
+                    style={{
+                      opacity: freezeFlash === "A" ? 0.6 : 1,
+                      transition: "opacity 0.2s ease",
+                    }}
+                  >
+                    {freezeFlash === "A" ? "✓" : "✚"}
+                  </span>
+                  {`${uiLanguage === "sv" ? "Frys" : "Freeze"} ${scenarioALabelText}`}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={freezeScenarioB}
                 style={{
-                  opacity: freezeFlash === "B" ? 0.6 : 1,
-                  transition: "opacity 0.2s ease",
+                  padding: "8px 16px",
+                  background: "#1a1a1a",
+                  border: "1px solid #2f333a",
+                  borderRadius: "6px",
+                  color: "#e6edf3",
+                  cursor: "pointer",
                 }}
               >
-                {freezeFlash === "B" ? "✓" : "✚"}
-              </span>
-              {`${uiLanguage === "sv" ? "Frys" : "Freeze"} ${scenarioBLabelText}`}
-            </span>
-          </button>
+                <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span
+                    style={{
+                      opacity: freezeFlash === "B" ? 0.6 : 1,
+                      transition: "opacity 0.2s ease",
+                    }}
+                  >
+                    {freezeFlash === "B" ? "✓" : "✚"}
+                  </span>
+                  {`${uiLanguage === "sv" ? "Frys" : "Freeze"} ${scenarioBLabelText}`}
+                </span>
+              </button>
+            </>
+          )}
           <button
             type="button"
             disabled={isRunning}
@@ -1969,10 +2351,11 @@ export default function PilotFastighetPage() {
               startSimulation("manual", riskStateA, riskStateB);
             }}
             style={{
-              padding: "8px 16px",
+              padding: executiveDemoMode ? "5px 11px" : "8px 16px",
+              fontSize: executiveDemoMode ? "11px" : undefined,
               background: "#1a1a1a",
               border: "1px solid #2f333a",
-              borderRadius: "6px",
+              borderRadius: executiveDemoMode ? "5px" : "6px",
               color: "#e6edf3",
               cursor: isRunning ? "not-allowed" : "pointer",
             }}
@@ -2004,10 +2387,11 @@ export default function PilotFastighetPage() {
               }
             }}
             style={{
-              padding: "8px 16px",
+              padding: executiveDemoMode ? "5px 11px" : "8px 16px",
+              fontSize: executiveDemoMode ? "11px" : undefined,
               background: "#1a1a1a",
               border: "1px solid #2f333a",
-              borderRadius: "6px",
+              borderRadius: executiveDemoMode ? "5px" : "6px",
               color: "#e6edf3",
               cursor: !isRunning ? "not-allowed" : "pointer",
             }}
@@ -2043,19 +2427,39 @@ export default function PilotFastighetPage() {
               setShowHelp(false);
             }}
             style={{
-              padding: "8px 16px",
+              padding: executiveDemoMode ? "5px 11px" : "8px 16px",
+              fontSize: executiveDemoMode ? "11px" : undefined,
               background: "#1a1a1a",
               border: "1px solid #2f333a",
-              borderRadius: "6px",
+              borderRadius: executiveDemoMode ? "5px" : "6px",
               color: "#e6edf3",
               cursor: "pointer",
             }}
           >
             {pulseLanguage[uiLanguage].reset}
           </button>
+          {execRealEstateLayout && (
+            <div
+              className="shrink-0 flex items-center gap-1.5 rounded-full border border-slate-600/65 bg-slate-900/75 px-2.5 py-1 max-h-[38px] max-w-[258px]"
+              role="note"
+              title={`${getExecutiveDemoPlaybackPresetTitle(uiLanguage)} — ${getExecutiveDemoPlaybackInitiativesNote(uiLanguage)}`}
+            >
+              <span className="shrink-0 rounded-sm border border-sky-900/60 bg-blue-950/80 px-[5px] py-[1px] text-[7.5px] font-bold uppercase tracking-wider text-sky-300">
+                Demo
+              </span>
+              <div className="min-w-0 overflow-hidden leading-tight">
+                <div className="truncate text-[9.5px] font-semibold text-slate-100">
+                  {getExecutiveDemoPlaybackPresetTitle(uiLanguage)}
+                </div>
+                <div className="truncate text-[8px] text-slate-500">
+                  {getExecutiveDemoPlaybackInitiativesNote(uiLanguage)}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
-      {showHelp && (
+      {showHelp && !executiveDemoMode && (
         <div
           style={{
             marginBottom: "12px",
@@ -2093,13 +2497,15 @@ export default function PilotFastighetPage() {
           </ol>
         </div>
       )}
-      {selectedPilotCaseId && PILOT_CASES.find((c) => c.id === selectedPilotCaseId) && (
+      {!executiveDemoMode &&
+        selectedPilotCaseId &&
+        PILOT_CASES.find((c) => c.id === selectedPilotCaseId) && (
         <div style={{ marginBottom: "12px", fontSize: "12px", color: "#9ca3af" }}>
           {PILOT_CASES.find((c) => c.id === selectedPilotCaseId)?.oneLiner}
         </div>
       )}
 
-      {isDirty && (
+      {!executiveDemoMode && isDirty && (
         <div style={{ marginBottom: "12px", fontSize: "13px", color: "#9ca3af" }}>
           {pt.actionNeedsStart}
         </div>
@@ -2107,151 +2513,347 @@ export default function PilotFastighetPage() {
 
       <div
         style={{
-          marginTop: "24px",
+          marginTop: execRealEstateLayout ? "0px" : executiveDemoMode ? "-1px" : "24px",
           display: "grid",
-          gridTemplateColumns: "minmax(0, 420px) minmax(0, 1fr)",
-          gap: "24px",
+          gridTemplateColumns: execRealEstateLayout
+            ? "minmax(0, 1fr)"
+            : executiveDemoMode
+              ? "minmax(0, 1fr) minmax(146px, 184px)"
+              : "minmax(0, 420px) minmax(0, 1fr)",
+          gap: executiveDemoMode ? (execRealEstateLayout ? "16px" : "7px") : "24px",
           alignItems: "start",
           minWidth: 0,
           maxWidth: "100%",
           overflowX: "hidden",
+          ...(execRealEstateLayout
+            ? { flex: "1 1 auto", minHeight: "min(63dvh, 1040px)" }
+            : {}),
         }}
       >
-        <div style={{ position: "sticky", top: "16px", minWidth: 0, maxWidth: "100%" }}>
-          <div style={{ marginBottom: "24px" }}>
-            <ActionPanel
-              language={uiLanguage}
-              domain={domain}
-              selectedActions={selectedActionsForPanel}
-              applyAction={applyAction}
-            />
-            {Object.entries(groupedParameters).map(([groupName, params]) => (
+        {!(executiveDemoMode && execRealEstateLayout) && (
+        <div
+          style={{
+            position: "sticky",
+            top: executiveDemoMode ? "6px" : "16px",
+            minWidth: 0,
+            maxWidth: "100%",
+            gridColumn: executiveDemoMode ? "2 / 3" : "1 / 2",
+          }}
+        >
+          <div
+            style={{
+              marginBottom: executiveDemoMode ? (execRealEstateLayout ? "0px" : "3px") : "24px",
+            }}
+          >
+            {executiveDemoMode ? (
               <div
-                key={groupName}
-                style={{
-                  marginBottom: "24px",
-                  padding: "16px",
-                  background: "#1a1a1a",
-                  border: "1px solid #2f333a",
-                  borderRadius: "8px",
-                }}
+                className="rounded-md border border-slate-600/70 bg-slate-900/60 px-2 py-1 text-gray-200"
               >
+                <div className="text-[9px] font-semibold uppercase tracking-wide text-slate-500 mb-0">
+                  {uiLanguage === "sv" ? "Demo" : "Demo"}
+                </div>
+                <div className="text-[11px] font-medium text-slate-100 leading-snug">
+                  {getExecutiveDemoPlaybackPresetTitle(uiLanguage)}
+                </div>
+                <p className="text-[9px] text-slate-500 leading-snug m-0 mt-1">
+                  {getExecutiveDemoPlaybackInitiativesNote(uiLanguage)}
+                </p>
+              </div>
+            ) : (
+              <ActionPanel
+                language={uiLanguage}
+                domain={domain}
+                selectedActions={selectedActionsForPanel}
+                applyAction={applyAction}
+                executiveDemoMode={executiveDemoMode}
+              />
+            )}
+            {!executiveDemoMode &&
+              Object.entries(groupedParameters).map(([groupName, params]) => (
                 <div
+                  key={groupName}
                   style={{
-                    fontSize: "14px",
-                    fontWeight: 600,
-                    marginBottom: "12px",
-                    color: "#9ca3af",
+                    marginBottom: "24px",
+                    padding: "16px",
+                    background: "#1a1a1a",
+                    border: "1px solid #2f333a",
+                    borderRadius: "8px",
                   }}
                 >
-                  {groupName}
-                </div>
-                {params.map((param) => {
-                  const isGoalRelevant =
-                    selectedGoal &&
-                    goalRelevantDrivers[selectedGoal]?.includes(param.key);
+                  <div
+                    style={{
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      marginBottom: "12px",
+                      color: "#9ca3af",
+                    }}
+                  >
+                    {groupName}
+                  </div>
+                  {params.map((param) => {
+                    const isGoalRelevant =
+                      selectedGoal &&
+                      goalRelevantDrivers[selectedGoal]?.includes(param.key);
 
-                  return (
-                    <div
-                      key={param.key}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: "10px",
-                        background: isGoalRelevant
-                          ? "rgba(59,130,246,0.12)"
-                          : "transparent",
-                        borderLeft: isGoalRelevant
-                          ? "3px solid #3b82f6"
-                          : "3px solid transparent",
-                        paddingLeft: "6px",
-                      }}
-                    >
-                      <span style={{ fontSize: "13px" }}>
-                        {pulseLanguage[uiLanguage].riskLabels[param.key] ??
-                          (typeof param.label === "string"
-                            ? param.label
-                            : param.label[uiLanguage])}
-                      </span>
-                      <select
-                        value={activeRiskState[param.key]}
-                        disabled={!isEditableScenario}
-                        onChange={(e) => {
-                          handleParameterChange(param.key, e.target.value as RiskLevel);
-                        }}
+                    return (
+                      <div
+                        key={param.key}
                         style={{
-                          background: "#0e1117",
-                          color: "#e6edf3",
-                          border: "1px solid #2f333a",
-                          borderRadius: "6px",
-                          padding: "4px 8px",
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          marginBottom: "10px",
+                          background: isGoalRelevant
+                            ? "rgba(59,130,246,0.12)"
+                            : "transparent",
+                          borderLeft: isGoalRelevant
+                            ? "3px solid #3b82f6"
+                            : "3px solid transparent",
+                          paddingLeft: "6px",
                         }}
                       >
-                        <option value="LOW">LOW</option>
-                        <option value="MODERATE">MODERATE</option>
-                        <option value="HIGH">HIGH</option>
-                        <option value="SEVERE">SEVERE</option>
-                      </select>
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
+                        <span style={{ fontSize: "13px" }}>
+                          {pulseLanguage[uiLanguage].riskLabels[param.key] ??
+                            (typeof param.label === "string"
+                              ? param.label
+                              : param.label[uiLanguage])}
+                        </span>
+                        <select
+                          value={activeRiskState[param.key]}
+                          disabled={!isEditableScenario}
+                          onChange={(e) => {
+                            handleParameterChange(param.key, e.target.value as RiskLevel);
+                          }}
+                          style={{
+                            background: "#0e1117",
+                            color: "#e6edf3",
+                            border: "1px solid #2f333a",
+                            borderRadius: "6px",
+                            padding: "4px 8px",
+                          }}
+                        >
+                          <option value="LOW">LOW</option>
+                          <option value="MODERATE">MODERATE</option>
+                          <option value="HIGH">HIGH</option>
+                          <option value="SEVERE">SEVERE</option>
+                        </select>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
           </div>
         </div>
-
-        <div style={{ minWidth: 0, maxWidth: "100%", overflowX: "hidden" }}>
+        )}
+        <div
+          style={{
+            minWidth: 0,
+            maxWidth: "100%",
+            overflowX: "hidden",
+            gridColumn:
+              executiveDemoMode && execRealEstateLayout
+                ? "1 / -1"
+                : executiveDemoMode
+                  ? "1 / 2"
+                  : "2 / 3",
+            ...(execRealEstateLayout
+              ? {
+                  display: "flex",
+                  flexDirection: "column",
+                  flex: "1 1 auto",
+                  minHeight: 0,
+                }
+              : {}),
+          }}
+        >
           {/* Impact panel – margins above graph */}
           <div
             style={{
-              marginBottom: "24px",
-              padding: "16px 20px",
+              marginBottom: executiveDemoMode ? (execRealEstateLayout ? "6px" : "4px") : "24px",
+              padding: executiveDemoMode ? (execRealEstateLayout ? "7px 14px 8px" : "4px 9px") : "16px 20px",
               background: "#111827",
               border: "1px solid #1f2937",
               borderRadius: "8px",
             }}
           >
-            <div style={{ display: "flex", gap: "24px", flexWrap: "wrap", alignItems: "flex-end" }}>
+            <div
+              style={{
+                display: "flex",
+                gap: executiveDemoMode ? (execRealEstateLayout ? "12px" : "11px") : "16px",
+                flexWrap: "wrap",
+                alignItems: "flex-end",
+              }}
+            >
               <div>
-                <div style={{ fontSize: "12px", color: "#9CA3AF" }}>Nuvarande strategi – marginal</div>
-                <div style={{ fontSize: "18px", fontWeight: 600 }}>
+                <div
+                  style={{
+                    fontSize: execRealEstateLayout ? "10px" : executiveDemoMode ? "9px" : "12px",
+                    color: "#9CA3AF",
+                  }}
+                >
+                  {executiveDemoMode
+                    ? getExecutiveDemoMarginStripLabels(uiLanguage).scenarioA
+                    : uiLanguage === "sv"
+                      ? "Nuvarande strategi – marginal"
+                      : "Current strategy – margin"}
+                </div>
+                <div
+                  style={{
+                    fontSize: execRealEstateLayout ? "14px" : executiveDemoMode ? "13px" : "18px",
+                    fontWeight: 600,
+                  }}
+                >
                   {stateA.margin.toFixed(5)}
                 </div>
               </div>
               <div>
-                <div style={{ fontSize: "12px", color: "#9CA3AF" }}>Alternativ strategi – marginal</div>
-                <div style={{ fontSize: "18px", fontWeight: 600 }}>
+                <div
+                  style={{
+                    fontSize: execRealEstateLayout ? "10px" : executiveDemoMode ? "9px" : "12px",
+                    color: "#9CA3AF",
+                  }}
+                >
+                  {executiveDemoMode
+                    ? getExecutiveDemoMarginStripLabels(uiLanguage).scenarioB
+                    : uiLanguage === "sv"
+                      ? "Alternativ strategi – marginal"
+                      : "Alternative strategy – margin"}
+                </div>
+                <div
+                  style={{
+                    fontSize: execRealEstateLayout ? "14px" : executiveDemoMode ? "13px" : "18px",
+                    fontWeight: 600,
+                  }}
+                >
                   {stateB.margin.toFixed(5)}
                 </div>
               </div>
               <div>
-                <div style={{ fontSize: "12px", color: "#9CA3AF" }}>Skillnad</div>
-                <div style={{ fontSize: "16px", fontWeight: 600 }}>
+                <div
+                  style={{
+                    fontSize: execRealEstateLayout ? "10px" : executiveDemoMode ? "9px" : "12px",
+                    color: "#9CA3AF",
+                  }}
+                >
+                  {executiveDemoMode
+                    ? getExecutiveDemoMarginStripLabels(uiLanguage).delta
+                    : uiLanguage === "sv"
+                      ? "Skillnad"
+                      : "Difference"}
+                </div>
+                <div
+                  style={{
+                    fontSize: execRealEstateLayout ? "14px" : executiveDemoMode ? "13px" : "16px",
+                    fontWeight: 600,
+                  }}
+                >
                   {(stateB.margin - stateA.margin).toFixed(5)}
                 </div>
               </div>
               <div
                 style={{
                   marginLeft: "auto",
-                  fontSize: "12px",
+                  fontSize: execRealEstateLayout ? "10px" : executiveDemoMode ? "9px" : "12px",
                   color: "#9CA3AF",
                   fontWeight: 500,
                   textAlign: "right",
                 }}
               >
-                {uiLanguage === "sv"
-                  ? `Simulerad period: M1 → M${(stateA.step ?? 0) + 1}`
-                  : `Simulated period: M1 → M${(stateA.step ?? 0) + 1}`}
+                {executiveDemoMode
+                  ? `${getExecutiveDemoMarginStripLabels(uiLanguage).period}: M1 → M${(stateA.step ?? 0) + 1}`
+                  : uiLanguage === "sv"
+                    ? `Simulerad period: M1 → M${(stateA.step ?? 0) + 1}`
+                    : `Simulated period: M1 → M${(stateA.step ?? 0) + 1}`}
               </div>
             </div>
           </div>
 
+          {executiveScenarioComparisonStrip && (
+              <div
+                style={{
+                  marginBottom: execRealEstateLayout ? "7px" : "3px",
+                  display: "flex",
+                  gap: execRealEstateLayout ? "8px" : "6px",
+                  flexWrap: "wrap",
+                  alignItems: "stretch",
+                }}
+              >
+                <div
+                  style={{
+                    flex: "1 1 240px",
+                    minWidth: 0,
+                    padding: execRealEstateLayout ? "7px 9px 8px" : "5px 8px",
+                    background: "rgba(15, 23, 42, 0.75)",
+                    border: "1px solid #334155",
+                    borderRadius: "6px",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "8.5px",
+                      fontWeight: 700,
+                      color: "#94a3b8",
+                      letterSpacing: "0.04em",
+                    }}
+                  >
+                    {executiveScenarioComparisonStrip.current.heading}
+                  </div>
+                  <p
+                    style={{
+                      margin: execRealEstateLayout ? "1px 0 0" : "2px 0 0",
+                      color: "#e2e8f0",
+                      fontSize: "10px",
+                      lineHeight: execRealEstateLayout ? 1.28 : 1.3,
+                    }}
+                  >
+                    {executiveScenarioComparisonStrip.current.bullets.join(
+                      uiLanguage === "sv" ? " · " : " · "
+                    )}
+                  </p>
+                </div>
+                <div
+                  style={{
+                    flex: "1 1 240px",
+                    minWidth: 0,
+                    padding: execRealEstateLayout ? "7px 9px 8px" : "5px 8px",
+                    background: "rgba(15, 23, 42, 0.75)",
+                    border: "1px solid #334155",
+                    borderRadius: "6px",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "8.5px",
+                      fontWeight: 700,
+                      color: "#94a3b8",
+                      letterSpacing: "0.04em",
+                    }}
+                  >
+                    {executiveScenarioComparisonStrip.alternative.heading}
+                  </div>
+                  <p
+                    style={{
+                      margin: execRealEstateLayout ? "1px 0 0" : "2px 0 0",
+                      color: "#e2e8f0",
+                      fontSize: "10px",
+                      lineHeight: execRealEstateLayout ? 1.28 : 1.3,
+                    }}
+                  >
+                    {executiveScenarioComparisonStrip.alternative.bullets.join(" · ")}
+                  </p>
+                </div>
+              </div>
+            )}
+
           {/* Margin trajectory graph */}
           <div
             style={{
-              marginBottom: "12px",
-              padding: "12px 16px",
+              marginBottom: execRealEstateLayout ? "3px" : executiveDemoMode ? "5px" : "12px",
+              padding: execRealEstateLayout
+                ? "0 3px 0px"
+                : executiveDemoMode
+                  ? "5px 9px 6px"
+                  : "12px 16px",
               width: "100%",
               border: `1px solid ${theme.graphBorder}`,
               borderRadius: "8px",
@@ -2295,53 +2897,103 @@ export default function PilotFastighetPage() {
           setIsDragging(false);
         }}
       >
-        <div className="flex flex-col gap-2">
-          <div className="text-sm font-medium text-slate-200">
-            Strukturellt handlingsutrymme över tid
-          </div>
-          <div className="text-xs text-slate-500">
-            {caseType === "real-estate"
-              ? "Fokus: Hur refinansiering, kapitalbindning, beläggning och kassaflöde påverkar portföljens handlingsutrymme"
-              : `Fokus: ${
-                  transportScenarioTarget === "avoid_tipping"
-                    ? "Tipping-risk och strukturella divergenspunkter"
-                    : transportScenarioTarget === "stabilize_margin"
-                    ? "Strukturell marginalnivå över tid"
-                    : transportScenarioTarget === "reduce_capacity_pressure"
-                    ? "Kapacitetstryckets påverkan på systemets handlingsutrymme"
-                    : transportScenarioTarget === "increase_modal_attractiveness"
-                    ? "Attraktivitetsdriven spridning i transportsystemet"
-                    : "Tillgänglighetsdriven strukturell utveckling"
-                }`}
-          </div>
+        <div className={executiveDemoMode ? "flex flex-col gap-0" : "flex flex-col gap-1.5"}>
+          {executiveDemoMode ? (
+            <>
+              <div
+                className={
+                  execRealEstateLayout
+                    ? "font-semibold text-slate-100 text-[11px] leading-tight tracking-tight"
+                    : "font-semibold text-slate-100 text-[10px] leading-none tracking-tight"
+                }
+              >
+                {getExecutiveDemoGraphFraming(uiLanguage).title}
+              </div>
+              {execRealEstateLayout && (
+                <p
+                  className="text-[9px] text-slate-400 leading-snug max-w-[52rem] mt-1 mb-0 font-medium"
+                  style={{ letterSpacing: "0.01em" }}
+                >
+                  {getExecutiveDemoGraphFraming(uiLanguage).purposeLine}
+                </p>
+              )}
+              <div
+                className={
+                  execRealEstateLayout
+                    ? "text-[9.5px] text-slate-500 leading-[1.32] max-w-[52rem] mt-1"
+                    : "text-[9px] text-slate-500 leading-snug max-w-3xl mt-0.5"
+                }
+              >
+                {getExecutiveDemoGraphFraming(uiLanguage).lead}{" "}
+                <span className="text-slate-600">
+                  {getExecutiveDemoGraphFraming(uiLanguage).nonOptimization}
+                </span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="font-medium text-slate-200 text-sm">
+                Strukturellt handlingsutrymme över tid
+              </div>
+              <div className="text-xs text-slate-500">
+                {caseType === "real-estate"
+                  ? "Fokus: Hur refinansiering, kapitalbindning, beläggning och kassaflöde påverkar portföljens handlingsutrymme"
+                  : `Fokus: ${
+                      transportScenarioTarget === "avoid_tipping"
+                        ? "Tipping-risk och strukturella divergenspunkter"
+                        : transportScenarioTarget === "stabilize_margin"
+                        ? "Strukturell marginalnivå över tid"
+                        : transportScenarioTarget === "reduce_capacity_pressure"
+                        ? "Kapacitetstryckets påverkan på systemets handlingsutrymme"
+                        : transportScenarioTarget === "increase_modal_attractiveness"
+                        ? "Attraktivitetsdriven spridning i transportsystemet"
+                        : "Tillgänglighetsdriven strukturell utveckling"
+                    }`}
+              </div>
 
-          <div className="text-xs text-slate-400 leading-relaxed max-w-xl">
-            {caseType === "real-estate"
-              ? "Grafen visar hur portföljens handlingsutrymme förändras över tid när refinansiering, kapitalbindning, kassaflöde, beläggning och underhållsstrategi utvecklas tillsammans."
-              : "Grafen visar hur systemets strukturella handlingsutrymme förändras över tid beroende på vilka beslut som kombineras. Den visar inte optimal lösning — utan hur beslut påverkar stabilitet, begränsningar och risk för tipping över tid."}
-          </div>
-          <button
-            onClick={() => setShowDriverActivations(prev => !prev)}
-            className="text-xs text-slate-400 hover:text-slate-200"
-            style={{ alignSelf: "flex-start" }}
-          >
-            {caseType === "real-estate"
-              ? showDriverActivations
-                ? "Dölj tidiga påverkanspunkter"
-                : "Visa tidiga påverkanspunkter"
-              : showDriverActivations
-                ? "Dölj driveraktiveringar"
-                : "Visa driveraktiveringar"}
-          </button>
+              <div className="text-xs text-slate-400 leading-relaxed max-w-xl">
+                {caseType === "real-estate"
+                  ? "Grafen visar hur portföljens handlingsutrymme förändras över tid när refinansiering, kapitalbindning, kassaflöde, beläggning och underhållsstrategi utvecklas tillsammans."
+                  : "Grafen visar hur systemets strukturella handlingsutrymme förändras över tid beroende på vilka beslut som kombineras. Den visar inte optimal lösning — utan hur beslut påverkar stabilitet, begränsningar och risk för tipping över tid."}
+              </div>
+              <button
+                onClick={() => setShowDriverActivations((prev) => !prev)}
+                className="text-xs text-slate-400 hover:text-slate-200"
+                style={{ alignSelf: "flex-start" }}
+              >
+                {caseType === "real-estate"
+                  ? showDriverActivations
+                    ? "Dölj tidiga påverkanspunkter"
+                    : "Visa tidiga påverkanspunkter"
+                  : showDriverActivations
+                    ? "Dölj driveraktiveringar"
+                    : "Visa driveraktiveringar"}
+              </button>
+            </>
+          )}
         </div>
         <MarginGraphLegendRow
           uiLanguage={uiLanguage}
+          executiveDemoMode={executiveDemoMode}
+          compactExecutivePresentation={executiveDemoMode && caseType === "real-estate"}
           scenarioALabelText={scenarioALabelText}
           scenarioBLabelText={scenarioBLabelText}
-          selectedScenarioALabel={selectedScenarioALabel}
-          selectedScenarioBLabel={selectedScenarioBLabel}
+          selectedScenarioALabel={
+            selectedScenarioALabel
+              ? executiveDemoMode
+                ? surfaceOrgDemoText(selectedScenarioALabel, uiLanguage)
+                : selectedScenarioALabel
+              : undefined
+          }
+          selectedScenarioBLabel={
+            selectedScenarioBLabel
+              ? executiveDemoMode
+                ? surfaceOrgDemoText(selectedScenarioBLabel, uiLanguage)
+                : selectedScenarioBLabel
+              : undefined
+          }
         />
-        {breachDifference !== null && (
+        {breachDifference !== null && !executiveDemoMode && (
           <div
             style={{
               fontSize: "13px",
@@ -2351,34 +3003,64 @@ export default function PilotFastighetPage() {
             }}
           >
             {breachDifference <= 0
-              ? pulseLanguage[uiLanguage].scenarioBDoesNotDelayBreach
-              : (typeof pulseLanguage[uiLanguage].scenarioBDelaysBreachBy === "function"
+              ? executiveDemoMode
+                ? surfaceOrgDemoText(
+                    pulseLanguage[uiLanguage].scenarioBDoesNotDelayBreach,
+                    uiLanguage
+                  )
+                : pulseLanguage[uiLanguage].scenarioBDoesNotDelayBreach
+              : executiveDemoMode
+                ? surfaceOrgDemoText(
+                    typeof pulseLanguage[uiLanguage].scenarioBDelaysBreachBy === "function"
+                      ? pulseLanguage[uiLanguage].scenarioBDelaysBreachBy(breachDifference)
+                      : String(pulseLanguage[uiLanguage].scenarioBDelaysBreachBy),
+                    uiLanguage
+                  )
+                : typeof pulseLanguage[uiLanguage].scenarioBDelaysBreachBy === "function"
                   ? pulseLanguage[uiLanguage].scenarioBDelaysBreachBy(breachDifference)
-                  : String(pulseLanguage[uiLanguage].scenarioBDelaysBreachBy))}
+                  : String(pulseLanguage[uiLanguage].scenarioBDelaysBreachBy)}
           </div>
         )}
         <div
           style={{
-            display: "flex",
-            gap: 16,
-            alignItems: "flex-start",
+            display: execRealEstateLayout ? "grid" : "flex",
+            flexDirection: execRealEstateLayout ? undefined : "row",
+            gridTemplateColumns: execRealEstateLayout
+              ? "minmax(300px, 0.35fr) minmax(0, 0.65fr)"
+              : undefined,
+            gap: executiveDemoMode ? (execRealEstateLayout ? 14 : 9) : 16,
+            alignItems: execRealEstateLayout ? "stretch" : "flex-start",
             minWidth: 0,
             maxWidth: "100%",
             overflowX: "hidden",
+            ...(execRealEstateLayout
+              ? { flex: "1 1 auto", minHeight: "min(44dvh, 720px)" }
+              : {}),
           }}
         >
           <div
-            style={{
-              flex: 1,
-              background: "#111827",
-              borderRadius: 8,
-              padding: 12,
-              minWidth: 0,
-              maxWidth: "100%",
-              overflowX: "hidden",
-            }}
+            style={
+              execRealEstateLayout
+                ? {
+                    minWidth: 0,
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    flex: "1 1 auto",
+                    overflowX: "hidden",
+                  }
+                : {
+                    flex: executiveDemoMode ? "0 0 clamp(284px, 30vw, 304px)" : "1 1 0",
+                    minWidth: 0,
+                    maxWidth: executiveDemoMode ? 304 : "min(100%, 420px)",
+                    background: executiveDemoMode ? "transparent" : "#111827",
+                    borderRadius: executiveDemoMode ? 0 : 8,
+                    padding: executiveDemoMode ? 0 : 12,
+                    overflowX: "hidden",
+                  }
+            }
           >
-              {caseType === "transport" && (
+              {caseType === "transport" && !executiveDemoMode && (
                 <ScenarioPresetsPanel
                   scenarioTarget={transportScenarioTarget}
                   setScenarioTarget={setTransportScenarioTarget}
@@ -2422,19 +3104,52 @@ export default function PilotFastighetPage() {
                 dominantScenarioDifferenceChannel={
                   transportContext?.dominantScenarioDifferenceChannel ?? null
                 }
+                executiveDemoMode={executiveDemoMode}
               />
           </div>
-          <div style={{ flex: 2, minWidth: 0 }}>
+          <div
+            style={
+              execRealEstateLayout
+                ? {
+                    minWidth: 0,
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    flex: "1 1 auto",
+                    overflowX: "hidden",
+                  }
+                : {
+                    flex: executiveDemoMode ? "1 1 0" : "2.2 1 0",
+                    minWidth: 0,
+                  }
+            }
+          >
             <div
               style={{
                 width: "100%",
                 maxWidth: "100%",
                 overflowX: "hidden",
-                overflowY: "hidden",
+                overflowY: execRealEstateLayout ? "visible" : "hidden",
+                ...(execRealEstateLayout
+                  ? {
+                      flex: "1 1 auto",
+                      display: "flex",
+                      flexDirection: "column",
+                      minHeight: 0,
+                    }
+                  : {}),
               }}
             >
-              <div style={{ width: "100%", maxWidth: "100%" }}>
-                {isDirty && (
+              <div
+                style={{
+                  width: "100%",
+                  maxWidth: "100%",
+                  ...(execRealEstateLayout
+                    ? { flex: "1 1 auto", display: "flex", flexDirection: "column", minHeight: 0 }
+                    : {}),
+                }}
+              >
+                {!executiveDemoMode && isDirty && (
                   <div
                     style={{
                       fontSize: 12,
@@ -2446,7 +3161,15 @@ export default function PilotFastighetPage() {
                     {pt.simulationNeedsUpdate}
                   </div>
                 )}
-                <div style={{ position: "relative", zIndex: 2 }}>
+                <div
+                  style={{
+                    position: "relative",
+                    zIndex: 2,
+                    ...(execRealEstateLayout
+                      ? { flex: "1 1 auto", minHeight: 0 }
+                      : {}),
+                  }}
+                >
                 <MarginGraph
                   marginHistoryA={marginHistoryA}
                   marginHistoryB={marginHistoryB}
@@ -2473,13 +3196,20 @@ export default function PilotFastighetPage() {
                   onSelectMonth={setSelectedMonthData}
                   selectedMonthIndex={selectedMonthData?.monthIndex}
                   graphTitle={undefined}
-                  dominantConstraintMessage={dominantConstraintMessage}
+                  dominantConstraintMessage={dominantConstraintMessage ?? undefined}
                   constraintActivationTimeline={
                     selectedScenario === "A"
                       ? constraintActivationTimelineA
                       : constraintActivationTimelineB
                   }
                   divergenceMonthIndex={divergenceMonthIndex}
+                  executiveDemoMode={executiveDemoMode}
+                  caseType={caseType}
+                  executiveNarrativeMarkers={
+                    executiveDemoMode && caseType === "real-estate"
+                      ? getExecutiveDemoGraphTimelineMarkers(uiLanguage)
+                      : undefined
+                  }
                   scenarioALabel={scenarioALabel}
                   scenarioBLabel={scenarioBLabel}
                   scenarioALegendDefault={scenarioALabelText}
@@ -2487,66 +3217,113 @@ export default function PilotFastighetPage() {
                   scenarioTarget={transportScenarioTarget}
                   showDriverActivations={showDriverActivations}
                 />
-                <div
-                  style={{
-                    marginTop: "16px",
-                    padding: "14px",
-                    borderRadius: "12px",
-                    background: "rgba(30, 41, 59, 0.6)",
-                    border: "1px solid rgba(148, 163, 184, 0.2)"
-                  }}
-                >
-                  <div style={{ fontWeight: 600, marginBottom: "8px" }}>
-                    {uiLanguage === "sv" ? "Systemstatus" : "System status"}
+                {executiveDemoMode && caseType === "real-estate" && (
+                  <div
+                    style={{
+                      marginTop: "auto",
+                      paddingTop: "1px",
+                      flexShrink: 0,
+                    }}
+                  >
+                  <AIInterpretationPanel
+                    language={uiLanguage}
+                    executiveDemoMode={executiveDemoMode}
+                    executiveInterpretationStrip
+                    tippingQuarter={
+                      tippingMarginIndexB != null ? tippingMarginIndexB + 1 : null
+                    }
+                    caseName={getExecutiveDemoPlaybackPresetTitle(uiLanguage)}
+                    events={[
+                      { quarter: 1, type: "Maintenance deferred" },
+                      {
+                        quarter:
+                          tippingMarginIndexB != null
+                            ? tippingMarginIndexB + 1
+                            : 0,
+                        type: "Capital constraint activated",
+                      },
+                    ].filter((e) => e.quarter > 0)}
+                    simulationCompleted={hasSimulationCompleted}
+                    currentMargin={finalA}
+                    alternativeMargin={finalB}
+                    marginImpact={finalB - finalA}
+                    cascadeEventsA={cascadeEventsA}
+                    cascadeEventsB={cascadeEventsB}
+                    primaryDriver={primaryDriver}
+                    systemPressure={systemPressure}
+                    estimatedTimeToBreach={estimatedTimeToBreach}
+                    decisionFlowEvents={sortedDecisionFlowEvents}
+                    marginTrend={marginTrend}
+                    cascadeDelay={cascadeDelaySteps}
+                    caseType={caseType}
+                    selectedActions={selectedActionsForPanel}
+                    primaryDriverChanged={primaryDriverChanged}
+                    constraintActivationChanged={constraintActivationChanged}
+                    propagationRootChanged={propagationRootChanged}
+                    dominantScenarioDifferenceChannel={
+                      transportContext?.dominantScenarioDifferenceChannel ??
+                      (transportContextA?.primaryDriver &&
+                      transportContextB?.primaryDriver &&
+                      transportContextA.primaryDriver !== transportContextB.primaryDriver
+                        ? `${transportContextA.primaryDriver} → ${transportContextB.primaryDriver}`
+                        : null)
+                    }
+                  />
                   </div>
-
-                  <div>
-                    {uiLanguage === "sv"
-                      ? `Nuläge: ${finalA >= 0 ? "Robust" : "Kollapszon"} (marginal ${finalA.toFixed(2)})`
-                      : `Baseline: ${finalA >= 0 ? "Robust" : "Collapse zone"} (margin ${finalA.toFixed(2)})`}
-                  </div>
-
-                  <div>
-                    {uiLanguage === "sv"
-                      ? `Målstrategi: ${finalB >= 0 ? "Robust" : "Kollapszon"} (marginal ${finalB.toFixed(2)})`
-                      : `Target strategy: ${finalB >= 0 ? "Robust" : "Collapse zone"} (margin ${finalB.toFixed(2)})`}
-                  </div>
-
-                  <div style={{ marginTop: "6px" }}>
-                    {uiLanguage === "sv"
-                      ? `Kapitalbegränsning: ${
-                          tippingMarginIndexB != null ? "AKTIV" : "INAKTIV"
-                        }`
-                      : `Capital constraint: ${
-                          tippingMarginIndexB != null ? "ACTIVE" : "INACTIVE"
-                        }`}
-                  </div>
-
-                  <div style={{ marginTop: "6px" }}>
-                    {uiLanguage === "sv"
-                      ? caseType === "real-estate"
-                        ? `Viktigaste påverkansfaktor: ${
-                            systemStatusPrimaryDriverDisplayText
-                          }`
-                        : `Primär drivare: ${
-                            systemStatusPrimaryDriverDisplayText
-                          }`
-                      : caseType === "real-estate"
-                        ? `Main influencing factor: ${
-                            systemStatusPrimaryDriverDisplayText
-                          }`
-                        : `Primary driver: ${
-                            systemStatusPrimaryDriverDisplayText
-                          }`}
-                  </div>
-                </div>
-                <AIInterpretationPanel
+                )}
+                {!executiveDemoMode && (
+                  <>
+                    <div
+                      style={{
+                        marginTop: "16px",
+                        padding: "14px",
+                        borderRadius: "12px",
+                        background: "rgba(30, 41, 59, 0.6)",
+                        border: "1px solid rgba(148, 163, 184, 0.2)"
+                      }}
+                    >
+                      <div style={{ fontWeight: 600, marginBottom: "8px" }}>
+                        {uiLanguage === "sv" ? "Systemstatus" : "System status"}
+                      </div>
+                      <div>
+                        {uiLanguage === "sv"
+                          ? `Nuläge: ${finalA >= 0 ? "Robust" : "Kollapszon"} (marginal ${finalA.toFixed(2)})`
+                          : `Baseline: ${finalA >= 0 ? "Robust" : "Collapse zone"} (margin ${finalA.toFixed(2)})`}
+                      </div>
+                      <div>
+                        {uiLanguage === "sv"
+                          ? `Målstrategi: ${finalB >= 0 ? "Robust" : "Kollapszon"} (marginal ${finalB.toFixed(2)})`
+                          : `Target strategy: ${finalB >= 0 ? "Robust" : "Collapse zone"} (margin ${finalB.toFixed(2)})`}
+                      </div>
+                      <div style={{ marginTop: "6px" }}>
+                        {uiLanguage === "sv"
+                          ? `Kapitalbegränsning: ${
+                              tippingMarginIndexB != null ? "AKTIV" : "INAKTIV"
+                            }`
+                          : `Capital constraint: ${
+                              tippingMarginIndexB != null ? "ACTIVE" : "INACTIVE"
+                            }`}
+                      </div>
+                      <div style={{ marginTop: "6px" }}>
+                        {uiLanguage === "sv"
+                          ? caseType === "real-estate"
+                            ? `Viktigaste påverkansfaktor: ${systemStatusPrimaryDriverDisplayText}`
+                            : `Primär drivare: ${systemStatusPrimaryDriverDisplayText}`
+                          : caseType === "real-estate"
+                            ? `Main influencing factor: ${systemStatusPrimaryDriverDisplayText}`
+                            : `Primary driver: ${systemStatusPrimaryDriverDisplayText}`}
+                      </div>
+                    </div>
+                    <AIInterpretationPanel
                   language={uiLanguage}
+                  executiveDemoMode={executiveDemoMode}
                   tippingQuarter={
                     tippingMarginIndexB != null ? tippingMarginIndexB + 1 : null
                   }
                   caseName={
-                    PILOT_CASES.find((c) => c.id === selectedPilotCaseId)?.title ?? ""
+                    executiveDemoMode
+                      ? getExecutiveDemoPlaybackPresetTitle(uiLanguage)
+                      : PILOT_CASES.find((c) => c.id === selectedPilotCaseId)?.title ?? ""
                   }
                   events={[
                     { quarter: 1, type: "Maintenance deferred" },
@@ -2586,12 +3363,14 @@ export default function PilotFastighetPage() {
                     )
                   }
                 />
+                  </>
+                )}
                 </div>
               </div>
             </div>
           </div>
         </div>
-        {selectedMonthData && (
+        {selectedMonthData && !executiveDemoMode && (
           <div
             style={{
               marginTop: 10,
@@ -2637,7 +3416,8 @@ export default function PilotFastighetPage() {
             </div>
           </div>
         )}
-        <div style={{ height: 8 }} />
+        {!executiveDemoMode && <div style={{ height: 8 }} />}
+        {!executiveDemoMode && (
         <div style={{ marginBottom: 12 }}>
           <div
             style={{
@@ -2646,7 +3426,7 @@ export default function PilotFastighetPage() {
               marginBottom: 4,
             }}
           >
-            Simulation horizon
+            {pt.pilotSimulationHorizonLabel}
           </div>
 
           {[12, 36, 60].map((q) => (
@@ -2671,7 +3451,7 @@ export default function PilotFastighetPage() {
               {q}M
             </button>
           ))}
-          <span style={{ marginLeft: 8, fontSize: 11, color: "#9CA3AF" }}>Custom horizon</span>
+          <span style={{ marginLeft: 8, fontSize: 11, color: "#9CA3AF" }}>{pt.pilotCustomHorizonLabel}</span>
           <input
             type="number"
             min={1}
@@ -2702,6 +3482,8 @@ export default function PilotFastighetPage() {
             }}
           />
         </div>
+        )}
+        {!executiveDemoMode && (
         <select
           value={domain}
           onChange={(e) => {
@@ -2715,13 +3497,15 @@ export default function PilotFastighetPage() {
             borderRadius: "4px",
           }}
         >
-          <option value="realEstate">{domainTitles.realEstate}</option>
-          <option value="municipal">{domainTitles.municipal}</option>
-          <option value="consulting">{domainTitles.consulting}</option>
+          <option value="realEstate">{pt.pilotDomainTitle.realEstate}</option>
+          <option value="municipal">{pt.pilotDomainTitle.municipal}</option>
+          <option value="consulting">{pt.pilotDomainTitle.consulting}</option>
         </select>
+        )}
+        {!executiveDemoMode && (
+          <>
         <div>
         <ScenarioLibrary
-          debugTag="PILOT_FASTIGHET_PAGE"
           domain={domain}
           language={uiLanguage}
           scenarioTarget={scenarioTarget}
@@ -2812,6 +3596,8 @@ export default function PilotFastighetPage() {
             setPreviewVisible(false);
           }}
         />
+          </>
+        )}
         {false && (
           <PromptDock
             language={uiLanguage}
@@ -2825,14 +3611,9 @@ export default function PilotFastighetPage() {
             decisionFlowEvents={sortedDecisionFlowEvents}
           />
         )}
-        {false && selectedQuarter != null && (
-          <div style={{ fontSize: "12px", color: "#9CA3AF", marginTop: "8px" }}>
-            M{selectedQuarter} — {scenarioALabelText}: {marginHistoryA[selectedQuarter - 1]?.toFixed(2) ?? "—"} | {scenarioBLabelText}: {marginHistoryB[selectedQuarter - 1]?.toFixed(2) ?? "—"}
-          </div>
-        )}
       </div>
 
-      {/* System Pressure classification */}
+      {!executiveDemoMode && (
       <div
         style={{
           marginTop: "4px",
@@ -2849,14 +3630,15 @@ export default function PilotFastighetPage() {
           {estimatedTimeToBreach != null ? `~${estimatedTimeToBreach} steps` : "—"}
         </span>
       </div>
+      )}
 
-      {!isRunning && executiveSummary && (
+      {!isRunning && executiveSummary && !executiveDemoMode && (
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "1.4fr 1fr",
-            gap: "24px",
-            marginTop: "28px",
+            gridTemplateColumns: executiveDemoMode ? "1fr" : "1.4fr 1fr",
+            gap: executiveDemoMode ? "0" : "24px",
+            marginTop: executiveDemoMode ? "20px" : "28px",
             alignItems: "stretch",
           }}
         >
@@ -2866,12 +3648,15 @@ export default function PilotFastighetPage() {
               theme={theme}
               t={t}
               structuralStatusKey={structuralStatusKey}
-              interpretation={interpretation}
-              narrativeText={narrativeText}
+              interpretation={displayInterpretation}
+              narrativeText={displayNarrativeText}
               tippingStepA={tippingStepA}
               tippingStepB={tippingStepB}
+              executiveDemoMode={executiveDemoMode}
+              uiLanguage={uiLanguage}
             />
           </div>
+          {!executiveDemoMode && (
           <SnapshotCompare
             baselineA={baselineA}
             finalA={finalA}
@@ -2884,9 +3669,12 @@ export default function PilotFastighetPage() {
             tippingLabel={t.common.tippingPrefix}
             noTippingText={t.common.noTipping}
           />
+          )}
         </div>
       )}
 
+      {!executiveDemoMode && (
+        <>
       <div style={{ marginTop: "32px", display: "flex", gap: "24px", flexWrap: "wrap" }}>
         <div
           style={{
@@ -3256,6 +4044,8 @@ export default function PilotFastighetPage() {
               (2) B never tips → "B avoids ACTIVE while A triggers it" or "No ACTIVE tipping" if A also never.
               (3) Verify tags: Margin up/down, Stability up/down, Risk ↑ from lifecycle/tipping. */}
         </div>
+      )}
+        </>
       )}
         </div>
       </div>

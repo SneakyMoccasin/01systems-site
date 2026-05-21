@@ -27,6 +27,10 @@ body {
   font-family: Montserrat, sans-serif;
 }
 
+html {
+  background-color: var(--background);
+}
+
 /* === PIXI CANVAS RESIZE FIX — ALWAYS MATCH VISIBLE SCREEN === */
 .pixi-container {
   width: 100vw;

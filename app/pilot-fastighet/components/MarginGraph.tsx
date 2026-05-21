@@ -4,7 +4,7 @@ import React from "react";
 import { pulseLanguage } from "@/src/i18n/pulseLanguage";
 import { getScenarioLibrary } from "@/src/pilotFastighet/scenarioLibrary";
 import type { CascadeEvent } from "@/src/pilotFastighet/riskPropagation";
-import { mapRiskLabelToPolicyLabel } from "./inspector-utils/mapRiskLabelToPolicyLabel";
+import { mapDominantPortfolioConstraintKeyToPolicyLabel } from "./inspector-utils/mapRiskLabelToPolicyLabel";
 import {
   profileCount,
   profileValue,
@@ -72,6 +72,10 @@ export interface MarginGraphProps {
   };
   constraintActivationTimeline?: ConstraintActivationTimelineMarker[];
   divergenceMonthIndex?: number | null;
+  executiveDemoMode?: boolean;
+  /** Executive demo narration markers (indexed like plotted months: M{n} aligns with axis label n). */
+  executiveNarrativeMarkers?: { monthIndex: number; label: string }[];
+  caseType?: "transport" | "real-estate" | null;
 }
 
 type CascadeMarker = { index: number; type: string };
@@ -110,7 +114,17 @@ function MarginGraph({
   dominantConstraintMessage,
   constraintActivationTimeline,
   divergenceMonthIndex,
+  executiveDemoMode = false,
+  executiveNarrativeMarkers,
+  caseType = null,
 }: MarginGraphProps) {
+  const execRiskLabelOpts =
+    executiveDemoMode && caseType === "real-estate"
+      ? ({ executiveDemo: true as const })
+      : undefined;
+  /** Executive demo + real-estate: lighter graph chrome; no simulation changes. */
+  const execRealEstateGraphPassive =
+    executiveDemoMode && caseType === "real-estate";
   profileCount("MarginGraph.render");
   profileValue(
     "MarginGraph.series.points",
@@ -141,13 +155,21 @@ function MarginGraph({
 
   const t = pulseLanguage[uiLanguage];
   const marginLabel =
-    viewMode === "delta"
-      ? uiLanguage === "sv"
-        ? "Förändring i strukturell marginal"
-        : "Change in structural margin"
-      : uiLanguage === "sv"
-        ? "Strukturell marginal (systemnivå)"
-        : "Structural margin (system level)";
+    executiveDemoMode && caseType === "real-estate"
+      ? viewMode === "delta"
+        ? uiLanguage === "sv"
+          ? "Förändring i genomföringsflexibilitet"
+          : "Change in execution flexibility"
+        : uiLanguage === "sv"
+          ? "Genomföringsflexibilitet (helhetsnivå)"
+          : "Execution flexibility (aggregate)"
+      : viewMode === "delta"
+        ? uiLanguage === "sv"
+          ? "Förändring i strukturell marginal"
+          : "Change in structural margin"
+        : uiLanguage === "sv"
+          ? "Strukturell marginal (systemnivå)"
+          : "Structural margin (system level)";
 
   const baselineText =
     uiLanguage === "sv"
@@ -210,14 +232,16 @@ function MarginGraph({
     }
     return null;
   })();
-  const LEFT_PADDING = 55;
-  const RIGHT_PADDING = 10;
+  const LEFT_PADDING = 48;
+  const RIGHT_PADDING = 18;
   const totalSteps = Math.max(marginHistoryA.length, marginHistoryB.length, 1);
   const height = 300;
-  const monthPixelWidth = 60;
+  const monthPixelWidth = execRealEstateGraphPassive ? 59 : 60;
   const timelineMonths = Array.from({ length: totalSteps }, (_, i) => i + 1);
   const totalTimelineWidth = timelineMonths.length * monthPixelWidth;
   const chartWidth = Math.max(monthPixelWidth, totalTimelineWidth);
+  /** Executive RE: readable trajectory height for recordings (~340–360px band). */
+  const svgDisplayHeightPx = execRealEstateGraphPassive ? 336 : 480;
   const graphWidth = Math.max(
     monthPixelWidth,
     Math.max(totalSteps - 1, 0) * monthPixelWidth
@@ -291,8 +315,8 @@ function MarginGraph({
       ? rawMax + 0.05
       : rawMax;
 
-  const TOP_PADDING = 12;
-  const BOTTOM_PADDING = 8;
+  const TOP_PADDING = execRealEstateGraphPassive ? 7 : 12;
+  const BOTTOM_PADDING = execRealEstateGraphPassive ? 5 : 8;
   const gridLevels = 4;
   const SERIES_COLOR_A = "#3B82F6"; // A = blue, B = orange (do not change)
   const SERIES_COLOR_B = "#F59E0B";
@@ -494,8 +518,16 @@ function MarginGraph({
           d={d}
           stroke={stroke}
           fill="none"
-          strokeWidth={2}
-          strokeDasharray={keyPrefix === "line-b" ? "6 4" : undefined}
+          strokeWidth={execRealEstateGraphPassive ? 2.35 : 2}
+          strokeLinecap={execRealEstateGraphPassive ? "round" : "butt"}
+          strokeDasharray={keyPrefix === "line-b" ? "8 6" : undefined}
+          opacity={
+            execRealEstateGraphPassive
+              ? keyPrefix === "line-b"
+                ? 0.91
+                : 0.86
+              : 1
+          }
         />
       );
     });
@@ -828,6 +860,7 @@ function MarginGraph({
           text-align: center;
         }
       `}</style>
+      {!execRealEstateGraphPassive && (
       <div style={{ marginBottom: 8 }}>
         <span style={{ marginRight: 6, color: "#9ca3af", fontSize: "11px" }}>
           {t.viewLabel}
@@ -894,6 +927,7 @@ function MarginGraph({
           {uiLanguage === "sv" ? "Visa drivarakiveringar" : "Show driver activations"}
         </label>
       </div>
+      )}
       <div
         ref={scrollContainerRef}
         style={{
@@ -923,13 +957,13 @@ function MarginGraph({
         viewBox={`0 0 ${chartWidth} 300`}
         preserveAspectRatio="none"
         width={chartWidth}
-        height={480}
+        height={svgDisplayHeightPx}
         style={{
           display: "block",
           background: graphBackground,
-          border: "1px solid #e5e7eb",
+          border: execRealEstateGraphPassive ? "1px solid rgba(51,65,85,0.55)" : "1px solid #e5e7eb",
           borderRadius: "4px",
-          minHeight: 480,
+          minHeight: svgDisplayHeightPx,
           minWidth: chartWidth,
         }}
         onMouseMove={(e) => {
@@ -944,15 +978,42 @@ function MarginGraph({
         }}
         onMouseLeave={() => setHoverIndex(null)}
       >
+      <defs>
+        {execRealEstateGraphPassive && (
+          <linearGradient id="execMicroDivergenceTint" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="rgba(37,99,235,0.055)" />
+            <stop offset="48%" stopColor="rgba(51,102,204,0.032)" />
+            <stop offset="100%" stopColor="rgba(217,119,6,0.028)" />
+          </linearGradient>
+        )}
+      </defs>
       <rect x={0} y={0} width={chartWidth} height={300} fill={graphBackground} />
+      {execRealEstateGraphPassive &&
+        totalSteps > 4 &&
+        (() => {
+          const bandX0 = scaleX(1) - monthPixelWidth * 0.3;
+          const bandW = scaleX(4) - scaleX(1) + monthPixelWidth * 0.65;
+          return bandW > 2 ? (
+            <rect
+              x={bandX0}
+              y={plotAreaY}
+              width={bandW}
+              height={plotAreaH}
+              fill="url(#execMicroDivergenceTint)"
+              opacity={0.68}
+              style={{ pointerEvents: "none" }}
+            />
+          ) : null;
+        })()}
       <text
         x={14}
         y={150}
-        fill="#6b7280"
-        fontSize={11}
+        fill={execRealEstateGraphPassive ? "#64748b" : "#6b7280"}
+        fontSize={execRealEstateGraphPassive ? 10 : 11}
         fontWeight={500}
         transform="rotate(-90 14 150)"
         textAnchor="middle"
+        opacity={execRealEstateGraphPassive ? 0.82 : 1}
       >
         {marginLabel}
       </text>
@@ -1137,7 +1198,7 @@ function MarginGraph({
           const x = scaleX(match.monthIndex);
 
           return (
-            <g>
+            <g opacity={execRealEstateGraphPassive ? 0.82 : 1}>
               <line
                 x1={x}
                 x2={x}
@@ -1145,14 +1206,14 @@ function MarginGraph({
                 y2={plotAreaY + plotAreaH}
                 stroke="#888"
                 strokeDasharray="4 3"
-                strokeWidth={1.5}
+                strokeWidth={execRealEstateGraphPassive ? 1.1 : 1.5}
               />
 
               <text
                 x={x + 6}
                 y={plotAreaY + 12}
-                fontSize="10"
-                fill="#666"
+                fontSize={execRealEstateGraphPassive ? 8 : 10}
+                fill={execRealEstateGraphPassive ? "#64748b" : "#666"}
               >
                 {uiLanguage === "sv"
                   ? "Dominerande begränsning"
@@ -1162,12 +1223,13 @@ function MarginGraph({
               <text
                 x={x + 6}
                 y={plotAreaY + 24}
-                fontSize="10"
-                fill="#666"
+                fontSize={execRealEstateGraphPassive ? 8 : 10}
+                fill={execRealEstateGraphPassive ? "#788499" : "#666"}
               >
-                {mapRiskLabelToPolicyLabel(
+                {mapDominantPortfolioConstraintKeyToPolicyLabel(
                   dominantConstraintMessage.constraintKey,
-                  uiLanguage
+                  uiLanguage,
+                  execRiskLabelOpts
                 )}
               </text>
             </g>
@@ -1183,14 +1245,15 @@ function MarginGraph({
               y2={plotAreaY + plotAreaH}
               stroke="#64748b"
               strokeDasharray="5 4"
-              strokeWidth={1.25}
-              opacity={0.9}
+              strokeWidth={execRealEstateGraphPassive ? 1.08 : 1.25}
+              opacity={execRealEstateGraphPassive ? 0.62 : 0.9}
             />
             <text
               x={scaleX(divergenceMonthIndex) + 6}
               y={plotAreaY + 36}
-              fontSize="10"
-              fill="#666"
+              fontSize={execRealEstateGraphPassive ? 8 : 10}
+              fill={execRealEstateGraphPassive ? "#64748b" : "#666"}
+              opacity={execRealEstateGraphPassive ? 0.75 : 1}
             >
               {uiLanguage === "sv"
                 ? "Strukturell divergens"
@@ -1198,6 +1261,69 @@ function MarginGraph({
             </text>
           </g>
         )}
+      {executiveDemoMode &&
+        caseType === "real-estate" &&
+        executiveNarrativeMarkers &&
+        executiveNarrativeMarkers.length > 0 &&
+        executiveNarrativeMarkers.map((marker, markerIdx) => {
+          const { monthIndex } = marker;
+          if (monthIndex < 0 || monthIndex >= totalSteps) return null;
+          const xi = scaleX(monthIndex);
+          const labelY =
+            TOP_PADDING +
+            (execRealEstateGraphPassive ? 13 : 16) +
+            markerIdx * (execRealEstateGraphPassive ? 10 : 11);
+          const inSeparationWindow =
+            execRealEstateGraphPassive && monthIndex >= 1 && monthIndex <= 4;
+          return (
+            <g key={`exec-narrative-${marker.monthIndex}-${markerIdx}`}>
+              <line
+                x1={xi}
+                x2={xi}
+                y1={plotAreaY}
+                y2={plotAreaY + plotAreaH}
+                stroke={inSeparationWindow ? "#6e7b8f" : "#64748b"}
+                strokeDasharray={inSeparationWindow ? "3 5" : "3 6"}
+                strokeWidth={
+                  execRealEstateGraphPassive
+                    ? inSeparationWindow
+                      ? 1.06
+                      : 1
+                    : 1.1
+                }
+                opacity={
+                  execRealEstateGraphPassive
+                    ? inSeparationWindow
+                      ? 0.58
+                      : 0.52
+                    : 0.75
+                }
+              />
+              <text
+                x={xi + 10}
+                y={labelY + 2}
+                fontSize={execRealEstateGraphPassive ? 9 : 9}
+                fill={
+                  execRealEstateGraphPassive
+                    ? inSeparationWindow
+                      ? "#d8dee9"
+                      : "#cbd5e1"
+                    : "#dbeafe"
+                }
+                fontWeight={600}
+                opacity={
+                  execRealEstateGraphPassive
+                    ? inSeparationWindow
+                      ? 0.91
+                      : 0.88
+                    : 0.95
+                }
+              >
+                {marker.label}
+              </text>
+            </g>
+          );
+        })}
       {demandShiftA !== null && (
         <>
           <line
@@ -1311,7 +1437,7 @@ function MarginGraph({
             return renderMarkerShape(
               scaleX(index),
               scaleY(value),
-              "#F59E0B",
+              execRealEstateGraphPassive ? "#d97706" : "#F59E0B",
               isBaselinePoint
                 ? "baseline"
                 : isTippingPoint
@@ -1363,16 +1489,26 @@ function MarginGraph({
           strokeOpacity={0.4}
         />
       )}
-      // Control visibility of scenarios (A/B) via showA/showB
+      {/* Control visibility of scenarios (A/B) via showA/showB */}
       {/* Scenario A margin line (blue) */}
       {showA && marginHistoryA.length > 0 && (
         <>
           <path
             d={buildSmoothPath(normalizedA, scaleX, scaleY)}
             fill="none"
-            stroke="#3b82f6"
-            strokeWidth={highlightedSeries === "margin" ? 3 : 2}
-            opacity={emphasisOpacity("margin")}
+            stroke={execRealEstateGraphPassive ? "#2563eb" : "#3b82f6"}
+            strokeWidth={
+              highlightedSeries === "margin"
+                ? 3
+                : execRealEstateGraphPassive
+                  ? 2.22
+                  : 2
+            }
+            opacity={
+              execRealEstateGraphPassive
+                ? 0.98 * emphasisOpacity("margin")
+                : emphasisOpacity("margin")
+            }
             filter={
               highlightedSeries === "margin"
                 ? "drop-shadow(0 0 6px rgba(59,130,246,0.6))"
@@ -1386,10 +1522,20 @@ function MarginGraph({
         <path
           d={buildSmoothPath(normalizedB, scaleX, scaleY)}
           fill="none"
-          stroke="#ef4444"
-          strokeWidth={highlightedSeries === "margin" ? 3 : 2}
-          strokeDasharray="6 4"
-          opacity={emphasisOpacity("margin")}
+          stroke={execRealEstateGraphPassive ? "#d97706" : "#ef4444"}
+          strokeWidth={
+            highlightedSeries === "margin"
+              ? 3
+              : execRealEstateGraphPassive
+                ? 2.02
+                : 2
+          }
+          strokeDasharray={execRealEstateGraphPassive ? "9 6" : "6 4"}
+          opacity={
+            execRealEstateGraphPassive
+              ? 0.93 * emphasisOpacity("margin")
+              : emphasisOpacity("margin")
+          }
           filter={
             highlightedSeries === "margin"
               ? "drop-shadow(0 0 6px rgba(59,130,246,0.6))"
@@ -1448,7 +1594,7 @@ function MarginGraph({
                     return renderMarkerShape(
                       scaleX(index),
                       scaleY(value),
-                      "#ef4444",
+                      execRealEstateGraphPassive ? "#d97706" : "#ef4444",
                       isBaselinePoint
                         ? "baseline"
                         : isTippingPoint
@@ -1468,13 +1614,12 @@ function MarginGraph({
           renderMarkerShape(
             scaleX(tippingMarginIndexA),
             scaleY(normalizedA[tippingMarginIndexA]),
-            "#3b82f6",
+            execRealEstateGraphPassive ? "#2563eb" : "#3b82f6",
             "tipping"
           )
         )}
 
-
-      // Cascade markers (single render loop)
+      {/* Cascade markers (single render loop) */}
       {systemEvents.length > 0 &&
         (() => {
           const occurrenceByIndexA = new Map<number, number>();
@@ -1566,19 +1711,22 @@ function MarginGraph({
             />
           );
         })}
-      {timelineMonths.map((month, i) => (
-          <text
-            key={`month-label-${month}`}
-            x={scaleX(i)}
-            y={height - 6}
-            textAnchor="middle"
-            fontSize={10}
-            fill="#9CA3AF"
-            opacity={0.8}
-          >
-            {`M${i + 1}`}
-          </text>
-        ))}
+      {timelineMonths.map((month, i) => {
+          const inSeparationWindow = execRealEstateGraphPassive && i >= 1 && i <= 4;
+          return (
+            <text
+              key={`month-label-${month}`}
+              x={scaleX(i)}
+              y={height - 6}
+              textAnchor="middle"
+              fontSize={execRealEstateGraphPassive ? 8 : 10}
+              fill={execRealEstateGraphPassive ? (inSeparationWindow ? "#7a8698" : "#64748b") : "#9CA3AF"}
+              opacity={execRealEstateGraphPassive ? (inSeparationWindow ? 0.69 : 0.62) : 0.8}
+            >
+              {`M${i + 1}`}
+            </text>
+          );
+        })}
       </svg>
           {showDriverOverlay &&
             driverActivationOverlayMarkers.map((event, index) => (
@@ -1610,7 +1758,7 @@ function MarginGraph({
             ))}
         </div>
       </div>
-      <div style={{ width: "100%", marginTop: "6px" }}>
+      <div style={{ width: "100%", marginTop: execRealEstateGraphPassive ? "2px" : "6px" }}>
         <div
           ref={sliderTrackRef}
           onMouseDown={(event) => {
@@ -1619,9 +1767,11 @@ function MarginGraph({
           }}
           style={{
             width: "100%",
-            height: 6,
+            height: execRealEstateGraphPassive ? 5 : 6,
             borderRadius: 4,
-            background: "rgba(59, 130, 246, 0.24)",
+            background: execRealEstateGraphPassive
+              ? "rgba(59, 130, 246, 0.16)"
+              : "rgba(59, 130, 246, 0.24)",
             position: "relative",
             cursor: "pointer",
             overflow: "hidden",
@@ -1637,7 +1787,7 @@ function MarginGraph({
               left: thumbLeft,
               top: 0,
               width: thumbWidth,
-              height: 6,
+              height: execRealEstateGraphPassive ? 5 : 6,
               borderRadius: 4,
               background: "rgba(96, 165, 250, 0.9)",
               boxShadow: "0 0 0 1px rgba(147, 197, 253, 0.45)",
@@ -1656,12 +1806,18 @@ export function MarginGraphLegendRow({
   scenarioBLabelText,
   selectedScenarioALabel,
   selectedScenarioBLabel,
+  executiveDemoMode = false,
+  compactExecutivePresentation = false,
 }: {
   uiLanguage: "sv" | "en";
   scenarioALabelText?: string;
   scenarioBLabelText?: string;
   selectedScenarioALabel?: string;
   selectedScenarioBLabel?: string;
+  /** Simpler labels and fewer legend items for executive demo. */
+  executiveDemoMode?: boolean;
+  /** Tighter typography and subdued comparison line / icons for real-estate executive polish. */
+  compactExecutivePresentation?: boolean;
 }) {
   const t = pulseLanguage[uiLanguage];
   const structuralReferencePointsLabel =
@@ -1670,15 +1826,18 @@ export function MarginGraphLegendRow({
     uiLanguage === "sv"
       ? "Stabiliserad strukturell marginalnivå"
       : "Stabilised structural margin level";
-  const labelStyle = { fontSize: "11px", color: "#9CA3AF" } as const;
+  const labelStyle = {
+    fontSize: compactExecutivePresentation ? "9.5px" : "11px",
+    color: compactExecutivePresentation ? "#94a3b8" : "#9CA3AF",
+  } as const;
   const rowStyle = {
-    fontSize: "12px",
+    fontSize: compactExecutivePresentation ? "11px" : "12px",
     color: "#9CA3AF",
     display: "flex",
-    gap: "12px",
+    gap: compactExecutivePresentation ? "8px" : "12px",
     alignItems: "center",
     flexWrap: "wrap",
-    marginBottom: "8px",
+    marginBottom: compactExecutivePresentation ? "3px" : "8px",
   } as const;
   const scenarioComparisonLabel =
     `${selectedScenarioALabel ?? scenarioALabelText ?? "Scenario A"} vs ${
@@ -1688,12 +1847,26 @@ export function MarginGraphLegendRow({
   return (
     <div>
       <div style={rowStyle}>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-          <span style={{ width: "10px", height: "2px", background: "#3B82F6" }} />
+        <span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}>
+          <span
+            style={{
+              width: compactExecutivePresentation ? "9px" : "10px",
+              height: "2px",
+              background: "#3B82F6",
+              opacity: compactExecutivePresentation ? 0.75 : 1,
+            }}
+          />
           <span style={labelStyle}>{scenarioALabelText ?? t.currentStrategy}</span>
         </span>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-          <span style={{ width: "10px", height: "2px", background: "#F59E0B" }} />
+        <span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}>
+          <span
+            style={{
+              width: compactExecutivePresentation ? "9px" : "10px",
+              height: "2px",
+              background: "#F59E0B",
+              opacity: compactExecutivePresentation ? 0.75 : 1,
+            }}
+          />
           <span style={labelStyle}>{scenarioBLabelText ?? t.alternativeStrategy}</span>
         </span>
         <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
@@ -1714,6 +1887,8 @@ export function MarginGraphLegendRow({
           </svg>
           <span style={labelStyle}>{t.tippingPoint}</span>
         </span>
+        {!executiveDemoMode && (
+          <>
         <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
           <svg width={14} height={14} viewBox="0 0 14 14" aria-hidden style={{ display: "block" }}>
             <rect x={2} y={2} width={10} height={10} fill="#22c55e" />
@@ -1734,10 +1909,14 @@ export function MarginGraphLegendRow({
           </svg>
           <span style={labelStyle}>{stabilizedStructuralMarginLabel}</span>
         </span>
+          </>
+        )}
       </div>
+      {!compactExecutivePresentation && (
       <div style={{ marginBottom: "6px", fontSize: "12px", opacity: 0.85 }}>
         {scenarioComparisonLabel}
       </div>
+      )}
     </div>
   );
 }

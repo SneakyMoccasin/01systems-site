@@ -5,6 +5,7 @@ import { pulseLanguage } from "@/src/i18n/pulseLanguage";
 import type { CascadeEvent } from "@/src/pilotFastighet/riskPropagation";
 import { resolveTransportInspectorContext } from "@/src/pilotFastighet/transportInspectorAdapter";
 import CascadeRendererRealEstate from "./CascadeRendererRealEstate";
+import CascadeRendererTransport from "./CascadeRendererTransport";
 
 type Language = "sv" | "en";
 

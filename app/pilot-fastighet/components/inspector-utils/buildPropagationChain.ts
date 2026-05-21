@@ -19,16 +19,18 @@ export function buildPropagationChain(
   constraintBreakQuarter?: number | null,
   tippingQuarter?: number | null,
   language: "sv" | "en" = "en",
-  detectedConstraintType?: string | null
+  detectedConstraintType?: string | null,
+  executiveDemo?: boolean
 ): PropagationNode[] {
   profileCount("buildPropagationChain.calls");
 
   return profileMeasure("buildPropagationChain.ms", () => {
     const nodes: PropagationNode[] = [];
+    const labelOpts = executiveDemo ? { executiveDemo: true as const } : undefined;
 
     if (primaryDriver) {
       nodes.push({
-        label: mapRiskLabelToPolicyLabel(primaryDriver, language),
+        label: mapRiskLabelToPolicyLabel(primaryDriver, language, labelOpts),
         type: "driver",
         timing: null,
       });
@@ -41,8 +43,8 @@ export function buildPropagationChain(
     });
 
     for (const event of orderedEvents) {
-      const sourceLabel = mapRiskLabelToPolicyLabel(event.sourceRisk, language);
-      const targetLabel = mapRiskLabelToPolicyLabel(event.targetRisk, language);
+      const sourceLabel = mapRiskLabelToPolicyLabel(event.sourceRisk, language, labelOpts);
+      const targetLabel = mapRiskLabelToPolicyLabel(event.targetRisk, language, labelOpts);
       nodes.push({
         label: `${sourceLabel} ↑ → ${targetLabel} ↑`,
         type: "interaction",
@@ -54,7 +56,8 @@ export function buildPropagationChain(
       const constraintType = detectedConstraintType ?? "CapitalConstraint";
       const constraintLabel = mapConstraintLabelToPolicyLabel(
         constraintType,
-        language
+        language,
+        labelOpts
       );
       nodes.push({
         label:
@@ -67,8 +70,11 @@ export function buildPropagationChain(
     }
 
     nodes.push({
-      label:
-        language === "sv"
+      label: executiveDemo
+        ? language === "sv"
+          ? "Genomföringsflexibiliteten börjar smalna via delade beroenden"
+          : "Execution flexibility begins narrowing through shared dependencies"
+        : language === "sv"
           ? "Strukturell marginal påverkas"
           : "Structural margin affected",
       type: "margin",
@@ -77,7 +83,11 @@ export function buildPropagationChain(
 
     if (tippingQuarter != null) {
       nodes.push({
-        label: "Tipping risk window begins",
+        label: executiveDemo
+          ? language === "sv"
+            ? "Fönster där genomföringsflexibiliteten snävas åt"
+            : "Window where execution flexibility tightens"
+          : "Tipping risk window begins",
         type: "tipping",
         timing: tippingQuarter,
       });

@@ -3,6 +3,7 @@
 import React from "react";
 import type { ExecutiveSummaryResult } from "@/src/pilotFastighet/analysis/calculateExecutiveSummary";
 import type { UI_TEXT } from "@/src/pilotFastighet/uiText";
+import { getExecutiveDemoSummaryCardCopy } from "@/src/pilotFastighet/executiveDemoFraming";
 
 type Theme = {
   panelBg: string;
@@ -20,6 +21,8 @@ type Props = {
   narrativeText: string;
   tippingStepA: number | null;
   tippingStepB: number | null;
+  executiveDemoMode?: boolean;
+  uiLanguage?: "sv" | "en";
 };
 
 export function ExecutiveSummaryCard({
@@ -31,7 +34,12 @@ export function ExecutiveSummaryCard({
   narrativeText,
   tippingStepA,
   tippingStepB,
+  executiveDemoMode = false,
+  uiLanguage = "en",
 }: Props) {
+  const execCopy = executiveDemoMode
+    ? getExecutiveDemoSummaryCardCopy(uiLanguage)
+    : null;
   const marginDelta = executiveSummary.deltaMargin;
   const marginDeltaText = `${marginDelta > 0 ? "+" : ""}${marginDelta.toFixed(
     2
@@ -106,7 +114,7 @@ export function ExecutiveSummaryCard({
               marginTop: "6px",
             }}
           >
-            Decision impact
+            {t.common.decisionImpact}
           </div>
         </div>
 
@@ -119,7 +127,7 @@ export function ExecutiveSummaryCard({
               marginBottom: "6px",
             }}
           >
-            {t.sections.tippingRisk}
+            {execCopy?.tippingRisk ?? t.sections.tippingRisk}
           </div>
           <div
             style={{
@@ -135,7 +143,8 @@ export function ExecutiveSummaryCard({
                   : "#10B981",
             }}
           >
-            {t.common.tippingRiskLevel[executiveSummary.tippingRiskLevel]}
+            {execCopy?.tippingRiskLevel[executiveSummary.tippingRiskLevel] ??
+              t.common.tippingRiskLevel[executiveSummary.tippingRiskLevel]}
           </div>
           <div
             style={{
@@ -148,7 +157,9 @@ export function ExecutiveSummaryCard({
               ? (() => {
                   const start = executiveSummary.tippingStep;
                   const end = executiveSummary.tippingStep + 1;
-                  return t.common.tippingRiskWindow(start, end);
+                  return execCopy
+                    ? execCopy.tippingRiskWindow(start, end)
+                    : t.common.tippingRiskWindow(start, end);
                 })()
               : "—"}
           </div>
@@ -163,7 +174,7 @@ export function ExecutiveSummaryCard({
               marginBottom: "6px",
             }}
           >
-            {t.sections.capacityUnderPressure}
+            {execCopy?.capacityUnderPressure ?? t.sections.capacityUnderPressure}
           </div>
           <div
             style={{
@@ -216,7 +227,7 @@ export function ExecutiveSummaryCard({
           }}
         >
           <div>
-            <span style={{ color: theme.subtext }}>Margin delta:&nbsp;</span>
+            <span style={{ color: theme.subtext }}>{t.common.marginDeltaLabel}&nbsp;</span>
             <span style={{ fontWeight: 600, color: marginDeltaColor }}>
               {marginDeltaText}
             </span>
@@ -225,13 +236,24 @@ export function ExecutiveSummaryCard({
             <div>
               <span style={{ color: theme.subtext }}>
                 {executiveSummary.tippingStep != null
-                  ? t.common.tippingRiskPeriodAround(executiveSummary.tippingStep)
-                  : t.common.tippingRiskPeriod}
+                  ? execCopy
+                    ? execCopy.tippingRiskPeriodAround(executiveSummary.tippingStep)
+                    : t.common.tippingRiskPeriodAround(executiveSummary.tippingStep)
+                  : execCopy
+                    ? execCopy.tippingRiskPeriod
+                    : t.common.tippingRiskPeriod}
               </span>
             </div>
           )}
           <div>
-            <span style={{ color: theme.subtext }}>Scenario B:&nbsp;</span>
+            <span style={{ color: theme.subtext }}>
+              {executiveDemoMode
+                ? uiLanguage === "sv"
+                  ? "Målstrategi:"
+                  : "Goal strategy:"
+                : `${t.common.legend.scenarioB}:`}
+              &nbsp;
+            </span>
             <span>{t.structuralStatus[structuralStatusKey]}</span>
           </div>
         </div>
@@ -253,7 +275,7 @@ export function ExecutiveSummaryCard({
             marginBottom: "8px",
           }}
         >
-          {t.sections.strategicInterpretation}
+          {execCopy?.strategicInterpretation ?? t.sections.strategicInterpretation}
         </div>
         <div
           style={{

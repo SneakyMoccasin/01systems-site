@@ -77,6 +77,7 @@ export const UI_TEXT = {
         irreversible: "Oåterkallelig",
       },
       decisionImpact: "Beslutspåverkan",
+      marginDeltaLabel: "Marginalskillnad:",
     },
   },
 
@@ -156,6 +157,7 @@ export const UI_TEXT = {
         irreversible: "Irreversible",
       },
       decisionImpact: "Decision Impact",
+      marginDeltaLabel: "Margin delta:",
     },
   },
 } as const;
