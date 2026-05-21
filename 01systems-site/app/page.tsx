@@ -150,6 +150,19 @@ export default function Page() {
         </p>
       </section>
 
+      {/* EXECUTIVE DEMO VIDEO */}
+      <section style={{ marginBottom: "64px" }}>
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="w-full rounded-2xl border border-white/10 shadow-2xl mt-8"
+        >
+          <source src="/videos/ce-demo-english.mp4" type="video/mp4" />
+        </video>
+      </section>
+
       {/* WORKFLOW OVERVIEW */}
       <section style={{ marginBottom: "64px" }}>
         <h2 style={{ fontSize: "22px", marginBottom: "10px", lineHeight: 1.3, fontWeight: 600 }}>
