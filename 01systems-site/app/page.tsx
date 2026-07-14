@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 
 export default function Page() {
@@ -54,11 +55,6 @@ export default function Page() {
             ? "Se hur dagens beslut förändrar morgondagens möjligheter."
             : "See how today's decisions reshape tomorrow's options."}
         </p>
-        <p style={{ fontSize: "18px", lineHeight: 1.65, color: "#555", maxWidth: "660px", marginBottom: 0 }}>
-          {(lang as "sv" | "en") === "sv"
-            ? "Cascade Engine hjälper ledningsgrupper att modellera, jämföra och visualisera hur beslut, beroenden och prioriteringar tillsammans förändrar vilka framtida möjligheter som fortfarande finns kvar."
-            : "Cascade Engine helps leadership teams model, compare and visualize how decisions, dependencies and priorities collectively reshape which future options remain available."}
-        </p>
       </section>
 
       {/* EXECUTIVE DEMO VIDEO */}
@@ -72,6 +68,90 @@ export default function Page() {
         >
           <source src="/videos/ce-demo-english.mp4" type="video/mp4" />
         </video>
+      </section>
+
+      <section style={{ marginBottom: "64px" }}>
+        <h2 style={{ fontSize: "22px", marginBottom: "12px", lineHeight: 1.3, fontWeight: 600 }}>
+          {(lang as "sv" | "en") === "sv"
+            ? "Cascade Engine i praktiken"
+            : "Cascade Engine in action"}
+        </h2>
+
+        <p style={{ color: "#666", marginBottom: "24px", maxWidth: "680px" }}>
+          {(lang as "sv" | "en") === "sv"
+            ? "Utforska hur olika beslut förändrar framtida möjligheter genom gränssnittet."
+            : "Explore how different decisions reshape future possibilities through the interface."}
+        </p>
+
+        <div
+          style={{
+            marginTop: "32px",
+            marginBottom: "28px",
+            width: "min(1200px, calc(100% + 260px))",
+            marginLeft: "50%",
+            transform: "translateX(-50%)",
+          }}
+        >
+          <Image
+            src="/images/cascade-engine-overview.jpg"
+            alt={(lang as "sv" | "en") === "sv" ? "Skärmbild av Cascade Engine" : "Screenshot of Cascade Engine"}
+            width={3267}
+            height={1143}
+            style={{
+              width: "100%",
+              height: "auto",
+              borderRadius: "16px",
+              boxShadow: "0 8px 24px rgba(0, 0, 0, 0.08)",
+            }}
+          />
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: "20px",
+            maxWidth: "900px",
+          }}
+        >
+          {((lang as "sv" | "en") === "sv"
+            ? [
+                {
+                  title: "AI Inspector",
+                  text: "Identifierar de tidigaste strukturella förändringarna i beslutsrummet.",
+                },
+                {
+                  title: "Decision Paths",
+                  text: "Jämför hur olika beslut förändrar framtida möjligheter.",
+                },
+                {
+                  title: "AI Interpretation",
+                  text: "Förklarar de strukturella drivkrafterna bakom varje scenario.",
+                },
+              ]
+            : [
+                {
+                  title: "AI Inspector",
+                  text: "Highlights the earliest structural changes in the decision space.",
+                },
+                {
+                  title: "Decision Paths",
+                  text: "Compare how different decisions reshape future possibilities.",
+                },
+                {
+                  title: "AI Interpretation",
+                  text: "Explains the structural drivers behind each scenario.",
+                },
+              ]
+          ).map((item) => (
+            <div key={item.title}>
+              <h3 style={{ fontSize: "18px", marginBottom: "8px", lineHeight: 1.3 }}>
+                {item.title}
+              </h3>
+              <p style={{ margin: 0, maxWidth: "260px" }}>{item.text}</p>
+            </div>
+          ))}
+        </div>
       </section>
 
       <section style={{ marginBottom: "64px" }}>
@@ -127,13 +207,13 @@ export default function Page() {
           {(lang as "sv" | "en") === "sv" ? (
             <>
               <p style={{ marginBottom: "18px" }}>
-                Cascade Engine är programvaran byggd för Decision Space Analytics.
+                Cascade Engine omvandlar beslut, beroenden och begränsningar till jämförbara scenarier.
               </p>
               <p style={{ marginBottom: "18px" }}>
-                Den hjälper ledningsgrupper att modellera, jämföra och visualisera hur olika beslut förändrar organisationens framtida möjligheter innan besluten genomförs.
+                Programvaran visar hur olika vägval och ordningsföljder påverkar genomförbarhet, prioriteringar och framtida valmöjligheter över tid.
               </p>
               <p style={{ marginBottom: "18px" }}>
-                Istället för att analysera enskilda projekt analyserar Cascade Engine hur beslut tillsammans påverkar vilka alternativ som fortfarande är möjliga längre fram.
+                Det ger ledningsgrupper ett konkret underlag för att pröva ett beslut innan resurser binds och konsekvenserna blir svåra att förändra.
               </p>
               <div style={{ display: "grid", gap: "12px" }}>
                 {[
@@ -151,13 +231,13 @@ export default function Page() {
           ) : (
             <>
               <p style={{ marginBottom: "18px" }}>
-                Cascade Engine is the software purpose-built for Decision Space Analytics.
+                Cascade Engine turns decisions, dependencies and constraints into comparable scenarios.
               </p>
               <p style={{ marginBottom: "18px" }}>
-                It helps leadership teams model, compare and visualize how different decisions reshape future options before those decisions are executed.
+                The software shows how different choices and sequences affect feasibility, priorities and future options over time.
               </p>
               <p style={{ marginBottom: "18px" }}>
-                Instead of analyzing individual projects, Cascade Engine analyzes how decisions collectively influence which options remain available over time.
+                It gives leadership teams a concrete basis for testing a decision before resources are committed and its consequences become difficult to change.
               </p>
               <div style={{ display: "grid", gap: "12px" }}>
                 {[
@@ -180,8 +260,8 @@ export default function Page() {
       <section style={{ marginBottom: "64px" }}>
         <h2 style={{ fontSize: "22px", marginBottom: "10px", lineHeight: 1.3, fontWeight: 600 }}>
           {(lang as "sv" | "en") === "sv"
-            ? "Så används Decision Space Analytics"
-            : "How Decision Space Analytics is used"}
+            ? "Decision Space Analytics – analysens fyra steg"
+            : "Decision Space Analytics – Four analytical steps"}
         </h2>
         <p style={{ color: "#666", marginBottom: "20px", maxWidth: "680px" }}>
           {(lang as "sv" | "en") === "sv"
@@ -361,6 +441,93 @@ export default function Page() {
         </ul>
       </section>
 
+      <section style={{ marginBottom: "64px", borderTop: "1px solid #e5e5e5", paddingTop: "40px" }}>
+        <h2 style={{ fontSize: "22px", marginBottom: "12px", lineHeight: 1.3, fontWeight: 600 }}>
+          {(lang as "sv" | "en") === "sv" ? "Så genomförs en analys med Cascade Engine" : "How an analysis is conducted with Cascade Engine"}
+        </h2>
+
+        <p style={{ color: "#666", marginBottom: "24px", maxWidth: "680px" }}>
+          {(lang as "sv" | "en") === "sv"
+            ? "Cascade Engine är programvaran som används för att genomföra Decision Space Analytics på verkliga beslut. Analysen sker tillsammans med organisationens egna beslutsfattare och domänexperter."
+            : "Cascade Engine is the software used to apply Decision Space Analytics to real decisions. The analysis is conducted together with the organisation’s own decision-makers and domain experts."}
+        </p>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+            gap: "16px",
+            alignItems: "stretch",
+          }}
+        >
+          {((lang as "sv" | "en") === "sv"
+            ? [
+                {
+                  title: "Välj ett verkligt beslut",
+                  text: "Utgå från ett investeringsprogram, en omställning eller ett strategiskt vägval som ännu inte är låst.",
+                },
+                {
+                  title: "Bygg beslutsalternativen",
+                  text: "Beslut, beroenden, begränsningar och alternativa sekvenser modelleras i Cascade Engine.",
+                },
+                {
+                  title: "Jämför konsekvenserna",
+                  text: "Programvaran visualiserar hur olika vägval påverkar genomförbarhet och framtida möjligheter över tid.",
+                },
+                {
+                  title: "Använd resultatet",
+                  text: "Ledningsgruppen använder analysen för att ändra, bekräfta eller sekvensera beslutet med större säkerhet.",
+                },
+              ]
+            : [
+                {
+                  title: "Select a real decision",
+                  text: "Start with an investment programme, transformation or strategic choice that is still open.",
+                },
+                {
+                  title: "Build the decision alternatives",
+                  text: "Decisions, dependencies, constraints and alternative sequences are modelled in Cascade Engine.",
+                },
+                {
+                  title: "Compare the consequences",
+                  text: "The software visualises how different paths affect feasibility and future options over time.",
+                },
+                {
+                  title: "Use the result",
+                  text: "Leadership uses the analysis to change, confirm or sequence the decision with greater confidence.",
+                },
+              ]
+          ).map((step, index) => (
+            <div
+              key={step.title}
+              style={{
+                padding: "18px 16px",
+                border: "1px solid #e5e5e5",
+                borderRadius: "8px",
+              }}
+            >
+              <p
+                style={{
+                  fontSize: "13px",
+                  color: "#666",
+                  marginBottom: "10px",
+                  letterSpacing: "0.04em",
+                  textTransform: "uppercase",
+                }}
+              >
+                {index + 1}
+              </p>
+              <h3 style={{ fontSize: "18px", marginBottom: "10px", lineHeight: 1.3 }}>
+                {step.title}
+              </h3>
+              <p style={{ fontSize: "16px", color: "#555", lineHeight: 1.6, margin: 0 }}>
+                {step.text}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <section
         style={{
           marginTop: "60px",
@@ -372,14 +539,14 @@ export default function Page() {
       >
         <h2 style={{ fontSize: "22px", marginBottom: "10px", lineHeight: 1.3, fontWeight: 600 }}>
           {(lang as "sv" | "en") === "sv"
-            ? "Vill du utforska detta i din egen organisation?"
-            : "Want to explore this in your own organization?"}
+            ? "Har ni ett beslut som är svårt att överblicka?"
+            : "Do you have a decision that's difficult to evaluate?"}
         </h2>
 
         <p style={{ color: "#666", marginBottom: "20px", maxWidth: "680px" }}>
           {(lang as "sv" | "en") === "sv"
-            ? "Vi hjälper team att analysera hur större beslut kan påverka genomförande, prioriteringar och framtida möjligheter i deras egen kontext."
-            : "We help teams examine how major decisions may affect execution, priorities and future options in their specific context."}
+            ? "Ta med ett verkligt beslut eller en investeringsfråga. Vi visar hur Cascade Engine kan synliggöra beroenden, alternativa vägval och hur dagens beslut påverkar framtida möjligheter."
+            : "Bring a real decision or investment question. We'll show how Cascade Engine reveals dependencies, alternative paths and how today's decisions reshape future possibilities."}
         </p>
 
         <button
@@ -395,7 +562,7 @@ export default function Page() {
           }}
           onClick={() => (window.location.href = "mailto:christian@01systems.se")}
         >
-          {(lang as "sv" | "en") === "sv" ? "Boka samtal" : "Book a conversation"}{" "}
+          {(lang as "sv" | "en") === "sv" ? "Boka en genomgång" : "Book a walkthrough"}{" "}
         </button>
 
         <p style={{ fontSize: "14px", color: "#999" }}>christian@01systems.se</p>
