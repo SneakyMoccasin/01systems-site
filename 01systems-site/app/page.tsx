@@ -203,49 +203,49 @@ export default function Page() {
 
       <section style={{ marginBottom: "64px" }}>
         <h2 style={{ fontSize: "22px", marginBottom: "30px", lineHeight: 1.3, fontWeight: 600 }}>
-          {(lang as "sv" | "en") === "sv" ? "Hur plattformen stödjer beslutsarbetet" : "How the platform supports decision work"}
+          {(lang as "sv" | "en") === "sv" ? "Vad Cascade Engine tillför" : "What Cascade Engine adds"}
         </h2>
 
         <p style={{ marginBottom: "20px", maxWidth: "680px" }}>
           {(lang as "sv" | "en") === "sv"
-            ? "Cascade Engine skapar struktur i komplexa beslut genom att göra avvägningar, beroenden och följdeffekter lättare att analysera."
-            : "Cascade Engine brings structure to complex decisions by making trade-offs, dependencies and downstream effects easier to examine."}
+            ? "Cascade Engine gör Decision Space Analytics konkret genom att låta ledningsgrupper jämföra hur olika beslut och sekvenser förändrar framtida möjligheter."
+            : "Cascade Engine makes Decision Space Analytics practical by allowing leadership teams to compare how different decisions and sequences reshape future options."}
         </p>
 
         <div style={{ display: "grid", gap: "25px" }}>
           <div>
-            <h3>{(lang as "sv" | "en") === "sv" ? "Tolkning" : "Interpretation"}</h3>
+            <h3>{(lang as "sv" | "en") === "sv" ? "Beslutsrum" : "Decision space"}</h3>
             <p style={{ maxWidth: "680px" }}>
               {(lang as "sv" | "en") === "sv"
-                ? "AI hjälper till att sammanfatta mönster och förklara konsekvenser i ett tydligt språk för ledningsgrupper och rådgivare."
-                : "AI helps summarize patterns and explain implications in clear language for leadership teams and advisors."}
+                ? "Synliggör vilka alternativ som fortfarande är öppna och hur de förändras när beslut fattas."
+                : "Reveal which options remain open and how they change as decisions are made."}
             </p>
           </div>
 
           <div>
-            <h3>{(lang as "sv" | "en") === "sv" ? "Beslutsspår" : "Decision paths"}</h3>
+            <h3>{(lang as "sv" | "en") === "sv" ? "Alternativa sekvenser" : "Alternative sequences"}</h3>
             <p style={{ maxWidth: "680px" }}>
               {(lang as "sv" | "en") === "sv"
-                ? "Olika vägval kan analyseras innan genomförande, så att team kan jämföra sannolika konsekvenser och tidseffekter."
-                : "Alternative choices can be explored before implementation, so teams can compare likely consequences and timing."}
+                ? "Jämför hur olika ordningsföljder påverkar genomförbarhet, prioriteringar och framtida valmöjligheter."
+                : "Compare how different sequences affect feasibility, priorities and future options."}
             </p>
           </div>
 
           <div>
-            <h3>{(lang as "sv" | "en") === "sv" ? "Följdeffekter" : "Downstream effects"}</h3>
+            <h3>{(lang as "sv" | "en") === "sv" ? "Strukturella samband" : "Structural relationships"}</h3>
             <p style={{ maxWidth: "680px" }}>
               {(lang as "sv" | "en") === "sv"
-                ? "Plattformen synliggör hur ett beslut kan påverka prioriteringar, resurser och framtida handlingsutrymme i organisationen."
-                : "The platform helps reveal how one decision can influence priorities, resources and future options across the organization."}
+                ? "Visa hur beroenden, begränsningar och konkurrerande prioriteringar påverkar varandra över tid."
+                : "Show how dependencies, constraints and competing priorities interact over time."}
             </p>
           </div>
 
           <div>
-            <h3>{(lang as "sv" | "en") === "sv" ? "Konsistens" : "Consistency"}</h3>
+            <h3>{(lang as "sv" | "en") === "sv" ? "Tydlig tolkning" : "Clear interpretation"}</h3>
             <p style={{ maxWidth: "680px" }}>
               {(lang as "sv" | "en") === "sv"
-                ? "Analysen är strukturerad och repeterbar, vilket gör det lättare att återkomma till antaganden och jämföra alternativ med större trygghet."
-                : "The analysis is structured and repeatable, which makes it easier to revisit assumptions and compare alternatives with confidence."}
+                ? "Översätt analysen till ett tydligt beslutsunderlag som ledningsgrupper och rådgivare kan använda i praktiken."
+                : "Translate the analysis into clear decision guidance that leadership teams and advisors can use in practice."}
             </p>
           </div>
         </div>
