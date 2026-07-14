@@ -29,124 +29,32 @@ export default function Page() {
 
       {/* HERO */}
       <section style={{ marginBottom: "72px" }}>
+        <p
+          style={{
+            fontSize: "13px",
+            color: "#666",
+            marginBottom: "14px",
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            maxWidth: "760px",
+          }}
+        >
+          Decision Space Analytics
+        </p>
         <h1 style={{ fontSize: "42px", lineHeight: 1.15, marginBottom: "28px", maxWidth: "760px" }}>
           {(lang as "sv" | "en") === "sv"
-            ? "Organisationer får sällan problem av ett enskilt beslut."
-            : "Organizations rarely fail because of a single decision."}
+            ? "Se hur dagens beslut förändrar morgondagens möjligheter."
+            : "See how today’s decisions reshape tomorrow’s options."}
         </h1>
         <p style={{ fontSize: "21px", lineHeight: 1.5, marginBottom: "20px", maxWidth: "700px" }}>
-  {(lang as "sv" | "en") === "sv"
-    ? "Problemen uppstår när beslut, prioriteringar och begränsningar börjar påverka varandra över tid."
-    : "Problems emerge when decisions, priorities and constraints begin influencing each other over time."
-  }
-</p>
-       {(lang as "sv" | "en") === "sv" ? (
-          <p style={{ fontSize: "18px", lineHeight: 1.65, color: "#555", maxWidth: "660px", marginBottom: 0 }}>
-            Cascade Engine hjälper organisationer förstå hur beslut gradvis påverkar genomförande, prioriteringar och framtida möjligheter innan problemen blivit synliga i verkligheten.
-          </p>
-        ) : (
-          <>
-            <div style={{ maxWidth: "720px", lineHeight: "1.65", marginTop: "28px" }}>
-              <p style={{ fontSize: "18px", color: "#555", maxWidth: "660px", marginBottom: 0 }}>
-              Cascade Engine helps organizations understand how decisions gradually affect execution, priorities and future possibilities before problems become visible in the real world.
-              </p>
-              <p style={{ fontSize: "18px", color: "#555", maxWidth: "660px", marginTop: "18px", marginBottom: 0 }}>
-    {(lang as "sv" | "en") === "sv"
-      ? "Utvecklad för organisationer där beslut påverkar många delar av verksamheten — inom fastighet, infrastruktur och offentlig sektor."
-      : "Designed for organizations where decisions affect many parts of the organization — including real estate, infrastructure and the public sector."
-    }
-  </p>
-              <p
-                style={{
-                  fontSize: "18px",
-                  color: "#555",
-                  maxWidth: "660px",
-                  marginTop: "18px",
-                  marginBottom: 0,
-                }}
-              >
-                We model how capacity, system load and structural margin evolve over time — and how decisions create cascade effects across interconnected factors.
-              </p>
-              <div
-                style={{
-                  marginTop: "32px",
-                  marginBottom: "32px",
-                  fontWeight: 500,
-                  letterSpacing: "0.2px",
-                }}
-              >
-                <p
-                  style={{
-                    fontSize: "18px",
-                    color: "#555",
-                    maxWidth: "680px",
-                  }}
-                >
-                  This is not forecasting.
-                </p>
-                <p
-                  style={{
-                    fontSize: "18px",
-                    color: "#555",
-                    maxWidth: "680px",
-                    marginTop: "6px",
-                  }}
-                >
-                  It is not optimization.
-                </p>
-                <p
-                  style={{
-                    fontSize: "18px",
-                    color: "#555",
-                    maxWidth: "680px",
-                    marginTop: "6px",
-                  }}
-                >
-                  It is structural consequence modeling.
-                </p>
-              </div>
-              <p
-                style={{
-                  fontSize: "18px",
-                  color: "#555",
-                  maxWidth: "680px",
-                  marginTop: "16px",
-                }}
-              >
-                Using our simulation engine, organizations can:
-              </p>
-              <ul
-                style={{
-                  fontSize: "18px",
-                  color: "#555",
-                  maxWidth: "680px",
-                  marginTop: "8px",
-                  paddingLeft: "20px",
-                }}
-              >
-                <li>Identify when structural flexibility begins to erode</li>
-                <li>Compare alternative strategies before capital is committed</li>
-                <li>Understand how parallel decisions interact over time</li>
-                <li>Detect cascade effects before they become systemic risk</li>
-                <li>Run simulations interactively or headless for large scenario sets</li>
-              </ul>
-              <p
-                style={{
-                  fontSize: "18px",
-                  color: "#555",
-                  maxWidth: "680px",
-                  marginTop: "16px",
-                }}
-              >
-                01 Systems is based in Sweden and works with decision-makers in real estate, infrastructure and other system-critical sectors.
-              </p>
-            </div>
-          </>
-        )}
-        <p style={{ marginTop: "15px", fontWeight: 500, maxWidth: "680px" }}>
           {(lang as "sv" | "en") === "sv"
-            ? "Beslutssamverkan · Genomföranderisk · Begränsningsanalys · Scenarioanalys"
-            : "Decision Interaction · Implementation Risk · Constraint Awareness · Scenario Analysis"}
+            ? "Cascade Engine hjälper ledningsgrupper att förstå hur beslut, beroenden och prioriteringar tillsammans förändrar vilka alternativ som fortfarande är möjliga längre fram."
+            : "Cascade Engine helps leadership teams understand how decisions, dependencies and priorities interact to reshape which options remain possible over time."}
+        </p>
+        <p style={{ fontSize: "18px", lineHeight: 1.65, color: "#555", maxWidth: "660px", marginBottom: 0, fontWeight: 500 }}>
+          {(lang as "sv" | "en") === "sv"
+            ? "Byggd för Decision Space Analytics."
+            : "Purpose-built for Decision Space Analytics."}
         </p>
       </section>
 
@@ -161,6 +69,48 @@ export default function Page() {
         >
           <source src="/videos/ce-demo-english.mp4" type="video/mp4" />
         </video>
+      </section>
+
+      <section style={{ marginBottom: "64px" }}>
+        <h2 style={{ fontSize: "22px", marginBottom: "20px", lineHeight: 1.3, fontWeight: 600 }}>
+          {(lang as "sv" | "en") === "sv"
+            ? "Vad är Decision Space Analytics?"
+            : "What is Decision Space Analytics?"}
+        </h2>
+
+        <div style={{ maxWidth: "680px", color: "#555", fontSize: "18px", lineHeight: 1.65 }}>
+          {(lang as "sv" | "en") === "sv" ? (
+            <>
+              <p style={{ marginBottom: "18px" }}>
+                Organisationer har redan verktyg för att analysera projekt, resurser, kostnader och risker.
+              </p>
+              <p style={{ marginBottom: "18px" }}>
+                Decision Space Analytics analyserar något annat.
+              </p>
+              <p style={{ marginBottom: "18px" }}>
+                Den analyserar hur beslut tillsammans förändrar organisationens framtida beslutsrum.
+              </p>
+              <p style={{ marginBottom: 0 }}>
+                Istället för att fokusera på enskilda aktiviteter visar analysen hur beslut, beroenden och prioriteringar gradvis förändrar vilka alternativ som fortfarande är möjliga.
+              </p>
+            </>
+          ) : (
+            <>
+              <p style={{ marginBottom: "18px" }}>
+                Organizations already use tools to analyze projects, resources, costs and risks.
+              </p>
+              <p style={{ marginBottom: "18px" }}>
+                Decision Space Analytics examines something different.
+              </p>
+              <p style={{ marginBottom: "18px" }}>
+                It analyzes how decisions collectively reshape an organization's future decision space.
+              </p>
+              <p style={{ marginBottom: 0 }}>
+                Instead of focusing on individual activities, it reveals how decisions, dependencies and priorities gradually change which options remain possible over time.
+              </p>
+            </>
+          )}
+        </div>
       </section>
 
       {/* WORKFLOW OVERVIEW */}
