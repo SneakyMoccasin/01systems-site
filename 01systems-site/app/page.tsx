@@ -82,31 +82,31 @@ export default function Page() {
           {(lang as "sv" | "en") === "sv" ? (
             <>
               <p style={{ marginBottom: "18px" }}>
-                Organisationer har redan verktyg för att analysera projekt, resurser, kostnader och risker.
+                Projektverktyg visar aktiviteter, resurser, tidplaner och risker.
               </p>
               <p style={{ marginBottom: "18px" }}>
-                Decision Space Analytics analyserar något annat.
+                Decision Space Analytics besvarar en annan fråga:
               </p>
-              <p style={{ marginBottom: "18px" }}>
-                Den analyserar hur beslut tillsammans förändrar organisationens framtida beslutsrum.
+              <p style={{ marginBottom: "18px", fontSize: "20px", lineHeight: 1.5, color: "#222", fontWeight: 600 }}>
+                Vilka framtida möjligheter är fortfarande öppna efter att dagens beslut har fattats?
               </p>
               <p style={{ marginBottom: 0 }}>
-                Istället för att fokusera på enskilda aktiviteter visar analysen hur beslut, beroenden och prioriteringar gradvis förändrar vilka alternativ som fortfarande är möjliga.
+                Genom att jämföra olika beslut och sekvenser visar analysen hur vissa alternativ öppnas, bevaras eller stängs över tid.
               </p>
             </>
           ) : (
             <>
               <p style={{ marginBottom: "18px" }}>
-                Organizations already use tools to analyze projects, resources, costs and risks.
+                Project tools show activities, resources, schedules and risks.
               </p>
               <p style={{ marginBottom: "18px" }}>
-                Decision Space Analytics examines something different.
+                Decision Space Analytics answers a different question:
               </p>
-              <p style={{ marginBottom: "18px" }}>
-                It analyzes how decisions collectively reshape an organization's future decision space.
+              <p style={{ marginBottom: "18px", fontSize: "20px", lineHeight: 1.5, color: "#222", fontWeight: 600 }}>
+                Which future options remain open after today’s decisions have been made?
               </p>
               <p style={{ marginBottom: 0 }}>
-                Instead of focusing on individual activities, it reveals how decisions, dependencies and priorities gradually change which options remain possible over time.
+                By comparing different decisions and sequences, the analysis reveals how options open, remain available or close over time.
               </p>
             </>
           )}
@@ -117,13 +117,13 @@ export default function Page() {
       <section style={{ marginBottom: "64px" }}>
         <h2 style={{ fontSize: "22px", marginBottom: "10px", lineHeight: 1.3, fontWeight: 600 }}>
           {(lang as "sv" | "en") === "sv"
-            ? "Cascade Engine i beslutsflödet"
-            : "Cascade Engine in the decision workflow"}
+            ? "Så används Decision Space Analytics"
+            : "How Decision Space Analytics is used"}
         </h2>
         <p style={{ color: "#666", marginBottom: "20px", maxWidth: "680px" }}>
           {(lang as "sv" | "en") === "sv"
-            ? "Plattformen används uppströms för att strukturera beslut innan genomförandet låser framtida alternativ."
-            : "The platform is used upstream to structure decisions before implementation locks future options."}
+            ? "Metoden hjälper ledningsgrupper att analysera ett verkligt vägskäl innan resurser binds och framtida alternativ begränsas."
+            : "The method helps leadership teams analyze a real decision point before resources are committed and future options become constrained."}
         </p>
 
         <div
@@ -146,28 +146,28 @@ export default function Page() {
           >
             {[
               {
-                svTitle: "Beslutsläge",
-                enTitle: "Decision context",
-                svText: "Mål, begränsningar och beroenden tydliggörs innan riktning väljs.",
-                enText: "Goals, constraints and dependencies are clarified before direction is chosen.",
+                svTitle: "Definiera beslutet",
+                enTitle: "Define the decision",
+                svText: "Tydliggör vilket vägskäl organisationen står inför och vilka alternativ som fortfarande är öppna.",
+                enText: "Clarify the decision point the organization is facing and which options are still open.",
               },
               {
-                svTitle: "Struktur",
-                enTitle: "Structural mapping",
-                svText: "Systemets kopplingar och känsliga punkter synliggörs tidigt.",
-                enText: "System relationships and sensitive pressure points are surfaced early.",
+                svTitle: "Kartlägg beslutsrummet",
+                enTitle: "Map the decision space",
+                svText: "Synliggör beroenden, begränsningar och prioriteringar som påverkar vad som fortfarande är möjligt.",
+                enText: "Reveal the dependencies, constraints and priorities that shape what remains possible.",
               },
               {
-                svTitle: "Scenarioanalys",
-                enTitle: "Scenario analysis",
-                svText: "Alternativa vägar jämförs innan resurser binds upp i genomförandet.",
-                enText: "Alternative paths are compared before resources are committed to execution.",
+                svTitle: "Jämför alternativen",
+                enTitle: "Compare the options",
+                svText: "Analysera hur olika beslut och sekvenser öppnar, bevarar eller stänger framtida möjligheter.",
+                enText: "Analyze how different decisions and sequences open, preserve or close future options.",
               },
               {
-                svTitle: "Beslutsunderlag",
-                enTitle: "Decision guidance",
-                svText: "Ledningen får en tydligare bild av följdverkningar innan problem uppstår.",
-                enText: "Leadership gets a clearer view of downstream effects before problems emerge.",
+                svTitle: "Stärk beslutet",
+                enTitle: "Strengthen the decision",
+                svText: "Ge ledningen ett tydligare underlag för att ändra, bekräfta eller sekvensera beslutet med större säkerhet.",
+                enText: "Give leadership a clearer basis to change, confirm or sequence the decision with greater confidence.",
               },
             ].map((step, index) => (
               <div
