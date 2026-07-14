@@ -42,19 +42,22 @@ export default function Page() {
           Decision Space Analytics
         </p>
         <h1 style={{ fontSize: "42px", lineHeight: 1.15, marginBottom: "28px", maxWidth: "760px" }}>
-          {(lang as "sv" | "en") === "sv"
-            ? "Se hur dagens beslut förändrar morgondagens möjligheter."
-            : "See how today’s decisions reshape tomorrow’s options."}
+          Cascade Engine
         </h1>
+        <p style={{ fontSize: "18px", lineHeight: 1.65, color: "#555", maxWidth: "660px", marginBottom: "20px", fontWeight: 500 }}>
+          {(lang as "sv" | "en") === "sv"
+            ? "Programvaran byggd för Decision Space Analytics."
+            : "Software purpose-built for Decision Space Analytics."}
+        </p>
         <p style={{ fontSize: "21px", lineHeight: 1.5, marginBottom: "20px", maxWidth: "700px" }}>
           {(lang as "sv" | "en") === "sv"
-            ? "Cascade Engine hjälper ledningsgrupper att förstå hur beslut, beroenden och prioriteringar tillsammans förändrar vilka alternativ som fortfarande är möjliga längre fram."
-            : "Cascade Engine helps leadership teams understand how decisions, dependencies and priorities interact to reshape which options remain possible over time."}
+            ? "Se hur dagens beslut förändrar morgondagens möjligheter."
+            : "See how today's decisions reshape tomorrow's options."}
         </p>
-        <p style={{ fontSize: "18px", lineHeight: 1.65, color: "#555", maxWidth: "660px", marginBottom: 0, fontWeight: 500 }}>
+        <p style={{ fontSize: "18px", lineHeight: 1.65, color: "#555", maxWidth: "660px", marginBottom: 0 }}>
           {(lang as "sv" | "en") === "sv"
-            ? "Byggd för Decision Space Analytics."
-            : "Purpose-built for Decision Space Analytics."}
+            ? "Cascade Engine hjälper ledningsgrupper att modellera, jämföra och visualisera hur beslut, beroenden och prioriteringar tillsammans förändrar vilka framtida möjligheter som fortfarande finns kvar."
+            : "Cascade Engine helps leadership teams model, compare and visualize how decisions, dependencies and priorities collectively reshape which future options remain available."}
         </p>
       </section>
 
@@ -108,6 +111,66 @@ export default function Page() {
               <p style={{ marginBottom: 0 }}>
                 By comparing different decisions and sequences, the analysis reveals how options open, remain available or close over time.
               </p>
+            </>
+          )}
+        </div>
+      </section>
+
+      <section style={{ marginBottom: "64px" }}>
+        <h2 style={{ fontSize: "22px", marginBottom: "20px", lineHeight: 1.3, fontWeight: 600 }}>
+          {(lang as "sv" | "en") === "sv"
+            ? "Vad är Cascade Engine?"
+            : "What is Cascade Engine?"}
+        </h2>
+
+        <div style={{ maxWidth: "680px", color: "#555", fontSize: "18px", lineHeight: 1.65 }}>
+          {(lang as "sv" | "en") === "sv" ? (
+            <>
+              <p style={{ marginBottom: "18px" }}>
+                Cascade Engine är programvaran byggd för Decision Space Analytics.
+              </p>
+              <p style={{ marginBottom: "18px" }}>
+                Den hjälper ledningsgrupper att modellera, jämföra och visualisera hur olika beslut förändrar organisationens framtida möjligheter innan besluten genomförs.
+              </p>
+              <p style={{ marginBottom: "18px" }}>
+                Istället för att analysera enskilda projekt analyserar Cascade Engine hur beslut tillsammans påverkar vilka alternativ som fortfarande är möjliga längre fram.
+              </p>
+              <div style={{ display: "grid", gap: "12px" }}>
+                {[
+                  "Modellera alternativa beslut",
+                  "Jämför olika sekvenser",
+                  "Visualisera hur beslutsmöjligheter förändras",
+                  "Skapa tydliga beslutsunderlag",
+                ].map((item) => (
+                  <p key={item} style={{ margin: 0 }}>
+                    {item}
+                  </p>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <p style={{ marginBottom: "18px" }}>
+                Cascade Engine is the software purpose-built for Decision Space Analytics.
+              </p>
+              <p style={{ marginBottom: "18px" }}>
+                It helps leadership teams model, compare and visualize how different decisions reshape future options before those decisions are executed.
+              </p>
+              <p style={{ marginBottom: "18px" }}>
+                Instead of analyzing individual projects, Cascade Engine analyzes how decisions collectively influence which options remain available over time.
+              </p>
+              <div style={{ display: "grid", gap: "12px" }}>
+                {[
+                  "Model alternative decisions",
+                  "Compare different sequences",
+                  "Visualize how decision space changes",
+                  "Create clear decision guidance",
+                ].map((item) => (
+                  <p key={item} style={{ margin: 0 }}>
+                    {item}
+                  </p>
+                ))}
+              </div>
             </>
           )}
         </div>
@@ -201,137 +264,77 @@ export default function Page() {
         </div>
       </section>
 
-      <section style={{ marginBottom: "64px" }}>
-        <h2 style={{ fontSize: "22px", marginBottom: "30px", lineHeight: 1.3, fontWeight: 600 }}>
-          {(lang as "sv" | "en") === "sv" ? "Vad Cascade Engine tillför" : "What Cascade Engine adds"}
-        </h2>
-
-        <p style={{ marginBottom: "20px", maxWidth: "680px" }}>
-          {(lang as "sv" | "en") === "sv"
-            ? "Cascade Engine gör Decision Space Analytics konkret genom att låta ledningsgrupper jämföra hur olika beslut och sekvenser förändrar framtida möjligheter."
-            : "Cascade Engine makes Decision Space Analytics practical by allowing leadership teams to compare how different decisions and sequences reshape future options."}
-        </p>
-
-        <div style={{ display: "grid", gap: "25px" }}>
-          <div>
-            <h3>{(lang as "sv" | "en") === "sv" ? "Beslutsrum" : "Decision space"}</h3>
-            <p style={{ maxWidth: "680px" }}>
-              {(lang as "sv" | "en") === "sv"
-                ? "Synliggör vilka alternativ som fortfarande är öppna och hur de förändras när beslut fattas."
-                : "Reveal which options remain open and how they change as decisions are made."}
-            </p>
-          </div>
-
-          <div>
-            <h3>{(lang as "sv" | "en") === "sv" ? "Alternativa sekvenser" : "Alternative sequences"}</h3>
-            <p style={{ maxWidth: "680px" }}>
-              {(lang as "sv" | "en") === "sv"
-                ? "Jämför hur olika ordningsföljder påverkar genomförbarhet, prioriteringar och framtida valmöjligheter."
-                : "Compare how different sequences affect feasibility, priorities and future options."}
-            </p>
-          </div>
-
-          <div>
-            <h3>{(lang as "sv" | "en") === "sv" ? "Strukturella samband" : "Structural relationships"}</h3>
-            <p style={{ maxWidth: "680px" }}>
-              {(lang as "sv" | "en") === "sv"
-                ? "Visa hur beroenden, begränsningar och konkurrerande prioriteringar påverkar varandra över tid."
-                : "Show how dependencies, constraints and competing priorities interact over time."}
-            </p>
-          </div>
-
-          <div>
-            <h3>{(lang as "sv" | "en") === "sv" ? "Tydlig tolkning" : "Clear interpretation"}</h3>
-            <p style={{ maxWidth: "680px" }}>
-              {(lang as "sv" | "en") === "sv"
-                ? "Översätt analysen till ett tydligt beslutsunderlag som ledningsgrupper och rådgivare kan använda i praktiken."
-                : "Translate the analysis into clear decision guidance that leadership teams and advisors can use in practice."}
-            </p>
-          </div>
-        </div>
-      </section>
-
       {/* CASCADE EXPLANATION */}
       <section style={{ marginBottom: "64px" }}>
         <h2 style={{ fontSize: "22px", marginBottom: "20px", lineHeight: 1.3, fontWeight: 600 }}>
           {(lang as "sv" | "en") === "sv"
-            ? "Vad som händer efter beslutet är det som räknas."
-            : "What happens after the decision is what matters."}
+            ? "Varför Decision Space Analytics?"
+            : "Why Decision Space Analytics?"}
         </h2>
 
         <p style={{ marginBottom: "15px", maxWidth: "680px" }}>
           {(lang as "sv" | "en") === "sv"
-            ? "När ett beslut förändrar en del av systemet påverkar det hur nästa del reagerar. Detta fortsätter steg för steg och skapar följdeffekter genom organisationen. Det är inte en enskild händelse som orsakar problem – utan hur systemet utvecklas över tid."
-            : "When one decision changes part of a system, it affects how the next part responds. This continues step by step and creates downstream effects across the organization. Problems are not caused by a single event — but by how the system evolves over time."}
+            ? "De flesta organisationer har god kontroll över projekt, resurser, budgetar och risker."
+            : "Most organizations already understand projects, resources, budgets and risks."}
+        </p>
+
+        <p style={{ marginBottom: "15px", maxWidth: "680px" }}>
+          {(lang as "sv" | "en") === "sv"
+            ? "Det som ofta saknas är ett sätt att förstå hur besluten tillsammans förändrar vilka möjligheter som fortfarande finns kvar längre fram."
+            : "What is often missing is a way to understand how decisions collectively reshape which future options remain available."}
+        </p>
+
+        <p style={{ marginBottom: "15px", maxWidth: "680px" }}>
+          {(lang as "sv" | "en") === "sv"
+            ? "När beslut, beroenden och prioriteringar samverkar förändras organisationens beslutsrum – ofta långt innan några traditionella nyckeltal visar att något är fel."
+            : "As decisions, dependencies and priorities interact, an organization's decision space changes—often long before traditional metrics reveal that anything is wrong."}
+        </p>
+
+        <p style={{ marginBottom: 0, maxWidth: "680px" }}>
+          {(lang as "sv" | "en") === "sv"
+            ? "Decision Space Analytics hjälper ledningsgrupper att upptäcka den förändringen innan den blir synlig i genomförandet."
+            : "Decision Space Analytics helps leadership teams recognize that change before it becomes visible in execution."}
         </p>
       </section>
 
       {/* INSIGHTS */}
       <section style={{ marginBottom: "64px" }}>
-        <ul style={{ paddingLeft: "20px" }}>
-          <li>
-            {(lang as "sv" | "en") === "sv"
-              ? "Problem uppstår sällan där man först tror"
-              : "Problems rarely appear where you first expect."}
-          </li>
-          <li>
-            {(lang as "sv" | "en") === "sv"
-              ? "Konsekvenser uppstår senare än man förväntar sig"
-              : "Consequences show up later than you expect."}
-          </li>
-          <li>
-            {(lang as "sv" | "en") === "sv"
-              ? "Små förändringar kan skapa helt olika utveckling över tid"
-              : "Small changes can lead to very different trajectories over time."}
-          </li>
-        </ul>
-      </section>
-
-
-      <section style={{ marginBottom: "64px" }}>
         <h2 style={{ fontSize: "22px", marginBottom: "20px", lineHeight: 1.3, fontWeight: 600 }}>
           {(lang as "sv" | "en") === "sv"
-            ? "Vad plattformen hjälper dig att se"
-            : "What the platform helps you see"}
+            ? "Frågor Decision Space Analytics hjälper dig besvara"
+            : "Questions Decision Space Analytics helps answer"}
         </h2>
 
-        <ul style={{ paddingLeft: "20px", display: "grid", gap: "12px" }}>
-          <li>
-            {(lang as "sv" | "en") === "sv"
-              ? "När en negativ utveckling börjar i simuleringen — innan den syns i de sammanfattade resultaten"
-              : "When a negative trend begins in the simulation — before it appears in summarized results"}
-          </li>
+        <p style={{ marginBottom: "24px", maxWidth: "680px" }}>
+          {(lang as "sv" | "en") === "sv"
+            ? "Decision Space Analytics hjälper ledningsgrupper att analysera frågor som traditionella projekt- och portföljverktyg sällan kan besvara."
+            : "Decision Space Analytics helps leadership teams explore questions that traditional project and portfolio tools rarely answer."}
+        </p>
 
-          <li>
-            {(lang as "sv" | "en") === "sv"
-              ? "Vilka beslut som kan leda till ett framtida problem"
-              : "Which decisions can lead to a future problem"}
-          </li>
-
-          <li>
-            {(lang as "sv" | "en") === "sv"
-              ? "Hur en förändring sprider sig genom systemet steg för steg"
-              : "How a change propagates through the system step by step"}
-          </li>
-
-          <li>
-            {(lang as "sv" | "en") === "sv"
-              ? "Var trycket byggs upp och systemet blir mer sårbart"
-              : "Where pressure builds up and the system becomes more vulnerable"}
-          </li>
-
-          <li>
-            {(lang as "sv" | "en") === "sv"
-              ? "Hur olika beslut kan leda till olika utveckling över tid"
-              : "How different decisions can lead to different developments over time"}
-          </li>
-
-          <li>
-            {(lang as "sv" | "en") === "sv"
-              ? "Vad som händer om du ändrar ett beslut innan du genomför det"
-              : "What happens if you change a decision before implementing it"}
-          </li>
-        </ul>
+        <div style={{ display: "grid", gap: "22px", maxWidth: "680px" }}>
+          {((lang as "sv" | "en") === "sv"
+            ? [
+                "Vilka framtida möjligheter stänger det här beslutet?",
+                "Vilka alternativ bevarar störst framtida flexibilitet?",
+                "Vilka beslut konkurrerar egentligen om samma resurser eller kapacitet?",
+                "När börjar beslutsrummet förändras?",
+                "Vilka beslut verkar oberoende men påverkar i själva verket varandra?",
+                "Var uppstår strukturella låsningar innan de blir synliga i genomförandet?",
+              ]
+            : [
+                "Which future options does this decision close?",
+                "Which choices preserve the greatest future flexibility?",
+                "Which decisions are silently competing for the same resources or capacity?",
+                "When does the decision space begin to change?",
+                "Which decisions appear independent but actually influence one another?",
+                "Where do structural lock-ins emerge before they become visible in execution?",
+              ]
+          ).map((question) => (
+            <p key={question} style={{ margin: 0 }}>
+              {question}
+            </p>
+          ))}
+        </div>
       </section>
 
       <section style={{ marginBottom: "64px" }}>
