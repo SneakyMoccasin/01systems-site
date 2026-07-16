@@ -1,7 +1,9 @@
 import { Analytics } from "@vercel/analytics/react";
 import type { Metadata } from "next";
-import Image from "next/image";
 import { Geist, Geist_Mono } from "next/font/google";
+import { LanguageProvider } from "@/components/language-context";
+import { SiteFooter } from "@/components/site-footer";
+import { SiteHeader } from "@/components/site-header";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -32,42 +34,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <header style={{
-          padding: "12px 20px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between"
-        }}>
-          <Image
-            className="site-logo"
-            src="/images/Logo-01.svg"
-            alt="01 Systems"
-            width={180}
-            height={52}
-            priority
-          />
-        </header>
-        {children}
-
-        <footer
-          style={{
-            marginTop: "60px",
-            padding: "24px 20px",
-            borderTop: "1px solid #eee",
-            display: "flex",
-            justifyContent: "center",
-          }}
-        >
-          <Image
-            className="site-logo"
-            src="/images/Logo-01.svg"
-            alt="01 Systems"
-            width={160}
-            height={46}
-          />
-        </footer>
-
-        <Analytics />
+        <LanguageProvider>
+          <SiteHeader />
+          {children}
+          <SiteFooter />
+          <Analytics />
+        </LanguageProvider>
       </body>
     </html>
   );

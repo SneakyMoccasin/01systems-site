@@ -1,10 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import Link from "next/link";
+import { useLanguage } from "@/components/language-context";
+import { getHomepageInsights } from "@/data/insights";
 
 export default function Page() {
-  const [lang, setLang] = useState<"sv" | "en">("sv");
+  const { lang, setLang } = useLanguage();
+  const latestInsights = getHomepageInsights(3);
   return (
     <main
       style={{
@@ -66,7 +69,7 @@ export default function Page() {
           playsInline
           className="w-full rounded-2xl border border-white/10 shadow-2xl mt-8"
         >
-          <source src="/videos/ce-demo-english.mp4" type="video/mp4" />
+          <source src="/videos/Demo01.mp4" type="video/mp4" />
         </video>
       </section>
 
@@ -93,10 +96,10 @@ export default function Page() {
           }}
         >
           <Image
-            src="/images/cascade-engine-overview.jpg"
+            src="/images/cascade-engine-interface-2026-07-16.png"
             alt={(lang as "sv" | "en") === "sv" ? "Skärmbild av Cascade Engine" : "Screenshot of Cascade Engine"}
-            width={3267}
-            height={1143}
+            width={1829}
+            height={980}
             style={{
               width: "100%",
               height: "auto",
@@ -530,6 +533,77 @@ export default function Page() {
 
       <section
         style={{
+          marginTop: "88px",
+          marginBottom: "64px",
+          padding: "40px 24px",
+          borderRadius: "16px",
+          background: "#fafafa",
+        }}
+      >
+        <p
+          style={{
+            fontSize: "13px",
+            color: "#666",
+            marginBottom: "10px",
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+          }}
+        >
+          FOUNDATION SERIES
+        </p>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "baseline",
+            gap: "20px",
+            marginBottom: "20px",
+            flexWrap: "wrap",
+          }}
+        >
+          <h2 style={{ fontSize: "22px", lineHeight: 1.3, fontWeight: 600, margin: 0 }}>
+            Insights
+          </h2>
+          <Link href="/insights" style={{ color: "inherit" }}>
+            View all Insights
+          </Link>
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: "20px",
+            maxWidth: "900px",
+          }}
+        >
+          {latestInsights.map((article) => (
+            <article
+              key={article.slug}
+              style={{
+                padding: "20px",
+                border: "1px solid #dddddd",
+                borderRadius: "12px",
+                background: "#fff",
+                boxShadow: "0 8px 24px rgba(0, 0, 0, 0.04)",
+              }}
+            >
+              <p style={{ fontSize: "13px", color: "#666", marginBottom: "10px" }}>
+                Foundation {String(article.order).padStart(2, "0")}
+              </p>
+              <h3 style={{ fontSize: "18px", lineHeight: 1.3, marginBottom: "10px" }}>
+                <Link href={`/insights/${article.slug}`} style={{ color: "inherit", textDecoration: "none" }}>
+                  {article.title}
+                </Link>
+              </h3>
+              <p style={{ margin: 0, color: "#555" }}>{article.subtitle}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section
+        style={{
           marginTop: "60px",
           padding: "30px",
           border: "1px solid #e5e5e5",
@@ -545,8 +619,14 @@ export default function Page() {
 
         <p style={{ color: "#666", marginBottom: "20px", maxWidth: "680px" }}>
           {(lang as "sv" | "en") === "sv"
-            ? "Ta med ett verkligt beslut eller en investeringsfråga. Vi visar hur Cascade Engine kan synliggöra beroenden, alternativa vägval och hur dagens beslut påverkar framtida möjligheter."
-            : "Bring a real decision or investment question. We'll show how Cascade Engine reveals dependencies, alternative paths and how today's decisions reshape future possibilities."}
+            ? "Ta med ett verkligt beslut eller en investeringsfråga. Under genomgången visar vi hur Cascade Engine kan synliggöra beroenden, jämföra alternativa vägval och göra tydligare vad dagens beslut betyder för framtida möjligheter."
+            : "Bring a real decision or investment question. In the walkthrough, we'll show how Cascade Engine reveals dependencies, compares alternative paths and makes it clearer what today's decisions mean for future options."}
+        </p>
+
+        <p style={{ color: "#666", marginBottom: "20px", maxWidth: "680px" }}>
+          {(lang as "sv" | "en") === "sv"
+            ? "Ni får en konkret bild av hur analysen genomförs tillsammans med era egna beslutsfattare och domänexperter, och vad ni kan ta med er vidare efter mötet."
+            : "You'll get a concrete view of how the analysis is carried out together with your own decision-makers and domain experts, and what you can take away from the session afterward."}
         </p>
 
         <button
