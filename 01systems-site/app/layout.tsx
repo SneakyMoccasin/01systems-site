@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { LanguageProvider } from "@/components/language-context";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { SITE_NAME, SITE_URL, absoluteUrl } from "@/lib/seo";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -17,11 +18,66 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-title: "01 Systems — Decision Flow Simulation",
-  description: "Decision-flow simulation engine",
-  icons: {
-    icon: "/favicon.svg",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "01 Systems | Decision Space Analytics",
+    template: `%s | ${SITE_NAME}`,
   },
+  description:
+    "01 Systems develops Cascade Engine, software purpose-built for Decision Space Analytics and understanding how decisions reshape future options.",
+  applicationName: SITE_NAME,
+  keywords: [
+    "01 Systems",
+    "Cascade Engine",
+    "Decision Space Analytics",
+    "decision analysis",
+    "strategic decision support",
+    "scenario analysis",
+  ],
+  alternates: {
+    canonical: SITE_URL,
+  },
+  openGraph: {
+    type: "website",
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    title: "01 Systems | Decision Space Analytics",
+    description:
+      "01 Systems develops Cascade Engine, software purpose-built for Decision Space Analytics and understanding how decisions reshape future options.",
+    locale: "en_US",
+    images: [
+      {
+        url: absoluteUrl("/images/cascade-engine-overview.jpg"),
+        width: 1200,
+        height: 630,
+        alt: "01 Systems and Cascade Engine",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "01 Systems | Decision Space Analytics",
+    description:
+      "01 Systems develops Cascade Engine, software purpose-built for Decision Space Analytics and understanding how decisions reshape future options.",
+    images: [absoluteUrl("/images/cascade-engine-overview.jpg")],
+  },
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: ["/favicon.ico"],
+    apple: [{ url: "/favicon.ico" }],
+  },
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION || undefined,
+    other: process.env.BING_SITE_VERIFICATION
+      ? {
+          "msvalidate.01": process.env.BING_SITE_VERIFICATION,
+        }
+      : undefined,
+  },
+  category: "technology",
 };
 
 export default function RootLayout({
@@ -29,11 +85,32 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const organizationJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: SITE_NAME,
+    url: SITE_URL,
+    logo: absoluteUrl("/images/Logo-01.svg"),
+    sameAs: ["https://www.linkedin.com/in/christian-strandek-821557393/"],
+    contactPoint: [
+      {
+        "@type": "ContactPoint",
+        contactType: "sales",
+        email: "christian@01systems.se",
+        availableLanguage: ["en", "sv"],
+      },
+    ],
+  };
+
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
         <LanguageProvider>
           <SiteHeader />
           {children}

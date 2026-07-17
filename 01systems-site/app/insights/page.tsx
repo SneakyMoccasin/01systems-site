@@ -1,5 +1,14 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { insightArticles } from "@/data/insights";
+import { createPageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = createPageMetadata({
+  title: "Insights",
+  description:
+    "Read the 01 Systems insight series on Decision Space Analytics, structural lock-in, and how decisions reshape future options.",
+  path: "/insights",
+});
 
 export default function InsightsPage() {
   return (
