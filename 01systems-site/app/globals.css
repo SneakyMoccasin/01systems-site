@@ -3,6 +3,10 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --text-primary: #171717;
+  --text-body: #555555;
+  --text-muted: #666666;
+  --text-subtle: #777777;
 }
 
 @theme inline {
@@ -15,7 +19,11 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
-    --foreground: #ededed;
+    --foreground: #f2f2f2;
+    --text-primary: #f2f2f2;
+    --text-body: #d0d0d0;
+    --text-muted: #9a9a9a;
+    --text-subtle: #787878;
   }
 
   .site-logo {

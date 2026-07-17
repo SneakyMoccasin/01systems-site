@@ -20,7 +20,7 @@ export default function AboutPage() {
         <p
           style={{
             fontSize: "13px",
-            color: "#666",
+            color: "var(--text-muted)",
             marginBottom: "14px",
             letterSpacing: "0.08em",
             textTransform: "uppercase",
@@ -34,26 +34,55 @@ export default function AboutPage() {
         </h1>
       </section>
 
-      <section style={{ marginBottom: "48px", maxWidth: "760px", color: "#555", fontSize: "18px", lineHeight: 1.65 }}>
+      <section
+        style={{ marginBottom: "48px", maxWidth: "760px", color: "var(--text-body)", fontSize: "18px", lineHeight: 1.65 }}
+      >
         <p style={{ marginBottom: "18px" }}>
           {isSwedish
-            ? "01 Systems bygger programvara för Decision Space Analytics."
-            : "01 Systems is building software for Decision Space Analytics."}
+            ? "Jag började inte med ambitionen att bygga en ny analysplattform."
+            : "I didn’t set out to build a new analytics platform."}
         </p>
         <p style={{ marginBottom: "18px" }}>
           {isSwedish
-            ? "Decision Space Analytics finns för att hjälpa organisationer att undersöka en fråga som vanliga projekt-, portfölj- och riskverktyg sällan besvarar direkt: vilka framtida beslut som fortfarande är öppna efter att dagens beslut har fattats."
-            : "Decision Space Analytics exists to help organizations examine a question that ordinary project, portfolio and risk tools rarely answer directly: which future decisions remain open after today's decisions have been made."}
+            ? "Jag började med en fråga som jag inte kunde släppa:"
+            : "I started with a question I couldn’t stop thinking about:"}
+        </p>
+        <p style={{ marginBottom: "18px" }}>
+          <strong>
+            {isSwedish
+              ? "Hur förändrar dagens beslut vilka beslut som fortfarande är möjliga i morgon?"
+              : "How do today’s decisions change which decisions are still possible tomorrow?"}
+          </strong>
         </p>
         <p style={{ marginBottom: "18px" }}>
           {isSwedish
-            ? "Cascade Engine skapades för att göra den analysen praktisk. Programvaran hjälper till att jämföra beslut, sekvenser, beroenden och begränsningar så att ledningsgrupper kan se hur olika vägval omformar framtida möjligheter över tid."
-            : "Cascade Engine was created to make that analysis practical. The software helps compare decisions, sequences, dependencies and constraints so that leadership teams can see how different paths reshape future possibilities over time."}
+            ? "När jag försökte besvara den upptäckte jag att det fanns gott om verktyg för att analysera projekt, risker, kostnader och utfall – men inget praktiskt sätt att analysera hur beslut steg för steg förändrar en organisations framtida handlingsutrymme."
+            : "As I tried to answer it, I found that there were many tools for analysing projects, risks, costs and outcomes — but no practical way to analyse how decisions gradually reshape an organisation’s future decision space."}
+        </p>
+        <p style={{ marginBottom: "18px" }}>
+          {isSwedish
+            ? "Det var utgångspunkten för Cascade Engine."
+            : "That became the starting point for Cascade Engine."}
+        </p>
+        <p style={{ marginBottom: "18px" }}>
+          {isSwedish ? "Idén bygger på en enkel observation: " : "The idea is built on a simple observation: "}
+          <strong>
+            {isSwedish
+              ? "individuellt rimliga beslut, fattade i en viss ordning, kan gradvis stänga dörrar som ingen medvetet valde att stänga."
+              : "individually reasonable decisions, made in a particular sequence, can gradually close doors that no one consciously chose to close."}
+          </strong>
+        </p>
+        <p style={{ marginBottom: "18px" }}>
+          {isSwedish
+            ? "Sedan dess har metoden utvecklats genom återkommande diskussioner med personer som arbetar med riskhantering, systemtänkande och komplexa program, samtidigt som den omsatts i en praktisk programvara för Decision Space Analytics."
+            : "Since then, the method has been developed through recurring discussions with people working in risk management, systems thinking and complex programmes, while also being translated into practical software for Decision Space Analytics."}
         </p>
         <p style={{ marginBottom: 0 }}>
-          {isSwedish
-            ? "Analyser genomförs tillsammans med kundernas egna beslutsfattare och domänexperter, med deras verkliga beslut, antaganden och begränsningar som grund för arbetet."
-            : "Analyses are carried out together with customers' own decision-makers and domain experts, using their real decisions, assumptions and constraints as the basis for the work."}
+          <strong>Christian Strandek</strong>
+          <br />
+          Founder, 01 Systems
+          <br />
+          Creator of Decision Space Analytics
         </p>
       </section>
 

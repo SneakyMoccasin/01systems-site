@@ -30,19 +30,19 @@ export default function InsightArticlePage({
         }}
       >
         <article style={{ maxWidth: "760px" }}>
-          <p style={{ fontSize: "13px", color: "#666", marginBottom: "14px", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+          <p style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "14px", letterSpacing: "0.08em", textTransform: "uppercase" }}>
             Insights
           </p>
           <h1 style={{ fontSize: "42px", lineHeight: 1.15, marginBottom: "20px" }}>
             {article.title}
           </h1>
-          <p style={{ fontSize: "20px", lineHeight: 1.5, color: "#555", marginBottom: "14px" }}>
+          <p style={{ fontSize: "20px", lineHeight: 1.5, color: "var(--text-body)", marginBottom: "14px" }}>
             {article.subtitle}
           </p>
-          <p style={{ color: "#666", marginBottom: "24px" }}>
+          <p style={{ color: "var(--text-muted)", marginBottom: "24px" }}>
             Foundation {String(article.order).padStart(2, "0")} · {article.readingTime}
           </p>
-          <div style={{ display: "grid", gap: "18px", color: "#555" }}>
+          <div style={{ display: "grid", gap: "18px", color: "var(--text-body)" }}>
             {article.content.map((paragraph, index) => (
               <p key={index} style={{ margin: 0 }}>
                 {paragraph}

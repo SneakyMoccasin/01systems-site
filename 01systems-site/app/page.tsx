@@ -36,7 +36,7 @@ export default function Page() {
         <p
           style={{
             fontSize: "13px",
-            color: "#666",
+            color: "var(--text-muted)",
             marginBottom: "14px",
             letterSpacing: "0.08em",
             textTransform: "uppercase",
@@ -48,7 +48,7 @@ export default function Page() {
         <h1 style={{ fontSize: "42px", lineHeight: 1.15, marginBottom: "28px", maxWidth: "760px" }}>
           Cascade Engine
         </h1>
-        <p style={{ fontSize: "18px", lineHeight: 1.65, color: "#555", maxWidth: "660px", marginBottom: "20px", fontWeight: 500 }}>
+        <p style={{ fontSize: "18px", lineHeight: 1.65, color: "var(--text-body)", maxWidth: "660px", marginBottom: "20px", fontWeight: 500 }}>
           {(lang as "sv" | "en") === "sv"
             ? "Programvaran byggd för Decision Space Analytics."
             : "Software purpose-built for Decision Space Analytics."}
@@ -80,7 +80,7 @@ export default function Page() {
             : "Cascade Engine in action"}
         </h2>
 
-        <p style={{ color: "#666", marginBottom: "24px", maxWidth: "680px" }}>
+        <p style={{ color: "var(--text-muted)", marginBottom: "24px", maxWidth: "680px" }}>
           {(lang as "sv" | "en") === "sv"
             ? "Utforska hur olika beslut förändrar framtida möjligheter genom gränssnittet."
             : "Explore how different decisions reshape future possibilities through the interface."}
@@ -164,7 +164,7 @@ export default function Page() {
             : "What is Decision Space Analytics?"}
         </h2>
 
-        <div style={{ maxWidth: "680px", color: "#555", fontSize: "18px", lineHeight: 1.65 }}>
+        <div style={{ maxWidth: "680px", color: "var(--text-body)", fontSize: "18px", lineHeight: 1.65 }}>
           {(lang as "sv" | "en") === "sv" ? (
             <>
               <p style={{ marginBottom: "18px" }}>
@@ -173,7 +173,7 @@ export default function Page() {
               <p style={{ marginBottom: "18px" }}>
                 Decision Space Analytics besvarar en annan fråga:
               </p>
-              <p style={{ marginBottom: "18px", fontSize: "20px", lineHeight: 1.5, color: "#222", fontWeight: 600 }}>
+              <p style={{ marginBottom: "18px", fontSize: "20px", lineHeight: 1.5, color: "var(--text-primary)", fontWeight: 600 }}>
                 Vilka framtida möjligheter är fortfarande öppna efter att dagens beslut har fattats?
               </p>
               <p style={{ marginBottom: 0 }}>
@@ -188,7 +188,7 @@ export default function Page() {
               <p style={{ marginBottom: "18px" }}>
                 Decision Space Analytics answers a different question:
               </p>
-              <p style={{ marginBottom: "18px", fontSize: "20px", lineHeight: 1.5, color: "#222", fontWeight: 600 }}>
+              <p style={{ marginBottom: "18px", fontSize: "20px", lineHeight: 1.5, color: "var(--text-primary)", fontWeight: 600 }}>
                 Which future options remain open after today’s decisions have been made?
               </p>
               <p style={{ marginBottom: 0 }}>
@@ -206,7 +206,7 @@ export default function Page() {
             : "What is Cascade Engine?"}
         </h2>
 
-        <div style={{ maxWidth: "680px", color: "#555", fontSize: "18px", lineHeight: 1.65 }}>
+        <div style={{ maxWidth: "680px", color: "var(--text-body)", fontSize: "18px", lineHeight: 1.65 }}>
           {(lang as "sv" | "en") === "sv" ? (
             <>
               <p style={{ marginBottom: "18px" }}>
@@ -266,7 +266,7 @@ export default function Page() {
             ? "Decision Space Analytics – analysens fyra steg"
             : "Decision Space Analytics – Four analytical steps"}
         </h2>
-        <p style={{ color: "#666", marginBottom: "20px", maxWidth: "680px" }}>
+        <p style={{ color: "var(--text-muted)", marginBottom: "20px", maxWidth: "680px" }}>
           {(lang as "sv" | "en") === "sv"
             ? "Metoden hjälper ledningsgrupper att analysera ett verkligt vägskäl innan resurser binds och framtida alternativ begränsas."
             : "The method helps leadership teams analyze a real decision point before resources are committed and future options become constrained."}
@@ -355,25 +355,25 @@ export default function Page() {
             : "Why Decision Space Analytics?"}
         </h2>
 
-        <p style={{ marginBottom: "15px", maxWidth: "680px" }}>
+        <p style={{ marginBottom: "15px", maxWidth: "680px", color: "var(--text-body)" }}>
           {(lang as "sv" | "en") === "sv"
             ? "De flesta organisationer har god kontroll över projekt, resurser, budgetar och risker."
             : "Most organizations already understand projects, resources, budgets and risks."}
         </p>
 
-        <p style={{ marginBottom: "15px", maxWidth: "680px" }}>
+        <p style={{ marginBottom: "15px", maxWidth: "680px", color: "var(--text-body)" }}>
           {(lang as "sv" | "en") === "sv"
             ? "Det som ofta saknas är ett sätt att förstå hur besluten tillsammans förändrar vilka möjligheter som fortfarande finns kvar längre fram."
             : "What is often missing is a way to understand how decisions collectively reshape which future options remain available."}
         </p>
 
-        <p style={{ marginBottom: "15px", maxWidth: "680px" }}>
+        <p style={{ marginBottom: "15px", maxWidth: "680px", color: "var(--text-body)" }}>
           {(lang as "sv" | "en") === "sv"
             ? "När beslut, beroenden och prioriteringar samverkar förändras organisationens beslutsrum – ofta långt innan några traditionella nyckeltal visar att något är fel."
             : "As decisions, dependencies and priorities interact, an organization's decision space changes—often long before traditional metrics reveal that anything is wrong."}
         </p>
 
-        <p style={{ marginBottom: 0, maxWidth: "680px" }}>
+        <p style={{ marginBottom: 0, maxWidth: "680px", color: "var(--text-body)" }}>
           {(lang as "sv" | "en") === "sv"
             ? "Decision Space Analytics hjälper ledningsgrupper att upptäcka den förändringen innan den blir synlig i genomförandet."
             : "Decision Space Analytics helps leadership teams recognize that change before it becomes visible in execution."}
@@ -388,13 +388,13 @@ export default function Page() {
             : "Questions Decision Space Analytics helps answer"}
         </h2>
 
-        <p style={{ marginBottom: "24px", maxWidth: "680px" }}>
+        <p style={{ marginBottom: "24px", maxWidth: "680px", color: "var(--text-body)" }}>
           {(lang as "sv" | "en") === "sv"
             ? "Decision Space Analytics hjälper ledningsgrupper att analysera frågor som traditionella projekt- och portföljverktyg sällan kan besvara."
             : "Decision Space Analytics helps leadership teams explore questions that traditional project and portfolio tools rarely answer."}
         </p>
 
-        <div style={{ display: "grid", gap: "22px", maxWidth: "680px" }}>
+        <div style={{ display: "grid", gap: "22px", maxWidth: "680px", color: "var(--text-body)" }}>
           {((lang as "sv" | "en") === "sv"
             ? [
                 "Vilka framtida möjligheter stänger det här beslutet?",
@@ -425,7 +425,7 @@ export default function Page() {
           {(lang as "sv" | "en") === "sv" ? "Vem det här är för" : "Who this is for"}
         </h2>
 
-        <ul style={{ paddingLeft: "20px" }}>
+        <ul style={{ paddingLeft: "20px", color: "var(--text-body)" }}>
           <li>
             {(lang as "sv" | "en") === "sv"
               ? "Ledningsgrupper som ansvarar för komplexa portföljer och långsiktiga investeringar"
@@ -449,7 +449,7 @@ export default function Page() {
           {(lang as "sv" | "en") === "sv" ? "Så genomförs en analys med Cascade Engine" : "How an analysis is conducted with Cascade Engine"}
         </h2>
 
-        <p style={{ color: "#666", marginBottom: "24px", maxWidth: "680px" }}>
+        <p style={{ color: "var(--text-muted)", marginBottom: "24px", maxWidth: "680px" }}>
           {(lang as "sv" | "en") === "sv"
             ? "Cascade Engine är programvaran som används för att genomföra Decision Space Analytics på verkliga beslut. Analysen sker tillsammans med organisationens egna beslutsfattare och domänexperter."
             : "Cascade Engine is the software used to apply Decision Space Analytics to real decisions. The analysis is conducted together with the organisation’s own decision-makers and domain experts."}
@@ -645,10 +645,10 @@ export default function Page() {
           {(lang as "sv" | "en") === "sv" ? "Boka en genomgång" : "Book a walkthrough"}{" "}
         </button>
 
-        <p style={{ fontSize: "14px", color: "#999" }}>christian@01systems.se</p>
+        <p style={{ fontSize: "14px", color: "var(--text-muted)" }}>christian@01systems.se</p>
       </section>
-      <footer style={{ marginTop: "80px", padding: "40px 0", opacity: 0.6 }}>
-        <div style={{ fontSize: "14px" }}>
+      <footer style={{ marginTop: "80px", padding: "40px 0" }}>
+        <div style={{ fontSize: "14px", color: "var(--text-subtle)" }}>
           © 2026 01 Systems
         </div>
       </footer>

@@ -16,7 +16,7 @@ export default function InsightsPage() {
         <p
           style={{
             fontSize: "13px",
-            color: "#666",
+            color: "var(--text-muted)",
             marginBottom: "14px",
             letterSpacing: "0.08em",
             textTransform: "uppercase",
@@ -46,7 +46,7 @@ export default function InsightsPage() {
               padding: "24px",
             }}
           >
-            <p style={{ fontSize: "13px", color: "#666", marginBottom: "10px" }}>
+            <p style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "10px" }}>
               Foundation {String(article.order).padStart(2, "0")}
             </p>
             <h2 style={{ fontSize: "24px", lineHeight: 1.3, marginBottom: "10px" }}>
@@ -54,8 +54,8 @@ export default function InsightsPage() {
                 {article.title}
               </Link>
             </h2>
-            <p style={{ color: "#555", marginBottom: "10px" }}>{article.subtitle}</p>
-            <p style={{ color: "#666", margin: 0 }}>{article.readingTime}</p>
+            <p style={{ color: "var(--text-body)", marginBottom: "10px" }}>{article.subtitle}</p>
+            <p style={{ color: "var(--text-muted)", margin: 0 }}>{article.readingTime}</p>
           </article>
         ))}
       </section>
