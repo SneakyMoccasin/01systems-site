@@ -21,28 +21,26 @@ export default function InsightArticlePage({
 
     return (
       <main
+        className="page-shell"
         style={{
           fontFamily: "system-ui, -apple-system, sans-serif",
-          padding: "60px 16px",
           maxWidth: "900px",
-          margin: "0 auto",
-          lineHeight: 1.6,
         }}
       >
         <article style={{ maxWidth: "760px" }}>
-          <p style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "14px", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+          <p className="eyebrow">
             Insights
           </p>
-          <h1 style={{ fontSize: "42px", lineHeight: 1.15, marginBottom: "20px" }}>
+          <h1 className="page-title">
             {article.title}
           </h1>
-          <p style={{ fontSize: "20px", lineHeight: 1.5, color: "var(--text-body)", marginBottom: "14px" }}>
+          <p className="body-xl" style={{ color: "var(--text-body)", marginBottom: "14px" }}>
             {article.subtitle}
           </p>
           <p style={{ color: "var(--text-muted)", marginBottom: "24px" }}>
             Foundation {String(article.order).padStart(2, "0")} · {article.readingTime}
           </p>
-          <div style={{ display: "grid", gap: "18px", color: "var(--text-body)" }}>
+          <div className="article-prose">
             {article.content.map((paragraph, index) => (
               <p key={index} style={{ margin: 0 }}>
                 {paragraph}

@@ -10,50 +10,33 @@ export default function Page() {
   const latestInsights = getHomepageInsights(3);
   return (
     <main
+      className="page-shell"
       style={{
         fontFamily: "system-ui, -apple-system, sans-serif",
-        padding: "60px 16px",
         maxWidth: "900px",
-        margin: "0 auto",
-        lineHeight: 1.6,
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "flex-end",
-          marginBottom: "20px",
-        }}
-      >
-        <button onClick={() => setLang("sv")} style={{ marginRight: "10px" }}>
+      <div className="language-toggle">
+        <button onClick={() => setLang("sv")} aria-label="Switch language to Swedish">
           SV
         </button>
-        <button onClick={() => setLang("en")}>EN</button>
+        <button onClick={() => setLang("en")} aria-label="Switch language to English">EN</button>
       </div>
 
       {/* HERO */}
       <section style={{ marginBottom: "72px" }}>
-        <p
-          style={{
-            fontSize: "13px",
-            color: "var(--text-muted)",
-            marginBottom: "14px",
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-            maxWidth: "760px",
-          }}
-        >
+        <p className="eyebrow content-narrow">
           Decision Space Analytics
         </p>
-        <h1 style={{ fontSize: "42px", lineHeight: 1.15, marginBottom: "28px", maxWidth: "760px" }}>
+        <h1 className="page-title content-narrow" style={{ marginBottom: "28px" }}>
           Cascade Engine
         </h1>
-        <p style={{ fontSize: "18px", lineHeight: 1.65, color: "var(--text-body)", maxWidth: "660px", marginBottom: "20px", fontWeight: 500 }}>
+        <p className="body-large" style={{ color: "var(--text-body)", maxWidth: "660px", marginBottom: "20px", fontWeight: 500 }}>
           {(lang as "sv" | "en") === "sv"
             ? "Programvaran byggd för Decision Space Analytics."
             : "Software purpose-built for Decision Space Analytics."}
         </p>
-        <p style={{ fontSize: "21px", lineHeight: 1.5, marginBottom: "20px", maxWidth: "700px" }}>
+        <p className="body-xl" style={{ marginBottom: "20px", maxWidth: "700px" }}>
           {(lang as "sv" | "en") === "sv"
             ? "Se hur dagens beslut förändrar morgondagens möjligheter."
             : "See how today's decisions reshape tomorrow's options."}
@@ -67,14 +50,14 @@ export default function Page() {
           muted
           loop
           playsInline
-          className="w-full rounded-2xl border border-white/10 shadow-2xl mt-8"
+          className="rounded-media"
         >
           <source src="/videos/Demo01.mp4" type="video/mp4" />
         </video>
       </section>
 
       <section style={{ marginBottom: "64px" }}>
-        <h2 style={{ fontSize: "22px", marginBottom: "12px", lineHeight: 1.3, fontWeight: 600 }}>
+        <h2 className="section-title" style={{ marginBottom: "12px" }}>
           {(lang as "sv" | "en") === "sv"
             ? "Cascade Engine i praktiken"
             : "Cascade Engine in action"}
@@ -86,37 +69,18 @@ export default function Page() {
             : "Explore how different decisions reshape future possibilities through the interface."}
         </p>
 
-        <div
-          style={{
-            marginTop: "32px",
-            marginBottom: "28px",
-            width: "min(1200px, calc(100% + 260px))",
-            marginLeft: "50%",
-            transform: "translateX(-50%)",
-          }}
-        >
+        <div className="full-bleed-media">
           <Image
             src="/images/cascade-engine-interface-2026-07-16.png"
             alt={(lang as "sv" | "en") === "sv" ? "Skärmbild av Cascade Engine" : "Screenshot of Cascade Engine"}
             width={1829}
             height={980}
-            style={{
-              width: "100%",
-              height: "auto",
-              borderRadius: "16px",
-              boxShadow: "0 8px 24px rgba(0, 0, 0, 0.08)",
-            }}
+            className="rounded-media"
+            style={{ width: "100%", height: "auto" }}
           />
         </div>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: "20px",
-            maxWidth: "900px",
-          }}
-        >
+        <div className="responsive-grid feature-grid" style={{ gap: "20px", maxWidth: "900px" }}>
           {((lang as "sv" | "en") === "sv"
             ? [
                 {
@@ -151,47 +115,47 @@ export default function Page() {
               <h3 style={{ fontSize: "18px", marginBottom: "8px", lineHeight: 1.3 }}>
                 {item.title}
               </h3>
-              <p style={{ margin: 0, maxWidth: "260px" }}>{item.text}</p>
+              <p className="body-large" style={{ margin: 0, maxWidth: "260px", fontSize: "16px" }}>{item.text}</p>
             </div>
           ))}
         </div>
       </section>
 
       <section style={{ marginBottom: "64px" }}>
-        <h2 style={{ fontSize: "22px", marginBottom: "20px", lineHeight: 1.3, fontWeight: 600 }}>
+        <h2 className="section-title" style={{ marginBottom: "20px" }}>
           {(lang as "sv" | "en") === "sv"
             ? "Vad är Decision Space Analytics?"
             : "What is Decision Space Analytics?"}
         </h2>
 
-        <div style={{ maxWidth: "680px", color: "var(--text-body)", fontSize: "18px", lineHeight: 1.65 }}>
+        <div className="body-large stack-lg" style={{ maxWidth: "680px", color: "var(--text-body)" }}>
           {(lang as "sv" | "en") === "sv" ? (
             <>
-              <p style={{ marginBottom: "18px" }}>
+              <p style={{ margin: 0 }}>
                 Projektverktyg visar aktiviteter, resurser, tidplaner och risker.
               </p>
-              <p style={{ marginBottom: "18px" }}>
+              <p style={{ margin: 0 }}>
                 Decision Space Analytics besvarar en annan fråga:
               </p>
-              <p style={{ marginBottom: "18px", fontSize: "20px", lineHeight: 1.5, color: "var(--text-primary)", fontWeight: 600 }}>
+              <p className="body-xl" style={{ margin: 0, color: "var(--text-primary)", fontWeight: 600 }}>
                 Vilka framtida möjligheter är fortfarande öppna efter att dagens beslut har fattats?
               </p>
-              <p style={{ marginBottom: 0 }}>
+              <p style={{ margin: 0 }}>
                 Genom att jämföra olika beslut och sekvenser visar analysen hur vissa alternativ öppnas, bevaras eller stängs över tid.
               </p>
             </>
           ) : (
             <>
-              <p style={{ marginBottom: "18px" }}>
+              <p style={{ margin: 0 }}>
                 Project tools show activities, resources, schedules and risks.
               </p>
-              <p style={{ marginBottom: "18px" }}>
+              <p style={{ margin: 0 }}>
                 Decision Space Analytics answers a different question:
               </p>
-              <p style={{ marginBottom: "18px", fontSize: "20px", lineHeight: 1.5, color: "var(--text-primary)", fontWeight: 600 }}>
+              <p className="body-xl" style={{ margin: 0, color: "var(--text-primary)", fontWeight: 600 }}>
                 Which future options remain open after today’s decisions have been made?
               </p>
-              <p style={{ marginBottom: 0 }}>
+              <p style={{ margin: 0 }}>
                 By comparing different decisions and sequences, the analysis reveals how options open, remain available or close over time.
               </p>
             </>
@@ -200,22 +164,22 @@ export default function Page() {
       </section>
 
       <section style={{ marginBottom: "64px" }}>
-        <h2 style={{ fontSize: "22px", marginBottom: "20px", lineHeight: 1.3, fontWeight: 600 }}>
+        <h2 className="section-title" style={{ marginBottom: "20px" }}>
           {(lang as "sv" | "en") === "sv"
             ? "Vad är Cascade Engine?"
             : "What is Cascade Engine?"}
         </h2>
 
-        <div style={{ maxWidth: "680px", color: "var(--text-body)", fontSize: "18px", lineHeight: 1.65 }}>
+        <div className="body-large stack-lg" style={{ maxWidth: "680px", color: "var(--text-body)" }}>
           {(lang as "sv" | "en") === "sv" ? (
             <>
-              <p style={{ marginBottom: "18px" }}>
+              <p style={{ margin: 0 }}>
                 Cascade Engine omvandlar beslut, beroenden och begränsningar till jämförbara scenarier.
               </p>
-              <p style={{ marginBottom: "18px" }}>
+              <p style={{ margin: 0 }}>
                 Programvaran visar hur olika vägval och ordningsföljder påverkar genomförbarhet, prioriteringar och framtida valmöjligheter över tid.
               </p>
-              <p style={{ marginBottom: "18px" }}>
+              <p style={{ margin: 0 }}>
                 Det ger ledningsgrupper ett konkret underlag för att pröva ett beslut innan resurser binds och konsekvenserna blir svåra att förändra.
               </p>
               <div style={{ display: "grid", gap: "12px" }}>
@@ -233,13 +197,13 @@ export default function Page() {
             </>
           ) : (
             <>
-              <p style={{ marginBottom: "18px" }}>
+              <p style={{ margin: 0 }}>
                 Cascade Engine turns decisions, dependencies and constraints into comparable scenarios.
               </p>
-              <p style={{ marginBottom: "18px" }}>
+              <p style={{ margin: 0 }}>
                 The software shows how different choices and sequences affect feasibility, priorities and future options over time.
               </p>
-              <p style={{ marginBottom: "18px" }}>
+              <p style={{ margin: 0 }}>
                 It gives leadership teams a concrete basis for testing a decision before resources are committed and its consequences become difficult to change.
               </p>
               <div style={{ display: "grid", gap: "12px" }}>
@@ -261,7 +225,7 @@ export default function Page() {
 
       {/* WORKFLOW OVERVIEW */}
       <section style={{ marginBottom: "64px" }}>
-        <h2 style={{ fontSize: "22px", marginBottom: "10px", lineHeight: 1.3, fontWeight: 600 }}>
+        <h2 className="section-title" style={{ marginBottom: "10px" }}>
           {(lang as "sv" | "en") === "sv"
             ? "Decision Space Analytics – analysens fyra steg"
             : "Decision Space Analytics – Four analytical steps"}
@@ -273,24 +237,17 @@ export default function Page() {
         </p>
 
         <div
+          className="surface-card"
           style={{
             width: "100%",
             maxWidth: "900px",
             border: "1px solid #e5e5e5",
             borderRadius: "8px",
-            padding: "28px 24px",
             background: "#fff",
             color: "var(--card-text-primary)",
           }}
         >
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-              gap: "16px",
-              alignItems: "stretch",
-            }}
-          >
+          <div className="responsive-grid steps-grid" style={{ alignItems: "stretch" }}>
             {[
               {
                 svTitle: "Definiera beslutet",
@@ -319,8 +276,8 @@ export default function Page() {
             ].map((step, index) => (
               <div
                 key={index}
+                className="surface-card"
                 style={{
-                  padding: "18px 16px",
                   border: "1px solid #e5e5e5",
                   borderRadius: "8px",
                   color: "var(--card-text-primary)",
@@ -351,7 +308,7 @@ export default function Page() {
 
       {/* CASCADE EXPLANATION */}
       <section style={{ marginBottom: "64px" }}>
-        <h2 style={{ fontSize: "22px", marginBottom: "20px", lineHeight: 1.3, fontWeight: 600 }}>
+        <h2 className="section-title" style={{ marginBottom: "20px" }}>
           {(lang as "sv" | "en") === "sv"
             ? "Varför Decision Space Analytics?"
             : "Why Decision Space Analytics?"}
@@ -384,7 +341,7 @@ export default function Page() {
 
       {/* INSIGHTS */}
       <section style={{ marginBottom: "64px" }}>
-        <h2 style={{ fontSize: "22px", marginBottom: "20px", lineHeight: 1.3, fontWeight: 600 }}>
+        <h2 className="section-title" style={{ marginBottom: "20px" }}>
           {(lang as "sv" | "en") === "sv"
             ? "Frågor Decision Space Analytics hjälper dig besvara"
             : "Questions Decision Space Analytics helps answer"}
@@ -396,7 +353,7 @@ export default function Page() {
             : "Decision Space Analytics helps leadership teams explore questions that traditional project and portfolio tools rarely answer."}
         </p>
 
-        <div style={{ display: "grid", gap: "22px", maxWidth: "680px", color: "var(--text-body)" }}>
+        <div className="responsive-grid body-large" style={{ gap: "22px", maxWidth: "680px", color: "var(--text-body)" }}>
           {((lang as "sv" | "en") === "sv"
             ? [
                 "Vilka framtida möjligheter stänger det här beslutet?",
@@ -423,11 +380,11 @@ export default function Page() {
       </section>
 
       <section style={{ marginBottom: "64px" }}>
-        <h2 style={{ fontSize: "22px", marginBottom: "20px", lineHeight: 1.3, fontWeight: 600 }}>
+        <h2 className="section-title" style={{ marginBottom: "20px" }}>
           {(lang as "sv" | "en") === "sv" ? "Vem det här är för" : "Who this is for"}
         </h2>
 
-        <ul style={{ paddingLeft: "20px", color: "var(--text-body)" }}>
+        <ul className="bullet-list body-large">
           <li>
             {(lang as "sv" | "en") === "sv"
               ? "Ledningsgrupper som ansvarar för komplexa portföljer och långsiktiga investeringar"
@@ -447,7 +404,7 @@ export default function Page() {
       </section>
 
       <section style={{ marginBottom: "64px", borderTop: "1px solid #e5e5e5", paddingTop: "40px" }}>
-        <h2 style={{ fontSize: "22px", marginBottom: "12px", lineHeight: 1.3, fontWeight: 600 }}>
+        <h2 className="section-title" style={{ marginBottom: "12px" }}>
           {(lang as "sv" | "en") === "sv" ? "Så genomförs en analys med Cascade Engine" : "How an analysis is conducted with Cascade Engine"}
         </h2>
 
@@ -457,14 +414,7 @@ export default function Page() {
             : "Cascade Engine is the software used to apply Decision Space Analytics to real decisions. The analysis is conducted together with the organisation’s own decision-makers and domain experts."}
         </p>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-            gap: "16px",
-            alignItems: "stretch",
-          }}
-        >
+        <div className="responsive-grid steps-grid" style={{ alignItems: "stretch" }}>
           {((lang as "sv" | "en") === "sv"
             ? [
                 {
@@ -505,8 +455,8 @@ export default function Page() {
           ).map((step, index) => (
             <div
               key={step.title}
+              className="surface-card"
               style={{
-                padding: "18px 16px",
                 border: "1px solid #e5e5e5",
                 borderRadius: "8px",
                 color: "var(--text-primary)",
@@ -535,10 +485,10 @@ export default function Page() {
       </section>
 
       <section
+        className="surface-card"
         style={{
           marginTop: "88px",
           marginBottom: "64px",
-          padding: "40px 24px",
           borderRadius: "16px",
           background: "#fafafa",
           color: "var(--card-text-primary)",
@@ -568,24 +518,17 @@ export default function Page() {
           <h2 style={{ fontSize: "22px", lineHeight: 1.3, fontWeight: 600, margin: 0 }}>
             Insights
           </h2>
-          <Link href="/insights" style={{ color: "inherit" }}>
+          <Link href="/insights" style={{ color: "inherit" }} className="touch-link">
             View all Insights
           </Link>
         </div>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: "20px",
-            maxWidth: "900px",
-          }}
-        >
+        <div className="responsive-grid feature-grid" style={{ gap: "20px", maxWidth: "900px" }}>
           {latestInsights.map((article) => (
             <article
               key={article.slug}
+              className="surface-card"
               style={{
-                padding: "20px",
                 border: "1px solid #dddddd",
                 borderRadius: "12px",
                 background: "#fff",
@@ -608,16 +551,16 @@ export default function Page() {
       </section>
 
       <section
+        className="surface-card"
         style={{
           marginTop: "60px",
-          padding: "30px",
           border: "1px solid #e5e5e5",
           borderRadius: "12px",
           background: "#fafafa",
           color: "var(--card-text-primary)",
         }}
       >
-        <h2 style={{ fontSize: "22px", marginBottom: "10px", lineHeight: 1.3, fontWeight: 600 }}>
+        <h2 className="section-title" style={{ marginBottom: "10px" }}>
           {(lang as "sv" | "en") === "sv"
             ? "Har ni ett beslut som är svårt att överblicka?"
             : "Do you have a decision that's difficult to evaluate?"}
@@ -636,6 +579,7 @@ export default function Page() {
         </p>
 
         <button
+          className="touch-button"
           style={{
             padding: "14px 22px",
             background: "#000",
@@ -648,7 +592,7 @@ export default function Page() {
           }}
           onClick={() => (window.location.href = "mailto:christian@01systems.se")}
         >
-          {(lang as "sv" | "en") === "sv" ? "Boka en genomgång" : "Book a walkthrough"}{" "}
+          {(lang as "sv" | "en") === "sv" ? "Boka en genomgång" : "Book a walkthrough"}
         </button>
 
         <p style={{ fontSize: "14px", color: "var(--text-muted)" }}>christian@01systems.se</p>

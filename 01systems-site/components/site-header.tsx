@@ -23,15 +23,8 @@ export function SiteHeader() {
         };
 
   return (
-    <header
-      style={{
-        padding: "12px 20px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-      }}
-    >
-      <Link href="/" aria-label="01 Systems home">
+    <header className="site-header-shell">
+      <Link href="/" aria-label="01 Systems home" className="site-header-home">
         <Image
           className="site-logo"
           src="/images/Logo-01.svg"
@@ -43,24 +36,18 @@ export function SiteHeader() {
       </Link>
       <nav
         aria-label="Primary"
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          justifyContent: "flex-end",
-          gap: "18px",
-          fontSize: "15px",
-        }}
+        className="site-nav"
       >
-        <Link href="/" style={{ color: "inherit", textDecoration: "none" }}>
+        <Link href="/">
           {labels.home}
         </Link>
-        <Link href="/insights" style={{ color: "inherit", textDecoration: "none" }}>
+        <Link href="/insights">
           {labels.insights}
         </Link>
-        <Link href="/about" style={{ color: "inherit", textDecoration: "none" }}>
+        <Link href="/about">
           {labels.about}
         </Link>
-        <a href="mailto:christian@01systems.se" style={{ color: "inherit", textDecoration: "none" }}>
+        <a href="mailto:christian@01systems.se">
           {labels.walkthrough}
         </a>
       </nav>
