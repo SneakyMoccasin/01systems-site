@@ -280,6 +280,7 @@ export default function Page() {
             borderRadius: "8px",
             padding: "28px 24px",
             background: "#fff",
+            color: "var(--card-text-primary)",
           }}
         >
           <div
@@ -322,12 +323,13 @@ export default function Page() {
                   padding: "18px 16px",
                   border: "1px solid #e5e5e5",
                   borderRadius: "8px",
+                  color: "var(--card-text-primary)",
                 }}
               >
                 <p
                   style={{
                     fontSize: "13px",
-                    color: "#666",
+                    color: "var(--card-text-muted)",
                     marginBottom: "10px",
                     letterSpacing: "0.04em",
                     textTransform: "uppercase",
@@ -338,7 +340,7 @@ export default function Page() {
                 <h3 style={{ fontSize: "18px", marginBottom: "10px", lineHeight: 1.3 }}>
                   {(lang as "sv" | "en") === "sv" ? step.svTitle : step.enTitle}
                 </h3>
-                <p style={{ fontSize: "16px", color: "#555", lineHeight: 1.6, margin: 0 }}>
+                <p style={{ fontSize: "16px", color: "var(--card-text-body)", lineHeight: 1.6, margin: 0 }}>
                   {(lang as "sv" | "en") === "sv" ? step.svText : step.enText}
                 </p>
               </div>
@@ -507,12 +509,13 @@ export default function Page() {
                 padding: "18px 16px",
                 border: "1px solid #e5e5e5",
                 borderRadius: "8px",
+                color: "var(--card-text-primary)",
               }}
             >
               <p
                 style={{
                   fontSize: "13px",
-                  color: "#666",
+                  color: "var(--card-text-muted)",
                   marginBottom: "10px",
                   letterSpacing: "0.04em",
                   textTransform: "uppercase",
@@ -523,7 +526,7 @@ export default function Page() {
               <h3 style={{ fontSize: "18px", marginBottom: "10px", lineHeight: 1.3 }}>
                 {step.title}
               </h3>
-              <p style={{ fontSize: "16px", color: "#555", lineHeight: 1.6, margin: 0 }}>
+              <p style={{ fontSize: "16px", color: "var(--card-text-body)", lineHeight: 1.6, margin: 0 }}>
                 {step.text}
               </p>
             </div>
@@ -538,12 +541,13 @@ export default function Page() {
           padding: "40px 24px",
           borderRadius: "16px",
           background: "#fafafa",
+          color: "var(--card-text-primary)",
         }}
       >
         <p
           style={{
             fontSize: "13px",
-            color: "#666",
+            color: "var(--card-text-muted)",
             marginBottom: "10px",
             letterSpacing: "0.08em",
             textTransform: "uppercase",
@@ -586,9 +590,10 @@ export default function Page() {
                 borderRadius: "12px",
                 background: "#fff",
                 boxShadow: "0 8px 24px rgba(0, 0, 0, 0.04)",
+                color: "var(--card-text-primary)",
               }}
             >
-              <p style={{ fontSize: "13px", color: "#666", marginBottom: "10px" }}>
+              <p style={{ fontSize: "13px", color: "var(--card-text-muted)", marginBottom: "10px" }}>
                 Foundation {String(article.order).padStart(2, "0")}
               </p>
               <h3 style={{ fontSize: "18px", lineHeight: 1.3, marginBottom: "10px" }}>
@@ -596,7 +601,7 @@ export default function Page() {
                   {article.title}
                 </Link>
               </h3>
-              <p style={{ margin: 0, color: "#555" }}>{article.subtitle}</p>
+              <p style={{ margin: 0, color: "var(--card-text-body)" }}>{article.subtitle}</p>
             </article>
           ))}
         </div>
@@ -609,6 +614,7 @@ export default function Page() {
           border: "1px solid #e5e5e5",
           borderRadius: "12px",
           background: "#fafafa",
+          color: "var(--card-text-primary)",
         }}
       >
         <h2 style={{ fontSize: "22px", marginBottom: "10px", lineHeight: 1.3, fontWeight: 600 }}>
@@ -617,13 +623,13 @@ export default function Page() {
             : "Do you have a decision that's difficult to evaluate?"}
         </h2>
 
-        <p style={{ color: "#666", marginBottom: "20px", maxWidth: "680px" }}>
+        <p style={{ color: "var(--card-text-body)", marginBottom: "20px", maxWidth: "680px" }}>
           {(lang as "sv" | "en") === "sv"
             ? "Ta med ett verkligt beslut eller en investeringsfråga. Under genomgången visar vi hur Cascade Engine kan synliggöra beroenden, jämföra alternativa vägval och göra tydligare vad dagens beslut betyder för framtida möjligheter."
             : "Bring a real decision or investment question. In the walkthrough, we'll show how Cascade Engine reveals dependencies, compares alternative paths and makes it clearer what today's decisions mean for future options."}
         </p>
 
-        <p style={{ color: "#666", marginBottom: "20px", maxWidth: "680px" }}>
+        <p style={{ color: "var(--card-text-body)", marginBottom: "20px", maxWidth: "680px" }}>
           {(lang as "sv" | "en") === "sv"
             ? "Ni får en konkret bild av hur analysen genomförs tillsammans med era egna beslutsfattare och domänexperter, och vad ni kan ta med er vidare efter mötet."
             : "You'll get a concrete view of how the analysis is carried out together with your own decision-makers and domain experts, and what you can take away from the session afterward."}

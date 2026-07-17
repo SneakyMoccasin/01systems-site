@@ -7,6 +7,9 @@
   --text-body: #555555;
   --text-muted: #666666;
   --text-subtle: #777777;
+  --card-text-primary: #171717;
+  --card-text-body: #444444;
+  --card-text-muted: #5c5c5c;
 }
 
 @theme inline {
@@ -24,6 +27,9 @@
     --text-body: #d0d0d0;
     --text-muted: #9a9a9a;
     --text-subtle: #787878;
+    --card-text-primary: #171717;
+    --card-text-body: #444444;
+    --card-text-muted: #5c5c5c;
   }
 
   .site-logo {

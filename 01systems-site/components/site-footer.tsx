@@ -14,6 +14,7 @@ export function SiteFooter() {
         marginTop: "60px",
         borderTop: "1px solid #eee",
         background: "#fff",
+        color: "var(--card-text-primary)",
       }}
     >
       <div
@@ -26,7 +27,7 @@ export function SiteFooter() {
         }}
       >
         <div style={{ fontSize: "22px", fontWeight: 600, lineHeight: 1.2 }}>01 Systems</div>
-        <div style={{ color: "#555", lineHeight: 1.5 }}>Decision Space Analytics</div>
+        <div style={{ color: "var(--card-text-body)", lineHeight: 1.5 }}>Decision Space Analytics</div>
 
         <div
           style={{
@@ -42,7 +43,7 @@ export function SiteFooter() {
           <Link href="/about" style={{ color: "#111", textDecoration: "none" }}>
             {isSwedish ? "Om" : "About"}
           </Link>
-          <a href="mailto:christian@01systems.se" style={{ color: "#111", textDecoration: "none" }}>
+          <a href="mailto:christian@01systems.se" style={{ color: "var(--card-text-primary)", textDecoration: "none" }}>
             {isSwedish ? "Boka en genomgång" : "Book a walkthrough"}
           </a>
         </div>
@@ -50,7 +51,7 @@ export function SiteFooter() {
         <a
           href="mailto:christian@01systems.se"
           style={{
-            color: "#555",
+            color: "var(--card-text-body)",
             textDecoration: "none",
             paddingTop: "8px",
             width: "fit-content",
@@ -72,7 +73,7 @@ export function SiteFooter() {
             rel="noopener noreferrer"
             aria-label="Christian Strandek on LinkedIn"
             style={{
-              color: "#111",
+              color: "var(--card-text-primary)",
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
@@ -91,7 +92,7 @@ export function SiteFooter() {
           </a>
         </div>
 
-        <div style={{ color: "#777", fontSize: "14px", paddingTop: "4px" }}>© 2026 01 Systems</div>
+        <div style={{ color: "var(--card-text-muted)", fontSize: "14px", paddingTop: "4px" }}>© 2026 01 Systems</div>
       </div>
     </footer>
   );

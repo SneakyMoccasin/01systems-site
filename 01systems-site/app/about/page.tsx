@@ -93,12 +93,13 @@ export default function AboutPage() {
           border: "1px solid #e5e5e5",
           borderRadius: "12px",
           background: "#fafafa",
+          color: "var(--card-text-primary)",
         }}
       >
         <h2 style={{ fontSize: "22px", marginBottom: "10px", lineHeight: 1.3, fontWeight: 600 }}>
           {isSwedish ? "Boka en genomgång" : "Book a walkthrough"}
         </h2>
-        <p style={{ color: "#666", marginBottom: "20px", maxWidth: "640px" }}>
+        <p style={{ color: "var(--card-text-body)", marginBottom: "20px", maxWidth: "640px" }}>
           {isSwedish
             ? "Ta med ett verkligt besluts- eller investeringsfall. Vi visar hur Cascade Engine stödjer Decision Space Analytics och hur arbetet genomförs tillsammans med ert team."
             : "Bring a real decision or investment question. We'll show how Cascade Engine supports Decision Space Analytics and how the work is carried out together with your team."}
