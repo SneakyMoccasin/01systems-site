@@ -509,13 +509,13 @@ export default function Page() {
                 padding: "18px 16px",
                 border: "1px solid #e5e5e5",
                 borderRadius: "8px",
-                color: "var(--card-text-primary)",
+                color: "var(--text-primary)",
               }}
             >
               <p
                 style={{
                   fontSize: "13px",
-                  color: "var(--card-text-muted)",
+                  color: "var(--text-muted)",
                   marginBottom: "10px",
                   letterSpacing: "0.04em",
                   textTransform: "uppercase",
