@@ -11,12 +11,14 @@ export function SiteHeader() {
     lang === "sv"
       ? {
           home: "Hem",
+          architecture: "Arkitektur",
           insights: "Insikter",
           about: "Om",
           walkthrough: "Boka en genomgång",
         }
       : {
           home: "Home",
+          architecture: "Architecture",
           insights: "Insights",
           about: "About",
           walkthrough: "Book a walkthrough",
@@ -40,6 +42,9 @@ export function SiteHeader() {
       >
         <Link href="/">
           {labels.home}
+        </Link>
+        <Link href="/architecture">
+          {labels.architecture}
         </Link>
         <Link href="/insights">
           {labels.insights}
