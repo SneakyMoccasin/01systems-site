@@ -1,15 +1,11 @@
 "use client";
 
-import { useLanguage } from "@/components/language-context";
-
 type Props = {
   compact?: boolean;
   style?: React.CSSProperties;
 };
 
 export function InsightAuthorLine({ compact = false, style }: Props) {
-  const { lang } = useLanguage();
-
   return (
     <p
       style={{
@@ -20,9 +16,7 @@ export function InsightAuthorLine({ compact = false, style }: Props) {
         ...style,
       }}
     >
-      {lang === "sv"
-        ? "Skriven av Christian Strandek"
-        : "Written by Christian Strandek"}
+      Written by Christian Strandek
     </p>
   );
 }
