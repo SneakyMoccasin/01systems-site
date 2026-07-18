@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { useLanguage } from "@/components/language-context";
 
 type Language = "sv" | "en";
@@ -42,6 +43,7 @@ type PageCopy = {
     heading: string;
     designedTo: string;
     notDesignedTo: string;
+    swipeHint: string;
     rows: [string, string][];
   };
 };
@@ -115,6 +117,7 @@ const COPY: Record<Language, PageCopy> = {
       heading: "Capabilities",
       designedTo: "Designed to",
       notDesignedTo: "Not Designed to",
+      swipeHint: "Swipe sideways to view both columns →",
       rows: [
         [
           "Analyse structural relationships between decisions.",
@@ -203,6 +206,7 @@ const COPY: Record<Language, PageCopy> = {
       heading: "Förmågor och avgränsningar",
       designedTo: "Utformad för att",
       notDesignedTo: "Inte utformad för att",
+      swipeHint: "Svep åt sidan för att se båda kolumnerna →",
       rows: [
         [
           "Analysera strukturella samband mellan beslut.",
@@ -468,6 +472,50 @@ function ArchitectureDiagram({
 export function ArchitecturePageContent() {
   const { lang } = useLanguage();
   const copy = COPY[lang];
+  const tableScrollRef = useRef<HTMLDivElement | null>(null);
+  const [isNarrowViewport, setIsNarrowViewport] = useState(false);
+  const [canScrollTable, setCanScrollTable] = useState(false);
+  const [canScrollTableRight, setCanScrollTableRight] = useState(false);
+  const [hasScrolledTable, setHasScrolledTable] = useState(false);
+
+  useEffect(() => {
+    const updateViewport = () => {
+      setIsNarrowViewport(window.innerWidth <= 640);
+    };
+
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+    return () => window.removeEventListener("resize", updateViewport);
+  }, []);
+
+  useEffect(() => {
+    const element = tableScrollRef.current;
+    if (!element) return;
+
+    const updateScrollState = () => {
+      const maxScrollLeft = element.scrollWidth - element.clientWidth;
+      setCanScrollTable(maxScrollLeft > 8);
+      setCanScrollTableRight(element.scrollLeft < maxScrollLeft - 8);
+      setHasScrolledTable(element.scrollLeft > 8);
+    };
+
+    updateScrollState();
+    element.addEventListener("scroll", updateScrollState, { passive: true });
+
+    const resizeObserver =
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(() => updateScrollState())
+        : null;
+    resizeObserver?.observe(element);
+
+    window.addEventListener("resize", updateScrollState);
+
+    return () => {
+      element.removeEventListener("scroll", updateScrollState);
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", updateScrollState);
+    };
+  }, []);
 
   return (
     <main
@@ -594,15 +642,39 @@ export function ArchitecturePageContent() {
         <h2 className="section-title" style={{ marginBottom: "16px" }}>
           {copy.capabilities.heading}
         </h2>
+        {isNarrowViewport && canScrollTable ? (
+          <p
+            className="eyebrow"
+            style={{
+              marginBottom: "12px",
+              color: "var(--text-muted)",
+              opacity: hasScrolledTable ? 0.55 : 1,
+              transition: "opacity 180ms ease",
+            }}
+          >
+            {copy.capabilities.swipeHint}
+          </p>
+        ) : null}
         <div
-          className="surface-card"
           style={{
-            border: "1px solid #e5e5e5",
-            background: "#fafafa",
-            color: "var(--card-text-primary)",
-            overflowX: "auto",
+            position: "relative",
+            overflow: "hidden",
+            borderRadius: "12px",
           }}
         >
+          <div
+            ref={tableScrollRef}
+            className="surface-card"
+            style={{
+              border: "1px solid #e5e5e5",
+              background: "#fafafa",
+              color: "var(--card-text-primary)",
+              overflowX: "auto",
+              overflowY: "hidden",
+              WebkitOverflowScrolling: "touch",
+              maxWidth: "100%",
+            }}
+          >
           <table
             style={{
               width: "100%",
@@ -671,6 +743,22 @@ export function ArchitecturePageContent() {
               ))}
             </tbody>
           </table>
+          </div>
+          {isNarrowViewport && canScrollTableRight ? (
+            <div
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                top: 0,
+                right: 0,
+                bottom: 0,
+                width: "28px",
+                pointerEvents: "none",
+                background:
+                  "linear-gradient(to left, rgba(250, 250, 250, 0.96), rgba(250, 250, 250, 0))",
+              }}
+            />
+          ) : null}
         </div>
       </section>
     </main>

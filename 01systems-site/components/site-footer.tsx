@@ -31,6 +31,9 @@ export function SiteFooter() {
         <div style={{ color: "var(--card-text-body)", lineHeight: 1.5 }}>Decision Space Analytics</div>
 
         <div className="footer-links">
+          <Link href="/architecture" style={{ color: "#111", textDecoration: "none" }}>
+            {isSwedish ? "Arkitektur" : "Architecture"}
+          </Link>
           <Link href="/insights" style={{ color: "#111", textDecoration: "none" }}>
             {isSwedish ? "Insikter" : "Insights"}
           </Link>

@@ -42,20 +42,40 @@ export function HomePageContent() {
       </section>
 
       <section style={{ marginBottom: "64px" }}>
+        <p className="eyebrow content-narrow">
+          {(lang as "sv" | "en") === "sv" ? "1 minuts demo" : "1-minute demo"}
+        </p>
+        <h2 className="section-title" style={{ marginBottom: "12px" }}>
+          {(lang as "sv" | "en") === "sv" ? "Se Executive Demo" : "Watch the Executive Demo"}
+        </h2>
+        <p style={{ color: "var(--text-muted)", marginBottom: "24px", maxWidth: "680px" }}>
+          {(lang as "sv" | "en") === "sv"
+            ? "Se hur olika beslutssekvenser påverkar framtida handlingsutrymme och genomförbarhet."
+            : "See how different decision sequences change future execution flexibility."}
+        </p>
+        <p className="eyebrow content-narrow" style={{ marginBottom: "16px" }}>
+          {(lang as "sv" | "en") === "sv" ? "VIDEODEMO" : "VIDEO DEMO"}
+        </p>
         <video autoPlay muted loop playsInline className="rounded-media">
           <source src="/videos/Demo01.mp4" type="video/mp4" />
         </video>
       </section>
 
       <section style={{ marginBottom: "64px" }}>
+        <p className="eyebrow content-narrow">
+          {(lang as "sv" | "en") === "sv" ? "Gränssnittsförhandsvisning" : "Interface preview"}
+        </p>
         <h2 className="section-title" style={{ marginBottom: "12px" }}>
-          {(lang as "sv" | "en") === "sv" ? "Cascade Engine i praktiken" : "Cascade Engine in action"}
+          {(lang as "sv" | "en") === "sv" ? "Utforska analysgränssnittet" : "Explore the Analysis Interface"}
         </h2>
 
         <p style={{ color: "var(--text-muted)", marginBottom: "24px", maxWidth: "680px" }}>
           {(lang as "sv" | "en") === "sv"
-            ? "Utforska hur olika beslut förändrar framtida möjligheter genom gränssnittet."
-            : "Explore how different decisions reshape future possibilities through the interface."}
+            ? "Se gränssnittet som används för att analysera beslutssekvenser, begränsningar och kaskadeffekter."
+            : "See the interface used to inspect decision sequences, constraints and cascading effects."}
+        </p>
+        <p className="eyebrow content-narrow" style={{ marginBottom: "16px" }}>
+          {(lang as "sv" | "en") === "sv" ? "BILD" : "IMAGE"}
         </p>
 
         <div className="full-bleed-media">
@@ -463,7 +483,7 @@ export function HomePageContent() {
             textTransform: "uppercase",
           }}
         >
-          FOUNDATION SERIES
+          {(lang as "sv" | "en") === "sv" ? "Grundserie" : "FOUNDATION SERIES"}
         </p>
         <div
           style={{
@@ -475,9 +495,11 @@ export function HomePageContent() {
             flexWrap: "wrap",
           }}
         >
-          <h2 style={{ fontSize: "22px", lineHeight: 1.3, fontWeight: 600, margin: 0 }}>Insights</h2>
+          <h2 style={{ fontSize: "22px", lineHeight: 1.3, fontWeight: 600, margin: 0 }}>
+            {(lang as "sv" | "en") === "sv" ? "Insikter" : "Insights"}
+          </h2>
           <Link href="/insights" style={{ color: "inherit" }} className="touch-link">
-            View all Insights
+            {(lang as "sv" | "en") === "sv" ? "Visa alla insikter" : "View all Insights"}
           </Link>
         </div>
 
