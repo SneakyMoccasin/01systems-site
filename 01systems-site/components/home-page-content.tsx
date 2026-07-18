@@ -517,7 +517,8 @@ export function HomePageContent() {
               }}
             >
               <p style={{ fontSize: "13px", color: "var(--card-text-muted)", marginBottom: "10px" }}>
-                Foundation {String(article.order).padStart(2, "0")}
+                {(lang as "sv" | "en") === "sv" ? "Grundserie" : "Foundation"}{" "}
+                {String(article.order).padStart(2, "0")}
               </p>
               <h3 style={{ fontSize: "18px", lineHeight: 1.3, marginBottom: "10px" }}>
                 <Link href={`/insights/${article.slug}`} style={{ color: "inherit", textDecoration: "none" }}>

@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { InsightAuthorLine } from "@/components/insight-author-line";
+import {
+  InsightFoundationLabel,
+  InsightLocalizedText,
+  InsightReadingTime,
+} from "@/components/insight-ui";
 import { getInsightBySlug, insightArticles } from "@/data/insights";
 import { SITE_NAME, absoluteUrl, createPageMetadata } from "@/lib/seo";
 
@@ -80,7 +85,7 @@ export default async function InsightArticlePage({
       />
       <article style={{ maxWidth: "760px" }}>
         <p className="eyebrow">
-          Insights
+          <InsightLocalizedText en="Insights" sv="Insikter" />
         </p>
         <h1 className="page-title">
           {article.title}
@@ -90,7 +95,8 @@ export default async function InsightArticlePage({
           {article.subtitle}
         </p>
         <p style={{ color: "var(--text-muted)", marginBottom: "24px" }}>
-          Foundation {String(article.order).padStart(2, "0")} · {article.readingTime}
+          <InsightFoundationLabel order={article.order} /> ·{" "}
+          <InsightReadingTime readingTime={article.readingTime} />
         </p>
         <div className="article-prose">
           {article.content.map((paragraph, index) => (

@@ -1,6 +1,11 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { InsightAuthorLine } from "@/components/insight-author-line";
+import {
+  InsightFoundationLabel,
+  InsightLocalizedText,
+  InsightReadingTime,
+} from "@/components/insight-ui";
 import { insightArticles } from "@/data/insights";
 import { createPageMetadata } from "@/lib/seo";
 
@@ -25,7 +30,7 @@ export default function InsightsPage() {
           01 Systems
         </p>
         <h1 className="page-title content-narrow">
-          Insights
+          <InsightLocalizedText en="Insights" sv="Insikter" />
         </h1>
       </section>
 
@@ -36,7 +41,7 @@ export default function InsightsPage() {
             className="article-card"
           >
             <p style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "10px" }}>
-              Foundation {String(article.order).padStart(2, "0")}
+              <InsightFoundationLabel order={article.order} />
             </p>
             <h2 style={{ fontSize: "24px", lineHeight: 1.3, marginBottom: "10px" }}>
               <Link href={`/insights/${article.slug}`} className="article-card-link touch-link">
@@ -45,7 +50,9 @@ export default function InsightsPage() {
             </h2>
             <InsightAuthorLine compact style={{ marginBottom: "10px" }} />
             <p className="body-large" style={{ color: "var(--text-body)", marginBottom: "10px", fontSize: "16px" }}>{article.subtitle}</p>
-            <p style={{ color: "var(--text-muted)", margin: 0 }}>{article.readingTime}</p>
+            <p style={{ color: "var(--text-muted)", margin: 0 }}>
+              <InsightReadingTime readingTime={article.readingTime} />
+            </p>
           </article>
         ))}
       </section>
