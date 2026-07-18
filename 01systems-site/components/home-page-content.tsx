@@ -94,11 +94,11 @@ export function HomePageContent() {
             ? [
                 {
                   title: "AI Inspector",
-                  text: "Identifierar de tidigaste strukturella förändringarna i beslutsrummet.",
+                  text: "Ger regelbaserade förklaringar av var de första strukturella förändringarna uppstår. Använder ingen språkmodell.",
                 },
                 {
                   title: "Decision Paths",
-                  text: "Jämför hur olika beslut förändrar framtida möjligheter.",
+                  text: "Jämför hur alternativa beslutsstrukturer påverkar framtida handlingsutrymme.",
                 },
                 {
                   title: "AI Interpretation",
@@ -108,11 +108,11 @@ export function HomePageContent() {
             : [
                 {
                   title: "AI Inspector",
-                  text: "Highlights the earliest structural changes in the decision space.",
+                  text: "Provides rule-based explanations of where structural changes emerge first. It does not use a language model.",
                 },
                 {
                   title: "Decision Paths",
-                  text: "Compare how different decisions reshape future possibilities.",
+                  text: "Compare how alternative decision structures affect future execution flexibility.",
                 },
                 {
                   title: "AI Interpretation",

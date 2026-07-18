@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { InsightAuthorLine } from "@/components/insight-author-line";
 import { getInsightBySlug, insightArticles } from "@/data/insights";
 import { SITE_NAME, absoluteUrl, createPageMetadata } from "@/lib/seo";
 
@@ -84,6 +85,7 @@ export default async function InsightArticlePage({
         <h1 className="page-title">
           {article.title}
         </h1>
+        <InsightAuthorLine style={{ marginBottom: "14px" }} />
         <p className="body-xl" style={{ color: "var(--text-body)", marginBottom: "14px" }}>
           {article.subtitle}
         </p>

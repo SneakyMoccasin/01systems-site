@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { InsightAuthorLine } from "@/components/insight-author-line";
 import { insightArticles } from "@/data/insights";
 import { createPageMetadata } from "@/lib/seo";
 
@@ -42,6 +43,7 @@ export default function InsightsPage() {
                 {article.title}
               </Link>
             </h2>
+            <InsightAuthorLine compact style={{ marginBottom: "10px" }} />
             <p className="body-large" style={{ color: "var(--text-body)", marginBottom: "10px", fontSize: "16px" }}>{article.subtitle}</p>
             <p style={{ color: "var(--text-muted)", margin: 0 }}>{article.readingTime}</p>
           </article>
