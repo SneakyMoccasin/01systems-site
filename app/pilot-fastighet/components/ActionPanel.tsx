@@ -1,4 +1,5 @@
 import { getExecutiveDemoInterventionLabel } from "@/src/pilotFastighet/executiveDemoTransformation";
+import type { StrategyColors } from "@/src/pilotFastighet/strategyColors";
 
 type ActionKey =
   | "increase_service_frequency"
@@ -85,15 +86,32 @@ const interventionLabels = {
 interface Props {
   language: "sv" | "en";
   domain?: DomainKey;
-  selectedActions: string[];
+  selectedActionsA?: string[];
+  selectedActionsB?: string[];
+  strategyView?: "baseline" | "goal" | "both";
+  strategyColors?: StrategyColors;
   applyAction: (action: ActionKey) => void;
   executiveDemoMode?: boolean;
+}
+
+function withAlpha(hex: string, alpha: number): string {
+  const normalized = hex.replace("#", "");
+  const value = normalized.length === 3
+    ? normalized.split("").map((char) => `${char}${char}`).join("")
+    : normalized;
+  const r = Number.parseInt(value.slice(0, 2), 16);
+  const g = Number.parseInt(value.slice(2, 4), 16);
+  const b = Number.parseInt(value.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 export default function ActionPanel({
   language,
   domain = "consulting",
-  selectedActions,
+  selectedActionsA = [],
+  selectedActionsB = [],
+  strategyView = "baseline",
+  strategyColors = { baseline: "#3b82f6", goal: "#ef4444" },
   applyAction,
   executiveDemoMode = false,
 }: Props) {
@@ -136,6 +154,12 @@ export default function ActionPanel({
     ],
   };
   const actions = domainActions[domain] ?? domainActions.consulting;
+  const baselineSelected = new Set(selectedActionsA);
+  const goalSelected = new Set(selectedActionsB);
+  const effectiveBaselineSelected =
+    strategyView === "goal" ? new Set<string>() : baselineSelected;
+  const effectiveGoalSelected =
+    strategyView === "baseline" ? new Set<string>() : goalSelected;
 
   return (
     <div className="mb-6">
@@ -148,21 +172,115 @@ export default function ActionPanel({
       </h3>
 
       <div className="flex flex-col gap-2">
-        {actions.map((action) => (
-          <button
-            key={action}
-            className={`px-3 py-2 text-left rounded-lg border transition ${
-              selectedActions.includes(action)
-                ? "bg-blue-600 text-white border-blue-500"
-                : "bg-transparent text-gray-200 border-gray-500 hover:bg-gray-700"
-            }`}
-            onClick={() => applyAction(action)}
-          >
-            {executiveDemoMode
-              ? getExecutiveDemoInterventionLabel(action, language)
-              : interventionLabels[action][language]}
-          </button>
-        ))}
+        {actions.map((action) => {
+          const inBaseline = effectiveBaselineSelected.has(action);
+          const inGoal = effectiveGoalSelected.has(action);
+          const isShared = inBaseline && inGoal;
+          const isSelected = inBaseline || inGoal;
+
+          const accentBackground = isShared
+            ? `linear-gradient(180deg, ${strategyColors.baseline} 0 50%, ${strategyColors.goal} 50% 100%)`
+            : inBaseline
+              ? strategyColors.baseline
+              : inGoal
+                ? strategyColors.goal
+                : "transparent";
+          const background = isShared
+            ? `linear-gradient(90deg, ${withAlpha(strategyColors.baseline, 0.22)} 0%, ${withAlpha(strategyColors.goal, 0.22)} 100%)`
+            : inBaseline
+              ? withAlpha(strategyColors.baseline, 0.22)
+              : inGoal
+                ? withAlpha(strategyColors.goal, 0.22)
+                : "transparent";
+          const borderColor = isShared
+            ? withAlpha("#ffffff", 0.28)
+            : inBaseline
+              ? withAlpha(strategyColors.baseline, 0.7)
+              : inGoal
+                ? withAlpha(strategyColors.goal, 0.7)
+                : "rgba(107, 114, 128, 0.9)";
+
+          return (
+            <button
+              key={action}
+              className="relative px-3 py-2 pl-6 text-left rounded-lg border transition hover:bg-gray-700/60"
+              onClick={() => applyAction(action)}
+              style={{
+                background,
+                borderColor,
+                color: isSelected ? "#FFFFFF" : "#D1D5DB",
+                boxShadow: isShared
+                  ? `inset 0 0 0 1px ${withAlpha(strategyColors.baseline, 0.26)}, inset 0 0 0 2px ${withAlpha(strategyColors.goal, 0.18)}`
+                  : inBaseline
+                    ? `inset 0 0 0 1px ${withAlpha(strategyColors.baseline, 0.18)}`
+                    : inGoal
+                      ? `inset 0 0 0 1px ${withAlpha(strategyColors.goal, 0.18)}`
+                      : "none",
+              }}
+            >
+              <span
+                aria-hidden="true"
+                style={{
+                  position: "absolute",
+                  left: "0",
+                  top: "0",
+                  bottom: "0",
+                  width: "8px",
+                  borderTopLeftRadius: "8px",
+                  borderBottomLeftRadius: "8px",
+                  background: accentBackground,
+                  opacity: isSelected ? 1 : 0,
+                }}
+              />
+              <span
+                className="block pr-10"
+                style={{
+                  fontWeight: isSelected ? 600 : 500,
+                }}
+              >
+                {executiveDemoMode
+                  ? getExecutiveDemoInterventionLabel(action, language)
+                  : interventionLabels[action][language]}
+              </span>
+              {(inBaseline || inGoal) && (
+                <span
+                  aria-hidden="true"
+                  style={{
+                    position: "absolute",
+                    right: "10px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    display: "flex",
+                    gap: "4px",
+                  }}
+                >
+                  {inBaseline && (
+                    <span
+                      style={{
+                        width: "8px",
+                        height: "8px",
+                        borderRadius: "9999px",
+                        background: strategyColors.baseline,
+                        boxShadow: `0 0 0 1px ${withAlpha(strategyColors.baseline, 0.35)}`,
+                      }}
+                    />
+                  )}
+                  {inGoal && (
+                    <span
+                      style={{
+                        width: "8px",
+                        height: "8px",
+                        borderRadius: "9999px",
+                        background: strategyColors.goal,
+                        boxShadow: `0 0 0 1px ${withAlpha(strategyColors.goal, 0.35)}`,
+                      }}
+                    />
+                  )}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

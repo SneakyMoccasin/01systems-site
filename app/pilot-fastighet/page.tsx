@@ -77,6 +77,7 @@ import {
   getExecutiveDemoPlaybackPresetTitle,
   getExecutiveDemoPlaybackRiskStates,
 } from "@/src/pilotFastighet/executiveDemoPlaybackScenario";
+import { getPilotStrategyColors } from "@/src/pilotFastighet/strategyColors";
 import { surfaceOrgDemoText } from "@/src/pilotFastighet/executiveDemoTransformation";
 import {
   installPulseUnhandledRejectionTracer,
@@ -1205,6 +1206,12 @@ export default function PilotFastighetPage() {
       : editableScenario === "B"
         ? selectedActionsB
         : [];
+  const strategyView =
+    activeScenario === "A"
+      ? "baseline"
+      : activeScenario === "B"
+        ? "goal"
+        : "both";
   const selectedScenario = editableScenario;
   const resolvedGoalType = DEFAULT_GOAL_TYPE;
   const constraintActivationTimelineA = useMemo(
@@ -1267,6 +1274,9 @@ export default function PilotFastighetPage() {
       : domain === "realEstate"
         ? "real-estate"
         : null;
+  const execRealEstateGraphPassive =
+    executiveDemoMode && caseType === "real-estate";
+  const strategyColors = getPilotStrategyColors(execRealEstateGraphPassive);
   const visiblePilotCases = useMemo(
     () => VISIBLE_PILOT_CASES.filter((c) => c.domain === domain),
     [domain]
@@ -2568,7 +2578,10 @@ export default function PilotFastighetPage() {
               <ActionPanel
                 language={uiLanguage}
                 domain={domain}
-                selectedActions={selectedActionsForPanel}
+                selectedActionsA={selectedActionsA}
+                selectedActionsB={selectedActionsB}
+                strategyView={strategyView}
+                strategyColors={strategyColors}
                 applyAction={applyAction}
                 executiveDemoMode={executiveDemoMode}
               />

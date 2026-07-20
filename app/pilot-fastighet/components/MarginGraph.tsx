@@ -4,6 +4,7 @@ import React from "react";
 import { pulseLanguage } from "@/src/i18n/pulseLanguage";
 import { getScenarioLibrary } from "@/src/pilotFastighet/scenarioLibrary";
 import type { CascadeEvent } from "@/src/pilotFastighet/riskPropagation";
+import { getPilotStrategyColors } from "@/src/pilotFastighet/strategyColors";
 import { mapDominantPortfolioConstraintKeyToPolicyLabel } from "./inspector-utils/mapRiskLabelToPolicyLabel";
 import {
   profileCount,
@@ -125,6 +126,7 @@ function MarginGraph({
   /** Executive demo + real-estate: lighter graph chrome; no simulation changes. */
   const execRealEstateGraphPassive =
     executiveDemoMode && caseType === "real-estate";
+  const strategyColors = getPilotStrategyColors(execRealEstateGraphPassive);
   profileCount("MarginGraph.render");
   profileValue(
     "MarginGraph.series.points",
@@ -1498,7 +1500,7 @@ function MarginGraph({
           <path
             d={buildSmoothPath(normalizedA, scaleX, scaleY)}
             fill="none"
-            stroke={execRealEstateGraphPassive ? "#2563eb" : "#3b82f6"}
+            stroke={strategyColors.baseline}
             strokeWidth={
               highlightedSeries === "margin"
                 ? 3
@@ -1524,7 +1526,7 @@ function MarginGraph({
         <path
           d={buildSmoothPath(normalizedB, scaleX, scaleY)}
           fill="none"
-          stroke={execRealEstateGraphPassive ? "#d97706" : "#ef4444"}
+          stroke={strategyColors.goal}
           strokeWidth={
             highlightedSeries === "margin"
               ? 3
