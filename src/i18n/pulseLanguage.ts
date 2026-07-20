@@ -609,7 +609,7 @@ Förbättringar införs gradvis med högre leveransfriktion.
       municipal: "Transportsystem",
       consulting: "Besluts- och scenariomiljö",
     },
-    pilotPageTitleSuffix: "Simulering av beslutspåverkan",
+    pilotPageTitleSuffix: "Cascade Engine",
     pilotSimulationHorizonLabel: "Simuleringshorisont",
     pilotCustomHorizonLabel: "Anpassad horisont",
     transportScenarioPresetPanelTitle: "Scenario",

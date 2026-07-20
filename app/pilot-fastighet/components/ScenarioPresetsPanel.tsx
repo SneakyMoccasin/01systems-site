@@ -1,45 +1,44 @@
 import React from "react";
+import { pulseLanguage } from "@/src/i18n/pulseLanguage";
 
 type Props = {
   scenarioTarget: string | null;
   setScenarioTarget: (target: string) => void;
+  language: "sv" | "en";
 };
 
-const PRESETS = [
+const PRESET_KEYS = [
   {
     key: "increase_accessibility",
-    label: "Förbättra tillgänglighet",
   },
   {
     key: "increase_modal_attractiveness",
-    label: "Öka kollektivtrafikens attraktivitet",
   },
   {
     key: "reduce_capacity_pressure",
-    label: "Minska kapacitetstryck",
   },
   {
     key: "margin_stability",
-    label: "Stabilisera marginaler",
   },
   {
     key: "avoid_tipping",
-    label: "Undvik tipping",
   },
 ] as const;
 
 export default function ScenarioPresetsPanel({
   scenarioTarget,
   setScenarioTarget,
+  language,
 }: Props) {
+  const t = pulseLanguage[language];
   return (
     <div className="mb-6">
       <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-2">
-        Scenario
+        {t.transportScenarioPresetPanelTitle}
       </h3>
 
       <div className="flex flex-col gap-2">
-        {PRESETS.map((preset) => {
+        {PRESET_KEYS.map((preset) => {
           const selected = scenarioTarget === preset.key;
 
           return (
@@ -56,7 +55,7 @@ export default function ScenarioPresetsPanel({
                 color: selected ? "#FFFFFF" : "#D1D5DB",
               }}
             >
-              {preset.label}
+              {t.transportScenarioPresetLabels[preset.key]}
             </button>
           );
         })}

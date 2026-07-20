@@ -108,11 +108,11 @@ export function getExecutiveDemoMarginStripLabels(lang: ExecutiveDemoLang) {
     scenarioA:
       lang === "sv"
         ? "Nuvarande strategi — beslutsmarginal"
-        : "Current strategy — decision margin",
+        : "Baseline — decision margin",
     scenarioB:
       lang === "sv"
         ? "Alternativ strategi — beslutsmarginal"
-        : "Alternative strategy — decision margin",
+        : "Goal strategy — decision margin",
     delta: lang === "sv" ? "Skillnad" : "Delta",
     period: lang === "sv" ? "Simulerad horisont" : "Simulated horizon",
   };
