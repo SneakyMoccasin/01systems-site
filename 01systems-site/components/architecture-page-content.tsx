@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useLanguage } from "@/components/language-context";
+import { SiteCta } from "@/components/site-cta";
 
 type Language = "sv" | "en";
 
@@ -761,6 +762,7 @@ export function ArchitecturePageContent() {
           ) : null}
         </div>
       </section>
+      <SiteCta />
     </main>
   );
 }
