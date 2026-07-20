@@ -1,6 +1,7 @@
 "use client";
 
 import { useLanguage } from "@/components/language-context";
+import { SiteCta } from "@/components/site-cta";
 
 export function AboutPageContent() {
   const { lang } = useLanguage();
@@ -72,40 +73,7 @@ export function AboutPageContent() {
         </p>
       </section>
 
-      <section
-        className="surface-card"
-        style={{
-          maxWidth: "760px",
-          border: "1px solid #e5e5e5",
-          borderRadius: "12px",
-          background: "#fafafa",
-          color: "var(--card-text-primary)",
-        }}
-      >
-        <h2 className="section-title" style={{ marginBottom: "10px" }}>
-          {isSwedish ? "Boka en genomgång" : "Book a walkthrough"}
-        </h2>
-        <p style={{ color: "var(--card-text-body)", marginBottom: "20px", maxWidth: "640px" }}>
-          {isSwedish
-            ? "Ta med ett verkligt besluts- eller investeringsfall. Vi visar hur Cascade Engine stödjer Decision Space Analytics och hur arbetet genomförs tillsammans med ert team."
-            : "Bring a real decision or investment question. We'll show how Cascade Engine supports Decision Space Analytics and how the work is carried out together with your team."}
-        </p>
-        <a
-          href="mailto:christian@01systems.se"
-          className="touch-link"
-          style={{
-            display: "inline-block",
-            padding: "14px 22px",
-            background: "#000",
-            color: "#fff",
-            borderRadius: "8px",
-            textDecoration: "none",
-            fontSize: "16px",
-          }}
-        >
-          {isSwedish ? "Boka en genomgång" : "Book a walkthrough"}
-        </a>
-      </section>
+      <SiteCta />
     </main>
   );
 }
