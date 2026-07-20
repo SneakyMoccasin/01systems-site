@@ -6,6 +6,11 @@ import { simulateConstraintsStep } from "./simulateConstraintsStep";
 import { computeDimensionMultipliers } from "./computeDimensionMultipliers";
 import { propagateRisks, type CascadeEvent } from "./riskPropagation";
 import {
+  buildDriverScoreState,
+  riskLevelToScore,
+  type DriverScoreState,
+} from "./driverScoreState";
+import {
   profileCount,
   profileMeasure,
   profileValue,
@@ -18,6 +23,7 @@ export type EngineState = {
   margin: number;
   registry: ConstraintRegistry;
   riskState: RiskState;
+  driverScores: DriverScoreState;
   cascadeEvents: CascadeEvent[];
 };
 
@@ -26,7 +32,7 @@ export class RealEstateEngine {
   private sensitivity: number;
   private state: EngineState;
 
-  constructor(initialRiskState?: RiskState) {
+  constructor(initialRiskState?: RiskState, initialDriverScores?: DriverScoreState) {
     const riskState =
       initialRiskState ??
       REAL_ESTATE_IMPACT_CONTRACT.reduce((acc, param) => {
@@ -42,6 +48,7 @@ export class RealEstateEngine {
       margin: this.baselineMargin,
       registry: createInitialConstraintRegistry(),
       riskState,
+      driverScores: initialDriverScores ?? buildDriverScoreState(riskState),
       cascadeEvents: [],
     };
   }
@@ -50,8 +57,9 @@ export class RealEstateEngine {
     return this.state;
   }
 
-  public setRiskState(riskState: RiskState) {
+  public setRiskState(riskState: RiskState, driverScores?: DriverScoreState) {
     this.state.riskState = riskState;
+    this.state.driverScores = driverScores ?? buildDriverScoreState(riskState);
     this.reset();
   }
 
@@ -69,17 +77,20 @@ export class RealEstateEngine {
       if (process.env.NEXT_PUBLIC_PULSE_PROFILE) {
         console.log("ENGINE STEP FORWARD RUNNING");
       }
-      const { riskState, margin, registry, step, cascadeEvents } = this.state;
+      const { riskState, driverScores, margin, registry, step, cascadeEvents } = this.state;
 
       // Minimal stress-triggered escalation so cascades can start during runtime.
       // If the system is already underwater, financing pressure typically spikes.
       const escalatedRiskState: RiskState = { ...riskState };
+      const escalatedDriverScores: DriverScoreState = { ...driverScores };
       if (margin < -1.0) {
         const current = escalatedRiskState.interestRateExposureRisk;
         if (current === "LOW" || current == null) {
           escalatedRiskState.interestRateExposureRisk = "MODERATE";
+          escalatedDriverScores.interestRateExposureRisk = riskLevelToScore("MODERATE");
         } else if (current === "MODERATE") {
           escalatedRiskState.interestRateExposureRisk = "HIGH";
+          escalatedDriverScores.interestRateExposureRisk = riskLevelToScore("HIGH");
         }
       }
       if (process.env.NEXT_PUBLIC_PULSE_PROFILE) {
@@ -97,6 +108,12 @@ export class RealEstateEngine {
         });
       }
       const riskStateForTick = propagatedState as RiskState;
+      const driverScoresForTick: DriverScoreState = { ...escalatedDriverScores };
+      for (const [key, value] of Object.entries(riskStateForTick)) {
+        if (escalatedRiskState[key] !== value) {
+          driverScoresForTick[key] = riskLevelToScore(value);
+        }
+      }
 
       const result = simulateConstraintsStep({
         riskState: riskStateForTick,
@@ -114,7 +131,11 @@ export class RealEstateEngine {
       if (process.env.NEXT_PUBLIC_PULSE_PROFILE) {
         console.log("riskStateForTick:", riskStateForTick);
       }
-      const baseMultipliers = computeDimensionMultipliers(riskStateForTick, step);
+      const baseMultipliers = computeDimensionMultipliers(
+        riskStateForTick,
+        step,
+        driverScoresForTick
+      );
 
       const adjustedCost = result.multipliersAfterConstraints.cost;
       const adjustedRecovery = result.multipliersAfterConstraints.recovery;
@@ -210,6 +231,7 @@ export class RealEstateEngine {
         margin: clampedNextMargin,
         registry: result.updatedRegistry,
         riskState: riskStateForTick,
+        driverScores: driverScoresForTick,
         cascadeEvents: [...cascadeEvents, ...events],
       };
     });

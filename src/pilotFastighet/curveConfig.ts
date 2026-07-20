@@ -1,4 +1,5 @@
 import type { CurveType, RiskLevel } from "./impactContract";
+import { clampDriverScore, SCORE_TO_RISK_LEVEL } from "./driverScoreState";
 
 export type CurveAmplitudeConfig = {
   base: number;
@@ -123,22 +124,38 @@ export function resolveLogistic(
 
 export function getImpactMultiplier(
   parameterKey: string,
-  level: RiskLevel,
+  level: RiskLevel | number,
   step?: number
 ): number {
   const config = PARAMETER_CURVE_CONFIG[parameterKey];
   if (!config) return 1;
 
   const { curve, amplitude } = config;
+  const resolveForRiskLevel = (resolvedLevel: RiskLevel): number => {
+    switch (curve) {
+      case "LINEAR":
+        return resolveLinear(resolvedLevel, amplitude);
+      case "EXPONENTIAL":
+        return resolveExponential(resolvedLevel, amplitude);
+      case "LOGISTIC":
+        return resolveLogistic(resolvedLevel, amplitude, step ?? 1);
+      default:
+        return 1;
+    }
+  };
 
-  switch (curve) {
-    case "LINEAR":
-      return resolveLinear(level, amplitude);
-    case "EXPONENTIAL":
-      return resolveExponential(level, amplitude);
-    case "LOGISTIC":
-      return resolveLogistic(level, amplitude, step ?? 1);
-    default:
-      return 1;
+  if (typeof level === "number") {
+    const clampedScore = clampDriverScore(level);
+    const lowerIndex = Math.floor(clampedScore);
+    const upperIndex = Math.ceil(clampedScore);
+    const lowerLevel = SCORE_TO_RISK_LEVEL[lowerIndex];
+    const upperLevel = SCORE_TO_RISK_LEVEL[upperIndex];
+    const lowerValue = resolveForRiskLevel(lowerLevel);
+    const upperValue = resolveForRiskLevel(upperLevel);
+    const fraction = clampedScore - lowerIndex;
+
+    return lowerValue + (upperValue - lowerValue) * fraction;
   }
+
+  return resolveForRiskLevel(level);
 }

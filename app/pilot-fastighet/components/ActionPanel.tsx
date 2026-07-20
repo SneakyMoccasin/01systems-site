@@ -1,4 +1,9 @@
 import { getExecutiveDemoInterventionLabel } from "@/src/pilotFastighet/executiveDemoTransformation";
+import {
+  actionHasOnlyModeledDrivers,
+  DOMAIN_ACTIONS,
+} from "@/src/pilotFastighet/actionEffects";
+import { defaultRiskState } from "@/src/pilotFastighet/presetRiskMapping";
 import type { StrategyColors } from "@/src/pilotFastighet/strategyColors";
 
 type ActionKey =
@@ -120,40 +125,9 @@ export default function ActionPanel({
     municipal: { sv: "Åtgärder", en: "Measures" },
     consulting: { sv: "Beslut", en: "Decisions" },
   } as const;
-  const domainActions: Record<DomainKey, ActionKey[]> = {
-    realEstate: [
-      "delay_maintenance",
-      "early_refinancing",
-      "phase_project_starts",
-      "stagger_project_starts",
-      "increase_liquidity_buffer",
-      "reduce_leverage",
-      "secure_long_term_leases",
-      "energy_retrofit_program",
-    ],
-    municipal: [
-      "increase_service_frequency",
-      "reduce_travel_time",
-      "expand_cycling_infrastructure",
-      "congestion_pricing",
-      "electrify_bus_fleet",
-      "transit_signal_priority",
-      "reduce_parking_supply",
-    ],
-    consulting: [
-      "increase_service_frequency",
-      "reduce_travel_time",
-      "expand_cycling_infrastructure",
-      "congestion_pricing",
-      "electrify_bus_fleet",
-      "transit_signal_priority",
-      "reduce_parking_supply",
-      "phase_project_starts",
-      "delay_maintenance",
-      "early_refinancing",
-    ],
-  };
-  const actions = domainActions[domain] ?? domainActions.consulting;
+  const actions = (DOMAIN_ACTIONS[domain] ?? DOMAIN_ACTIONS.consulting).filter((action) =>
+    actionHasOnlyModeledDrivers(action, Object.keys(defaultRiskState))
+  );
   const baselineSelected = new Set(selectedActionsA);
   const goalSelected = new Set(selectedActionsB);
   const effectiveBaselineSelected =

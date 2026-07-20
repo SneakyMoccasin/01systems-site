@@ -31,11 +31,18 @@ export default function ScenarioPresetsPanel({
   language,
 }: Props) {
   const t = pulseLanguage[language];
+  const helperText =
+    language === "sv"
+      ? "Påverkar analytiskt fokus i förklaringen, inte simuleringens numeriska utfall."
+      : "Affects analytical focus in the explanation, not the simulation's numerical result.";
   return (
     <div className="mb-6">
       <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-2">
         {t.transportScenarioPresetPanelTitle}
       </h3>
+      <p className="mb-2 text-xs text-gray-400">
+        {helperText}
+      </p>
 
       <div className="flex flex-col gap-2">
         {PRESET_KEYS.map((preset) => {

@@ -58,6 +58,15 @@ import {
   getRiskStateAfterPreset,
 } from "@/src/pilotFastighet/presetRiskMapping";
 import {
+  ACTION_EFFECTS,
+  resolveActionDrivenState,
+} from "@/src/pilotFastighet/actionEffects";
+import {
+  buildDriverScoreState,
+  type DriverScoreState,
+} from "@/src/pilotFastighet/driverScoreState";
+import { createFreshDomainScenarioState } from "@/src/pilotFastighet/domainState";
+import {
   profileCount,
   profileMeasure,
   profileValue,
@@ -189,68 +198,6 @@ const RISK_LEVEL_TO_NUMBER: Record<RiskLevel, number> = {
   HIGH: 2,
   SEVERE: 3,
 };
-const actionEffects = {
-  increase_service_frequency: {
-    accessibility: +1,
-    operational_capacity: -0.5,
-    budget_pressure: +0.5,
-  },
-  reduce_travel_time: {
-    modal_attractiveness: +1,
-  },
-  expand_cycling_infrastructure: {
-    modal_attractiveness: +2,
-    congestion_pressure: -1,
-    budget_pressure: +1,
-  },
-  congestion_pricing: {
-    modal_shift_pressure: +2,
-    political_feasibility: -1,
-  },
-  electrify_bus_fleet: {
-    energyExposureRisk: -1,
-    operationalEfficiencyRisk: -0.5,
-    capitalCommitmentRigidityRisk: +0.5,
-  },
-  transit_signal_priority: {
-    transit_signal_priority: +1,
-  },
-  reduce_parking_supply: {
-    demandRisk: +1,
-  },
-  phase_project_starts: {
-    capitalCommitmentRigidityRisk: -1,
-    refinancingRisk: -0.5,
-  },
-  stagger_project_starts: {
-    capitalCommitmentRigidityRisk: -1,
-    implementationPacingRisk: -1,
-  },
-  increase_liquidity_buffer: {
-    liquidityPressure: -1,
-    refinancingRisk: -1,
-  },
-  reduce_leverage: {
-    refinancingRisk: -1,
-    interestRateExposureRisk: -1,
-  },
-  secure_long_term_leases: {
-    tenantStabilityRisk: -1,
-    demandRisk: -1,
-  },
-  energy_retrofit_program: {
-    energyExposureRisk: -1,
-    operationalEfficiencyRisk: +1,
-  },
-  delay_maintenance: {
-    maintenanceIntensityRisk: +1,
-    tenantStabilityRisk: +0.5,
-  },
-  early_refinancing: {
-    refinancingRisk: -1,
-    interestRateExposureRisk: -0.5,
-  },
-} as const;
 
 const TOP_LEVEL_GOAL_LABELS = {
   transport: {
@@ -343,6 +290,18 @@ export default function PilotFastighetPage() {
     structuredClone(defaultRiskState)
   );
   const [riskStateB, setRiskStateB] = useState<RiskState>(() =>
+    structuredClone(defaultRiskState)
+  );
+  const [driverScoresA, setDriverScoresA] = useState<DriverScoreState>(() =>
+    buildDriverScoreState(defaultRiskState)
+  );
+  const [driverScoresB, setDriverScoresB] = useState<DriverScoreState>(() =>
+    buildDriverScoreState(defaultRiskState)
+  );
+  const [baseRiskStateA, setBaseRiskStateA] = useState<RiskState>(() =>
+    structuredClone(defaultRiskState)
+  );
+  const [baseRiskStateB, setBaseRiskStateB] = useState<RiskState>(() =>
     structuredClone(defaultRiskState)
   );
   const [activeScenario, setActiveScenario] = useState<ScenarioId>("A");
@@ -484,8 +443,12 @@ export default function PilotFastighetPage() {
     setDomain("realEstate");
     setSelectedPilotCaseId("");
     const demo = getExecutiveDemoPlaybackRiskStates();
+    setBaseRiskStateA(structuredClone(demo.riskStateA));
+    setBaseRiskStateB(structuredClone(demo.riskStateB));
     setRiskStateA(structuredClone(demo.riskStateA));
     setRiskStateB(structuredClone(demo.riskStateB));
+    setDriverScoresA(buildDriverScoreState(demo.riskStateA));
+    setDriverScoresB(buildDriverScoreState(demo.riskStateB));
     setSelectedActionsA([]);
     setSelectedActionsB([]);
     setScenarioALabel("");
@@ -501,7 +464,13 @@ export default function PilotFastighetPage() {
     setIsDirty(false);
 
     const runId = window.setTimeout(() => {
-      startSimulation("manual", demo.riskStateA, demo.riskStateB);
+      startSimulation(
+        "manual",
+        demo.riskStateA,
+        demo.riskStateB,
+        buildDriverScoreState(demo.riskStateA),
+        buildDriverScoreState(demo.riskStateB)
+      );
     }, 0);
     return () => window.clearTimeout(runId);
   }, [executiveDemoMode]);
@@ -657,28 +626,40 @@ export default function PilotFastighetPage() {
     const nextA =
       Object.keys(changesA).length > 0
         ? applyChangesToState(
-            riskStateA as Record<string, RiskLevel>,
+            baseRiskStateA as Record<string, RiskLevel>,
             changesA
           )
-        : riskStateA;
+        : baseRiskStateA;
     const nextB =
       Object.keys(changesB).length > 0
         ? applyChangesToState(
-            riskStateB as Record<string, RiskLevel>,
+            baseRiskStateB as Record<string, RiskLevel>,
             changesB
           )
-        : riskStateB;
+        : baseRiskStateB;
 
     // Apply scenario changes to input risk states.
     // Escalation, propagation, and cascade events are computed inside RealEstateEngine.
     const target = editableScenario;
 
     if (target === "A") {
-      setRiskStateA(structuredClone(nextA as RiskState));
+      setBaseRiskStateA(structuredClone(nextA as RiskState));
+      const resolved = resolveActionDrivenState(
+        structuredClone(nextA as RiskState),
+        selectedActionsA
+      );
+      setRiskStateA(resolved.riskState);
+      setDriverScoresA(resolved.driverScores);
     }
 
     if (target === "B") {
-      setRiskStateB(structuredClone(nextB as RiskState));
+      setBaseRiskStateB(structuredClone(nextB as RiskState));
+      const resolved = resolveActionDrivenState(
+        structuredClone(nextB as RiskState),
+        selectedActionsB
+      );
+      setRiskStateB(resolved.riskState);
+      setDriverScoresB(resolved.driverScores);
     }
   }
 
@@ -705,11 +686,15 @@ export default function PilotFastighetPage() {
   function startSimulation(
     source: "scenario" | "manual",
     riskOverrideA?: RiskState,
-    riskOverrideB?: RiskState
+    riskOverrideB?: RiskState,
+    driverScoreOverrideA?: DriverScoreState,
+    driverScoreOverrideB?: DriverScoreState
   ) {
     profileCount("PilotFastighetPage.startSimulation.calls");
     const effectiveRiskStateA = riskOverrideA ?? riskStateA;
     const effectiveRiskStateB = riskOverrideB ?? riskStateB;
+    const effectiveDriverScoresA = driverScoreOverrideA ?? driverScoresA;
+    const effectiveDriverScoresB = driverScoreOverrideB ?? driverScoresB;
     setSimulationSource(source);
     setHasSimulationCompleted(false);
     setIsRunning(false);
@@ -722,8 +707,8 @@ export default function PilotFastighetPage() {
     const snapshotBaseline = { ...riskStateBaseline };
     marginHistoryARef.current = [];
     marginHistoryBRef.current = [];
-    engineARef.current = new RealEstateEngine(snapshotA);
-    engineBRef.current = new RealEstateEngine(snapshotB);
+    engineARef.current = new RealEstateEngine(snapshotA, effectiveDriverScoresA);
+    engineBRef.current = new RealEstateEngine(snapshotB, effectiveDriverScoresB);
     engineBaselineRef.current = new RealEstateEngine(snapshotBaseline);
     setIsDirty(false);
     setIsRunning(true);
@@ -837,11 +822,13 @@ export default function PilotFastighetPage() {
               ? prev
               : structuredClone(sA.riskState as RiskState)
           );
+          setDriverScoresA((sA as any).driverScores ?? buildDriverScoreState(sA.riskState as RiskState));
           setRiskStateB((prev) =>
             areRiskStatesEqual(prev, sB.riskState as RiskState)
               ? prev
               : structuredClone(sB.riskState as RiskState)
           );
+          setDriverScoresB((sB as any).driverScores ?? buildDriverScoreState(sB.riskState as RiskState));
 
           if (nextCascadeEventsA) {
             setCascadeEventsA((prev) =>
@@ -1085,7 +1072,7 @@ export default function PilotFastighetPage() {
         const delta = Number(valueOrDelta);
         const targetIndex = Math.max(
           0,
-          Math.min(riskLevels.length - 1, Math.round(currentIndex + delta))
+          Math.min(riskLevels.length - 1, currentIndex + Math.trunc(delta))
         );
         nextValue = riskLevels[targetIndex];
       } else {
@@ -1098,7 +1085,13 @@ export default function PilotFastighetPage() {
       };
     };
 
-    setRiskStateA((prev) => updateScenarioState(prev));
+    setBaseRiskStateA((prev) => {
+      const nextBase = updateScenarioState(prev);
+      const resolved = resolveActionDrivenState(nextBase, selectedActionsA);
+      setRiskStateA(resolved.riskState);
+      setDriverScoresA(resolved.driverScores);
+      return nextBase;
+    });
   }
 
   function handleParameterChangeScenarioB(
@@ -1120,7 +1113,7 @@ export default function PilotFastighetPage() {
         const delta = Number(valueOrDelta);
         const targetIndex = Math.max(
           0,
-          Math.min(riskLevels.length - 1, Math.round(currentIndex + delta))
+          Math.min(riskLevels.length - 1, currentIndex + Math.trunc(delta))
         );
         nextValue = riskLevels[targetIndex];
       } else {
@@ -1133,7 +1126,13 @@ export default function PilotFastighetPage() {
       };
     };
 
-    setRiskStateB((prev) => updateScenarioState(prev));
+    setBaseRiskStateB((prev) => {
+      const nextBase = updateScenarioState(prev);
+      const resolved = resolveActionDrivenState(nextBase, selectedActionsB);
+      setRiskStateB(resolved.riskState);
+      setDriverScoresB(resolved.driverScores);
+      return nextBase;
+    });
   }
 
   function handleParameterChange(
@@ -1149,55 +1148,27 @@ export default function PilotFastighetPage() {
   }
 
   function applyAction(action: string) {
-    const toggleAction = (prev: string[]) =>
-      prev.includes(action)
-        ? prev.filter((a) => a !== action)
-        : [...prev, action];
-
     if (editableScenario === "A") {
-      setSelectedActionsA(toggleAction);
+      setSelectedActionsA((prev) => {
+        const nextActions = prev.includes(action)
+          ? prev.filter((a) => a !== action)
+          : [...prev, action];
+        const resolved = resolveActionDrivenState(baseRiskStateA, nextActions);
+        setRiskStateA(resolved.riskState);
+        setDriverScoresA(resolved.driverScores);
+        return nextActions;
+      });
     } else if (editableScenario === "B") {
-      setSelectedActionsB(toggleAction);
-    }
-
-    const effects = actionEffects[action as keyof typeof actionEffects];
-    if (!effects) return;
-    if (editableScenario === "A") {
-      Object.entries(effects).forEach(([driver, delta]) => {
-        handleParameterChangeScenarioA(driver, delta, true);
+      setSelectedActionsB((prev) => {
+        const nextActions = prev.includes(action)
+          ? prev.filter((a) => a !== action)
+          : [...prev, action];
+        const resolved = resolveActionDrivenState(baseRiskStateB, nextActions);
+        setRiskStateB(resolved.riskState);
+        setDriverScoresB(resolved.driverScores);
+        return nextActions;
       });
     }
-    if (editableScenario === "B") {
-      Object.entries(effects).forEach(([driver, delta]) => {
-        handleParameterChangeScenarioB(driver, delta, true);
-      });
-    }
-  }
-
-  function applyActionEffectsToRiskState(
-    baseState: RiskState,
-    actions: string[]
-  ): RiskState {
-    const riskLevels: RiskLevel[] = ["LOW", "MODERATE", "HIGH", "SEVERE"];
-    const nextState = structuredClone(baseState);
-
-    actions.forEach((action) => {
-      const effects = actionEffects[action as keyof typeof actionEffects];
-      if (!effects) return;
-      Object.entries(effects).forEach(([driver, delta]) => {
-        if (!(driver in nextState)) return;
-        const currentValue = nextState[driver as keyof RiskState];
-        const currentIndex = riskLevels.indexOf(currentValue);
-        if (currentIndex < 0) return;
-        const targetIndex = Math.max(
-          0,
-          Math.min(riskLevels.length - 1, Math.round(currentIndex + Number(delta)))
-        );
-        nextState[driver as keyof RiskState] = riskLevels[targetIndex];
-      });
-    });
-
-    return nextState;
   }
 
   const selectedActionsForPanel =
@@ -2177,8 +2148,14 @@ export default function PilotFastighetPage() {
                   if (id === "") return;
                   const pilotCase = PILOT_CASES.find((c) => c.id === id);
                   if (pilotCase) {
+                    setBaseRiskStateA(structuredClone(pilotCase.riskStateA));
+                    setBaseRiskStateB(structuredClone(pilotCase.riskStateB));
                     setRiskStateA(structuredClone(pilotCase.riskStateA));
                     setRiskStateB(structuredClone(pilotCase.riskStateB));
+                    setDriverScoresA(buildDriverScoreState(pilotCase.riskStateA));
+                    setDriverScoresB(buildDriverScoreState(pilotCase.riskStateB));
+                    setSelectedActionsA([]);
+                    setSelectedActionsB([]);
                     setIsDirty(true);
                     setHasSimulationCompleted(false);
                     setIsRunning(false);
@@ -2425,15 +2402,25 @@ export default function PilotFastighetPage() {
 
               if (!caseId) {
                 // Reset to engine baseline (all MODERATE), matching initial load
+                setBaseRiskStateA(structuredClone(defaultRiskState));
+                setBaseRiskStateB(structuredClone(defaultRiskState));
                 setRiskStateA(structuredClone(defaultRiskState));
                 setRiskStateB(structuredClone(defaultRiskState));
+                setDriverScoresA(buildDriverScoreState(defaultRiskState));
+                setDriverScoresB(buildDriverScoreState(defaultRiskState));
               } else {
                 const pilotCase = PILOT_CASES.find((c) => c.id === caseId);
                 if (pilotCase) {
+                  setBaseRiskStateA(structuredClone(pilotCase.riskStateA));
+                  setBaseRiskStateB(structuredClone(pilotCase.riskStateB));
                   setRiskStateA(structuredClone(pilotCase.riskStateA));
                   setRiskStateB(structuredClone(pilotCase.riskStateB));
+                  setDriverScoresA(buildDriverScoreState(pilotCase.riskStateA));
+                  setDriverScoresB(buildDriverScoreState(pilotCase.riskStateB));
                 }
               }
+              setSelectedActionsA([]);
+              setSelectedActionsB([]);
               setScenarioPromptA("");
               setScenarioPromptB("");
               setScenarioALabel("");
@@ -3509,6 +3496,28 @@ export default function PilotFastighetPage() {
             const newDomain = e.target.value as DomainKey;
             setDomain(newDomain);
             setActiveDomain(newDomain);
+            const freshDomainState = createFreshDomainScenarioState(newDomain);
+            resetRunState();
+            setHasSimulationCompleted(false);
+            setIsRunning(false);
+            setSelectedPilotCaseId(freshDomainState.selectedPilotCaseId);
+            setBaseRiskStateA(freshDomainState.baseRiskStateA);
+            setBaseRiskStateB(freshDomainState.baseRiskStateB);
+            setRiskStateA(freshDomainState.riskStateA);
+            setRiskStateB(freshDomainState.riskStateB);
+            setDriverScoresA(freshDomainState.driverScoresA);
+            setDriverScoresB(freshDomainState.driverScoresB);
+            setSelectedActionsA(freshDomainState.selectedActionsA);
+            setSelectedActionsB(freshDomainState.selectedActionsB);
+            setScenarioPromptA(freshDomainState.scenarioPromptA);
+            setScenarioPromptB(freshDomainState.scenarioPromptB);
+            setScenarioALabel(freshDomainState.scenarioALabel);
+            setScenarioBLabel(freshDomainState.scenarioBLabel);
+            setAppliedScenarioAId(freshDomainState.appliedScenarioAId);
+            setAppliedScenarioBId(freshDomainState.appliedScenarioBId);
+            setTransportScenarioTarget(null);
+            setManualScenarioTarget("A");
+            setIsDirty(false);
           }}
           style={{
             marginBottom: "10px",
@@ -3541,26 +3550,30 @@ export default function PilotFastighetPage() {
             const prompt = preset?.prompt ?? "";
             const nextPresetState = getRiskStateAfterPreset(presetId) as RiskState;
             const selectedActionKeys = preset?.actionKeys ?? [];
-            const knownActionKeys = new Set(Object.keys(actionEffects));
+            const knownActionKeys = new Set(Object.keys(ACTION_EFFECTS));
             const applicableActions = selectedActionKeys.filter((a) => knownActionKeys.has(a));
             const missingActionKeys = selectedActionKeys.filter((a) => !knownActionKeys.has(a));
             if (missingActionKeys.length > 0) {
               console.warn("[PULSE TRANSPORT] Missing intervention keys:", missingActionKeys);
             }
-            const scenarioStateWithActions = applyActionEffectsToRiskState(
+            const resolvedScenarioState = resolveActionDrivenState(
               nextPresetState,
               applicableActions
             );
             const applyTo = editableScenario;
 
             if (editableScenario === "A") {
-              setRiskStateA(structuredClone(scenarioStateWithActions));
+              setBaseRiskStateA(structuredClone(nextPresetState));
+              setRiskStateA(structuredClone(resolvedScenarioState.riskState));
+              setDriverScoresA(resolvedScenarioState.driverScores);
               setScenarioPromptA(prompt);
               setAppliedScenarioAId(presetId);
               setSelectedActionsA(applicableActions);
             }
             if (editableScenario === "B") {
-              setRiskStateB(structuredClone(scenarioStateWithActions));
+              setBaseRiskStateB(structuredClone(nextPresetState));
+              setRiskStateB(structuredClone(resolvedScenarioState.riskState));
+              setDriverScoresB(resolvedScenarioState.driverScores);
               setScenarioPromptB(prompt);
               setAppliedScenarioBId(presetId);
               setSelectedActionsB(applicableActions);

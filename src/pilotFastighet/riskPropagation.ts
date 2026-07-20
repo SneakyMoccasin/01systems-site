@@ -1,4 +1,5 @@
 import type { RiskLevel } from "./impactContract";
+import { isPropagationTriggerLevel } from "./impactContract";
 import {
   profileCount,
   profileMeasure,
@@ -112,7 +113,7 @@ export function propagateRisks(
       for (const [source, effects] of Object.entries(RISK_PROPAGATION)) {
         const level = next[source] as RiskLevel | undefined;
 
-        if (level === "HIGH" || level === "SEVERE") {
+        if (isPropagationTriggerLevel(source, level)) {
           for (const effect of effects) {
             const current = (next[effect.target] as RiskLevel | undefined) ?? "LOW";
             if (
@@ -197,7 +198,7 @@ export function propagateRisks(
             console.log("[CASCADE DEBUG] propagation skipped", {
               node: source,
               sourceLevel: level ?? null,
-              reason: "source is not HIGH/SEVERE",
+              reason: "source is not in an adverse propagation state",
             });
           }
         }

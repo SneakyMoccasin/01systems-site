@@ -1,12 +1,16 @@
-import { REAL_ESTATE_IMPACT_CONTRACT } from "./impactContract";
+import {
+  CONSULTING_IMPACT_CONTRACT,
+  MUNICIPAL_IMPACT_CONTRACT,
+  REAL_ESTATE_IMPACT_CONTRACT,
+} from "./impactContract";
 
 export function getImpactContract(domain: string) {
   switch (domain) {
     case "municipal":
-      return REAL_ESTATE_IMPACT_CONTRACT;
+      return MUNICIPAL_IMPACT_CONTRACT;
 
     case "consulting":
-      return REAL_ESTATE_IMPACT_CONTRACT;
+      return CONSULTING_IMPACT_CONTRACT;
 
     case "realEstate":
     default:
