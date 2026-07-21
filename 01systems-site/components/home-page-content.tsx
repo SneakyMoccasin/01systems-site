@@ -25,7 +25,7 @@ export function HomePageContent() {
         <button onClick={() => setLang("en")} aria-label="Switch language to English">EN</button>
       </div>
 
-      <section style={{ marginBottom: "72px" }}>
+      <section style={{ marginBottom: "56px" }}>
         <p className="eyebrow content-narrow">Decision Space Analytics</p>
         <h1 className="page-title content-narrow" style={{ marginBottom: "28px" }}>
           Cascade Engine
