@@ -43,6 +43,28 @@ export function HomePageContent() {
       </section>
 
       <section style={{ marginBottom: "64px" }}>
+        <div className="body-large stack-lg" style={{ maxWidth: "680px", color: "var(--text-body)" }}>
+          {(lang as "sv" | "en") === "sv" ? (
+            <>
+              <p style={{ margin: 0 }}>Vi har alla sett organisationer gradvis måla in sig i ett hörn.</p>
+              <p style={{ margin: 0 }}>
+                Inte genom ett enda dåligt beslut, utan genom många individuellt rimliga beslut – vart och ett rimligt när det fattades, men som tillsammans minskade vad som fortfarande var möjligt.
+              </p>
+              <p style={{ margin: 0 }}>Decision Space Analytics är utformat för att göra den processen synlig.</p>
+            </>
+          ) : (
+            <>
+              <p style={{ margin: 0 }}>We&apos;ve all seen organisations gradually paint themselves into a corner.</p>
+              <p style={{ margin: 0 }}>
+                Not through one bad decision, but through many individually reasonable decisions — each making sense at the time, yet together reducing what was still possible.
+              </p>
+              <p style={{ margin: 0 }}>Decision Space Analytics is designed to make that process visible.</p>
+            </>
+          )}
+        </div>
+      </section>
+
+      <section style={{ marginBottom: "64px" }}>
         <p className="eyebrow content-narrow">
           {(lang as "sv" | "en") === "sv" ? "1 minuts demo" : "1-minute demo"}
         </p>
@@ -139,8 +161,7 @@ export function HomePageContent() {
         <div className="body-large stack-lg" style={{ maxWidth: "680px", color: "var(--text-body)" }}>
           {(lang as "sv" | "en") === "sv" ? (
             <>
-              <p style={{ margin: 0 }}>Projektverktyg visar aktiviteter, resurser, tidplaner och risker.</p>
-              <p style={{ margin: 0 }}>Decision Space Analytics besvarar en annan fråga:</p>
+              <p style={{ margin: 0 }}>Decision Space Analytics besvarar denna analytiska fråga:</p>
               <p className="body-xl" style={{ margin: 0, color: "var(--text-primary)", fontWeight: 600 }}>
                 Vilka framtida möjligheter är fortfarande öppna efter att dagens beslut har fattats?
               </p>
@@ -150,8 +171,7 @@ export function HomePageContent() {
             </>
           ) : (
             <>
-              <p style={{ margin: 0 }}>Project tools show activities, resources, schedules and risks.</p>
-              <p style={{ margin: 0 }}>Decision Space Analytics answers a different question:</p>
+              <p style={{ margin: 0 }}>Decision Space Analytics answers this analytical question:</p>
               <p className="body-xl" style={{ margin: 0, color: "var(--text-primary)", fontWeight: 600 }}>
                 Which future options remain open after today’s decisions have been made?
               </p>
