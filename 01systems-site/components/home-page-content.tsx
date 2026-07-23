@@ -48,7 +48,7 @@ export function HomePageContent() {
             <>
               <p style={{ margin: 0 }}>Vi har alla sett organisationer gradvis måla in sig i ett hörn.</p>
               <p style={{ margin: 0 }}>
-                Inte genom ett enda dåligt beslut, utan genom många individuellt rimliga beslut – vart och ett rimligt när det fattades, men som tillsammans minskade vad som fortfarande var möjligt.
+                Inte genom ett enda dåligt beslut, utan genom många individuellt rimliga beslut – vart och ett rimligt när det fattades, men som tillsammans gjorde allt färre framtida alternativ möjliga.
               </p>
               <p style={{ margin: 0 }}>Decision Space Analytics är utformat för att göra den processen synlig.</p>
             </>
