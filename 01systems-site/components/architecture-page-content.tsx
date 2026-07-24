@@ -101,9 +101,9 @@ const COPY: Record<Language, PageCopy> = {
       diagramTitle: "Analytical Architecture",
       parentTop: "Structural Analysis",
       parentMiddle: "Analytical Results",
-      childNodes: ["Visualisation", "AI Inspector", "AI Interpretation"],
+      childNodes: ["Visualisation", "Structural Findings", "AI Interpretation"],
       conclusion:
-        "These categories may be implemented through multiple visual, summary and explanatory interface components.",
+        "These categories may be implemented through multiple visual, summary and explanatory interface components. Structural Findings is the deterministic, selected narrative presentation of completed analytical results; it does not perform a separate analysis, discover new evidence or use a language model. AI Interpretation is the separate language-model-generated explanation layer.",
     },
     analyticalScope: {
       heading: "Analytical Scope",
@@ -190,9 +190,9 @@ const COPY: Record<Language, PageCopy> = {
       diagramTitle: "Analytisk arkitektur",
       parentTop: "Strukturell analys",
       parentMiddle: "Analysresultat",
-      childNodes: ["Visualisering", "AI Inspector", "AI-tolkning"],
+      childNodes: ["Visualisering", "Strukturella fynd", "AI-tolkning"],
       conclusion:
-        "Dessa kategorier kan implementeras genom flera visuella, sammanfattande och förklarande gränssnittskomponenter.",
+        "Dessa kategorier kan implementeras genom flera visuella, sammanfattande och förklarande gränssnittskomponenter. Strukturella fynd är den deterministiska, utvalda narrativa presentationen av färdigställda analysresultat. Komponenten genomför ingen separat analys, upptäcker inga nya belägg och använder ingen språkmodell. AI-tolkning är det separata förklaringslagret som genereras av en språkmodell.",
     },
     analyticalScope: {
       heading: "Analytisk omfattning",

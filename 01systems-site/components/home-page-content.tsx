@@ -118,8 +118,8 @@ export function HomePageContent() {
           {((lang as "sv" | "en") === "sv"
             ? [
                 {
-                  title: "AI Inspector",
-                  text: "Ger regelbaserade förklaringar av var de första strukturella förändringarna uppstår. Använder ingen språkmodell.",
+                  title: "Strukturella fynd",
+                  text: "Presenterar ett deterministiskt urval av fynd från de färdigställda analysresultaten. Komponenten använder ingen språkmodell och genomför ingen separat analys.",
                 },
                 {
                   title: "Decision Paths",
@@ -132,8 +132,8 @@ export function HomePageContent() {
               ]
             : [
                 {
-                  title: "AI Inspector",
-                  text: "Provides rule-based explanations of where structural changes emerge first. It does not use a language model.",
+                  title: "Structural Findings",
+                  text: "Presents a deterministic selection of findings derived from the completed analytical results. It does not use a language model or perform a separate analysis.",
                 },
                 {
                   title: "Decision Paths",

@@ -460,6 +460,14 @@ type Props = {
   executiveDemoMode?: boolean;
 };
 
+/**
+ * Deterministic presentation of selected findings derived from completed
+ * analytical results. This component does not invoke a language model or
+ * perform a separate structural analysis.
+ *
+ * The legacy component identifier is retained to avoid unrelated code churn;
+ * the product-facing name is Structural Findings / Strukturella fynd.
+ */
 const AIInspectorPanel: React.FC<Props> = ({
   language = "en",
   scenarioALabel,
@@ -1690,7 +1698,7 @@ const AIInspectorPanel: React.FC<Props> = ({
               marginBottom: 8,
             }}
           >
-            {t.aiInspector}
+            {t.structuralFindings}
           </div>
           <div style={{ fontSize: 13, color: "#94a3b8" }}>
             {language === "sv"
@@ -1742,7 +1750,7 @@ const AIInspectorPanel: React.FC<Props> = ({
                 boxShadow: "0 0 14px rgba(56,189,248,0.45)",
               }}
             />
-            {t.aiInspector}
+            {t.structuralFindings}
           </div>
           {blocks.map((block, i) => (
             <section
@@ -1824,7 +1832,7 @@ const AIInspectorPanel: React.FC<Props> = ({
             marginBottom: 6,
           }}
         >
-          {t.aiInspector}
+          {t.structuralFindings}
         </div>
         {seriesLengthA > 0 && seriesLengthB > 0 && (
           <div
@@ -1903,7 +1911,7 @@ const AIInspectorPanel: React.FC<Props> = ({
           marginBottom: "10px",
         }}
       >
-        {t.aiInspector}
+        {t.structuralFindings}
       </div>
       {scenarioTarget && caseType === "transport" && resolvedScenarioLabel && (
         <div
