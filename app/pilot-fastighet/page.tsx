@@ -423,11 +423,16 @@ export default function PilotFastighetPage() {
   const [cascadeEventsA, setCascadeEventsA] = useState<CascadeEvent[]>([]);
   const [cascadeEventsB, setCascadeEventsB] = useState<CascadeEvent[]>([]);
   const [domain, setDomain] = useState<DomainKey>(activeDomain);
-  const [scenarioTarget, setScenarioTarget] = useState<"A" | "B">("A");
+  const [manualScenarioTarget, setManualScenarioTarget] = useState<"A" | "B">("A");
   const [appliedScenarioAId, setAppliedScenarioAId] = useState<string | null>(null);
   const [appliedScenarioBId, setAppliedScenarioBId] = useState<string | null>(null);
   const [selectedActionsA, setSelectedActionsA] = useState<string[]>([]);
   const [selectedActionsB, setSelectedActionsB] = useState<string[]>([]);
+
+  const editableScenario: "A" | "B" =
+    activeScenario === "A" || activeScenario === "B"
+      ? activeScenario
+      : manualScenarioTarget;
 
   const engineARef = useRef<RealEstateEngine | null>(null);
   const engineBRef = useRef<RealEstateEngine | null>(null);
@@ -665,7 +670,7 @@ export default function PilotFastighetPage() {
 
     // Apply scenario changes to input risk states.
     // Escalation, propagation, and cascade events are computed inside RealEstateEngine.
-    const target = scenarioTarget;
+    const target = editableScenario;
 
     if (target === "A") {
       setRiskStateA(structuredClone(nextA as RiskState));
@@ -1148,20 +1153,20 @@ export default function PilotFastighetPage() {
         ? prev.filter((a) => a !== action)
         : [...prev, action];
 
-    if (scenarioTarget === "A") {
+    if (editableScenario === "A") {
       setSelectedActionsA(toggleAction);
-    } else if (scenarioTarget === "B") {
+    } else if (editableScenario === "B") {
       setSelectedActionsB(toggleAction);
     }
 
     const effects = actionEffects[action as keyof typeof actionEffects];
     if (!effects) return;
-    if (scenarioTarget === "A") {
+    if (editableScenario === "A") {
       Object.entries(effects).forEach(([driver, delta]) => {
         handleParameterChangeScenarioA(driver, delta, true);
       });
     }
-    if (scenarioTarget === "B") {
+    if (editableScenario === "B") {
       Object.entries(effects).forEach(([driver, delta]) => {
         handleParameterChangeScenarioB(driver, delta, true);
       });
@@ -1195,12 +1200,12 @@ export default function PilotFastighetPage() {
   }
 
   const selectedActionsForPanel =
-    scenarioTarget === "A"
+    editableScenario === "A"
       ? selectedActionsA
-      : scenarioTarget === "B"
+      : editableScenario === "B"
         ? selectedActionsB
         : [];
-  const selectedScenario = scenarioTarget;
+  const selectedScenario = editableScenario;
   const resolvedGoalType = DEFAULT_GOAL_TYPE;
   const constraintActivationTimelineA = useMemo(
     () =>
@@ -1418,14 +1423,14 @@ export default function PilotFastighetPage() {
   const scenarioALabelText = executiveDemoMode
     ? uiLanguage === "sv"
       ? "Nuvarande strategi"
-      : "Current strategy"
+      : "Baseline"
     : uiLanguage === "sv"
       ? "Nuläge"
       : "Baseline";
   const scenarioBLabelText = executiveDemoMode
     ? uiLanguage === "sv"
       ? "Alternativ strategi"
-      : "Alternative strategy"
+      : "Goal strategy"
     : uiLanguage === "sv"
       ? "Målstrategi"
       : "Goal strategy";
@@ -1562,7 +1567,7 @@ export default function PilotFastighetPage() {
   const expertTippingStep = executiveSummary?.tippingStep ?? null;
 
   const activeCascadeEvents =
-    scenarioTarget === "B"
+    editableScenario === "B"
       ? cascadeEventsB
       : cascadeEventsA;
   const cascadeEvents =
@@ -1678,7 +1683,7 @@ export default function PilotFastighetPage() {
   }
 
   const activeMarginHistory =
-    scenarioTarget === "B"
+    editableScenario === "B"
       ? marginHistoryB
       : marginHistoryA;
   const marginTrend: "declining" | "stable" | "improving" =
@@ -2695,7 +2700,7 @@ export default function PilotFastighetPage() {
                     ? getExecutiveDemoMarginStripLabels(uiLanguage).scenarioA
                     : uiLanguage === "sv"
                       ? "Nuvarande strategi – marginal"
-                      : "Current strategy – margin"}
+                      : "Baseline – margin"}
                 </div>
                 <div
                   style={{
@@ -2717,7 +2722,7 @@ export default function PilotFastighetPage() {
                     ? getExecutiveDemoMarginStripLabels(uiLanguage).scenarioB
                     : uiLanguage === "sv"
                       ? "Alternativ strategi – marginal"
-                      : "Alternative strategy – margin"}
+                      : "Goal strategy – margin"}
                 </div>
                 <div
                   style={{
@@ -2933,28 +2938,28 @@ export default function PilotFastighetPage() {
           ) : (
             <>
               <div className="font-medium text-slate-200 text-sm">
-                Strukturellt handlingsutrymme över tid
+                {pt.transportGraphSectionTitle}
               </div>
               <div className="text-xs text-slate-500">
                 {caseType === "real-estate"
-                  ? "Fokus: Hur refinansiering, kapitalbindning, beläggning och kassaflöde påverkar portföljens handlingsutrymme"
-                  : `Fokus: ${
+                  ? `${pt.transportGraphFocusPrefix} ${pt.transportGraphFocusRealEstate}`
+                  : `${pt.transportGraphFocusPrefix} ${
                       transportScenarioTarget === "avoid_tipping"
-                        ? "Tipping-risk och strukturella divergenspunkter"
+                        ? pt.transportGraphFocusTransport.avoid_tipping
                         : transportScenarioTarget === "stabilize_margin"
-                        ? "Strukturell marginalnivå över tid"
+                        ? pt.transportGraphFocusTransport.stabilize_margin
                         : transportScenarioTarget === "reduce_capacity_pressure"
-                        ? "Kapacitetstryckets påverkan på systemets handlingsutrymme"
+                        ? pt.transportGraphFocusTransport.reduce_capacity_pressure
                         : transportScenarioTarget === "increase_modal_attractiveness"
-                        ? "Attraktivitetsdriven spridning i transportsystemet"
-                        : "Tillgänglighetsdriven strukturell utveckling"
+                        ? pt.transportGraphFocusTransport.increase_modal_attractiveness
+                        : pt.transportGraphFocusTransport.default
                     }`}
               </div>
 
               <div className="text-xs text-slate-400 leading-relaxed max-w-xl">
                 {caseType === "real-estate"
-                  ? "Grafen visar hur portföljens handlingsutrymme förändras över tid när refinansiering, kapitalbindning, kassaflöde, beläggning och underhållsstrategi utvecklas tillsammans."
-                  : "Grafen visar hur systemets strukturella handlingsutrymme förändras över tid beroende på vilka beslut som kombineras. Den visar inte optimal lösning — utan hur beslut påverkar stabilitet, begränsningar och risk för tipping över tid."}
+                  ? pt.transportGraphDescriptionRealEstate
+                  : pt.transportGraphDescriptionTransport}
               </div>
               <button
                 onClick={() => setShowDriverActivations((prev) => !prev)}
@@ -2963,11 +2968,11 @@ export default function PilotFastighetPage() {
               >
                 {caseType === "real-estate"
                   ? showDriverActivations
-                    ? "Dölj tidiga påverkanspunkter"
-                    : "Visa tidiga påverkanspunkter"
+                    ? pt.hideEarlyInfluencePoints
+                    : pt.showEarlyInfluencePoints
                   : showDriverActivations
-                    ? "Dölj driveraktiveringar"
-                    : "Visa driveraktiveringar"}
+                    ? pt.hideDriverActivations
+                    : pt.showDriverActivations}
               </button>
             </>
           )}
@@ -3064,6 +3069,7 @@ export default function PilotFastighetPage() {
                 <ScenarioPresetsPanel
                   scenarioTarget={transportScenarioTarget}
                   setScenarioTarget={setTransportScenarioTarget}
+                  language={uiLanguage}
                 />
               )}
               <AIInspectorPanel
@@ -3293,7 +3299,7 @@ export default function PilotFastighetPage() {
                       <div>
                         {uiLanguage === "sv"
                           ? `Målstrategi: ${finalB >= 0 ? "Robust" : "Kollapszon"} (marginal ${finalB.toFixed(2)})`
-                          : `Target strategy: ${finalB >= 0 ? "Robust" : "Collapse zone"} (margin ${finalB.toFixed(2)})`}
+                          : `Goal strategy: ${finalB >= 0 ? "Robust" : "Collapse zone"} (margin ${finalB.toFixed(2)})`}
                       </div>
                       <div style={{ marginTop: "6px" }}>
                         {uiLanguage === "sv"
@@ -3508,10 +3514,14 @@ export default function PilotFastighetPage() {
         <ScenarioLibrary
           domain={domain}
           language={uiLanguage}
-          scenarioTarget={scenarioTarget}
-          onScenarioTargetChange={(target) => {
-            setScenarioTarget(target);
-          }}
+          scenarioTarget={editableScenario}
+          onScenarioTargetChange={
+            activeScenario === "BOTH"
+              ? (target) => {
+                  setManualScenarioTarget(target);
+                }
+              : undefined
+          }
           onSelectScenario={(presetId) => {
             const presetLibrary = getScenarioLibrary(uiLanguage);
             const preset = presetLibrary.find((p) => p.id === presetId);
@@ -3528,15 +3538,15 @@ export default function PilotFastighetPage() {
               nextPresetState,
               applicableActions
             );
-            const applyTo = scenarioTarget;
+            const applyTo = editableScenario;
 
-            if (scenarioTarget === "A") {
+            if (editableScenario === "A") {
               setRiskStateA(structuredClone(scenarioStateWithActions));
               setScenarioPromptA(prompt);
               setAppliedScenarioAId(presetId);
               setSelectedActionsA(applicableActions);
             }
-            if (scenarioTarget === "B") {
+            if (editableScenario === "B") {
               setRiskStateB(structuredClone(scenarioStateWithActions));
               setScenarioPromptB(prompt);
               setAppliedScenarioBId(presetId);

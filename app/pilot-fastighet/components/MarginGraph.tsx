@@ -645,9 +645,11 @@ function MarginGraph({
     tippingBandWidth > 0.5;
 
   const tippingWindowLabel =
-    uiLanguage === "sv" ? "Tipping risk-fönster" : "Tipping Risk Window";
+    uiLanguage === "sv"
+      ? "Aktiveringsfönster för begränsning"
+      : "Constraint Activation Window";
   const tippingTriggerLabel =
-    uiLanguage === "sv" ? "Tipping risk-start" : "Tipping Risk Trigger";
+    uiLanguage === "sv" ? "Fönstrets början" : "Window Start";
   const demandShiftA = detectDemandShiftIndex(demandHistoryA);
   const demandShiftB = detectDemandShiftIndex(demandHistoryB);
   const demandShiftLabel =

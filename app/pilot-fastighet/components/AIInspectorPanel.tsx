@@ -744,7 +744,9 @@ const AIInspectorPanel: React.FC<Props> = ({
       ? `${scenarioALabel} vs ${scenarioBLabel}`
       : scenarioALabel
         ? scenarioALabel
-        : "Analys av vald strategi";
+        : language === "sv"
+          ? "Analys av vald strategi"
+          : "Analysis of selected strategy";
   const shouldShowCaseHeader = caseType !== "real-estate";
   const cascadeStatusText =
     simulationCascadeEvents.length > 0
@@ -1954,7 +1956,7 @@ const AIInspectorPanel: React.FC<Props> = ({
           </div>
           <div>
             <span style={{ color: "#9CA3AF", marginRight: "6px" }}>
-              {language === "sv" ? "Målstrategi: " : "Target strategy: "}
+              {language === "sv" ? "Målstrategi: " : "Goal strategy: "}
             </span>
             <span>{scenarioBLabel}</span>
           </div>
@@ -2353,8 +2355,8 @@ const AIInspectorPanel: React.FC<Props> = ({
                     } bevarar marginalnivån längre innan första kritiska fall`
                   : `${
                       structuralGoalSummaryMessage.winningScenario === "target"
-                        ? "Target strategy"
-                        : "Baseline strategy"
+                        ? "Goal strategy"
+                        : "Baseline"
                     } preserves structural margin longer before first critical decline`
                 : language === "sv"
                 ? (() => {
@@ -2389,16 +2391,16 @@ const AIInspectorPanel: React.FC<Props> = ({
                     if (caseType === "real-estate") {
                       return structuralGoalSummaryMessage.winningScenario === "target"
                         ? executiveDemoMode
-                          ? "Target strategy avoids a critical execution bottleneck."
-                          : "Target strategy avoids a critical financing constraint."
+                          ? "Goal strategy avoids a critical execution bottleneck."
+                          : "Goal strategy avoids a critical financing constraint."
                         : executiveDemoMode
-                          ? "Baseline strategy avoids a critical execution bottleneck."
-                          : "Baseline strategy avoids a critical financing constraint.";
+                          ? "Baseline avoids a critical execution bottleneck."
+                          : "Baseline avoids a critical financing constraint.";
                     }
                     const scenarioLabel =
                       structuralGoalSummaryMessage.winningScenario === "target"
-                        ? "Target strategy"
-                        : "Baseline strategy";
+                        ? "Goal strategy"
+                        : "Baseline";
                     const avoidedText =
                       structuralGoalSummaryMessage.avoidedConstraintCount > 0
                         ? `avoiding ${structuralGoalSummaryMessage.avoidedConstraintCount} constraint${
