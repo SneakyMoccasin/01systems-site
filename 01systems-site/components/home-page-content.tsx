@@ -66,7 +66,9 @@ export function HomePageContent() {
 
       <section style={{ marginBottom: "64px" }}>
         <p className="eyebrow content-narrow">
-          {(lang as "sv" | "en") === "sv" ? "1 minuts demo" : "1-minute demo"}
+          {(lang as "sv" | "en") === "sv"
+            ? "EXECUTIVE DEMO · 1:16"
+            : "EXECUTIVE DEMO · 1:16"}
         </p>
         <h2 className="section-title" style={{ marginBottom: "12px" }}>
           {(lang as "sv" | "en") === "sv" ? "Se Executive Demo" : "Watch the Executive Demo"}
@@ -107,8 +109,8 @@ export function HomePageContent() {
           <Image
             src="/images/cascade-engine-interface-2026-07-16.png"
             alt={(lang as "sv" | "en") === "sv" ? "Skärmbild av Cascade Engine" : "Screenshot of Cascade Engine"}
-            width={1829}
-            height={980}
+            width={3362}
+            height={1924}
             className="rounded-media"
             style={{ width: "100%", height: "auto" }}
           />
@@ -119,29 +121,29 @@ export function HomePageContent() {
             ? [
                 {
                   title: "Strukturella fynd",
-                  text: "Presenterar ett deterministiskt urval av fynd från de färdigställda analysresultaten. Komponenten använder ingen språkmodell och genomför ingen separat analys.",
+                  text: "Presenterar ett deterministiskt urval av fynd som hämtas från de färdigställda analysresultaten. Komponenten använder ingen språkmodell och genomför ingen separat analys.",
                 },
                 {
-                  title: "Decision Paths",
-                  text: "Jämför hur alternativa beslutsstrukturer påverkar framtida handlingsutrymme.",
+                  title: "Strukturellt beslutsutrymme",
+                  text: "Visualiserar hur baslinjen och målstrategin förändrar det strukturella handlingsutrymmet över tid och var begränsningar aktiveras.",
                 },
                 {
-                  title: "AI Interpretation",
-                  text: "Förklarar de strukturella drivkrafterna bakom varje scenario.",
+                  title: "AI-tolkning",
+                  text: "Ger en separat, språkmodellsgenererad förklaring av de färdigställda analysresultaten.",
                 },
               ]
             : [
                 {
                   title: "Structural Findings",
-                  text: "Presents a deterministic selection of findings derived from the completed analytical results. It does not use a language model or perform a separate analysis.",
+                  text: "Presents a deterministic selection of findings drawn from the completed analytical results. It does not use a language model or perform a separate analysis.",
                 },
                 {
-                  title: "Decision Paths",
-                  text: "Compare how alternative decision structures affect future execution flexibility.",
+                  title: "Structural Decision Space",
+                  text: "Visualises how the baseline and goal strategy change structural decision space over time and where constraints activate.",
                 },
                 {
                   title: "AI Interpretation",
-                  text: "Explains the structural drivers behind each scenario.",
+                  text: "Provides a separate language-model-generated explanation of the completed analytical results.",
                 },
               ]
           ).map((item) => (

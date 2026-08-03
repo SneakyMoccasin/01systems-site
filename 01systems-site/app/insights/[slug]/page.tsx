@@ -68,7 +68,7 @@ export default async function InsightArticlePage({
         url: absoluteUrl("/images/Logo-01.svg"),
       },
     },
-    image: [absoluteUrl("/images/cascade-engine-overview.jpg")],
+    image: [absoluteUrl("/images/cascade-engine-interface-2026-07-16.png")],
   };
 
   return (

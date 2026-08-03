@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const SITE_URL = "https://01systems.se";
 export const SITE_NAME = "01 Systems";
-export const DEFAULT_OG_IMAGE = "/images/cascade-engine-overview.jpg";
+export const DEFAULT_OG_IMAGE = "/images/cascade-engine-interface-2026-07-16.png";
 export const HOME_OG_IMAGE = "/images/cascade-engine-interface-2026-07-16.png";
 
 type PageMetadataInput = {
@@ -43,8 +43,8 @@ export function createPageMetadata({
       images: [
         {
           url: imageUrl,
-          width: 1200,
-          height: 630,
+          width: 3362,
+          height: 1924,
           alt: title,
         },
       ],

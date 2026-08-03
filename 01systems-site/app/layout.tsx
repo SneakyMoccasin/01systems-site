@@ -47,9 +47,9 @@ export const metadata: Metadata = {
     locale: "en_US",
     images: [
       {
-        url: absoluteUrl("/images/cascade-engine-overview.jpg"),
-        width: 1200,
-        height: 630,
+        url: absoluteUrl("/images/cascade-engine-interface-2026-07-16.png"),
+        width: 3362,
+        height: 1924,
         alt: "01 Systems and Cascade Engine",
       },
     ],
@@ -59,7 +59,7 @@ export const metadata: Metadata = {
     title: "01 Systems | Decision Space Analytics",
     description:
       "01 Systems develops Cascade Engine, software purpose-built for Decision Space Analytics and understanding how decisions reshape future options.",
-    images: [absoluteUrl("/images/cascade-engine-overview.jpg")],
+    images: [absoluteUrl("/images/cascade-engine-interface-2026-07-16.png")],
   },
   icons: {
     icon: [
