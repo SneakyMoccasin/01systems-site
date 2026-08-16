@@ -1,5 +1,9 @@
 import type { MetadataRoute } from "next";
 import { insightArticles } from "@/data/insights";
+import {
+  cascadeEngineSeries,
+  getCascadeEngineArticleUrl,
+} from "@/data/cascade-engine-series";
 import { SITE_URL } from "@/lib/seo";
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -32,5 +36,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.6,
   }));
 
-  return [...staticRoutes, ...articleRoutes];
+  const cascadeEngineRoutes: MetadataRoute.Sitemap = [
+    {
+      url: `${SITE_URL}/insights/cascade-engine`,
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    ...cascadeEngineSeries.map((article) => ({
+      url: `${SITE_URL}${getCascadeEngineArticleUrl(article.slug)}`,
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    })),
+  ];
+
+  return [...staticRoutes, ...articleRoutes, ...cascadeEngineRoutes];
 }
