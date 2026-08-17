@@ -16,7 +16,7 @@ export function LanguageProvider({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [lang, setLang] = useState<SiteLanguage>("sv");
+  const [lang, setLang] = useState<SiteLanguage>("en");
 
   return (
     <LanguageContext.Provider value={{ lang, setLang }}>

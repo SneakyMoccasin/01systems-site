@@ -25,10 +25,14 @@ export function InsightFoundationLabel({ order }: { order: number }) {
 export function InsightReadingTime({ readingTime }: { readingTime: string }) {
   const { lang } = useLanguage();
   const normalizedDuration = readingTime.replace(/^Estimated reading time:\s*/i, "");
+  const localizedDuration =
+    lang === "sv"
+      ? normalizedDuration.replace(/\bminutes\b/i, "minuter")
+      : normalizedDuration;
   const prefix = lang === "sv" ? "Beräknad lästid" : "Estimated reading time";
   return (
     <>
-      {prefix}: {normalizedDuration}
+      {prefix}: {localizedDuration}
     </>
   );
 }
