@@ -125,7 +125,7 @@ export function HomePageContent() {
                 },
                 {
                   title: "Strukturellt beslutsutrymme",
-                  text: "Visualiserar hur baslinjen och målstrategin förändrar det strukturella handlingsutrymmet över tid och var begränsningar aktiveras.",
+                  text: "Visualiserar hur baslinjen och målstrategin förändrar det strukturella beslutsutrymmet över tid och var begränsningar aktiveras.",
                 },
                 {
                   title: "AI-tolkning",
@@ -271,7 +271,7 @@ export function HomePageContent() {
                 enText: "Clarify the decision point the organization is facing and which options are still open.",
               },
               {
-                svTitle: "Kartlägg beslutsrummet",
+                svTitle: "Kartlägg beslutsutrymmet",
                 enTitle: "Map the decision space",
                 svText: "Synliggör beroenden, begränsningar och prioriteringar som påverkar vad som fortfarande är möjligt.",
                 enText: "Reveal the dependencies, constraints and priorities that shape what remains possible.",
@@ -370,7 +370,7 @@ export function HomePageContent() {
                 "Vilka framtida möjligheter stänger det här beslutet?",
                 "Vilka alternativ bevarar störst framtida flexibilitet?",
                 "Vilka beslut konkurrerar egentligen om samma resurser eller kapacitet?",
-                "När börjar beslutsrummet förändras?",
+                "När börjar beslutsutrymmet förändras?",
                 "Vilka beslut verkar oberoende men påverkar i själva verket varandra?",
                 "Var uppstår strukturella låsningar innan de blir synliga i genomförandet?",
               ]

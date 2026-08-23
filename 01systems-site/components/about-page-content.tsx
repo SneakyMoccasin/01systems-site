@@ -43,8 +43,8 @@ export function AboutPageContent() {
         </p>
         <p style={{ margin: 0 }}>
           {isSwedish
-            ? "När jag försökte besvara den upptäckte jag att det fanns gott om verktyg för att analysera projekt, risker, kostnader och utfall – men inget praktiskt sätt att analysera hur beslut steg för steg förändrar en organisations framtida handlingsutrymme."
-            : "As I tried to answer it, I found that there were many tools for analysing projects, risks, costs and outcomes — but no practical way to analyse how decisions gradually reshape an organisation’s future decision space."}
+            ? "När jag försökte besvara den upptäckte jag att det fanns gott om verktyg för att analysera projekt, risker, kostnader och utfall – men jag hade inte funnit något praktiskt sätt att analysera hur beslut steg för steg förändrar en organisations framtida handlingsutrymme."
+            : "As I tried to answer it, I found that there were many tools for analysing projects, risks, costs and outcomes — but I had not found a practical way to analyse how decisions gradually reshape an organisation’s future decision space."}
         </p>
         <p style={{ margin: 0 }}>
           {isSwedish
@@ -67,9 +67,9 @@ export function AboutPageContent() {
         <p style={{ margin: 0 }}>
           <strong>Christian Strandek</strong>
           <br />
-          Founder, 01 Systems
-          <br />
-          Creator of Decision Space Analytics
+          {isSwedish
+            ? "Grundare av 01 Systems och utvecklare av ramverket Decision Space Analytics bakom Cascade Engine"
+            : "Founder of 01 Systems and developer of the Decision Space Analytics framework behind Cascade Engine"}
         </p>
       </section>
 
