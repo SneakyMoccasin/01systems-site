@@ -125,7 +125,7 @@ export function HomePageContent() {
                 },
                 {
                   title: "Strukturellt beslutsutrymme",
-                  text: "Visualiserar hur baslinjen och målstrategin förändrar det strukturella beslutsutrymmet över tid och var begränsningar aktiveras.",
+                  text: "Visualiserar hur baslinjen och målstrategin förändrar det strukturella beslutsutrymme som representeras i den konfigurerade modellen över tid, och var begränsningar aktiveras.",
                 },
                 {
                   title: "AI-tolkning",
@@ -139,7 +139,7 @@ export function HomePageContent() {
                 },
                 {
                   title: "Structural Decision Space",
-                  text: "Visualises how the baseline and goal strategy change structural decision space over time and where constraints activate.",
+                  text: "Visualises how the baseline and goal strategy change the structural decision space represented in the configured model over time, and where constraints activate.",
                 },
                 {
                   title: "AI Interpretation",
