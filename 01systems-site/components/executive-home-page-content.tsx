@@ -293,8 +293,8 @@ export function ExecutiveHomePageContent() {
           <p style={{ margin: 0 }}>{isSwedish ? "Decision Space Analytics definierar den analytiska frågan och principerna." : "Decision Space Analytics defines the analytical question and principles."}</p>
           <p style={{ margin: 0 }}>{isSwedish ? "Cascade Engine tillhandahåller den strukturerade representationen, jämförelsen och analysen." : "Cascade Engine provides the structured representation, comparison and analysis."}</p>
           <div style={{ display: "grid", gap: "10px", marginTop: "24px" }}>
-            <Link href="/insights" className="touch-link">{isSwedish ? "Läs Foundation-serien" : "Read the Foundation Series"}</Link>
-            <Link href="/architecture" className="touch-link">{isSwedish ? "Utforska Product Architecture" : "Explore the Product Architecture"}</Link>
+            <Link href="/insights" className="touch-link executive-reference-link">{isSwedish ? "Läs Foundation-serien →" : "Read the Foundation Series →"}</Link>
+            <Link href="/architecture" className="touch-link executive-reference-link">{isSwedish ? "Utforska Product Architecture →" : "Explore the Product Architecture →"}</Link>
           </div>
         </div>
       </section>

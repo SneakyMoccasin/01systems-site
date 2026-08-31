@@ -157,6 +157,21 @@ video {
   justify-content: center;
 }
 
+.executive-reference-link {
+  width: fit-content;
+  color: var(--text-primary);
+  font-weight: 550;
+  text-decoration-line: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 4px;
+  transition: text-decoration-color 160ms ease;
+}
+
+.executive-reference-link:hover,
+.executive-reference-link:focus-visible {
+  text-decoration-color: currentColor;
+}
+
 .site-header-shell {
   position: relative;
   width: min(100%, 1120px);
