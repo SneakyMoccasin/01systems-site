@@ -41,6 +41,19 @@
   .site-logo {
     filter: invert(1) brightness(1.1);
   }
+
+  .surface-card {
+    --card-text-primary: #eeeeee;
+    --card-text-body: #c8c8c8;
+    --card-text-muted: #9a9a9a;
+    border-color: #292929 !important;
+    background: #141414 !important;
+  }
+
+  .surface-card .touch-button {
+    background: #eeeeee !important;
+    color: #171717 !important;
+  }
 }
 
 body {
