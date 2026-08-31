@@ -7,7 +7,7 @@ import { SiteCta } from "@/components/site-cta";
 import { getHomepageInsights } from "@/data/insights";
 
 export function HomePageContent() {
-  const { lang, setLang } = useLanguage();
+  const { lang } = useLanguage();
   const latestInsights = getHomepageInsights(3);
 
   return (
@@ -18,13 +18,6 @@ export function HomePageContent() {
         maxWidth: "900px",
       }}
     >
-      <div className="language-toggle">
-        <button onClick={() => setLang("sv")} aria-label="Switch language to Swedish">
-          SV
-        </button>
-        <button onClick={() => setLang("en")} aria-label="Switch language to English">EN</button>
-      </div>
-
       <section style={{ marginBottom: "56px" }}>
         <p className="eyebrow content-narrow">Decision Space Analytics</p>
         <h1 className="page-title content-narrow" style={{ marginBottom: "28px" }}>

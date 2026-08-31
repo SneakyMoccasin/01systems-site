@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 
 type SiteLanguage = "sv" | "en";
 
@@ -10,13 +10,29 @@ type LanguageContextValue = {
 };
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
+const LANGUAGE_STORAGE_KEY = "01systems-language";
 
 export function LanguageProvider({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [lang, setLang] = useState<SiteLanguage>("en");
+  const [lang, setLanguage] = useState<SiteLanguage>("en");
+
+  useEffect(() => {
+    const storedLanguage = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
+
+    if (storedLanguage === "sv" || storedLanguage === "en") {
+      setLanguage(storedLanguage);
+      document.documentElement.lang = storedLanguage;
+    }
+  }, []);
+
+  const setLang = useCallback((nextLanguage: SiteLanguage) => {
+    setLanguage(nextLanguage);
+    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLanguage);
+    document.documentElement.lang = nextLanguage;
+  }, []);
 
   return (
     <LanguageContext.Provider value={{ lang, setLang }}>

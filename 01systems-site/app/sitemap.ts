@@ -24,6 +24,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     {
+      url: `${SITE_URL}/cascade-engine`,
+      changeFrequency: "monthly",
+      priority: 0.9,
+    },
+    {
       url: `${SITE_URL}/insights`,
       changeFrequency: "weekly",
       priority: 0.8,

@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useLanguage } from "@/components/language-context";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
 export function SiteHeader() {
   const { lang } = useLanguage();
@@ -11,17 +12,19 @@ export function SiteHeader() {
     lang === "sv"
       ? {
           home: "Hem",
+          cascadeEngine: "Cascade Engine",
           architecture: "Arkitektur",
           insights: "Insikter",
           about: "Om",
-          walkthrough: "Boka en genomgång",
+          walkthrough: "Boka ett inledande samtal",
         }
       : {
           home: "Home",
+          cascadeEngine: "Cascade Engine",
           architecture: "Architecture",
           insights: "Insights",
           about: "About",
-          walkthrough: "Book a walkthrough",
+          walkthrough: "Book an initial conversation",
         };
 
   return (
@@ -36,26 +39,32 @@ export function SiteHeader() {
           priority
         />
       </Link>
-      <nav
-        aria-label="Primary"
-        className="site-nav"
-      >
-        <Link href="/">
-          {labels.home}
-        </Link>
-        <Link href="/architecture">
-          {labels.architecture}
-        </Link>
-        <Link href="/insights">
-          {labels.insights}
-        </Link>
-        <Link href="/about">
-          {labels.about}
-        </Link>
-        <a href="mailto:christian@01systems.se">
-          {labels.walkthrough}
-        </a>
-      </nav>
+      <div className="site-header-utilities">
+        <nav
+          aria-label={lang === "sv" ? "Primär navigering" : "Primary navigation"}
+          className="site-nav"
+        >
+          <Link href="/">
+            {labels.home}
+          </Link>
+          <Link href="/cascade-engine">
+            {labels.cascadeEngine}
+          </Link>
+          <Link href="/architecture">
+            {labels.architecture}
+          </Link>
+          <Link href="/insights">
+            {labels.insights}
+          </Link>
+          <Link href="/about">
+            {labels.about}
+          </Link>
+          <a href="mailto:christian@01systems.se">
+            {labels.walkthrough}
+          </a>
+        </nav>
+        <LanguageSwitcher />
+      </div>
     </header>
   );
 }

@@ -31,6 +31,9 @@ export function SiteFooter() {
         <div style={{ color: "var(--card-text-body)", lineHeight: 1.5 }}>Decision Space Analytics</div>
 
         <div className="footer-links">
+          <Link href="/cascade-engine" style={{ color: "#111", textDecoration: "none" }}>
+            Cascade Engine
+          </Link>
           <Link href="/architecture" style={{ color: "#111", textDecoration: "none" }}>
             {isSwedish ? "Arkitektur" : "Architecture"}
           </Link>
@@ -41,7 +44,7 @@ export function SiteFooter() {
             {isSwedish ? "Om" : "About"}
           </Link>
           <a href="mailto:christian@01systems.se" style={{ color: "var(--card-text-primary)", textDecoration: "none" }}>
-            {isSwedish ? "Boka en genomgång" : "Book a walkthrough"}
+            {isSwedish ? "Boka ett inledande samtal" : "Book an initial conversation"}
           </a>
         </div>
 
