@@ -94,32 +94,22 @@ export function ExecutiveHomePageContent() {
       <section className="executive-chapter-two" style={chapterSpacing}>
         <h2 className="section-title">
           {localized(lang, {
-            en: "Every organisation eventually reaches moments like this.",
-            sv: "Varje organisation hamnar förr eller senare i sådana här situationer.",
+            en: "The difficult part is rarely a single decision.",
+            sv: "Det svåra är sällan ett enskilt beslut.",
           })}
         </h2>
         <div className="body-large stack-lg" style={bodyStack}>
-          <p style={{ margin: 0 }}>{isSwedish ? "Flera viktiga beslut måste fattas." : "Several important decisions have to be made."}</p>
-          <p style={{ margin: 0 }}>{isSwedish ? "Varje beslut är rimligt i sig." : "Each decision makes sense on its own."}</p>
+          <p style={{ margin: 0 }}>{isSwedish ? "Flera viktiga beslut måste fattas." : "Several important decisions must be made."}</p>
+          <p style={{ margin: 0 }}>{isSwedish ? "Varje beslut kan vara rimligt i sig." : "Each decision may be reasonable on its own."}</p>
           <p style={{ margin: 0 }}>
             {isSwedish
-              ? "Individuellt rimliga beslut börjar samverka på sätt som är svåra att upptäcka medan besluten fortfarande fattas."
-              : "Individually reasonable decisions begin to interact in ways that are difficult to recognise while they are still being made."}
-          </p>
-          <p style={{ margin: 0 }}>
-            {isSwedish
-              ? "Den verkliga utmaningen är att förstå hur samspelet förändrar vad som fortfarande är möjligt över tid."
-              : "Understanding how those interactions change what remains possible over time is the real challenge."}
-          </p>
-          <p style={{ margin: 0 }}>
-            {isSwedish
-              ? "När den samlade effekten blir synlig kan vissa möjligheter redan ha begränsats eller försvunnit."
-              : "By the time the combined effect becomes visible, some possibilities may already have narrowed or disappeared."}
+              ? "Utmaningen är att förstå hur de tillsammans förändrar vilka alternativ som fortfarande är tillgängliga."
+              : "The challenge is understanding how they collectively change which alternatives remain available."}
           </p>
           <p className="body-xl" style={{ margin: 0, color: "var(--text-primary)", fontWeight: 600 }}>
             {isSwedish
-              ? "Analysen har störst värde medan meningsfulla alternativ fortfarande är öppna."
-              : "The most valuable moment for analysis is while meaningful alternatives still remain."}
+              ? "Cascade Engine gör den förändringen synlig innan viktiga alternativ har stängts."
+              : "Cascade Engine makes that change visible before important alternatives have closed."}
           </p>
         </div>
       </section>
