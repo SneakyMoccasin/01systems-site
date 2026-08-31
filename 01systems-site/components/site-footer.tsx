@@ -28,9 +28,12 @@ export function SiteFooter() {
         }}
       >
         <div style={{ fontSize: "22px", fontWeight: 600, lineHeight: 1.2 }}>01 Systems</div>
-        <div style={{ color: "var(--card-text-body)", lineHeight: 1.5 }}>Decision Space Analytics</div>
+        <div className="footer-tagline">Decision Space Analytics</div>
 
         <div className="footer-links">
+          <Link href="/" style={{ color: "#111", textDecoration: "none" }}>
+            {isSwedish ? "Hem" : "Home"}
+          </Link>
           <Link href="/cascade-engine" style={{ color: "#111", textDecoration: "none" }}>
             Cascade Engine
           </Link>
