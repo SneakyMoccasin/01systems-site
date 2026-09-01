@@ -301,7 +301,7 @@ export function ExecutiveHomePageContent() {
       </section>
 
       <section id="conversation" className="surface-card" style={{ marginBottom: "64px", border: "1px solid #e5e5e5", background: "#fafafa", color: "var(--card-text-primary)" }}>
-        <h2 className="section-title">{isSwedish ? "Har ni flera viktiga beslut som påverkar varandra?" : "Are several important decisions affecting one another?"}</h2>
+        <h2 className="section-title">{isSwedish ? "Står ni inför flera beslut som påverkar samma resurser, beroenden eller tidsplan?" : "Are several decisions competing for the same resources, dependencies or timeline?"}</h2>
         <div className="body-large stack-lg" style={{ maxWidth: "700px", color: "var(--card-text-body)" }}>
           <p style={{ margin: 0 }}>
             {isSwedish
