@@ -290,7 +290,7 @@ export function ExecutiveHomePageContent() {
               : "A pilot focuses on one concrete decision situation—not the entire organisation."}
           </p>
           <p style={{ margin: 0 }}>{isSwedish ? "Typisk omfattning:" : "Typical scope:"}</p>
-          <ul className="bullet-list">
+          <ul className="bullet-list executive-pilot-scope-list">
             <li>2–4 workshops</li>
             <li>{isSwedish ? "cirka 10–30 representerade initiativ" : "approximately 10–30 represented initiatives"}</li>
             <li>{isSwedish ? "beslutsägare och domänexperter" : "decision owners and domain experts"}</li>

@@ -1599,6 +1599,16 @@ video {
   margin-top: 10px;
 }
 
+.executive-pilot-scope-list {
+  padding-left: 24px;
+  list-style-position: outside;
+  list-style-type: disc;
+}
+
+.executive-pilot-scope-list li + li {
+  margin-top: 8px;
+}
+
 .product-information,
 .product-card-content {
   display: grid;
