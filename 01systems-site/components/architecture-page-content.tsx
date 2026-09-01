@@ -55,7 +55,7 @@ const COPY: Record<Language, PageCopy> = {
     title: "Understanding the Analytical Foundation of Cascade Engine",
     intro: [
       "Cascade Engine is a structural analysis engine designed to examine how combinations and sequences of decisions influence future execution conditions.",
-      "Rather than estimating probabilities or forecasting future events, it characterises how structural relationships evolve as decisions interact over time. The analytical results describe how structural relationships change, where constraints emerge and how future execution flexibility is affected.",
+      "Rather than estimating probabilities or forecasting future events, it characterises how represented states and effects propagate through explicitly configured structural relationships. The analytical results describe how structural conditions, margins and configured constraints develop across the alternatives.",
     ],
     corePrinciple: {
       heading: "Core Principle",
@@ -64,7 +64,7 @@ const COPY: Record<Language, PageCopy> = {
       question:
         "How do combinations and sequences of decisions change future execution flexibility?",
       body:
-        "Rather than considering decisions in isolation, the analysis examines how multiple decisions interact structurally over time. Individually reasonable decisions may collectively reduce future execution flexibility by activating constraints, increasing structural dependencies or narrowing available execution paths.",
+        "Rather than considering decisions in isolation, the analysis examines how multiple decisions interact through explicitly configured structural relationships over time. Individually reasonable decisions may collectively change represented structural conditions and activate configured constraints along a modelled path.",
       diagramTitle: "Analytical Principle",
       diagramSteps: [
         "Decisions",
@@ -72,7 +72,7 @@ const COPY: Record<Language, PageCopy> = {
         "Future Execution Flexibility",
       ],
       conclusion:
-        "The purpose of the analysis is not to determine whether individual decisions are objectively correct or incorrect. Instead, it characterises how combinations of decisions influence the structural conditions under which future decisions must be made.",
+        "The purpose of the analysis is not to determine whether individual decisions are objectively correct or incorrect. Instead, it characterises how combinations of decisions influence represented structural conditions. It does not enumerate every future choice available to an organisation.",
     },
     analyticalModel: {
       heading: "The Analytical Model",
@@ -111,7 +111,7 @@ const COPY: Record<Language, PageCopy> = {
         "Every analytical method is designed to answer a particular type of question.",
         "Cascade Engine is designed to analyse how combinations and sequences of decisions influence future execution conditions through their structural relationships.",
         "Its analytical scope is centred on the structural consequences of decision interaction rather than on predicting future events or estimating uncertainty.",
-        "The analysis characterises how structural conditions change as decisions accumulate, allowing users to examine where constraints emerge, how dependencies develop and how future execution flexibility is affected.",
+        "The analysis characterises how represented states and effects propagate through configured relationships as decisions accumulate. This allows users to compare how structural conditions, margins and configured constraints develop across alternatives, including how sequencing changes intermediate trajectories.",
       ],
     },
     capabilities: {
@@ -148,7 +148,7 @@ const COPY: Record<Language, PageCopy> = {
     title: "Den analytiska grunden för Cascade Engine",
     intro: [
       "Cascade Engine är en strukturell analysmotor som undersöker hur kombinationer och sekvenser av beslut påverkar framtida genomförandeförutsättningar.",
-      "I stället för att uppskatta sannolikheter eller förutsäga framtida händelser karakteriserar motorn hur strukturella samband utvecklas när beslut samverkar över tid. Analysresultaten visar hur dessa samband förändras, var begränsningar uppstår och hur det framtida handlingsutrymmet påverkas.",
+      "I stället för att uppskatta sannolikheter eller förutsäga framtida händelser karakteriserar motorn hur representerade tillstånd och effekter sprids genom uttryckligen konfigurerade strukturella samband. Analysresultaten visar hur strukturella förutsättningar, marginaler och konfigurerade begränsningar utvecklas mellan alternativen.",
     ],
     corePrinciple: {
       heading: "Grundprincip",
@@ -157,11 +157,11 @@ const COPY: Record<Language, PageCopy> = {
       question:
         "Hur förändrar kombinationer och sekvenser av beslut det framtida handlingsutrymmet?",
       body:
-        "I stället för att betrakta beslut isolerat analyseras hur flera beslut samverkar strukturellt över tid. Beslut som vart och ett framstår som rimliga kan tillsammans minska det framtida handlingsutrymmet genom att aktivera begränsningar, öka strukturella beroenden eller minska antalet tillgängliga vägar för genomförande.",
+        "I stället för att betrakta beslut isolerat analyseras hur flera beslut samverkar genom uttryckligen konfigurerade strukturella samband över tid. Beslut som vart och ett framstår som rimliga kan tillsammans förändra representerade strukturella förutsättningar och aktivera konfigurerade begränsningar längs en modellerad väg.",
       diagramTitle: "Analytisk princip",
       diagramSteps: ["Beslut", "Strukturella samband", "Framtida handlingsutrymme"],
       conclusion:
-        "Analysens syfte är inte att avgöra om enskilda beslut är objektivt rätt eller fel. Den karakteriserar i stället hur kombinationer av beslut påverkar de strukturella förutsättningar inom vilka framtida beslut måste fattas.",
+        "Analysens syfte är inte att avgöra om enskilda beslut är objektivt rätt eller fel. Den karakteriserar i stället hur kombinationer av beslut påverkar representerade strukturella förutsättningar. Den räknar inte upp alla framtida val som är tillgängliga för en organisation.",
     },
     analyticalModel: {
       heading: "Den analytiska modellen",
@@ -200,7 +200,7 @@ const COPY: Record<Language, PageCopy> = {
         "Varje analysmetod är utformad för att besvara en viss typ av fråga.",
         "Cascade Engine är utformad för att analysera hur kombinationer och sekvenser av beslut påverkar framtida genomförandeförutsättningar genom sina strukturella samband.",
         "Den analytiska omfattningen är inriktad på de strukturella konsekvenserna av att beslut samverkar, snarare än på att förutsäga framtida händelser eller uppskatta osäkerhet.",
-        "Analysen karakteriserar hur de strukturella förutsättningarna förändras när beslut ackumuleras. Det gör det möjligt för användaren att undersöka var begränsningar uppstår, hur beroenden utvecklas och hur det framtida handlingsutrymmet påverkas.",
+        "Analysen karakteriserar hur representerade tillstånd och effekter sprids genom konfigurerade samband när beslut ackumuleras. Det gör det möjligt för användaren att jämföra hur strukturella förutsättningar, marginaler och konfigurerade begränsningar utvecklas mellan alternativ, inklusive hur sekvensering förändrar mellanliggande banor.",
       ],
     },
     capabilities: {

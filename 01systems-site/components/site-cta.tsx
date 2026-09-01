@@ -18,20 +18,20 @@ export function SiteCta() {
     >
       <h2 className="section-title" style={{ marginBottom: "10px" }}>
         {lang === "sv"
-          ? "Har ni ett beslut som är svårt att överblicka?"
-          : "Do you have a decision that's difficult to evaluate?"}
+          ? "Diskutera en konkret beslutssituation"
+          : "Discuss a concrete decision situation"}
       </h2>
 
       <p style={{ color: "var(--card-text-body)", marginBottom: "20px", maxWidth: "680px" }}>
         {lang === "sv"
-          ? "Ta med ett verkligt beslut eller en investeringsfråga. Under genomgången visar vi hur Cascade Engine kan synliggöra beroenden, jämföra alternativa vägval och göra tydligare vad dagens beslut betyder för framtida möjligheter."
-          : "Bring a real decision or investment question. In the walkthrough, we'll show how Cascade Engine reveals dependencies, compares alternative paths and makes it clearer what today's decisions mean for future options."}
+          ? "Ett inledande samtal börjar med en avgränsad beslutssituation och de beslut, alternativ, beroenden, begränsningar och antaganden som kan vara relevanta för en första analys."
+          : "An initial conversation begins with one bounded decision situation and the decisions, alternatives, dependencies, constraints and assumptions that may be relevant to an initial analysis."}
       </p>
 
       <p style={{ color: "var(--card-text-body)", marginBottom: "20px", maxWidth: "680px" }}>
         {lang === "sv"
-          ? "Ni får en konkret bild av hur analysen genomförs tillsammans med era egna beslutsfattare och domänexperter, och vad ni kan ta med er vidare efter mötet."
-          : "You'll get a concrete view of how the analysis is carried out together with your own decision-makers and domain experts, and what you can take away from the session afterward."}
+          ? "Tillsammans bedömer vi om situationen kan representeras tydligt. Ingen omfattande förberedelse eller fullständig datainsamling krävs inför det första samtalet."
+          : "Together, we assess whether the situation can be represented clearly. No extensive preparation or complete data collection is required before the first conversation."}
       </p>
 
       <button
@@ -48,7 +48,7 @@ export function SiteCta() {
         }}
         onClick={() => (window.location.href = "mailto:christian@01systems.se")}
       >
-        {lang === "sv" ? "Boka en genomgång" : "Book a walkthrough"}
+        {lang === "sv" ? "Boka ett inledande samtal" : "Book an initial conversation"}
       </button>
 
       <p style={{ fontSize: "14px", color: "var(--text-muted)" }}>christian@01systems.se</p>

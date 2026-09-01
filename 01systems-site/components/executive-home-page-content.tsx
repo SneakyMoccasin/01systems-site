@@ -164,6 +164,11 @@ export function ExecutiveHomePageContent() {
                 ? "Motorn jämför uttryckligen konfigurerade alternativ och visar hur deras strukturella förutsättningar skiljer sig över tid. Skillnaderna ger underlag för att förstå hur organisationens framtida handlingsutrymme kan påverkas inom den representerade modellen."
                 : "The engine compares explicitly configured alternatives and shows how their structural conditions differ over time. Those differences provide insight into how the organisation’s future room to act may be affected within the represented model."}
             </p>
+            <p>
+              {isSwedish
+                ? "Inom en konfigurerad modell kan Cascade Engine jämföra samma startförhållanden och åtgärder i olika ordning eller vid olika tidpunkter och visa var de modellerade vägarna skiljer sig och om de senare konvergerar."
+                : "Within a configured model, Cascade Engine can compare the same starting conditions and actions in different orders or at different times, showing where the modelled paths diverge and whether they later converge."}
+            </p>
           </div>
           <div className="product-information-group">
             <p className="product-list-intro">{isSwedish ? "Den kan synliggöra:" : "It can make visible:"}</p>
