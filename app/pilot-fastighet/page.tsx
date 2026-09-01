@@ -14,7 +14,10 @@ import {
 } from "@/src/pilotFastighet/compareHelpers";
 import { PILOT_CASES } from "@/src/pilotFastighet/pilotCases";
 import { calculateExecutiveSummary } from "@/src/pilotFastighet/analysis/calculateExecutiveSummary";
-import { runCascadeAnalysis } from "@/src/pilotFastighet/analysis/runCascadeAnalysis";
+import {
+  createCleanRunSourceSnapshot,
+  runReactAnalysisBoundary,
+} from "@/src/pilotFastighet/analysis/reactScheduledAnalysisBoundary";
 import {
   createPreconfiguredPlayback,
   getPreconfiguredPlaybackSnapshot,
@@ -693,20 +696,23 @@ export default function PilotFastighetPage() {
     setIsRunning(false);
     resetRunState();
 
-    const analysis = runCascadeAnalysis({
-      executionMode: "preconfigured",
-      horizon: simulationHorizon,
+    const runSource = createCleanRunSourceSnapshot({
       scenarioA: {
-        initialRiskState: structuredClone(effectiveRiskStateA),
-        initialDriverScores: structuredClone(effectiveDriverScoresA),
+        baseRiskState: structuredClone(effectiveRiskStateA),
+        baseDriverScores: structuredClone(effectiveDriverScoresA),
       },
       scenarioB: {
-        initialRiskState: structuredClone(effectiveRiskStateB),
-        initialDriverScores: structuredClone(effectiveDriverScoresB),
+        baseRiskState: structuredClone(effectiveRiskStateB),
+        baseDriverScores: structuredClone(effectiveDriverScoresB),
       },
       baseline: {
-        initialRiskState: structuredClone(riskStateBaseline),
+        baseRiskState: structuredClone(riskStateBaseline),
       },
+    });
+    const { analysis } = runReactAnalysisBoundary({
+      executionMode: "configured-start",
+      horizon: simulationHorizon,
+      runSource,
     });
     const playback = createPreconfiguredPlayback(analysis, simulationHorizon);
     playbackRef.current = playback;
