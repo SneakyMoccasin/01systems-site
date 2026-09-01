@@ -3,13 +3,19 @@ import { createHash } from "node:crypto";
 import test from "node:test";
 import { ACTION_EFFECTS } from "../actionEffects";
 import { getScheduledFairComparisonFacts, getRevealedExecutionProvenance } from "./manualScheduledExecution";
-import { runReactAnalysisBoundary } from "./reactScheduledAnalysisBoundary";
+import {
+  runReactAnalysisBoundary,
+  type ScenarioExecutionProvenance,
+} from "./reactScheduledAnalysisBoundary";
 import {
   getScheduledExecutiveDemoRunSource,
   SCHEDULED_EXECUTIVE_DEMO_HORIZON,
   SCHEDULED_EXECUTIVE_DEMO_SCHEDULES,
 } from "../scheduledExecutiveDemo";
-import { calculateScheduledExecutiveMetrics } from "./scheduledExecutivePresentation";
+import {
+  buildScheduledExecutionGraphMarkers,
+  calculateScheduledExecutiveMetrics,
+} from "./scheduledExecutivePresentation";
 import {
   getExecutiveDemoGraphFraming,
   getExecutiveDemoHero,
@@ -85,10 +91,59 @@ test("scheduled executive trajectories, provenance, and path metrics are exact",
   assert.deepEqual([marginsA[0], marginsA[2], marginsA[5], marginsA[8], marginsA[11], marginsA[17], marginsA[23], marginsA[35]], [0.1465125164690384, -1.90360732121212, -3, -3, -3, -3, -3, -3]);
   assert.deepEqual([marginsB[0], marginsB[2], marginsB[5], marginsB[8], marginsB[11], marginsB[17], marginsB[23], marginsB[35]], [1.194542569851336, 1.8958752877373437, 3, 3, 3, 2.0061364191692057, -3, -3]);
   const metrics = calculateScheduledExecutiveMetrics({ marginHistoryA: marginsA, marginHistoryB: marginsB, terminalStateA: analysis.scenarioA.terminalState, terminalStateB: analysis.scenarioB.terminalState });
-  assert.deepEqual(metrics, { firstDivergencePeriod: 1, maximumMarginSeparation: 6, cumulativeAbsoluteSeparation: 107.22345298061776, firstLowerClampPeriodA: 4, firstLowerClampPeriodB: 24, visibleConstraintPeriodA: 2, visibleConstraintPeriodB: 21, terminalMarginA: -3, terminalMarginB: -3 });
+  assert.deepEqual(metrics, { firstDivergencePeriod: 1, maximumMarginSeparation: 6, cumulativeAbsoluteSeparation: 107.22345298061776, firstLowerClampPeriodA: 4, firstLowerClampPeriodB: 24, visibleConstraintPeriodA: 2, visibleConstraintPeriodB: 21, terminalMarginA: -3, terminalMarginB: -3, convergencePeriod: 24 });
   assert.equal(analysis.scenarioA.cascadeHistory.length, 9);
   assert.equal(analysis.scenarioB.cascadeHistory.length, 7);
   assert.equal(analysis.baseline.terminalState.margin, 1);
+});
+
+test("execution graph markers come only from revealed facade provenance", () => {
+  const { result } = execute();
+  const labels = { A: "Adverse first", B: "Mitigation first" };
+  const getActionLabel = (actionId: any) => `label:${actionId}`;
+  const at = (revealedStep: number) =>
+    buildScheduledExecutionGraphMarkers({
+      provenance: result.provenance,
+      revealedStep,
+      language: "en",
+      scenarioLabels: labels,
+      getActionLabel,
+    });
+
+  assert.deepEqual(at(0), []);
+  assert.deepEqual(at(1).map(({ scenario, actionId, actualExecutionStep, graphIndex, periodLabel }) => ({ scenario, actionId, actualExecutionStep, graphIndex, periodLabel })), [
+    { scenario: "A", actionId: "delay_maintenance", actualExecutionStep: 1, graphIndex: 0, periodLabel: "M1" },
+    { scenario: "B", actionId: "early_refinancing", actualExecutionStep: 1, graphIndex: 0, periodLabel: "M1" },
+  ]);
+  assert.deepEqual(at(3).map((marker) => marker.periodLabel), ["M1", "M1", "M3"]);
+  assert.deepEqual(at(9).map((marker) => marker.periodLabel), ["M1", "M1", "M3", "M9"]);
+  const complete = at(36);
+  assert.equal(complete.length, 6);
+  assert.deepEqual(complete.filter((marker) => marker.actualExecutionStep === 18).map(({ scenario, actionId }) => ({ scenario, actionId })), [
+    { scenario: "A", actionId: "secure_long_term_leases" },
+    { scenario: "B", actionId: "delay_maintenance" },
+  ]);
+  assert.equal(new Set(complete.map((marker) => `${marker.scenario}:${marker.actionId}`)).size, 6);
+  assert.ok(complete.every((marker) => marker.accessibleLabel.includes(`Scenario ${marker.scenario}`) && marker.accessibleLabel.includes(marker.periodLabel)));
+  assert.ok(complete.every((marker) => !Object.hasOwn(marker, "appliedDriverDeltas")));
+});
+
+test("planned schedules cannot create execution markers and clean reruns are exact", () => {
+  const labels = { A: "Adverse first", B: "Mitigation first" };
+  const build = (provenance: ScenarioExecutionProvenance, revealedStep: number) =>
+    buildScheduledExecutionGraphMarkers({
+      provenance,
+      revealedStep,
+      language: "en",
+      scenarioLabels: labels,
+      getActionLabel: (actionId) => actionId,
+    });
+  assert.deepEqual(build({ A: [], B: [] }, 36), []);
+  const first = execute().result.provenance;
+  const rerun = execute().result.provenance;
+  assert.deepEqual(build(first, 0), []);
+  assert.deepEqual(build(rerun, 0), []);
+  assert.deepEqual(build(first, 36), build(rerun, 36));
 });
 
 test("executive provenance reveal never exposes future or cross-scenario actions", () => {

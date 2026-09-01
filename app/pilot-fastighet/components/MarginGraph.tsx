@@ -10,6 +10,7 @@ import {
   profileCount,
   profileValue,
 } from "@/src/lib/runtimeProfile";
+import type { ScheduledExecutionGraphMarker } from "@/src/pilotFastighet/analysis/scheduledExecutivePresentation";
 
 const EXEC_SUSTAIN_THRESHOLD = 0.8;
 
@@ -76,6 +77,8 @@ export interface MarginGraphProps {
   executiveDemoMode?: boolean;
   /** Executive demo narration markers (indexed like plotted months: M{n} aligns with axis label n). */
   executiveNarrativeMarkers?: { monthIndex: number; label: string }[];
+  /** Revealed facade-provenance executions for the scheduled executive demo only. */
+  executionMarkers?: readonly ScheduledExecutionGraphMarker[];
   caseType?: "transport" | "real-estate" | null;
 }
 
@@ -115,6 +118,7 @@ function MarginGraph({
   divergenceMonthIndex,
   executiveDemoMode = false,
   executiveNarrativeMarkers,
+  executionMarkers = [],
   caseType = null,
 }: MarginGraphProps) {
   const execRiskLabelOpts =
@@ -810,6 +814,15 @@ function MarginGraph({
           pointer-events: none;
           text-align: center;
         }
+
+        .scheduled-execution-marker:focus {
+          outline: none;
+        }
+
+        .scheduled-execution-marker:focus .scheduled-execution-marker-focus {
+          stroke: #f8fafc;
+          stroke-width: 3;
+        }
       `}</style>
       {!execRealEstateGraphPassive && (
       <div style={{ marginBottom: 8 }}>
@@ -1494,6 +1507,84 @@ function MarginGraph({
           }
         />
       )}
+      {execRealEstateGraphPassive &&
+        executionMarkers.map((marker) => {
+          const series = marker.scenario === "A" ? normalizedA : normalizedB;
+          const isVisible = marker.scenario === "A" ? showA : showB;
+          const value = series[marker.graphIndex];
+          if (!isVisible || !Number.isFinite(value)) return null;
+          const x = scaleX(marker.graphIndex);
+          const pointY = scaleY(value);
+          const markerY = Math.max(
+            TOP_PADDING + 10,
+            Math.min(
+              300 - BOTTOM_PADDING - 16,
+              pointY + (marker.scenario === "A" ? -13 : 13)
+            )
+          );
+          const color = marker.scenario === "A" ? SERIES_COLOR_A : SERIES_COLOR_B;
+          return (
+            <g
+              key={`${marker.scenario}-${marker.actionId}-${marker.actualExecutionStep}`}
+              className="scheduled-execution-marker"
+              role="img"
+              tabIndex={0}
+              aria-label={marker.accessibleLabel}
+              focusable="true"
+            >
+              <title>{marker.accessibleLabel}</title>
+              <line
+                x1={x}
+                x2={x}
+                y1={pointY}
+                y2={markerY}
+                stroke={color}
+                strokeWidth={1.25}
+                strokeDasharray="2 2"
+                opacity={0.9}
+                aria-hidden="true"
+              />
+              {marker.scenario === "A" ? (
+                <circle
+                  className="scheduled-execution-marker-focus"
+                  cx={x}
+                  cy={markerY}
+                  r={7}
+                  fill={color}
+                  stroke="#dbeafe"
+                  strokeWidth={1.5}
+                  aria-hidden="true"
+                />
+              ) : (
+                <rect
+                  className="scheduled-execution-marker-focus"
+                  x={x - 6}
+                  y={markerY - 6}
+                  width={12}
+                  height={12}
+                  rx={1}
+                  fill={color}
+                  stroke="#fef3c7"
+                  strokeWidth={1.5}
+                  transform={`rotate(45 ${x} ${markerY})`}
+                  aria-hidden="true"
+                />
+              )}
+              <text
+                x={x}
+                y={markerY + 2.6}
+                textAnchor="middle"
+                fontSize={7}
+                fontWeight={800}
+                fill="#0b1220"
+                pointerEvents="none"
+                aria-hidden="true"
+              >
+                {marker.scenario}
+              </text>
+            </g>
+          );
+        })}
       {selectedMonthIndex !== undefined &&
         selectedMonthIndex >= 0 &&
         selectedMonthIndex < marginHistoryA.length && (

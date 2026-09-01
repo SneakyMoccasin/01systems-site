@@ -127,7 +127,10 @@ import {
   SCHEDULED_EXECUTIVE_DEMO_ID,
   SCHEDULED_EXECUTIVE_DEMO_SCHEDULES,
 } from "@/src/pilotFastighet/scheduledExecutiveDemo";
-import { calculateScheduledExecutiveMetrics } from "@/src/pilotFastighet/analysis/scheduledExecutivePresentation";
+import {
+  buildScheduledExecutionGraphMarkers,
+  calculateScheduledExecutiveMetrics,
+} from "@/src/pilotFastighet/analysis/scheduledExecutivePresentation";
 import { getPilotStrategyColors } from "@/src/pilotFastighet/strategyColors";
 import { surfaceOrgDemoText } from "@/src/pilotFastighet/executiveDemoTransformation";
 import {
@@ -1343,6 +1346,27 @@ export default function PilotFastighetPage() {
         terminalStateB: stateB,
       }),
     [marginHistoryA, marginHistoryB, stateA, stateB]
+  );
+  const scheduledExecutiveGraphMarkers = useMemo(
+    () =>
+      executiveDemoMode
+        ? buildScheduledExecutionGraphMarkers({
+            provenance: scheduledProvenance,
+            revealedStep: revealedPlaybackStep,
+            language: uiLanguage,
+            scenarioLabels: {
+              A: getScheduledExecutiveScenarioLabel("A", uiLanguage),
+              B: getScheduledExecutiveScenarioLabel("B", uiLanguage),
+            },
+            getActionLabel: getActionPanelLabel,
+          })
+        : [],
+    [
+      executiveDemoMode,
+      scheduledProvenance,
+      revealedPlaybackStep,
+      uiLanguage,
+    ]
   );
   const structuralStatusA = executiveSummary
     ? executiveSummary.structuralStatusA
@@ -3292,6 +3316,8 @@ export default function PilotFastighetPage() {
                     <dd style={{ margin: 0, fontWeight: 650 }}>{`${scheduledExecutiveMetrics.firstLowerClampPeriodA ? `M${scheduledExecutiveMetrics.firstLowerClampPeriodA}` : "—"} / ${scheduledExecutiveMetrics.firstLowerClampPeriodB ? `M${scheduledExecutiveMetrics.firstLowerClampPeriodB}` : "—"}`}</dd>
                     <dt>{uiLanguage === "sv" ? "Terminal marginal A / B" : "Terminal margin A / B"}</dt>
                     <dd style={{ margin: 0, fontWeight: 650 }}>{hasSimulationCompleted ? `${scheduledExecutiveMetrics.terminalMarginA.toFixed(0)} / ${scheduledExecutiveMetrics.terminalMarginB.toFixed(0)}` : "— / —"}</dd>
+                    <dt>{uiLanguage === "sv" ? "Konvergens" : "Convergence"}</dt>
+                    <dd style={{ margin: 0, fontWeight: 650 }}>{scheduledExecutiveMetrics.convergencePeriod ? `M${scheduledExecutiveMetrics.convergencePeriod}` : "—"}</dd>
                   </dl>
                   {hasSimulationCompleted && (
                     <p style={{ color: "#cbd5e1", margin: "10px 0 0" }}>
@@ -3453,6 +3479,11 @@ export default function PilotFastighetPage() {
                   executiveNarrativeMarkers={
                     executiveDemoMode && caseType === "real-estate"
                       ? getExecutiveDemoGraphTimelineMarkers(uiLanguage)
+                      : undefined
+                  }
+                  executionMarkers={
+                    executiveDemoMode && caseType === "real-estate"
+                      ? scheduledExecutiveGraphMarkers
                       : undefined
                   }
                   scenarioALabel={scenarioALabel}
