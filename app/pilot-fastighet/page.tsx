@@ -15,9 +15,25 @@ import {
 import { PILOT_CASES } from "@/src/pilotFastighet/pilotCases";
 import { calculateExecutiveSummary } from "@/src/pilotFastighet/analysis/calculateExecutiveSummary";
 import {
+  clearAllScenarioSchedules,
+  clearScenarioSchedule,
+  createEmptyScenarioSchedules,
   runReactAnalysisBoundary,
   type CleanRunSourceSnapshot,
+  type ReactExecutionMode,
+  type ScenarioExecutionProvenance,
+  type ScenarioSchedules,
 } from "@/src/pilotFastighet/analysis/reactScheduledAnalysisBoundary";
+import {
+  DEFAULT_MANUAL_EXECUTION_MODE,
+  formatManualScheduleIssue,
+  getManualScheduleIssues,
+  getOrderedScenarioSchedule,
+  prepareManualScheduledRunSource,
+  resolveManualExecutionMode,
+  toggleManualScheduledAction,
+  updateManualScheduledActionStep,
+} from "@/src/pilotFastighet/analysis/manualScheduledExecution";
 import {
   prepareExplicitConfiguredRunSource,
   prepareOrdinaryConfiguredRunSource,
@@ -59,7 +75,7 @@ import { buildConstraintComparisonMessages } from "./components/inspector-utils/
 import { buildStructuralGoalMessages } from "./components/inspector-utils/buildStructuralGoalMessages";
 import { buildDominantConstraintMessage } from "./components/inspector-utils/buildDominantConstraintMessage";
 import { DEFAULT_GOAL_TYPE } from "./components/inspector-utils/goalTypes";
-import ActionPanel from "./components/ActionPanel";
+import ActionPanel, { getActionPanelLabel } from "./components/ActionPanel";
 import MarginGraph, {
   MarginGraphLegendRow,
   type DomainEvent,
@@ -394,17 +410,31 @@ export default function PilotFastighetPage() {
   const [appliedScenarioBId, setAppliedScenarioBId] = useState<string | null>(null);
   const [selectedActionsA, setSelectedActionsA] = useState<string[]>([]);
   const [selectedActionsB, setSelectedActionsB] = useState<string[]>([]);
+  const [manualExecutionMode, setManualExecutionMode] =
+    useState<ReactExecutionMode>(DEFAULT_MANUAL_EXECUTION_MODE);
+  const [scenarioSchedules, setScenarioSchedules] = useState<ScenarioSchedules>(
+    createEmptyScenarioSchedules
+  );
 
   const editableScenario: "A" | "B" =
     activeScenario === "A" || activeScenario === "B"
       ? activeScenario
       : manualScenarioTarget;
+  const effectiveExecutionMode = resolveManualExecutionMode(
+    manualExecutionMode,
+    executiveDemoMode
+  );
+  const scheduleValidationIssues =
+    effectiveExecutionMode === "actions-over-time"
+      ? getManualScheduleIssues(scenarioSchedules, simulationHorizon)
+      : [];
 
   const playbackRef = useRef<PreconfiguredPlayback | null>(null);
   const currentStateARef = useRef<EngineState | null>(null);
   const currentStateBRef = useRef<EngineState | null>(null);
   const playbackGenerationRef = useRef(0);
   const intervalRef = useRef<number | null>(null);
+  const scheduledProvenanceRef = useRef<ScenarioExecutionProvenance>({ A: [], B: [] });
 
   profileValue(
     "PilotFastighetPage.marginSeries.points",
@@ -452,6 +482,8 @@ export default function PilotFastighetPage() {
     setDriverScoresB(buildDriverScoreState(demo.riskStateB));
     setSelectedActionsA([]);
     setSelectedActionsB([]);
+    setManualExecutionMode("configured-start");
+    setScenarioSchedules(clearAllScenarioSchedules());
     setScenarioALabel("");
     setScenarioBLabel("");
     setAppliedScenarioAId(EXEC_DEMO_PLAYBACK_PRESET_ID);
@@ -614,6 +646,7 @@ export default function PilotFastighetPage() {
 
   function resetRunState() {
     cancelPlayback();
+    scheduledProvenanceRef.current = { A: [], B: [] };
     playbackRef.current = null;
     currentStateARef.current = null;
     currentStateBRef.current = null;
@@ -633,7 +666,9 @@ export default function PilotFastighetPage() {
 
   function startSimulation(
     source: "scenario" | "manual",
-    runSource: CleanRunSourceSnapshot
+    runSource: CleanRunSourceSnapshot,
+    executionMode: ReactExecutionMode = "configured-start",
+    schedules: ScenarioSchedules = createEmptyScenarioSchedules()
   ) {
     profileCount("PilotFastighetPage.startSimulation.calls");
     setSimulationSource(source);
@@ -641,11 +676,21 @@ export default function PilotFastighetPage() {
     setIsRunning(false);
     resetRunState();
 
-    const { analysis } = runReactAnalysisBoundary({
-      executionMode: "configured-start",
-      horizon: simulationHorizon,
-      runSource,
-    });
+    const boundaryResult =
+      executionMode === "actions-over-time"
+        ? runReactAnalysisBoundary({
+            executionMode,
+            horizon: simulationHorizon,
+            runSource,
+            schedules,
+          })
+        : runReactAnalysisBoundary({
+            executionMode: "configured-start",
+            horizon: simulationHorizon,
+            runSource,
+          });
+    const { analysis } = boundaryResult;
+    scheduledProvenanceRef.current = boundaryResult.provenance;
     const playback = createPreconfiguredPlayback(analysis, simulationHorizon);
     playbackRef.current = playback;
     currentStateARef.current = {
@@ -954,9 +999,14 @@ export default function PilotFastighetPage() {
 
     setBaseRiskStateA((prev) => {
       const nextBase = updateScenarioState(prev);
-      const resolved = resolveActionDrivenState(nextBase, selectedActionsA);
-      setRiskStateA(resolved.riskState);
-      setDriverScoresA(resolved.driverScores);
+      if (effectiveExecutionMode === "actions-over-time") {
+        setRiskStateA(structuredClone(nextBase));
+        setDriverScoresA(buildDriverScoreState(nextBase));
+      } else {
+        const resolved = resolveActionDrivenState(nextBase, selectedActionsA);
+        setRiskStateA(resolved.riskState);
+        setDriverScoresA(resolved.driverScores);
+      }
       return nextBase;
     });
   }
@@ -995,9 +1045,14 @@ export default function PilotFastighetPage() {
 
     setBaseRiskStateB((prev) => {
       const nextBase = updateScenarioState(prev);
-      const resolved = resolveActionDrivenState(nextBase, selectedActionsB);
-      setRiskStateB(resolved.riskState);
-      setDriverScoresB(resolved.driverScores);
+      if (effectiveExecutionMode === "actions-over-time") {
+        setRiskStateB(structuredClone(nextBase));
+        setDriverScoresB(buildDriverScoreState(nextBase));
+      } else {
+        const resolved = resolveActionDrivenState(nextBase, selectedActionsB);
+        setRiskStateB(resolved.riskState);
+        setDriverScoresB(resolved.driverScores);
+      }
       return nextBase;
     });
   }
@@ -1036,6 +1091,29 @@ export default function PilotFastighetPage() {
         return nextActions;
       });
     }
+  }
+
+  function toggleTimedAction(action: keyof typeof ACTION_EFFECTS) {
+    setScenarioSchedules((current) =>
+      toggleManualScheduledAction(current, editableScenario, action)
+    );
+    setIsDirty(true);
+  }
+
+  function updateTimedActionStep(
+    action: keyof typeof ACTION_EFFECTS,
+    executionStep: number
+  ) {
+    setScenarioSchedules((current) =>
+      updateManualScheduledActionStep(
+        current,
+        editableScenario,
+        action,
+        executionStep,
+        simulationHorizon
+      )
+    );
+    setIsDirty(true);
   }
 
   const selectedActionsForPanel =
@@ -2006,6 +2084,58 @@ export default function PilotFastighetPage() {
         >
           {!executiveDemoMode && (
             <>
+              <label style={{ fontSize: "13px", color: theme.subtext }}>
+                {uiLanguage === "sv" ? "Analysläge:" : "Analysis mode:"}
+              </label>
+              <select
+                aria-label={uiLanguage === "sv" ? "Analysläge" : "Analysis mode"}
+                value={manualExecutionMode}
+                disabled={isRunning}
+                onChange={(event) => {
+                  const nextMode = event.target.value as ReactExecutionMode;
+                  setManualExecutionMode(nextMode);
+                  resetRunState();
+                  setHasSimulationCompleted(false);
+                  setIsDirty(true);
+                  if (nextMode === "actions-over-time") {
+                    setRiskStateA(structuredClone(baseRiskStateA));
+                    setRiskStateB(structuredClone(baseRiskStateB));
+                    setDriverScoresA(buildDriverScoreState(baseRiskStateA));
+                    setDriverScoresB(buildDriverScoreState(baseRiskStateB));
+                  } else {
+                    const configuredA = resolveActionDrivenState(
+                      baseRiskStateA,
+                      selectedActionsA
+                    );
+                    const configuredB = resolveActionDrivenState(
+                      baseRiskStateB,
+                      selectedActionsB
+                    );
+                    setRiskStateA(configuredA.riskState);
+                    setRiskStateB(configuredB.riskState);
+                    setDriverScoresA(configuredA.driverScores);
+                    setDriverScoresB(configuredB.driverScores);
+                  }
+                }}
+                style={{
+                  background: "#0e1117",
+                  color: "#e6edf3",
+                  border: "1px solid #2f333a",
+                  borderRadius: "6px",
+                  padding: "6px 10px",
+                  fontSize: "13px",
+                  marginRight: "16px",
+                }}
+              >
+                <option value="configured-start">
+                  {uiLanguage === "sv"
+                    ? "Konfigurerade startvillkor"
+                    : "Configured starting conditions"}
+                </option>
+                <option value="actions-over-time">
+                  {uiLanguage === "sv" ? "Åtgärder över tid" : "Actions over time"}
+                </option>
+              </select>
               <label style={{ fontSize: "13px", marginRight: "6px", color: theme.subtext }}>Case</label>
               <select
                 value={selectedPilotCaseId}
@@ -2024,6 +2154,7 @@ export default function PilotFastighetPage() {
                     setDriverScoresB(buildDriverScoreState(pilotCase.riskStateB));
                     setSelectedActionsA([]);
                     setSelectedActionsB([]);
+                    setScenarioSchedules(clearAllScenarioSchedules());
                     setIsDirty(true);
                     setHasSimulationCompleted(false);
                     setIsRunning(false);
@@ -2206,12 +2337,26 @@ export default function PilotFastighetPage() {
           )}
           <button
             type="button"
-            disabled={isRunning}
+            disabled={isRunning || scheduleValidationIssues.length > 0}
             onClick={() => {
-              startSimulation(
-                "manual",
-                prepareOrdinaryConfiguredRunSource(getConfiguredRunSelection())
-              );
+              if (effectiveExecutionMode === "actions-over-time") {
+                if (scheduleValidationIssues.length > 0) return;
+                startSimulation(
+                  "manual",
+                  prepareManualScheduledRunSource({
+                    baseRiskStateA,
+                    baseRiskStateB,
+                    baselineRiskState: riskStateBaseline,
+                  }),
+                  "actions-over-time",
+                  scenarioSchedules
+                );
+              } else {
+                startSimulation(
+                  "manual",
+                  prepareOrdinaryConfiguredRunSource(getConfiguredRunSelection())
+                );
+              }
             }}
             style={{
               padding: executiveDemoMode ? "5px 11px" : "8px 16px",
@@ -2220,7 +2365,10 @@ export default function PilotFastighetPage() {
               border: "1px solid #2f333a",
               borderRadius: executiveDemoMode ? "5px" : "6px",
               color: "#e6edf3",
-              cursor: isRunning ? "not-allowed" : "pointer",
+              cursor:
+                isRunning || scheduleValidationIssues.length > 0
+                  ? "not-allowed"
+                  : "pointer",
             }}
           >
             Start
@@ -2289,6 +2437,7 @@ export default function PilotFastighetPage() {
               }
               setSelectedActionsA([]);
               setSelectedActionsB([]);
+              setScenarioSchedules(clearAllScenarioSchedules());
               setScenarioPromptA("");
               setScenarioPromptB("");
               setScenarioALabel("");
@@ -2439,7 +2588,64 @@ export default function PilotFastighetPage() {
                 strategyColors={strategyColors}
                 applyAction={applyAction}
                 executiveDemoMode={executiveDemoMode}
+                executionMode={effectiveExecutionMode}
+                schedules={scenarioSchedules}
+                editableScenario={editableScenario}
+                simulationHorizon={simulationHorizon}
+                toggleScheduledAction={toggleTimedAction}
+                updateScheduledActionStep={updateTimedActionStep}
               />
+            )}
+            {!executiveDemoMode && effectiveExecutionMode === "actions-over-time" && (
+              <div
+                aria-label={uiLanguage === "sv" ? "Åtgärdsschema" : "Action schedule"}
+                style={{
+                  marginBottom: "24px",
+                  padding: "12px",
+                  background: "#111827",
+                  border: "1px solid #2f333a",
+                  borderRadius: "8px",
+                }}
+              >
+                {(["A", "B"] as const).map((scenario) => {
+                  const entries = getOrderedScenarioSchedule(scenarioSchedules, scenario);
+                  return (
+                    <div key={scenario} style={{ marginBottom: scenario === "A" ? 10 : 0 }}>
+                      <div style={{ color: "#d1d5db", fontSize: 13, fontWeight: 600 }}>
+                        {`${uiLanguage === "sv" ? "Scenario" : "Scenario"} ${scenario}`}
+                      </div>
+                      {entries.length === 0 ? (
+                        <div style={{ color: "#9ca3af", fontSize: 12, marginTop: 3 }}>
+                          {uiLanguage === "sv"
+                            ? "Inga tidsatta åtgärder."
+                            : "No timed actions."}
+                        </div>
+                      ) : (
+                        <ul style={{ margin: "4px 0 0", paddingLeft: 20 }}>
+                          {entries.map((entry) => (
+                            <li key={entry.actionId} style={{ color: "#d1d5db", fontSize: 12 }}>
+                              {`${getActionPanelLabel(entry.actionId, uiLanguage)} — M${entry.executionStep}`}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  );
+                })}
+                {scheduleValidationIssues.map((issue) => (
+                  <div
+                    key={`${issue.scenario}-${issue.actionId}-${String(issue.executionStep)}`}
+                    role="alert"
+                    style={{ color: "#fca5a5", fontSize: 12, marginTop: 8 }}
+                  >
+                    {formatManualScheduleIssue(
+                      issue,
+                      getActionPanelLabel(issue.actionId, uiLanguage),
+                      uiLanguage
+                    )}
+                  </div>
+                ))}
+              </div>
             )}
             {!executiveDemoMode &&
               Object.entries(groupedParameters).map(([groupName, params]) => (
@@ -2940,6 +3146,7 @@ export default function PilotFastighetPage() {
                   language={uiLanguage}
                 />
               )}
+              {effectiveExecutionMode === "configured-start" && (
               <AIInspectorPanel
                 language={uiLanguage}
                 scenarioALabel={selectedScenarioALabel}
@@ -2980,6 +3187,7 @@ export default function PilotFastighetPage() {
                 }
                 executiveDemoMode={executiveDemoMode}
               />
+              )}
           </div>
           <div
             style={
@@ -3188,6 +3396,24 @@ export default function PilotFastighetPage() {
                             : `Primary driver: ${systemStatusPrimaryDriverDisplayText}`}
                       </div>
                     </div>
+                    {effectiveExecutionMode === "actions-over-time" ? (
+                      <div
+                        role="status"
+                        style={{
+                          marginTop: "16px",
+                          padding: "14px",
+                          borderRadius: "12px",
+                          background: "rgba(30, 41, 59, 0.6)",
+                          border: "1px solid rgba(148, 163, 184, 0.2)",
+                          color: "#cbd5e1",
+                          fontSize: 13,
+                        }}
+                      >
+                        {uiLanguage === "sv"
+                          ? "Tolkning av åtgärdernas tidpunkter läggs till i nästa steg."
+                          : "Interpretation of action timing will be added in the next step."}
+                      </div>
+                    ) : (
                     <AIInterpretationPanel
                   language={uiLanguage}
                   executiveDemoMode={executiveDemoMode}
@@ -3237,6 +3463,7 @@ export default function PilotFastighetPage() {
                     )
                   }
                 />
+                    )}
                   </>
                 )}
                 </div>
@@ -3377,6 +3604,7 @@ export default function PilotFastighetPage() {
             setDriverScoresB(freshDomainState.driverScoresB);
             setSelectedActionsA(freshDomainState.selectedActionsA);
             setSelectedActionsB(freshDomainState.selectedActionsB);
+            setScenarioSchedules(clearAllScenarioSchedules());
             setScenarioPromptA(freshDomainState.scenarioPromptA);
             setScenarioPromptB(freshDomainState.scenarioPromptB);
             setScenarioALabel(freshDomainState.scenarioALabel);
@@ -3432,19 +3660,41 @@ export default function PilotFastighetPage() {
 
             if (editableScenario === "A") {
               setBaseRiskStateA(structuredClone(nextPresetState));
-              setRiskStateA(structuredClone(resolvedScenarioState.riskState));
-              setDriverScoresA(resolvedScenarioState.driverScores);
+              setRiskStateA(
+                structuredClone(
+                  effectiveExecutionMode === "actions-over-time"
+                    ? nextPresetState
+                    : resolvedScenarioState.riskState
+                )
+              );
+              setDriverScoresA(
+                effectiveExecutionMode === "actions-over-time"
+                  ? buildDriverScoreState(nextPresetState)
+                  : resolvedScenarioState.driverScores
+              );
               setScenarioPromptA(prompt);
               setAppliedScenarioAId(presetId);
               setSelectedActionsA(applicableActions);
+              setScenarioSchedules((current) => clearScenarioSchedule(current, "A"));
             }
             if (editableScenario === "B") {
               setBaseRiskStateB(structuredClone(nextPresetState));
-              setRiskStateB(structuredClone(resolvedScenarioState.riskState));
-              setDriverScoresB(resolvedScenarioState.driverScores);
+              setRiskStateB(
+                structuredClone(
+                  effectiveExecutionMode === "actions-over-time"
+                    ? nextPresetState
+                    : resolvedScenarioState.riskState
+                )
+              );
+              setDriverScoresB(
+                effectiveExecutionMode === "actions-over-time"
+                  ? buildDriverScoreState(nextPresetState)
+                  : resolvedScenarioState.driverScores
+              );
               setScenarioPromptB(prompt);
               setAppliedScenarioBId(presetId);
               setSelectedActionsB(applicableActions);
+              setScenarioSchedules((current) => clearScenarioSchedule(current, "B"));
             }
 
             if (applyTo === "A") {

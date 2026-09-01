@@ -5,6 +5,12 @@ import {
 } from "@/src/pilotFastighet/actionEffects";
 import { defaultRiskState } from "@/src/pilotFastighet/presetRiskMapping";
 import type { StrategyColors } from "@/src/pilotFastighet/strategyColors";
+import {
+  isActionSupportedForScheduledExecution,
+  type ReactExecutionMode,
+  type ScenarioSchedules,
+  type ScheduleScenarioId,
+} from "@/src/pilotFastighet/analysis/reactScheduledAnalysisBoundary";
 
 type ActionKey =
   | "increase_service_frequency"
@@ -88,6 +94,10 @@ const interventionLabels = {
   },
 } as const;
 
+export function getActionPanelLabel(action: string, language: "sv" | "en"): string {
+  return interventionLabels[action as ActionKey]?.[language] ?? action;
+}
+
 interface Props {
   language: "sv" | "en";
   domain?: DomainKey;
@@ -97,6 +107,12 @@ interface Props {
   strategyColors?: StrategyColors;
   applyAction: (action: ActionKey) => void;
   executiveDemoMode?: boolean;
+  executionMode?: ReactExecutionMode;
+  schedules?: ScenarioSchedules;
+  editableScenario?: ScheduleScenarioId;
+  simulationHorizon?: number;
+  toggleScheduledAction?: (action: ActionKey) => void;
+  updateScheduledActionStep?: (action: ActionKey, executionStep: number) => void;
 }
 
 function withAlpha(hex: string, alpha: number): string {
@@ -119,17 +135,34 @@ export default function ActionPanel({
   strategyColors = { baseline: "#3b82f6", goal: "#ef4444" },
   applyAction,
   executiveDemoMode = false,
+  executionMode = "configured-start",
+  schedules = { A: [], B: [] },
+  editableScenario = "A",
+  simulationHorizon = 36,
+  toggleScheduledAction,
+  updateScheduledActionStep,
 }: Props) {
   const interventionSectionTitles = {
     realEstate: { sv: "Interventioner", en: "Interventions" },
     municipal: { sv: "Åtgärder", en: "Measures" },
     consulting: { sv: "Beslut", en: "Decisions" },
   } as const;
-  const actions = (DOMAIN_ACTIONS[domain] ?? DOMAIN_ACTIONS.consulting).filter((action) =>
-    actionHasOnlyModeledDrivers(action, Object.keys(defaultRiskState))
+  const actions = (DOMAIN_ACTIONS[domain] ?? DOMAIN_ACTIONS.consulting).filter(
+    (action) =>
+      actionHasOnlyModeledDrivers(action, Object.keys(defaultRiskState)) &&
+      (executionMode === "configured-start" ||
+        isActionSupportedForScheduledExecution(action))
   );
-  const baselineSelected = new Set(selectedActionsA);
-  const goalSelected = new Set(selectedActionsB);
+  const baselineSelected = new Set(
+    executionMode === "actions-over-time"
+      ? schedules.A.map((entry) => entry.actionId)
+      : selectedActionsA
+  );
+  const goalSelected = new Set(
+    executionMode === "actions-over-time"
+      ? schedules.B.map((entry) => entry.actionId)
+      : selectedActionsB
+  );
   const effectiveBaselineSelected =
     strategyView === "goal" ? new Set<string>() : baselineSelected;
   const effectiveGoalSelected =
@@ -173,6 +206,65 @@ export default function ActionPanel({
               : inGoal
                 ? withAlpha(strategyColors.goal, 0.7)
                 : "rgba(107, 114, 128, 0.9)";
+
+          if (executionMode === "actions-over-time") {
+            const scheduledEntry = schedules[editableScenario].find(
+              (entry) => entry.actionId === action
+            );
+            const scenarioColor =
+              editableScenario === "A" ? strategyColors.baseline : strategyColors.goal;
+            return (
+              <div
+                key={action}
+                className="flex flex-col gap-2 rounded-lg border px-3 py-2 sm:flex-row sm:items-center"
+                style={{
+                  borderColor: scheduledEntry
+                    ? withAlpha(scenarioColor, 0.7)
+                    : "rgba(107, 114, 128, 0.9)",
+                  background: scheduledEntry
+                    ? withAlpha(scenarioColor, 0.22)
+                    : "transparent",
+                }}
+              >
+                <button
+                  type="button"
+                  className="min-w-0 flex-1 text-left"
+                  onClick={() => toggleScheduledAction?.(action)}
+                  style={{
+                    color: scheduledEntry ? "#FFFFFF" : "#D1D5DB",
+                    fontWeight: scheduledEntry ? 600 : 500,
+                  }}
+                >
+                  {interventionLabels[action][language]}
+                </button>
+                {scheduledEntry && (
+                  <label className="flex shrink-0 flex-col gap-1 text-xs text-gray-300 sm:items-end">
+                    <span>
+                      {language === "sv" ? "Genomförandeperiod" : "Execution period"}
+                    </span>
+                    <select
+                      aria-label={`${
+                        language === "sv" ? "Genomförandeperiod" : "Execution period"
+                      }: ${interventionLabels[action][language]}, Scenario ${editableScenario}`}
+                      value={scheduledEntry.executionStep}
+                      onClick={(event) => event.stopPropagation()}
+                      onChange={(event) => {
+                        event.stopPropagation();
+                        updateScheduledActionStep?.(action, Number(event.target.value));
+                      }}
+                      className="w-full min-w-24 rounded border border-gray-600 bg-gray-900 px-2 py-1.5 text-sm text-gray-100 sm:w-auto"
+                    >
+                      {Array.from({ length: simulationHorizon }, (_, index) => index + 1).map(
+                        (step) => (
+                          <option key={step} value={step}>{`M${step}`}</option>
+                        )
+                      )}
+                    </select>
+                  </label>
+                )}
+              </div>
+            );
+          }
 
           return (
             <button

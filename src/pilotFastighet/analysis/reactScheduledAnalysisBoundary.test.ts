@@ -306,7 +306,7 @@ test("configured-start boundary preserves facade output and exposes no provenanc
   assert.equal("executionProvenance" in result.analysis, false);
 });
 
-test("Gate 5A adds no public schedule control or scheduled consumer wiring", () => {
+test("manual scheduled integration preserves the canonical boundary and LLM safety", () => {
   const pageSource = readFileSync("app/pilot-fastighet/page.tsx", "utf8");
   const actionPanelSource = readFileSync(
     "app/pilot-fastighet/components/ActionPanel.tsx",
@@ -317,7 +317,11 @@ test("Gate 5A adds no public schedule control or scheduled consumer wiring", () 
     "utf8"
   );
   assert.match(pageSource, /executionMode:\s*["']configured-start["']/);
-  assert.doesNotMatch(pageSource, /actions-over-time|ScheduledAction|executionProvenance/);
-  assert.doesNotMatch(actionPanelSource, /executionStep|scheduledStep/);
+  assert.match(pageSource, /executionMode === ["']actions-over-time["']/);
+  assert.match(pageSource, /effectiveExecutionMode === ["']actions-over-time["']/);
+  assert.match(pageSource, /Interpretation of action timing will be added in the next step\./);
+  assert.match(actionPanelSource, /isActionSupportedForScheduledExecution/);
+  assert.match(actionPanelSource, /Execution period/);
+  assert.doesNotMatch(actionPanelSource, /driverDeltas|month|quarter|\bQ\d/);
   assert.doesNotMatch(interpretationSource, /executionProvenance|scheduledStep/);
 });

@@ -298,19 +298,17 @@ test("executive demo facade output and completion state equal legacy execution",
   assert.equal(completed.steadyStateStep, 36);
 });
 
-test("React boundary selects configured-start and exposes no scheduled or engine stepping path", () => {
+test("React playback uses the facade boundary for both modes and no engine stepping path", () => {
   const pageSource = readFileSync("app/pilot-fastighet/page.tsx", "utf8");
-  assert.equal((pageSource.match(/runReactAnalysisBoundary\s*\(/g) ?? []).length, 1);
+  assert.equal((pageSource.match(/runReactAnalysisBoundary\s*\(/g) ?? []).length, 2);
   assert.match(pageSource, /executionMode:\s*["']configured-start["']/);
+  assert.match(pageSource, /executionMode === ["']actions-over-time["']/);
   assert.match(pageSource, /horizon:\s*simulationHorizon\s*,/);
   assert.doesNotMatch(pageSource, /horizon:\s*simulationHorizon\s*\+\s*1/);
   assert.doesNotMatch(pageSource, /Compatibility|compatibility|state 37|state-37/);
   assert.doesNotMatch(pageSource, /new\s+RealEstateEngine\s*\(/);
   assert.doesNotMatch(pageSource, /\.stepForward\s*\(/);
-  assert.doesNotMatch(
-    pageSource,
-    /actions-over-time|ScheduledAction|scenarioAActions|scenarioBActions/
-  );
+  assert.doesNotMatch(pageSource, /scenarioAActions|scenarioBActions/);
   assert.match(pageSource, /currentStateARef\.current\s*=\s*snapshot\.currentStateA/);
   assert.match(pageSource, /currentStateBRef\.current\s*=\s*snapshot\.currentStateB/);
   assert.match(pageSource, /engineState:\s*JSON\.parse\(JSON\.stringify\(stateA\)\)/);
