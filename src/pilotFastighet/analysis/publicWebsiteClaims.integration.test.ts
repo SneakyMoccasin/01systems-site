@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import {
+  PRIMARY_CTA_COPY,
+  PRIMARY_CTA_DESTINATION,
+} from "../../../01systems-site/components/primary-cta-content";
 
 const HOME_PAGE = readFileSync(
   "01systems-site/components/executive-home-page-content.tsx",
@@ -24,15 +28,13 @@ const CASCADE_ENGINE_PAGE = readFileSync(
 );
 const HEADER = readFileSync("01systems-site/components/site-header.tsx", "utf8");
 const FOOTER = readFileSync("01systems-site/components/site-footer.tsx", "utf8");
+const ABOUT_PAGE = readFileSync(
+  "01systems-site/components/about-page-content.tsx",
+  "utf8"
+);
 const ACTIVE_HOME_ROUTE = readFileSync("01systems-site/app/page.tsx", "utf8");
 
-const ACTIVE_PRIMARY_CTA_SOURCES = [
-  HOME_PAGE,
-  SHARED_CTA,
-  CASCADE_ENGINE_PAGE,
-  HEADER,
-  FOOTER,
-];
+const PAGE_SPECIFIC_CTA_SOURCES = [HOME_PAGE, CASCADE_ENGINE_PAGE];
 
 test("active homepage states the bounded configured-model sequencing capability", () => {
   assert.match(HOME_PAGE, /Within a configured model, Cascade Engine can compare the same starting conditions and actions in different orders or at different times/);
@@ -60,12 +62,49 @@ test("DSA article uses configured timing, capacities, and constraints rather tha
   assert.match(DSA_ARTICLES, /configured action timing and order, represented capacities and configured constraints affect the represented decision space within the model/);
 });
 
-test("all active primary CTA sources use the canonical labels and contact destination", () => {
-  for (const source of ACTIVE_PRIMARY_CTA_SOURCES) {
+test("all four active page CTA blocks consume the exact shared bilingual proposition", () => {
+  assert.deepEqual(PRIMARY_CTA_COPY, {
+    sv: {
+      heading: "Står ni inför flera beslut som påverkar samma resurser, beroenden eller tidsplan?",
+      supportingText: "Boka ett inledande samtal om beslutssituationen och vilka samband, begränsningar eller genomförandeordningar som behöver synliggöras innan beslut fattas.",
+      button: "Boka ett inledande samtal",
+    },
+    en: {
+      heading: "Are you facing several decisions that affect the same resources, dependencies, or timeline?",
+      supportingText: "Book an initial conversation about the decision situation and the relationships, constraints, or implementation sequences that need to be made visible before decisions are made.",
+      button: "Book an initial conversation",
+    },
+  });
+  assert.equal(PRIMARY_CTA_DESTINATION, "mailto:christian@01systems.se");
+
+  for (const source of PAGE_SPECIFIC_CTA_SOURCES) {
+    assert.match(source, /PRIMARY_CTA_COPY\[lang\]/);
+    assert.match(source, /PRIMARY_CTA_DESTINATION/);
+  }
+  assert.match(ARCHITECTURE_PAGE, /<SiteCta \/>/);
+  assert.match(ABOUT_PAGE, /<SiteCta \/>/);
+  assert.match(SHARED_CTA, /PRIMARY_CTA_COPY\[lang\]/);
+  assert.match(SHARED_CTA, /PRIMARY_CTA_DESTINATION/);
+});
+
+test("header and footer retain the canonical action labels and destination", () => {
+  for (const source of [HEADER, FOOTER]) {
     assert.match(source, /Book an initial conversation/);
     assert.match(source, /Boka ett inledande samtal/);
     assert.match(source, /mailto:christian@01systems\.se/);
-    assert.doesNotMatch(source, /\/pilot-fastighet|Book a walkthrough|Boka en genomgång|self-service trial|demo access/i);
+  }
+});
+
+test("active CTA sources contain no obsolete proposition or access promise", () => {
+  for (const source of [
+    ...PAGE_SPECIFIC_CTA_SOURCES,
+    SHARED_CTA,
+    ARCHITECTURE_PAGE,
+    ABOUT_PAGE,
+    HEADER,
+    FOOTER,
+  ]) {
+    assert.doesNotMatch(source, /\/pilot-fastighet|Book a walkthrough|Boka en genomgång|Diskutera en konkret beslutssituation|Discuss a concrete decision situation|self-service trial|demo access/i);
   }
 });
 

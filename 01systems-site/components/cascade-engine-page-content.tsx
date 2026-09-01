@@ -4,6 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useLanguage } from "@/components/language-context";
+import {
+  PRIMARY_CTA_COPY,
+  PRIMARY_CTA_DESTINATION,
+} from "@/components/primary-cta-content";
 
 type Lang = "sv" | "en";
 type Pair = [string, string];
@@ -51,11 +55,6 @@ const text = {
     ce: "Represents, executes, compares and makes configured alternatives inspectable.",
     architecture: "Formal analytical responsibilities, modelling principles and deterministic boundaries.",
     architectureLink: "Explore Product Architecture",
-    cta: "Discuss a concrete decision situation",
-    ctaIntro: "An initial conversation begins with one bounded decision situation.",
-    ctaBody: "Together, we assess whether its decisions, alternatives, dependencies, constraints and assumptions can be represented clearly for an initial analysis.",
-    ctaButton: "Book an initial conversation",
-    ctaNote: "No extensive preparation or complete data collection is required before the first conversation.",
   },
   sv: {
     lead: "Deterministisk motor för beslutsanalys",
@@ -72,7 +71,6 @@ const text = {
     boundaries: "Produktens gränser", boundaryIntro: "Cascade Engine:", boundaryItems: ["förutsäger inte framtida händelser,", "avgör inte vilka antaganden som är korrekta,", "upptäcker inte orsakssamband automatiskt,", "optimerar inte beslut,", "rekommenderar inte ett föredraget alternativ,", "ersätter inte domänkunskap eller ledningens omdöme."], quality: "Analysens kvalitet beror på den representerade modellen och dess granskade antaganden.",
     human: "Mänskligt ansvar", organisation: "Organisationen", orgItems: ["bidrar med domänkunskap,", "definierar beslut och alternativ,", "granskar antaganden,", "validerar modellerade samband."], engineItems: ["kör modellen deterministiskt,", "jämför alternativ konsekvent,", "beräknar konfigurerade effekter,", "presenterar analysresultat strukturerat."], judgement: "Ledningens omdöme förblir ett mänskligt ansvar.",
     relationship: "Relationen till Decision Space Analytics", dsa: "Definierar den analytiska frågan och principerna.", ce: "Representerar, kör, jämför och gör konfigurerade alternativ granskningsbara.", architecture: "Formella analytiska ansvarsområden, modelleringsprinciper och deterministiska gränser.", architectureLink: "Utforska Product Architecture",
-    cta: "Diskutera en konkret beslutssituation", ctaIntro: "Ett inledande samtal börjar med en avgränsad beslutssituation.", ctaBody: "Tillsammans bedömer vi om dess beslut, alternativ, beroenden, begränsningar och antaganden kan representeras tydligt för en första analys.", ctaButton: "Boka ett inledande samtal", ctaNote: "Ingen omfattande förberedelse eller fullständig datainsamling krävs inför det första samtalet.",
   },
 };
 
@@ -82,6 +80,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) { 
 export function CascadeEnginePageContent() {
   const { lang } = useLanguage();
   const copy = text[lang];
+  const primaryCta = PRIMARY_CTA_COPY[lang];
   return <main className="page-shell cascade-product-page">
     <section className="cascade-product-hero"><p className="eyebrow">01 Systems · Cascade Engine</p><h1 className="page-title">Cascade Engine</h1><p className="body-xl cascade-product-lead">{copy.lead}</p><ul className="cascade-product-verbs">{copy.verbs.map(v => <li key={v}>{v}</li>)}</ul></section>
     <section className="cascade-product-specification"><h2 className="section-title">{copy.spec}</h2><dl className="cascade-specification-list">{copy.specs.map(([label,value]) => <div className="cascade-specification-row" key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl></section>
@@ -96,6 +95,6 @@ export function CascadeEnginePageContent() {
     <Section title={copy.human}><div className="cascade-responsibility-groups"><div><h3>{copy.organisation}</h3><Bullets items={copy.orgItems}/></div><div><h3>Cascade Engine</h3><Bullets items={copy.engineItems}/></div></div><p className="body-large cascade-product-conclusion">{copy.judgement}</p></Section>
     <Section title={copy.relationship}><dl className="cascade-relationship-list"><div><dt>Decision Space Analytics</dt><dd>{copy.dsa}</dd></div><div><dt>Cascade Engine</dt><dd>{copy.ce}</dd></div></dl></Section>
     <Section title="Product Architecture"><p className="body-large cascade-product-intro">{copy.architecture}</p><Link href="/architecture" className="touch-link cascade-product-inline-link">{copy.architectureLink}</Link></Section>
-    <section className="surface-card cascade-product-cta"><h2 className="section-title">{copy.cta}</h2><div className="body-large cascade-product-copy"><p>{copy.ctaIntro}</p><p>{copy.ctaBody}</p><a href="mailto:christian@01systems.se" className="touch-button cascade-product-cta-button">{copy.ctaButton}</a><p className="cascade-product-supporting-text">{copy.ctaNote}</p></div></section>
+    <section className="surface-card cascade-product-cta"><h2 className="section-title">{primaryCta.heading}</h2><div className="body-large cascade-product-copy"><p>{primaryCta.supportingText}</p><a href={PRIMARY_CTA_DESTINATION} className="touch-button cascade-product-cta-button">{primaryCta.button}</a></div></section>
   </main>;
 }

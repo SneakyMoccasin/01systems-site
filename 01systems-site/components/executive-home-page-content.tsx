@@ -4,6 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { useLanguage } from "@/components/language-context";
+import {
+  PRIMARY_CTA_COPY,
+  PRIMARY_CTA_DESTINATION,
+} from "@/components/primary-cta-content";
 
 type LocalizedCopy = {
   en: string;
@@ -47,6 +51,7 @@ export function ExecutiveHomePageContent() {
   }, []);
 
   const isSwedish = lang === "sv";
+  const primaryCta = PRIMARY_CTA_COPY[lang];
 
   return (
     <main
@@ -306,21 +311,11 @@ export function ExecutiveHomePageContent() {
       </section>
 
       <section id="conversation" className="surface-card" style={{ marginBottom: "64px", border: "1px solid #e5e5e5", background: "#fafafa", color: "var(--card-text-primary)" }}>
-        <h2 className="section-title">{isSwedish ? "Står ni inför flera beslut som påverkar samma resurser, beroenden eller tidsplan?" : "Are several decisions competing for the same resources, dependencies or timeline?"}</h2>
+        <h2 className="section-title">{primaryCta.heading}</h2>
         <div className="body-large stack-lg" style={{ maxWidth: "700px", color: "var(--card-text-body)" }}>
-          <p style={{ margin: 0 }}>
-            {isSwedish
-              ? "Om flera viktiga beslut fortfarande är öppna och är beroende av gemensam kapacitet, begränsningar, beroenden eller tidsfönster kan det vara relevant att undersöka hur alternativa vägar påverkar organisationens framtida handlingsutrymme."
-              : "If several important decisions are still open and depend on shared capacities, constraints, dependencies or time windows, it may be useful to examine how alternative paths affect the organisation’s future room to act."}
-          </p>
-          <p style={{ margin: 0 }}>{isSwedish ? "Boka ett inledande samtal på 20 minuter." : "Book an initial 20-minute conversation."}</p>
-          <p style={{ margin: 0 }}>
-            {isSwedish
-              ? "Tillsammans går vi igenom en konkret beslutssituation och bedömer om den är tillräckligt avgränsad och lämplig för en första analys med Cascade Engine."
-              : "Together, we will discuss one concrete decision situation and assess whether it is sufficiently bounded and suitable for an initial Cascade Engine analysis."}
-          </p>
+          <p style={{ margin: 0 }}>{primaryCta.supportingText}</p>
           <a
-            href="mailto:christian@01systems.se"
+            href={PRIMARY_CTA_DESTINATION}
             className="touch-button"
             style={{
               width: "fit-content",
@@ -332,13 +327,8 @@ export function ExecutiveHomePageContent() {
               fontSize: "16px",
             }}
           >
-            {isSwedish ? "Boka ett inledande samtal" : "Book an initial conversation"}
+            {primaryCta.button}
           </a>
-          <p style={{ margin: 0, fontSize: "14px", color: "var(--card-text-muted)" }}>
-            {isSwedish
-              ? "Ingen omfattande förberedelse eller fullständig datainsamling krävs inför det första samtalet."
-              : "No extensive preparation or complete data collection is required before the first conversation."}
-          </p>
         </div>
       </section>
     </main>
