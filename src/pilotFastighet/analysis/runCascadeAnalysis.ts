@@ -32,7 +32,6 @@ export type PreconfiguredCascadeAnalysisInput = CommonCascadeAnalysisInput & {
 export type ScheduledAction = {
   actionId: ActionKey;
   executionStep: number;
-  driverDeltas: DriverDeltas;
 };
 
 export type ScheduledCascadeAnalysisInput = CommonCascadeAnalysisInput & {
@@ -119,6 +118,11 @@ function normalizeScheduledActions(
     }
 
     const action = candidate as Record<string, unknown>;
+    if (Object.prototype.hasOwnProperty.call(action, "driverDeltas")) {
+      throw new Error(
+        `${collectionName}[${index}] must not supply independent driverDeltas.`
+      );
+    }
     const actionId = action.actionId;
     if (
       typeof actionId !== "string" ||
@@ -137,21 +141,24 @@ function normalizeScheduledActions(
       );
     }
 
-    const deltas = action.driverDeltas;
-    if (deltas == null || typeof deltas !== "object" || Array.isArray(deltas)) {
-      throw new TypeError(`${collectionName}[${index}] driverDeltas must be an object.`);
-    }
-
-    const normalizedEntries = Object.entries(deltas).sort(([left], [right]) =>
+    const canonicalEffect = ACTION_EFFECTS[actionId as ActionKey];
+    const normalizedEntries = Object.entries(canonicalEffect).sort(([left], [right]) =>
       compareCanonicalStrings(left, right)
     );
+    const unsupportedDrivers = normalizedEntries
+      .map(([driver]) => driver)
+      .filter((driver) => !SUPPORTED_DRIVER_KEYS.has(driver));
+    if (unsupportedDrivers.length > 0) {
+      throw new Error(
+        `Scheduled action ${actionId} has unsupported drivers: ${unsupportedDrivers.join(
+          ", "
+        )}.`
+      );
+    }
     for (const [driver, delta] of normalizedEntries) {
-      if (!SUPPORTED_DRIVER_KEYS.has(driver)) {
-        throw new Error(`${collectionName}[${index}] has an unsupported driver: ${driver}.`);
-      }
       if (typeof delta !== "number" || !Number.isFinite(delta)) {
         throw new TypeError(
-          `${collectionName}[${index}] has a non-finite driver delta: ${driver}.`
+          `Scheduled action ${actionId} has a non-finite canonical delta: ${driver}.`
         );
       }
     }
@@ -164,8 +171,14 @@ function normalizeScheduledActions(
   });
 }
 
-function scheduledActionSortKey(action: NormalizedScheduledAction): string {
-  return `${action.executionStep}:${action.actionId}:${JSON.stringify(action.driverDeltas)}`;
+function compareScheduledActions(
+  left: NormalizedScheduledAction,
+  right: NormalizedScheduledAction
+): number {
+  return (
+    left.executionStep - right.executionStep ||
+    compareCanonicalStrings(left.actionId, right.actionId)
+  );
 }
 
 function validateExecutionInput(input: CascadeAnalysisInput): {
@@ -250,9 +263,7 @@ function runScheduledScenario(
   const provenance: ScheduledActionExecution[] = [];
   const actionsByStep = new Map<number, NormalizedScheduledAction[]>();
 
-  for (const action of [...scheduledActions].sort((left, right) =>
-    compareCanonicalStrings(scheduledActionSortKey(left), scheduledActionSortKey(right))
-  )) {
+  for (const action of [...scheduledActions].sort(compareScheduledActions)) {
     const actions = actionsByStep.get(action.executionStep) ?? [];
     actions.push(action);
     actionsByStep.set(action.executionStep, actions);
