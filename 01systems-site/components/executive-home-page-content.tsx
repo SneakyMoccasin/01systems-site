@@ -59,57 +59,28 @@ export function ExecutiveHomePageContent() {
       <section className="executive-hero" style={{ marginBottom: 0 }}>
         <h1 className="page-title content-narrow executive-hero-title" style={{ marginBottom: "28px", maxWidth: "780px" }}>
           {localized(lang, {
-            en: "Most decisions feel reasonable when they are made.",
-            sv: "De flesta beslut känns rimliga när de fattas.",
+            en: "We've all seen organisations gradually limit their future options.",
+            sv: "Vi har alla sett organisationer gradvis begränsa sitt framtida handlingsutrymme.",
           })}
         </h1>
         <div className="body-large stack-lg" style={bodyStack}>
           <p style={{ margin: 0 }}>
             {localized(lang, {
-              en: "It is only in hindsight that we begin to see how they collectively changed an organisation’s future room to act.",
-              sv: "Det är först i efterhand som man börjar se hur de tillsammans har förändrat organisationens framtida handlingsutrymme.",
-            })}
-          </p>
-          <p style={{ margin: 0 }}>
-            {localized(lang, {
-              en: "We’ve all seen organisations paint themselves into a corner.",
-              sv: "Vi har alla sett organisationer måla in sig i ett hörn.",
+              en: "Not through one decision—but through many individually reasonable decisions.",
+              sv: "Inte genom ett enda beslut, utan genom många individuellt rimliga beslut.",
             })}
           </p>
           <p className="body-xl" style={{ margin: 0, color: "var(--text-primary)", fontWeight: 600 }}>
             {localized(lang, {
-              en: "What if that change could be made visible while meaningful alternatives still remained?",
-              sv: "Tänk om den förändringen gick att se medan meningsfulla alternativ fortfarande fanns kvar?",
+              en: "What if that loss of future flexibility could be understood while meaningful alternatives still remained?",
+              sv: "Tänk om den förändringen kunde förstås medan meningsfulla alternativ fortfarande fanns kvar?",
             })}
           </p>
           <p style={{ margin: 0 }}>
             {localized(lang, {
-              en: "That is the change Cascade Engine is designed to make visible.",
-              sv: "Det är den förändringen Cascade Engine är byggd för att göra synlig.",
+              en: "That is exactly the kind of decision situation Cascade Engine is designed to analyse.",
+              sv: "Det är precis den typen av beslutssituation Cascade Engine är byggd för att analysera.",
             })}
-          </p>
-        </div>
-      </section>
-
-      <section className="executive-chapter-two" style={chapterSpacing}>
-        <h2 className="section-title">
-          {localized(lang, {
-            en: "The difficult part is rarely a single decision.",
-            sv: "Det svåra är sällan ett enskilt beslut.",
-          })}
-        </h2>
-        <div className="body-large stack-lg" style={bodyStack}>
-          <p style={{ margin: 0 }}>{isSwedish ? "Flera viktiga beslut måste fattas." : "Several important decisions must be made."}</p>
-          <p style={{ margin: 0 }}>{isSwedish ? "Varje beslut kan vara rimligt i sig." : "Each decision may be reasonable on its own."}</p>
-          <p style={{ margin: 0 }}>
-            {isSwedish
-              ? "Utmaningen är att förstå hur de tillsammans förändrar vilka alternativ som fortfarande är tillgängliga."
-              : "The challenge is understanding how they collectively change which alternatives remain available."}
-          </p>
-          <p className="body-xl" style={{ margin: 0, color: "var(--text-primary)", fontWeight: 600 }}>
-            {isSwedish
-              ? "Cascade Engine gör den förändringen synlig innan viktiga alternativ har stängts."
-              : "Cascade Engine makes that change visible before important alternatives have closed."}
           </p>
         </div>
       </section>
@@ -308,6 +279,25 @@ export function ExecutiveHomePageContent() {
         <p className="body-xl" style={{ marginBottom: 0, fontWeight: 600 }}>
           {isSwedish ? "Det första steget är att förstå en konkret beslutssituation." : "The first step is understanding one concrete decision situation."}
         </p>
+      </section>
+
+      <section style={chapterSpacing}>
+        <h2 className="section-title">{isSwedish ? "En första pilot är medvetet liten." : "A first pilot is intentionally small."}</h2>
+        <div className="body-large stack-lg" style={bodyStack}>
+          <p style={{ margin: 0 }}>
+            {isSwedish
+              ? "En pilot fokuserar på en konkret beslutssituation – inte hela organisationen."
+              : "A pilot focuses on one concrete decision situation—not the entire organisation."}
+          </p>
+          <p style={{ margin: 0 }}>{isSwedish ? "Typisk omfattning:" : "Typical scope:"}</p>
+          <ul className="bullet-list">
+            <li>2–4 workshops</li>
+            <li>{isSwedish ? "cirka 10–30 representerade initiativ" : "approximately 10–30 represented initiatives"}</li>
+            <li>{isSwedish ? "beslutsägare och domänexperter" : "decision owners and domain experts"}</li>
+            <li>{isSwedish ? "inget stort dataintegrationsprojekt" : "no large data-integration project"}</li>
+            <li>{isSwedish ? "ett strukturerat analysunderlag" : "structured analytical deliverables"}</li>
+          </ul>
+        </div>
       </section>
 
       <section id="conversation" className="surface-card" style={{ marginBottom: "64px", border: "1px solid #e5e5e5", background: "#fafafa", color: "var(--card-text-primary)" }}>
