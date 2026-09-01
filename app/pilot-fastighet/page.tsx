@@ -15,9 +15,15 @@ import {
 import { PILOT_CASES } from "@/src/pilotFastighet/pilotCases";
 import { calculateExecutiveSummary } from "@/src/pilotFastighet/analysis/calculateExecutiveSummary";
 import {
-  createCleanRunSourceSnapshot,
   runReactAnalysisBoundary,
+  type CleanRunSourceSnapshot,
 } from "@/src/pilotFastighet/analysis/reactScheduledAnalysisBoundary";
+import {
+  prepareExplicitConfiguredRunSource,
+  prepareOrdinaryConfiguredRunSource,
+  prepareScenarioPreviewRun,
+  type ConfiguredRunSelection,
+} from "@/src/pilotFastighet/analysis/configuredRunSource";
 import {
   createPreconfiguredPlayback,
   getPreconfiguredPlaybackSnapshot,
@@ -458,14 +464,19 @@ export default function PilotFastighetPage() {
     setCustomHorizon(null);
     setIsDirty(false);
 
+    const executiveDemoRunSource = prepareExplicitConfiguredRunSource({
+      scenarioA: {
+        initialRiskState: demo.riskStateA,
+        initialDriverScores: buildDriverScoreState(demo.riskStateA),
+      },
+      scenarioB: {
+        initialRiskState: demo.riskStateB,
+        initialDriverScores: buildDriverScoreState(demo.riskStateB),
+      },
+      baselineRiskState: defaultRiskState,
+    });
     const runId = window.setTimeout(() => {
-      startSimulation(
-        "manual",
-        demo.riskStateA,
-        demo.riskStateB,
-        buildDriverScoreState(demo.riskStateA),
-        buildDriverScoreState(demo.riskStateB)
-      );
+      startSimulation("manual", executiveDemoRunSource);
     }, 0);
     return () => window.clearTimeout(runId);
   }, [executiveDemoMode]);
@@ -585,76 +596,12 @@ export default function PilotFastighetPage() {
     setPreviewVisible(true);
   };
 
-  const keyMap: Record<string, string> = {
-    "Interest Rate Exposure": "interestRateExposureRisk",
-    "Energy Exposure": "energyExposureRisk",
-    "Tenant Stability": "tenantStabilityRisk",
-    "Maintenance Intensity": "maintenanceIntensityRisk",
-    "Refinancing Risk": "refinancingRisk",
-    "Demand Risk": "demandRisk",
-    "Pricing Power Risk": "pricingPowerRisk",
-    "Operational Efficiency Risk": "operationalEfficiencyRisk",
-    "Market Volatility Risk": "marketVolatilityRisk",
-    "Regulatory Pressure Risk": "regulatoryPressureRisk",
-    "Capital Commitment Rigidity Risk": "capitalCommitmentRigidityRisk",
-    "Leverage Level Risk": "leverageLevelRisk",
-  };
-
-  function applyChangesToState(
-    prev: Record<string, RiskLevel>,
-    changes: ScenarioChange[]
-  ): Record<string, RiskLevel> {
-    const next = { ...prev };
-    for (const change of changes) {
-      const key = keyMap[change.parameter];
-      if (key) {
-        (next as Record<string, RiskLevel>)[key] = change.to;
-      }
-    }
-    return next;
-  }
-
-  function applyScenarioChanges(
-    changesA: ScenarioChange[],
-    changesB: ScenarioChange[]
-  ) {
-    const nextA =
-      Object.keys(changesA).length > 0
-        ? applyChangesToState(
-            baseRiskStateA as Record<string, RiskLevel>,
-            changesA
-          )
-        : baseRiskStateA;
-    const nextB =
-      Object.keys(changesB).length > 0
-        ? applyChangesToState(
-            baseRiskStateB as Record<string, RiskLevel>,
-            changesB
-          )
-        : baseRiskStateB;
-
-    // Apply scenario changes to the preconfigured facade input states.
-    const target = editableScenario;
-
-    if (target === "A") {
-      setBaseRiskStateA(structuredClone(nextA as RiskState));
-      const resolved = resolveActionDrivenState(
-        structuredClone(nextA as RiskState),
-        selectedActionsA
-      );
-      setRiskStateA(resolved.riskState);
-      setDriverScoresA(resolved.driverScores);
-    }
-
-    if (target === "B") {
-      setBaseRiskStateB(structuredClone(nextB as RiskState));
-      const resolved = resolveActionDrivenState(
-        structuredClone(nextB as RiskState),
-        selectedActionsB
-      );
-      setRiskStateB(resolved.riskState);
-      setDriverScoresB(resolved.driverScores);
-    }
+  function getConfiguredRunSelection(): ConfiguredRunSelection {
+    return {
+      scenarioA: { baseRiskState: baseRiskStateA, selectedActions: selectedActionsA },
+      scenarioB: { baseRiskState: baseRiskStateB, selectedActions: selectedActionsB },
+      baselineRiskState: riskStateBaseline,
+    };
   }
 
   function cancelPlayback() {
@@ -686,34 +633,14 @@ export default function PilotFastighetPage() {
 
   function startSimulation(
     source: "scenario" | "manual",
-    riskOverrideA?: RiskState,
-    riskOverrideB?: RiskState,
-    driverScoreOverrideA?: DriverScoreState,
-    driverScoreOverrideB?: DriverScoreState
+    runSource: CleanRunSourceSnapshot
   ) {
     profileCount("PilotFastighetPage.startSimulation.calls");
-    const effectiveRiskStateA = riskOverrideA ?? riskStateA;
-    const effectiveRiskStateB = riskOverrideB ?? riskStateB;
-    const effectiveDriverScoresA = driverScoreOverrideA ?? driverScoresA;
-    const effectiveDriverScoresB = driverScoreOverrideB ?? driverScoresB;
     setSimulationSource(source);
     setHasSimulationCompleted(false);
     setIsRunning(false);
     resetRunState();
 
-    const runSource = createCleanRunSourceSnapshot({
-      scenarioA: {
-        baseRiskState: structuredClone(effectiveRiskStateA),
-        baseDriverScores: structuredClone(effectiveDriverScoresA),
-      },
-      scenarioB: {
-        baseRiskState: structuredClone(effectiveRiskStateB),
-        baseDriverScores: structuredClone(effectiveDriverScoresB),
-      },
-      baseline: {
-        baseRiskState: structuredClone(riskStateBaseline),
-      },
-    });
     const { analysis } = runReactAnalysisBoundary({
       executionMode: "configured-start",
       horizon: simulationHorizon,
@@ -724,16 +651,22 @@ export default function PilotFastighetPage() {
     currentStateARef.current = {
       step: 0,
       margin: 1,
-      riskState: structuredClone(effectiveRiskStateA),
-      driverScores: structuredClone(effectiveDriverScoresA),
+      riskState: structuredClone(runSource.scenarioA.initialRiskState),
+      driverScores: structuredClone(
+        runSource.scenarioA.initialDriverScores ??
+          buildDriverScoreState(runSource.scenarioA.initialRiskState)
+      ),
       registry: createInitialConstraintRegistry(),
       cascadeEvents: [],
     };
     currentStateBRef.current = {
       step: 0,
       margin: 1,
-      riskState: structuredClone(effectiveRiskStateB),
-      driverScores: structuredClone(effectiveDriverScoresB),
+      riskState: structuredClone(runSource.scenarioB.initialRiskState),
+      driverScores: structuredClone(
+        runSource.scenarioB.initialDriverScores ??
+          buildDriverScoreState(runSource.scenarioB.initialRiskState)
+      ),
       registry: createInitialConstraintRegistry(),
       cascadeEvents: [],
     };
@@ -2275,7 +2208,10 @@ export default function PilotFastighetPage() {
             type="button"
             disabled={isRunning}
             onClick={() => {
-              startSimulation("manual", riskStateA, riskStateB);
+              startSimulation(
+                "manual",
+                prepareOrdinaryConfiguredRunSource(getConfiguredRunSelection())
+              );
             }}
             style={{
               padding: executiveDemoMode ? "5px 11px" : "8px 16px",
@@ -3541,23 +3477,26 @@ export default function PilotFastighetPage() {
           scenarioTextB={previewScenarioTextB}
           language={uiLanguage}
           onApply={() => {
-            const nextA =
-              previewChangesA.length > 0
-                ? applyChangesToState(
-                    riskStateA as Record<string, RiskLevel>,
-                    previewChangesA
-                  )
-                : riskStateA;
-            const nextB =
-              previewChangesB.length > 0
-                ? applyChangesToState(
-                    riskStateB as Record<string, RiskLevel>,
-                    previewChangesB
-                  )
-                : riskStateB;
-
-            applyScenarioChanges(previewChangesA, previewChangesB);
-            startSimulation("manual", nextA as RiskState, nextB as RiskState);
+            const preview = prepareScenarioPreviewRun({
+              configuredSelection: getConfiguredRunSelection(),
+              editableScenario,
+              changesA: previewChangesA,
+              changesB: previewChangesB,
+            });
+            if (editableScenario === "A") {
+              setBaseRiskStateA(structuredClone(preview.persistedBaseRiskStateA));
+              setRiskStateA(structuredClone(preview.persistedScenarioA.initialRiskState));
+              setDriverScoresA(
+                structuredClone(preview.persistedScenarioA.initialDriverScores)
+              );
+            } else {
+              setBaseRiskStateB(structuredClone(preview.persistedBaseRiskStateB));
+              setRiskStateB(structuredClone(preview.persistedScenarioB.initialRiskState));
+              setDriverScoresB(
+                structuredClone(preview.persistedScenarioB.initialDriverScores)
+              );
+            }
+            startSimulation("manual", preview.runSource);
             setPreviewVisible(false);
           }}
           onCancel={() => {
