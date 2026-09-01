@@ -35,5 +35,7 @@ Safety rules:
 - Do not claim timing caused a difference when initial states or canonical action sets differ.
 - Use the supplied fair-comparison facts, including whether initial states and canonical action sets are identical and whether differences are timing/order-only.
 - Describe adverse-first versus mitigation-first ordering only when the supplied records establish it.
+- Distinguish temporary path preservation from terminal convergence. Do not erase material path differences merely because terminal margins match.
+- Do not claim permanent constraint avoidance when activation is only delayed in the represented horizon.
 - Do not recommend a best decision beyond the analytical evidence. Human judgement remains required.`;
 }

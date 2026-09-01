@@ -37,7 +37,6 @@ import {
   updateManualScheduledActionStep,
 } from "@/src/pilotFastighet/analysis/manualScheduledExecution";
 import {
-  prepareExplicitConfiguredRunSource,
   prepareOrdinaryConfiguredRunSource,
   prepareScenarioPreviewRun,
   type ConfiguredRunSelection,
@@ -121,10 +120,14 @@ import {
   getExecutiveDemoScenarioComparisonStrip,
 } from "@/src/pilotFastighet/executiveDemoFraming";
 import {
-  EXEC_DEMO_PLAYBACK_PRESET_ID,
-  getExecutiveDemoPlaybackPresetTitle,
-  getExecutiveDemoPlaybackRiskStates,
-} from "@/src/pilotFastighet/executiveDemoPlaybackScenario";
+  getScheduledExecutiveDemoRunSource,
+  getScheduledExecutiveDemoTitle,
+  getScheduledExecutiveScenarioLabel,
+  SCHEDULED_EXECUTIVE_DEMO_HORIZON,
+  SCHEDULED_EXECUTIVE_DEMO_ID,
+  SCHEDULED_EXECUTIVE_DEMO_SCHEDULES,
+} from "@/src/pilotFastighet/scheduledExecutiveDemo";
+import { calculateScheduledExecutiveMetrics } from "@/src/pilotFastighet/analysis/scheduledExecutivePresentation";
 import { getPilotStrategyColors } from "@/src/pilotFastighet/strategyColors";
 import { surfaceOrgDemoText } from "@/src/pilotFastighet/executiveDemoTransformation";
 import {
@@ -426,10 +429,9 @@ export default function PilotFastighetPage() {
     activeScenario === "A" || activeScenario === "B"
       ? activeScenario
       : manualScenarioTarget;
-  const effectiveExecutionMode = resolveManualExecutionMode(
-    manualExecutionMode,
-    executiveDemoMode
-  );
+  const effectiveExecutionMode = executiveDemoMode
+    ? "actions-over-time"
+    : resolveManualExecutionMode(manualExecutionMode, false);
   const scheduleValidationIssues =
     effectiveExecutionMode === "actions-over-time"
       ? getManualScheduleIssues(scenarioSchedules, simulationHorizon)
@@ -488,42 +490,38 @@ export default function PilotFastighetPage() {
     setActiveDomain("realEstate");
     setDomain("realEstate");
     setSelectedPilotCaseId("");
-    const demo = getExecutiveDemoPlaybackRiskStates();
-    setBaseRiskStateA(structuredClone(demo.riskStateA));
-    setBaseRiskStateB(structuredClone(demo.riskStateB));
-    setRiskStateA(structuredClone(demo.riskStateA));
-    setRiskStateB(structuredClone(demo.riskStateB));
-    setDriverScoresA(buildDriverScoreState(demo.riskStateA));
-    setDriverScoresB(buildDriverScoreState(demo.riskStateB));
+    const executiveDemoRunSource = getScheduledExecutiveDemoRunSource();
+    const initialRiskState = executiveDemoRunSource.scenarioA.initialRiskState;
+    const initialDriverScores = executiveDemoRunSource.scenarioA.initialDriverScores;
+    setBaseRiskStateA(structuredClone(initialRiskState));
+    setBaseRiskStateB(structuredClone(initialRiskState));
+    setRiskStateA(structuredClone(initialRiskState));
+    setRiskStateB(structuredClone(initialRiskState));
+    setDriverScoresA(structuredClone(initialDriverScores ?? buildDriverScoreState(initialRiskState)));
+    setDriverScoresB(structuredClone(initialDriverScores ?? buildDriverScoreState(initialRiskState)));
     setSelectedActionsA([]);
     setSelectedActionsB([]);
     setManualExecutionMode("configured-start");
-    setScenarioSchedules(clearAllScenarioSchedules());
+    setScenarioSchedules(structuredClone(SCHEDULED_EXECUTIVE_DEMO_SCHEDULES));
     setScenarioALabel("");
     setScenarioBLabel("");
-    setAppliedScenarioAId(EXEC_DEMO_PLAYBACK_PRESET_ID);
-    setAppliedScenarioBId(EXEC_DEMO_PLAYBACK_PRESET_ID);
+    setAppliedScenarioAId(SCHEDULED_EXECUTIVE_DEMO_ID);
+    setAppliedScenarioBId(SCHEDULED_EXECUTIVE_DEMO_ID);
     setSelectedGoal("margin_stability");
     setShowA(true);
     setShowB(true);
     setActiveScenario("BOTH");
-    setSimulationHorizon(36);
+    setSimulationHorizon(SCHEDULED_EXECUTIVE_DEMO_HORIZON);
     setCustomHorizon(null);
     setIsDirty(false);
 
-    const executiveDemoRunSource = prepareExplicitConfiguredRunSource({
-      scenarioA: {
-        initialRiskState: demo.riskStateA,
-        initialDriverScores: buildDriverScoreState(demo.riskStateA),
-      },
-      scenarioB: {
-        initialRiskState: demo.riskStateB,
-        initialDriverScores: buildDriverScoreState(demo.riskStateB),
-      },
-      baselineRiskState: defaultRiskState,
-    });
     const runId = window.setTimeout(() => {
-      startSimulation("manual", executiveDemoRunSource);
+      startSimulation(
+        "manual",
+        executiveDemoRunSource,
+        "actions-over-time",
+        SCHEDULED_EXECUTIVE_DEMO_SCHEDULES
+      );
     }, 0);
     return () => window.clearTimeout(runId);
   }, [executiveDemoMode]);
@@ -1336,6 +1334,16 @@ export default function PilotFastighetPage() {
   const baselineB = marginHistoryB.length > 0 ? marginHistoryB[0] : 0;
   const finalB =
     marginHistoryB.length > 0 ? marginHistoryB[marginHistoryB.length - 1] : 0;
+  const scheduledExecutiveMetrics = useMemo(
+    () =>
+      calculateScheduledExecutiveMetrics({
+        marginHistoryA,
+        marginHistoryB,
+        terminalStateA: stateA,
+        terminalStateB: stateB,
+      }),
+    [marginHistoryA, marginHistoryB, stateA, stateB]
+  );
   const structuralStatusA = executiveSummary
     ? executiveSummary.structuralStatusA
     : "stable";
@@ -1369,16 +1377,12 @@ export default function PilotFastighetPage() {
   const t = UI_TEXT[uiLanguage];
   const pt = pulseLanguage[uiLanguage];
   const scenarioALabelText = executiveDemoMode
-    ? uiLanguage === "sv"
-      ? "Nuvarande strategi"
-      : "Baseline"
+    ? getScheduledExecutiveScenarioLabel("A", uiLanguage)
     : uiLanguage === "sv"
       ? "Nuläge"
       : "Baseline";
   const scenarioBLabelText = executiveDemoMode
-    ? uiLanguage === "sv"
-      ? "Alternativ strategi"
-      : "Goal strategy"
+    ? getScheduledExecutiveScenarioLabel("B", uiLanguage)
     : uiLanguage === "sv"
       ? "Målstrategi"
       : "Goal strategy";
@@ -1858,7 +1862,7 @@ export default function PilotFastighetPage() {
                 <span style={{ fontWeight: 700, color: "#93c5fd" }}>
                   {uiLanguage === "sv" ? "Spår:" : "Preset:"}
                 </span>{" "}
-                {getExecutiveDemoPlaybackPresetTitle(uiLanguage)}
+                {getScheduledExecutiveDemoTitle(uiLanguage)}
               </p>
               )}
             </div>
@@ -2360,6 +2364,15 @@ export default function PilotFastighetPage() {
             type="button"
             disabled={isRunning || scheduleValidationIssues.length > 0}
             onClick={() => {
+              if (executiveDemoMode) {
+                startSimulation(
+                  "manual",
+                  getScheduledExecutiveDemoRunSource(),
+                  "actions-over-time",
+                  SCHEDULED_EXECUTIVE_DEMO_SCHEDULES
+                );
+                return;
+              }
               if (effectiveExecutionMode === "actions-over-time") {
                 if (scheduleValidationIssues.length > 0) return;
                 startSimulation(
@@ -2435,6 +2448,28 @@ export default function PilotFastighetPage() {
               resetRunState();
               setIsDirty(true);
 
+              if (executiveDemoMode) {
+                const source = getScheduledExecutiveDemoRunSource();
+                const initialRiskState = source.scenarioA.initialRiskState;
+                const initialDriverScores = source.scenarioA.initialDriverScores;
+                setBaseRiskStateA(structuredClone(initialRiskState));
+                setBaseRiskStateB(structuredClone(initialRiskState));
+                setRiskStateA(structuredClone(initialRiskState));
+                setRiskStateB(structuredClone(initialRiskState));
+                setDriverScoresA(structuredClone(initialDriverScores ?? buildDriverScoreState(initialRiskState)));
+                setDriverScoresB(structuredClone(initialDriverScores ?? buildDriverScoreState(initialRiskState)));
+                setSelectedActionsA([]);
+                setSelectedActionsB([]);
+                setScenarioSchedules(structuredClone(SCHEDULED_EXECUTIVE_DEMO_SCHEDULES));
+                setScenarioPromptA("");
+                setScenarioPromptB("");
+                setScenarioALabel("");
+                setScenarioBLabel("");
+                setIsDirty(false);
+                setShowHelp(false);
+                return;
+              }
+
               const caseId = selectedPilotCaseId;
 
               if (!caseId) {
@@ -2482,14 +2517,14 @@ export default function PilotFastighetPage() {
             <div
               className="shrink-0 flex items-center gap-1.5 rounded-full border border-slate-600/65 bg-slate-900/75 px-2.5 py-1 max-h-[38px] max-w-[258px]"
               role="note"
-              title={`${getExecutiveDemoPlaybackPresetTitle(uiLanguage)} — ${getExecutiveDemoPlaybackInitiativesNote(uiLanguage)}`}
+              title={`${getScheduledExecutiveDemoTitle(uiLanguage)} — ${getExecutiveDemoPlaybackInitiativesNote(uiLanguage)}`}
             >
               <span className="shrink-0 rounded-sm border border-sky-900/60 bg-blue-950/80 px-[5px] py-[1px] text-[7.5px] font-bold uppercase tracking-wider text-sky-300">
                 Demo
               </span>
               <div className="min-w-0 overflow-hidden leading-tight">
                 <div className="truncate text-[9.5px] font-semibold text-slate-100">
-                  {getExecutiveDemoPlaybackPresetTitle(uiLanguage)}
+                  {getScheduledExecutiveDemoTitle(uiLanguage)}
                 </div>
                 <div className="truncate text-[8px] text-slate-500">
                   {getExecutiveDemoPlaybackInitiativesNote(uiLanguage)}
@@ -2593,7 +2628,7 @@ export default function PilotFastighetPage() {
                   {uiLanguage === "sv" ? "Demo" : "Demo"}
                 </div>
                 <div className="text-[11px] font-medium text-slate-100 leading-snug">
-                  {getExecutiveDemoPlaybackPresetTitle(uiLanguage)}
+                  {getScheduledExecutiveDemoTitle(uiLanguage)}
                 </div>
                 <p className="text-[9px] text-slate-500 leading-snug m-0 mt-1">
                   {getExecutiveDemoPlaybackInitiativesNote(uiLanguage)}
@@ -3194,6 +3229,79 @@ export default function PilotFastighetPage() {
                   }
             }
           >
+              {executiveDemoMode && (
+                <section
+                  aria-label={uiLanguage === "sv" ? "Sekvensanalys" : "Sequence analysis"}
+                  style={{
+                    padding: "12px",
+                    background: "#111827",
+                    border: "1px solid #334155",
+                    borderRadius: 8,
+                    color: "#e5e7eb",
+                    fontSize: 11,
+                    lineHeight: 1.45,
+                  }}
+                >
+                  <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
+                    {uiLanguage === "sv" ? "Sekvensanalys" : "Sequence analysis"}
+                  </div>
+                  <div style={{ color: "#94a3b8", marginBottom: 10 }}>
+                    {uiLanguage === "sv"
+                      ? "Identiska startvillkor · samma åtgärder · endast tidpunkt och ordning skiljer sig"
+                      : "Identical starting conditions · same actions · only timing and order differ"}
+                  </div>
+                  {(["A", "B"] as const).map((scenario) => (
+                    <div key={`executive-schedule-${scenario}`} style={{ marginBottom: 9 }}>
+                      <div style={{ fontWeight: 650 }}>
+                        {`${scenario}: ${getScheduledExecutiveScenarioLabel(scenario, uiLanguage)}`}
+                      </div>
+                      <div style={{ color: "#94a3b8", marginTop: 2 }}>
+                        {uiLanguage === "sv" ? "Planerat" : "Planned"}
+                      </div>
+                      <ul style={{ margin: "2px 0 0", paddingLeft: 18, listStyle: "disc outside" }}>
+                        {getOrderedScenarioSchedule(SCHEDULED_EXECUTIVE_DEMO_SCHEDULES, scenario).map((entry) => (
+                          <li key={`planned-${scenario}-${entry.actionId}`}>
+                            {`${getActionPanelLabel(entry.actionId, uiLanguage)} — M${entry.executionStep}`}
+                          </li>
+                        ))}
+                      </ul>
+                      <div style={{ color: "#94a3b8", marginTop: 4 }}>
+                        {uiLanguage === "sv" ? "Genomfört" : "Executed"}
+                      </div>
+                      {revealedScheduledProvenance[scenario].length === 0 ? (
+                        <div style={{ color: "#64748b" }}>
+                          {uiLanguage === "sv" ? "Inga ännu" : "None yet"}
+                        </div>
+                      ) : (
+                        <ul style={{ margin: "2px 0 0", paddingLeft: 18, listStyle: "disc outside" }}>
+                          {revealedScheduledProvenance[scenario].map((entry) => (
+                            <li key={`executed-${scenario}-${entry.actionId}`}>
+                              {`${getActionPanelLabel(entry.actionId, uiLanguage)} — M${entry.actualExecutionStep}`}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  ))}
+                  <dl style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "4px 10px", margin: "10px 0 0", borderTop: "1px solid #334155", paddingTop: 9 }}>
+                    <dt>{uiLanguage === "sv" ? "Största marginalskillnad" : "Maximum margin separation"}</dt>
+                    <dd style={{ margin: 0, fontWeight: 650 }}>{scheduledExecutiveMetrics.maximumMarginSeparation.toFixed(2)}</dd>
+                    <dt>{uiLanguage === "sv" ? "Synlig begränsning A / B" : "Visible constraint A / B"}</dt>
+                    <dd style={{ margin: 0, fontWeight: 650 }}>{`${scheduledExecutiveMetrics.visibleConstraintPeriodA ? `M${scheduledExecutiveMetrics.visibleConstraintPeriodA}` : "—"} / ${scheduledExecutiveMetrics.visibleConstraintPeriodB ? `M${scheduledExecutiveMetrics.visibleConstraintPeriodB}` : "—"}`}</dd>
+                    <dt>{uiLanguage === "sv" ? "Nedre gräns A / B" : "Lower clamp A / B"}</dt>
+                    <dd style={{ margin: 0, fontWeight: 650 }}>{`${scheduledExecutiveMetrics.firstLowerClampPeriodA ? `M${scheduledExecutiveMetrics.firstLowerClampPeriodA}` : "—"} / ${scheduledExecutiveMetrics.firstLowerClampPeriodB ? `M${scheduledExecutiveMetrics.firstLowerClampPeriodB}` : "—"}`}</dd>
+                    <dt>{uiLanguage === "sv" ? "Terminal marginal A / B" : "Terminal margin A / B"}</dt>
+                    <dd style={{ margin: 0, fontWeight: 650 }}>{hasSimulationCompleted ? `${scheduledExecutiveMetrics.terminalMarginA.toFixed(0)} / ${scheduledExecutiveMetrics.terminalMarginB.toFixed(0)}` : "— / —"}</dd>
+                  </dl>
+                  {hasSimulationCompleted && (
+                    <p style={{ color: "#cbd5e1", margin: "10px 0 0" }}>
+                      {uiLanguage === "sv"
+                        ? "Förloppen skiljer sig materiellt innan de konvergerar vid samma terminala marginal."
+                        : "The paths differ materially before converging at the same terminal margin."}
+                    </p>
+                  )}
+                </section>
+              )}
               {caseType === "transport" && !executiveDemoMode && (
                 <ScenarioPresetsPanel
                   scenarioTarget={transportScenarioTarget}
@@ -3369,7 +3477,7 @@ export default function PilotFastighetPage() {
                     tippingQuarter={
                       tippingMarginIndexB != null ? tippingMarginIndexB + 1 : null
                     }
-                    caseName={getExecutiveDemoPlaybackPresetTitle(uiLanguage)}
+                    caseName={getScheduledExecutiveDemoTitle(uiLanguage)}
                     events={[
                       { quarter: 1, type: "Maintenance deferred" },
                       {
@@ -3380,7 +3488,7 @@ export default function PilotFastighetPage() {
                         type: "Capital constraint activated",
                       },
                     ].filter((e) => e.quarter > 0)}
-                    simulationCompleted={hasSimulationCompleted}
+                    simulationCompleted={naturallyCompletedRun}
                     currentMargin={finalA}
                     alternativeMargin={finalB}
                     marginImpact={finalB - finalA}
@@ -3405,6 +3513,14 @@ export default function PilotFastighetPage() {
                         ? `${transportContextA.primaryDriver} → ${transportContextB.primaryDriver}`
                         : null)
                     }
+                    executionContext={{
+                      mode: "actions-over-time",
+                      plannedSchedules: SCHEDULED_EXECUTIVE_DEMO_SCHEDULES,
+                      executedProvenance: revealedScheduledProvenance,
+                      horizon: SCHEDULED_EXECUTIVE_DEMO_HORIZON,
+                      naturalCompletion: naturallyCompletedRun,
+                      fairComparisonFacts: scheduledFairComparisonFacts,
+                    }}
                   />
                   </div>
                 )}
@@ -3459,7 +3575,7 @@ export default function PilotFastighetPage() {
                   }
                   caseName={
                     executiveDemoMode
-                      ? getExecutiveDemoPlaybackPresetTitle(uiLanguage)
+                      ? getScheduledExecutiveDemoTitle(uiLanguage)
                       : PILOT_CASES.find((c) => c.id === selectedPilotCaseId)?.title ?? ""
                   }
                   events={[

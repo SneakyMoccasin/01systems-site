@@ -272,12 +272,21 @@ test("baseline remains isolated from actions, preview, terminal, and partial sta
   assert.deepEqual(run(configured).runSource.baseline, preview.runSource.baseline);
 });
 
-test("page configured preparation cannot consume display or playback state", () => {
+test("page manual configured preparation cannot consume display or playback state", () => {
   const page = readFileSync("app/pilot-fastighet/page.tsx", "utf8");
   assert.doesNotMatch(page, /startSimulation\("manual",\s*riskStateA/);
   assert.doesNotMatch(page, /riskOverrideA|driverScoreOverrideA/);
   assert.doesNotMatch(page, /executionMode:\s*["']actions-over-time["']/);
   assert.match(page, /prepareOrdinaryConfiguredRunSource/);
   assert.match(page, /prepareScenarioPreviewRun/);
-  assert.match(page, /prepareExplicitConfiguredRunSource/);
+  assert.match(page, /prepareOrdinaryConfiguredRunSource\(getConfiguredRunSelection\(\)\)/);
+});
+
+test("public executive demo uses the canonical scheduled boundary instead of the legacy fixture", () => {
+  const page = readFileSync("app/pilot-fastighet/page.tsx", "utf8");
+  assert.match(page, /getScheduledExecutiveDemoRunSource/);
+  assert.match(page, /SCHEDULED_EXECUTIVE_DEMO_SCHEDULES/);
+  assert.match(page, /"actions-over-time"/);
+  assert.doesNotMatch(page, /getExecutiveDemoPlaybackRiskStates/);
+  assert.doesNotMatch(page, /prepareExplicitConfiguredRunSource/);
 });

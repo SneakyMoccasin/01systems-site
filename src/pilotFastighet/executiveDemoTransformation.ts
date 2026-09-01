@@ -170,21 +170,17 @@ export function getExecutiveDemoInterpretationAddon(language: "sv" | "en"): stri
     ? `
 
 Demonstrationsläge — tolkning (endast språk; samma fakta som i data):
-- 4–6 korta meningar. Observatorisk, strukturanalytisk ton: vad modellen visar om samordningstryck, beroenden och genomföringsflexibilitet.
-- Skriv som beroende-/kapacitetsdiagnostik, inte som rådgivning: använd “modellen visar…”, “trycket koncentreras…”, “divergensen syns när…”. Undvik “ni bör…”, “rekommendation…”, “för att undvika…”.
-- Undvik finansord: inte refinansiering, likviditet, belåning, finansiering, kapitalstruktur — beskriv motsvarande som resursbindning, sekvensering, genomföringslast, operativ flexibilitet.
-- Undvik konsult- och chattbotston (“holistisk”, “synergi”, etc.).
-- Sluta med en tydlig, observerad huvudpoäng (utan råd om vad organisationen ska göra).
-- Exempel på bra stil: “Trycket kommer inte från en isolerad insats utan uppstår när flera initiativ möter samma genomföringskapacitet över tid.” / “När samordningstrycket koncentreras smalnar handlingsutrymmet gradvis.”`
+- Beskriv endast den konfigurerade jämförelsen: identiska startvillkor, samma åtgärder och olika tidpunkt/ordning.
+- Skilj mellan bevarad marginal längs vägen och samma terminala marginal.
+- Härled inte tidpunkt från kaskaddjup och påstå inte överbelastning, samtidighetskostnad, permanent undvikande, optimering eller en föredragen sekvens.
+- Skriv observerande, inte rådgivande. Mänskligt omdöme är fortsatt avgörande.`
     : `
 
 Executive demo — interpretation (wording only; same facts as in the data):
-- 4–6 short sentences. Observational, structural tone: what the run shows about coordination pressure, dependencies, and execution flexibility.
-- Write as dependency/capacity diagnostics, not advice: use “the pattern shows…”, “pressure concentrates…”, “divergence appears when…”. Do NOT use “you should…”, “recommended…”, “to avoid this…”, “the organization must…”.
-- Avoid finance vocabulary in the answer: no refinancing, liquidity, leverage, financing, debt, covenant, capital structure—use resource lock-in, sequencing, execution load, operational flexibility, coordination pressure instead (only in natural sentences, not as labels).
-- Avoid consulting / generic AI tone (“holistic”, “synergy”, etc.).
-- End with one clear observational takeaway—not a call to action.
-- Good style examples: “The pressure does not come from one isolated initiative. It emerges as multiple initiatives compete for the same execution capacity over time.” / “As coordination pressure concentrates, future flexibility narrows gradually.” / “Divergence appears when dependencies activate faster than execution capacity can absorb.”`;
+- Describe only the configured comparison: identical starting conditions, the same actions, and different timing/order.
+- Distinguish margin preserved along the path from the same terminal margin.
+- Do not infer timing from cascade depth or claim overload, concurrency cost, permanent avoidance, optimization, or a preferred sequence.
+- Write observationally, not prescriptively. Human judgment remains authoritative.`;
 }
 
 /* Longer phrases first where overlaps matter. Executive demo surface only (post-process). */
