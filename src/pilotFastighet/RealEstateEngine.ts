@@ -1,12 +1,14 @@
 import type { ConstraintRegistry } from "./constraintState";
 import { createInitialConstraintRegistry } from "./constraintState";
-import type { RiskLevel } from "./impactContract";
+import type { ParameterKey, RiskLevel } from "./impactContract";
 import { REAL_ESTATE_IMPACT_CONTRACT } from "./impactContract";
 import { simulateConstraintsStep } from "./simulateConstraintsStep";
 import { computeDimensionMultipliers } from "./computeDimensionMultipliers";
 import { propagateRisks, type CascadeEvent } from "./riskPropagation";
 import {
   buildDriverScoreState,
+  clampDriverScore,
+  materializeRiskStateFromScores,
   riskLevelToScore,
   type DriverScoreState,
 } from "./driverScoreState";
@@ -17,6 +19,12 @@ import {
 } from "@/src/lib/runtimeProfile";
 
 export type RiskState = Record<string, RiskLevel>;
+
+export type DriverDeltas = Readonly<Partial<Record<ParameterKey, number>>>;
+
+const SUPPORTED_DRIVER_KEYS = new Set<string>(
+  REAL_ESTATE_IMPACT_CONTRACT.map((parameter) => parameter.key)
+);
 
 export type EngineState = {
   step: number;
@@ -55,6 +63,43 @@ export class RealEstateEngine {
 
   public getState(): EngineState {
     return this.state;
+  }
+
+  public applyDriverDeltas(deltas: DriverDeltas): void {
+    const entries = Object.entries(deltas);
+
+    for (const [driver, delta] of entries) {
+      if (!SUPPORTED_DRIVER_KEYS.has(driver)) {
+        throw new Error(`Unsupported driver: ${driver}`);
+      }
+      if (typeof delta !== "number" || !Number.isFinite(delta)) {
+        throw new TypeError(`Driver delta must be finite: ${driver}`);
+      }
+    }
+
+    const nextDriverScores = { ...this.state.driverScores };
+    let changed = false;
+
+    for (const [driver, delta] of entries) {
+      const currentScore = nextDriverScores[driver];
+      if (typeof currentScore !== "number" || !Number.isFinite(currentScore)) {
+        throw new Error(`Missing precise score for driver: ${driver}`);
+      }
+
+      const nextScore = clampDriverScore(currentScore + delta);
+      if (nextScore !== currentScore) {
+        nextDriverScores[driver] = nextScore;
+        changed = true;
+      }
+    }
+
+    if (!changed) return;
+
+    this.state = {
+      ...this.state,
+      driverScores: nextDriverScores,
+      riskState: materializeRiskStateFromScores(nextDriverScores),
+    };
   }
 
   public setRiskState(riskState: RiskState, driverScores?: DriverScoreState) {
