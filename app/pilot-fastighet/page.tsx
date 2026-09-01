@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { unstable_batchedUpdates } from "react-dom";
 import { getSystemSnapshot } from "@/src/systemSnapshot/systemSnapshotStore";
-import { RealEstateEngine, type RiskState } from "@/src/pilotFastighet/RealEstateEngine";
+import type { EngineState, RiskState } from "@/src/pilotFastighet/RealEstateEngine";
 import type { CascadeEvent } from "@/src/pilotFastighet/riskPropagation";
 import { createInitialConstraintRegistry } from "@/src/pilotFastighet/constraintState";
 import type { RiskLevel, ParameterSpec } from "@/src/pilotFastighet/impactContract";
@@ -14,6 +14,13 @@ import {
 } from "@/src/pilotFastighet/compareHelpers";
 import { PILOT_CASES } from "@/src/pilotFastighet/pilotCases";
 import { calculateExecutiveSummary } from "@/src/pilotFastighet/analysis/calculateExecutiveSummary";
+import { runCascadeAnalysis } from "@/src/pilotFastighet/analysis/runCascadeAnalysis";
+import {
+  createPreconfiguredPlayback,
+  getPreconfiguredPlaybackSnapshot,
+  isPlaybackGenerationCurrent,
+  type PreconfiguredPlayback,
+} from "@/src/pilotFastighet/analysis/preconfiguredPlayback";
 import { SnapshotCompare } from "@/src/pilotFastighet/components/SnapshotCompare";
 import { ExecutiveSummaryCard } from "@/app/pilot-fastighet/components/ExecutiveSummaryCard";
 import AIInterpretationPanel from "./components/AIInterpretationPanel";
@@ -192,13 +199,6 @@ const EXEC_COLLAPSE_THRESHOLD = 0.6;
 const MIN_STEPS_BEFORE_STEADY = 5;
 const REQUIRED_STABLE_TICKS = 3;
 const ANALYSIS_HORIZON = 16;
-const RISK_LEVEL_TO_NUMBER: Record<RiskLevel, number> = {
-  LOW: 0,
-  MODERATE: 1,
-  HIGH: 2,
-  SEVERE: 3,
-};
-
 const TOP_LEVEL_GOAL_LABELS = {
   transport: {
     accessibility: { sv: "Öka tillgänglighet", en: "Increase accessibility" },
@@ -268,19 +268,12 @@ export default function PilotFastighetPage() {
     snapshotId: string;
     label?: string;
     createdAt: number;
-    engineState: ReturnType<RealEstateEngine["getState"]>;
+    engineState: EngineState;
     metadata: {
       caseId: string | null;
       scenario: "A" | "B";
       modelVersion: string;
     };
-  };
-
-  type Scenario = {
-    id: ScenarioId;
-    label: string;
-    engine: RealEstateEngine;
-    riskState: Record<string, RiskLevel>;
   };
 
   const [riskStateBaseline, setRiskStateBaseline] = useState<
@@ -340,8 +333,7 @@ export default function PilotFastighetPage() {
   const [uiMode, setUiMode] = useState<"executive" | "expert">("executive");
   const [executiveDemoMode, setExecutiveDemoMode] = useState(false);
 
-  // NOTE: Cascades/escalation are computed by RealEstateEngine during ticks.
-  // We intentionally avoid running propagateRisks in the UI layer.
+  // Cascades and escalation come from the headless analysis facade.
   const [executiveSummary, setExecutiveSummary] =
     useState<ReturnType<typeof calculateExecutiveSummary> | null>(null);
   const [steadyStateStep, setSteadyStateStep] = useState<number | null>(null);
@@ -394,16 +386,11 @@ export default function PilotFastighetPage() {
       ? activeScenario
       : manualScenarioTarget;
 
-  const engineARef = useRef<RealEstateEngine | null>(null);
-  const engineBRef = useRef<RealEstateEngine | null>(null);
-  const engineBaselineRef = useRef<RealEstateEngine | null>(null);
+  const playbackRef = useRef<PreconfiguredPlayback | null>(null);
+  const currentStateARef = useRef<EngineState | null>(null);
+  const currentStateBRef = useRef<EngineState | null>(null);
+  const playbackGenerationRef = useRef(0);
   const intervalRef = useRef<number | null>(null);
-  const marginHistoryARef = useRef<number[]>([]);
-  const marginHistoryBRef = useRef<number[]>([]);
-  const lastMarginARef = useRef<number | null>(null);
-  const lastMarginBRef = useRef<number | null>(null);
-  const stableCounterARef = useRef(0);
-  const stableCounterBRef = useRef(0);
 
   profileValue(
     "PilotFastighetPage.marginSeries.points",
@@ -638,8 +625,7 @@ export default function PilotFastighetPage() {
           )
         : baseRiskStateB;
 
-    // Apply scenario changes to input risk states.
-    // Escalation, propagation, and cascade events are computed inside RealEstateEngine.
+    // Apply scenario changes to the preconfigured facade input states.
     const target = editableScenario;
 
     if (target === "A") {
@@ -663,7 +649,19 @@ export default function PilotFastighetPage() {
     }
   }
 
+  function cancelPlayback() {
+    playbackGenerationRef.current += 1;
+    if (intervalRef.current) {
+      window.clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }
+
   function resetRunState() {
+    cancelPlayback();
+    playbackRef.current = null;
+    currentStateARef.current = null;
+    currentStateBRef.current = null;
     setMarginHistoryA([]);
     setMarginHistoryB([]);
     setDemandHistoryA([]);
@@ -676,11 +674,6 @@ export default function PilotFastighetPage() {
     setSteadyStateStep(null);
     setCascadeEventsA([]);
     setCascadeEventsB([]);
-
-    lastMarginARef.current = null;
-    lastMarginBRef.current = null;
-    stableCounterARef.current = 0;
-    stableCounterBRef.current = 0;
   }
 
   function startSimulation(
@@ -700,177 +693,104 @@ export default function PilotFastighetPage() {
     setIsRunning(false);
     resetRunState();
 
-    // RealEstateEngine is the single source of truth for escalation, propagation,
-    // and cascade event generation. The UI passes the initial risk state only.
-    const snapshotA = { ...effectiveRiskStateA };
-    const snapshotB = { ...effectiveRiskStateB };
-    const snapshotBaseline = { ...riskStateBaseline };
-    marginHistoryARef.current = [];
-    marginHistoryBRef.current = [];
-    engineARef.current = new RealEstateEngine(snapshotA, effectiveDriverScoresA);
-    engineBRef.current = new RealEstateEngine(snapshotB, effectiveDriverScoresB);
-    engineBaselineRef.current = new RealEstateEngine(snapshotBaseline);
+    const analysis = runCascadeAnalysis({
+      executionMode: "preconfigured",
+      horizon: simulationHorizon + 1,
+      scenarioA: {
+        initialRiskState: structuredClone(effectiveRiskStateA),
+        initialDriverScores: structuredClone(effectiveDriverScoresA),
+      },
+      scenarioB: {
+        initialRiskState: structuredClone(effectiveRiskStateB),
+        initialDriverScores: structuredClone(effectiveDriverScoresB),
+      },
+      baseline: {
+        initialRiskState: structuredClone(riskStateBaseline),
+      },
+    });
+    const playback = createPreconfiguredPlayback(analysis, simulationHorizon);
+    playbackRef.current = playback;
+    currentStateARef.current = {
+      step: 0,
+      margin: 1,
+      riskState: structuredClone(effectiveRiskStateA),
+      driverScores: structuredClone(effectiveDriverScoresA),
+      registry: createInitialConstraintRegistry(),
+      cascadeEvents: [],
+    };
+    currentStateBRef.current = {
+      step: 0,
+      margin: 1,
+      riskState: structuredClone(effectiveRiskStateB),
+      driverScores: structuredClone(effectiveDriverScoresB),
+      registry: createInitialConstraintRegistry(),
+      cascadeEvents: [],
+    };
+    const runGeneration = playbackGenerationRef.current;
+    let playbackTick = 0;
     setIsDirty(false);
     setIsRunning(true);
 
-    if (intervalRef.current) {
-      window.clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-
     intervalRef.current = window.setInterval(() => {
       try {
-      profileCount("PilotFastighetPage.intervalTick.calls");
-      profileMeasure("PilotFastighetPage.intervalTick.ms", () => {
-        if (!engineARef.current || !engineBRef.current) return;
-        const engineA = engineARef.current;
-        const engineB = engineBRef.current;
-        const engineBaseline = engineBaselineRef.current;
-
-        engineA.stepForward();
-        engineB.stepForward();
-        if (engineBaseline) engineBaseline.stepForward();
-
-        const sA = engineA.getState();
-        const sB = engineB.getState();
-        const sBaseline = engineBaseline?.getState();
-
-        marginHistoryARef.current.push(sA.margin);
-        marginHistoryBRef.current.push(sB.margin);
-        if (sA.step <= 3 || sB.step <= 3) {
-        }
-
-        if (sA.step > simulationHorizon && sB.step > simulationHorizon) {
-          if (engineBaselineRef.current) engineBaselineRef.current = null;
-
-          if (intervalRef.current) {
-            window.clearInterval(intervalRef.current);
-            intervalRef.current = null;
+        profileCount("PilotFastighetPage.intervalTick.calls");
+        profileMeasure("PilotFastighetPage.intervalTick.ms", () => {
+          if (
+            !isPlaybackGenerationCurrent(
+              runGeneration,
+              playbackGenerationRef.current
+            ) ||
+            playbackRef.current !== playback
+          ) {
+            return;
           }
+
+          playbackTick += 1;
+          const snapshot = getPreconfiguredPlaybackSnapshot(playback, playbackTick);
+          currentStateARef.current = snapshot.currentStateA;
+          currentStateBRef.current = snapshot.currentStateB;
+
+          if (snapshot.isCompatibilityPhase) {
+            if (intervalRef.current) {
+              window.clearInterval(intervalRef.current);
+              intervalRef.current = null;
+            }
+            unstable_batchedUpdates(() => {
+              setHasSimulationCompleted(true);
+              setIsRunning(false);
+            });
+            return;
+          }
+
           unstable_batchedUpdates(() => {
-            setHasSimulationCompleted(true);
-            setIsRunning(false);
+            if (snapshot.riskStateA && snapshot.driverScoresA) {
+              setRiskStateA((prev) =>
+                areRiskStatesEqual(prev, snapshot.riskStateA as RiskState)
+                  ? prev
+                  : structuredClone(snapshot.riskStateA as RiskState)
+              );
+              setDriverScoresA(structuredClone(snapshot.driverScoresA));
+            }
+            if (snapshot.riskStateB && snapshot.driverScoresB) {
+              setRiskStateB((prev) =>
+                areRiskStatesEqual(prev, snapshot.riskStateB as RiskState)
+                  ? prev
+                  : structuredClone(snapshot.riskStateB as RiskState)
+              );
+              setDriverScoresB(structuredClone(snapshot.driverScoresB));
+            }
+            setCascadeEventsA([...snapshot.cascadeEventsA]);
+            setCascadeEventsB([...snapshot.cascadeEventsB]);
+            setSteadyStateStep(snapshot.steadyStateStep);
+            setTippingMarginIndexA(snapshot.tippingMarginIndexA);
+            setTippingMarginIndexB(snapshot.tippingMarginIndexB);
+            setMarginHistoryA([...snapshot.marginHistoryA]);
+            setMarginHistoryB([...snapshot.marginHistoryB]);
+            setDemandHistoryA([...snapshot.demandHistoryA]);
+            setDemandHistoryB([...snapshot.demandHistoryB]);
+            setMarginHistoryBaseline([...snapshot.marginHistoryBaseline]);
           });
-          return;
-        }
-
-        const epsilon = 1e-6;
-
-        if (sA.step > MIN_STEPS_BEFORE_STEADY) {
-          if (lastMarginARef.current !== null) {
-            const nextDemandA =
-              RISK_LEVEL_TO_NUMBER[
-                (sA.riskState.demandRisk as RiskLevel) ?? "MODERATE"
-              ];
-            const nextDemandB =
-              RISK_LEVEL_TO_NUMBER[
-                (sB.riskState.demandRisk as RiskLevel) ?? "MODERATE"
-              ];
-            const isStableA =
-              Math.abs(sA.margin - lastMarginARef.current) < epsilon;
-            if (isStableA) {
-              stableCounterARef.current += 1;
-            } else {
-              stableCounterARef.current = 0;
-            }
-          }
-        }
-        lastMarginARef.current = sA.margin;
-
-        if (sB.step > MIN_STEPS_BEFORE_STEADY) {
-          if (lastMarginBRef.current !== null) {
-            const isStableB =
-              Math.abs(sB.margin - lastMarginBRef.current) < epsilon;
-            if (isStableB) {
-              stableCounterBRef.current += 1;
-            } else {
-              stableCounterBRef.current = 0;
-            }
-          }
-        }
-        lastMarginBRef.current = sB.margin;
-
-        const nextDemandA =
-          RISK_LEVEL_TO_NUMBER[
-            (sA.riskState.demandRisk as RiskLevel) ?? "MODERATE"
-          ];
-        const nextDemandB =
-          RISK_LEVEL_TO_NUMBER[
-            (sB.riskState.demandRisk as RiskLevel) ?? "MODERATE"
-          ];
-        const nextCascadeEventsA = Array.isArray((sA as any).cascadeEvents)
-          ? ((sA as any).cascadeEvents as CascadeEvent[])
-          : null;
-        const nextCascadeEventsB = Array.isArray((sB as any).cascadeEvents)
-          ? ((sB as any).cascadeEvents as CascadeEvent[])
-          : null;
-        const shouldMarkTippingA =
-          sA.registry?.RefinancingConstraint?.lifecycle === "ACTIVE";
-        const shouldMarkTippingB =
-          sB.registry?.RefinancingConstraint?.lifecycle === "ACTIVE";
-        const shouldSetSteadyStateA =
-          sA.step > MIN_STEPS_BEFORE_STEADY &&
-          stableCounterARef.current >= REQUIRED_STABLE_TICKS;
-        const shouldSetSteadyStateB =
-          sB.step > MIN_STEPS_BEFORE_STEADY &&
-          stableCounterBRef.current >= REQUIRED_STABLE_TICKS;
-
-        unstable_batchedUpdates(() => {
-          // Keep the UI in sync with the engine (single source of truth).
-          setRiskStateA((prev) =>
-            areRiskStatesEqual(prev, sA.riskState as RiskState)
-              ? prev
-              : structuredClone(sA.riskState as RiskState)
-          );
-          setDriverScoresA((sA as any).driverScores ?? buildDriverScoreState(sA.riskState as RiskState));
-          setRiskStateB((prev) =>
-            areRiskStatesEqual(prev, sB.riskState as RiskState)
-              ? prev
-              : structuredClone(sB.riskState as RiskState)
-          );
-          setDriverScoresB((sB as any).driverScores ?? buildDriverScoreState(sB.riskState as RiskState));
-
-          if (nextCascadeEventsA) {
-            setCascadeEventsA((prev) =>
-              prev.length === nextCascadeEventsA.length ? prev : nextCascadeEventsA
-            );
-          }
-          if (nextCascadeEventsB) {
-            setCascadeEventsB((prev) =>
-              prev.length === nextCascadeEventsB.length ? prev : nextCascadeEventsB
-            );
-          }
-
-          if (shouldSetSteadyStateA) {
-            setSteadyStateStep(sA.step);
-          }
-          if (shouldSetSteadyStateB) {
-            setSteadyStateStep(sB.step);
-          }
-
-          setMarginHistoryA((prev) => {
-            const idx = prev.length;
-            if (shouldMarkTippingA) {
-              setTippingMarginIndexA((t) => (t === null ? idx : t));
-            }
-            return [...prev, sA.margin];
-          });
-
-          setMarginHistoryB((prev) => {
-            const idx = prev.length;
-            if (shouldMarkTippingB) {
-              setTippingMarginIndexB((t) => (t === null ? idx : t));
-            }
-            return [...prev, sB.margin];
-          });
-          setDemandHistoryA((prev) => [...prev, nextDemandA]);
-          setDemandHistoryB((prev) => [...prev, nextDemandB]);
-
-          if (sBaseline != null) {
-            setMarginHistoryBaseline((prev) => [...prev, sBaseline.margin]);
-          }
         });
-      });
       } catch (err) {
         logPulseCaughtRejection("PilotFastighetPage.intervalTick", err);
         throw err;
@@ -881,6 +801,7 @@ export default function PilotFastighetPage() {
 
   useEffect(() => {
     return () => {
+      playbackGenerationRef.current += 1;
       if (intervalRef.current) {
         window.clearInterval(intervalRef.current);
         intervalRef.current = null;
@@ -901,16 +822,17 @@ export default function PilotFastighetPage() {
       step: 0,
       margin: 1,
       riskState,
+      driverScores: buildDriverScoreState(riskState),
       registry: createInitialConstraintRegistry(),
       cascadeEvents: [] as CascadeEvent[],
     };
   }
 
-  const stateA = engineARef.current
-    ? engineARef.current.getState()
+  const stateA = currentStateARef.current
+    ? currentStateARef.current
     : defaultEngineState(riskStateA);
-  const stateB = engineBRef.current
-    ? engineBRef.current.getState()
+  const stateB = currentStateBRef.current
+    ? currentStateBRef.current
     : defaultEngineState(riskStateB);
   const activeState =
     activeScenario === "A" ? stateA : stateB;
@@ -2358,10 +2280,7 @@ export default function PilotFastighetPage() {
             type="button"
             disabled={!isRunning}
             onClick={() => {
-              if (intervalRef.current) {
-                window.clearInterval(intervalRef.current);
-                intervalRef.current = null;
-              }
+              cancelPlayback();
               setHasSimulationCompleted(true);
               setIsRunning(false);
               if (marginHistoryA.length > 0 && marginHistoryB.length > 0) {
