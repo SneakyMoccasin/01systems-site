@@ -47,21 +47,6 @@ export function ExecutiveSummaryCard({
   const marginDeltaColor =
     marginDelta < 0 ? "#B91C1C" : marginDelta > 0 ? "#16A34A" : theme.text;
 
-  let tippingLine: string | null = null;
-  if (tippingStepA != null && tippingStepB != null) {
-    if (tippingStepB < tippingStepA) {
-      tippingLine = `Earlier tipping: Q${tippingStepA} \u2192 Q${tippingStepB}`;
-    } else if (tippingStepB > tippingStepA) {
-      tippingLine = `Delayed tipping: Q${tippingStepA} \u2192 Q${tippingStepB}`;
-    } else {
-      tippingLine = `Tipping unchanged: Q${tippingStepA}`;
-    }
-  } else if (tippingStepA != null && tippingStepB == null) {
-    tippingLine = `Scenario B avoids tipping seen in Scenario A (Q${tippingStepA}).`;
-  } else if (tippingStepA == null && tippingStepB != null) {
-    tippingLine = `New tipping in Scenario B: Q${tippingStepB}.`;
-  }
-
   const decisionImpactBackground =
     theme.panelBg === "#111827" ? "#020617" : "#F3F4F6";
 

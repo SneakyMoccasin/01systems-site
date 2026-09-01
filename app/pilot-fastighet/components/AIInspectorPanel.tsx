@@ -40,6 +40,10 @@ import {
   getExecutiveDemoInspectorDecisionAnalytic,
   getExecutiveDemoInspectorSignalBlocks,
 } from "@/src/pilotFastighet/executiveDemoPlaybackScenario";
+import {
+  constraintSourceStepToDisplayedPeriod,
+  formatDisplayedPeriod,
+} from "@/src/pilotFastighet/analysis/periodPresentation";
 
 function toReadableLabel(
   driverId: TransportSystemDriverId | string | null | undefined,
@@ -81,42 +85,6 @@ function toReadableTransportChainStep(
   return getTransportPolicyExplanationLabel(String(driverId), language);
 }
 
-/** Aligns cascade events to graph month indices (same logic as MarginGraph.mapCascadeToMarkers). */
-function mapCascadeEventToIndex(
-  e: CascadeEvent,
-  arrayIndex: number,
-  seriesLength: number,
-  horizon?: number | null
-): number {
-  if (seriesLength <= 0) return 0;
-  const safeStep =
-    Number.isFinite(e.step) && e.step >= 0 ? e.step : arrayIndex + 1;
-  const scaledIndex =
-    horizon != null && Number.isFinite(horizon) && horizon > 0
-      ? Math.floor((safeStep / horizon) * seriesLength)
-      : safeStep;
-  return Math.max(0, Math.min(seriesLength - 1, scaledIndex));
-}
-
-function findCascadeEventAtSelectedMonth(
-  events: CascadeEvent[] | undefined,
-  selectedMonthIndex: number | null | undefined,
-  seriesLength: number,
-  simulationHorizon?: number | null
-): CascadeEvent | null {
-  if (!events?.length || selectedMonthIndex == null) return null;
-  for (let i = 0; i < events.length; i++) {
-    const e = events[i];
-    const idx = mapCascadeEventToIndex(e, i, seriesLength, simulationHorizon);
-    if (idx === selectedMonthIndex) return e;
-  }
-  return null;
-}
-
-/**
- * CascadeEvent has no `index`/`type`; we map to the timeline index and derive
- * semantics from propagation `iteration` (matches reaction → secondary → … progression).
- */
 function getStructuralStateText(
   marginValue: number | null | undefined,
   uiLanguage: "sv" | "en"
@@ -834,7 +802,11 @@ const AIInspectorPanel: React.FC<Props> = ({
                 : "The system is under high structural pressure"
             : systemPressure;
   const breachEstimate =
-    constraintBreakQuarter != null ? `Q${constraintBreakQuarter}` : null;
+    constraintBreakQuarter != null
+      ? language === "sv"
+        ? `~${constraintBreakQuarter} steg`
+        : `~${constraintBreakQuarter} steps`
+      : null;
   const breachEstimateExecutiveLabel =
     breachEstimate === null || breachEstimate === undefined
       ? language === "sv"
@@ -1142,10 +1114,10 @@ const AIInspectorPanel: React.FC<Props> = ({
   const constraintLifecycleText =
     uiLanguage === "sv"
       ? constraintActive
-        ? `Aktiv (uppskattad påverkan kring M${constraintBreakQuarter})`
+        ? `Aktiv (uppskattad påverkan om cirka ${constraintBreakQuarter} steg)`
         : "Inaktiv"
       : constraintActive
-        ? `Active (estimated impact around M${constraintBreakQuarter})`
+        ? `Active (estimated impact in approximately ${constraintBreakQuarter} steps)`
         : "Inactive";
   const cascadeStructureText =
     simulationCascadeEvents.length > 0
@@ -2238,11 +2210,11 @@ const AIInspectorPanel: React.FC<Props> = ({
                   <div key={`${entry.constraintType}-${entry.activationStep}`}>
                     {entry.status === "approaching"
                       ? language === "sv"
-                        ? `${constraintLabel} närmar sig M${entry.activationStep}`
-                        : `${constraintLabel} approaching M${entry.activationStep}`
+                        ? `${constraintLabel} närmar sig ${formatDisplayedPeriod(constraintSourceStepToDisplayedPeriod(entry.activationStep))}`
+                        : `${constraintLabel} approaching ${formatDisplayedPeriod(constraintSourceStepToDisplayedPeriod(entry.activationStep))}`
                       : language === "sv"
-                      ? `${constraintLabel} aktiveras M${entry.activationStep}`
-                      : `${constraintLabel} activates M${entry.activationStep}`}
+                      ? `${constraintLabel} aktiveras ${formatDisplayedPeriod(constraintSourceStepToDisplayedPeriod(entry.activationStep))}`
+                      : `${constraintLabel} activates ${formatDisplayedPeriod(constraintSourceStepToDisplayedPeriod(entry.activationStep))}`}
                   </div>
                 );
               })}

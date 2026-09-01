@@ -24,6 +24,11 @@ import {
   isPlaybackGenerationCurrent,
   type PreconfiguredPlayback,
 } from "@/src/pilotFastighet/analysis/preconfiguredPlayback";
+import {
+  divergenceIndexToDisplayedPeriod,
+  engineStateStepToDisplayedPeriod,
+  formatDisplayedPeriod,
+} from "@/src/pilotFastighet/analysis/periodPresentation";
 import { SnapshotCompare } from "@/src/pilotFastighet/components/SnapshotCompare";
 import { ExecutiveSummaryCard } from "@/app/pilot-fastighet/components/ExecutiveSummaryCard";
 import AIInterpretationPanel from "./components/AIInterpretationPanel";
@@ -839,6 +844,8 @@ export default function PilotFastighetPage() {
   const stateB = currentStateBRef.current
     ? currentStateBRef.current
     : defaultEngineState(riskStateB);
+  const displayedSimulationEndPeriod =
+    stateA.step === 0 ? 1 : engineStateStepToDisplayedPeriod(stateA.step);
   const activeState =
     activeScenario === "A" ? stateA : stateB;
 
@@ -1287,8 +1294,9 @@ export default function PilotFastighetPage() {
   const diffSeries = marginHistoryB.map(
     (v, index) => v - (marginHistoryA[index] ?? v)
   );
-  const firstDivergenceMonth =
-    diffSeries?.findIndex((v) => Math.abs(v) > 0.01) ?? null;
+  const firstDivergenceMonth = divergenceIndexToDisplayedPeriod(
+    diffSeries.findIndex((v) => Math.abs(v) > 0.01)
+  );
 
   const baselineA = marginHistoryA.length > 0 ? marginHistoryA[0] : 0;
   const finalA =
@@ -1656,7 +1664,7 @@ export default function PilotFastighetPage() {
   }
 
   // Add cascade events to the decision flow (delayed after decision)
-  const decisionTimeForCascade = 1; // scenario/decision at Q1
+  const decisionTimeForCascade = 1; // Curated scenario/decision presentation at M1.
   const allCascadeEvents = [...cascadeEventsA, ...cascadeEventsB];
   if (allCascadeEvents.length > 0) {
     const seenPairs = new Set<string>();
@@ -1676,8 +1684,8 @@ export default function PilotFastighetPage() {
   }
 
   const sortedDecisionFlowEvents = [...decisionFlowEvents].sort((a, b) => {
-    const ta = parseInt(a.time.replace(/^Q/, ""), 10) || 0;
-    const tb = parseInt(b.time.replace(/^Q/, ""), 10) || 0;
+    const ta = parseInt(a.time.replace(/^M/, ""), 10) || 0;
+    const tb = parseInt(b.time.replace(/^M/, ""), 10) || 0;
     return ta - tb;
   });
 
@@ -2689,10 +2697,10 @@ export default function PilotFastighetPage() {
                 }}
               >
                 {executiveDemoMode
-                  ? `${getExecutiveDemoMarginStripLabels(uiLanguage).period}: M1 → M${(stateA.step ?? 0) + 1}`
+                  ? `${getExecutiveDemoMarginStripLabels(uiLanguage).period}: M1 → ${formatDisplayedPeriod(displayedSimulationEndPeriod)}`
                   : uiLanguage === "sv"
-                    ? `Simulerad period: M1 → M${(stateA.step ?? 0) + 1}`
-                    : `Simulated period: M1 → M${(stateA.step ?? 0) + 1}`}
+                    ? `Simulerad period: M1 → ${formatDisplayedPeriod(displayedSimulationEndPeriod)}`
+                    : `Simulated period: M1 → ${formatDisplayedPeriod(displayedSimulationEndPeriod)}`}
               </div>
             </div>
           </div>

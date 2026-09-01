@@ -38,9 +38,9 @@ export const UI_TEXT = {
       noTipping: "Ingen tipping inom horisonten",
       tippingPrefix: "Tipping",
       tippingRiskPeriod: "Tipping risk period",
-      tippingRiskPeriodAround: (q: number) => `Riskperiod runt Q${q}`,
+      tippingRiskPeriodAround: (period: number) => `Riskperiod runt M${period}`,
       tippingRiskWindow: (start: number, end: number) =>
-        `Riskperiod: Q${start}–Q${end}`,
+        `Riskperiod: M${start}–M${end}`,
       narrative: {
         withTipping: (delta: string, status: string, tippingQ: string) =>
           `Om Alternative implementeras innebär det en genomsnittlig marginalförändring på ${delta} p.p. jämfört med Current. Systemets strukturella status klassificeras som "${status}". Tipping inträffar vid ${tippingQ}, vilket indikerar en förhöjd riskprofil inom horisonten.`,
@@ -118,9 +118,9 @@ export const UI_TEXT = {
       noTipping: "No tipping within horizon",
       tippingPrefix: "Tipping",
       tippingRiskPeriod: "Tipping risk period",
-      tippingRiskPeriodAround: (q: number) => `Risk period around Q${q}`,
+      tippingRiskPeriodAround: (period: number) => `Risk period around M${period}`,
       tippingRiskWindow: (start: number, end: number) =>
-        `Risk period: Q${start}–Q${end}`,
+        `Risk period: M${start}–M${end}`,
       narrative: {
         withTipping: (delta: string, status: string, tippingQ: string) =>
           `If Alternative is implemented, the average margin changes by ${delta} p.p. compared to Current. The system's structural status is classified as "${status}". Tipping occurs at ${tippingQ}, indicating elevated risk within the horizon.`,

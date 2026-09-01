@@ -79,8 +79,6 @@ export interface MarginGraphProps {
   caseType?: "transport" | "real-estate" | null;
 }
 
-type CascadeMarker = { index: number; type: string };
-
 function MarginGraph({
   marginHistoryA,
   marginHistoryB,
@@ -661,19 +659,6 @@ function MarginGraph({
       ? "Efterfrågedivergens mellan scenarier"
       : "Demand divergence between scenarios";
 
-  const decisionEvents =
-    Math.max(marginHistoryA.length, marginHistoryB.length) > 0
-      ? [
-          { quarter: 1 },
-          {
-            quarter: tippingMarginIndexB != null ? tippingMarginIndexB + 1 : 0,
-          },
-        ].filter(
-          (e) =>
-            e.quarter > 0 &&
-            e.quarter <= Math.max(marginHistoryA.length, marginHistoryB.length)
-        )
-      : [];
   const mapDomainEventsToMarkers = (events: DomainEvent[]) =>
     events
     .map((event) => {
@@ -736,40 +721,10 @@ function MarginGraph({
     return null;
   })();
 
-  const mapCascadeToMarkers = (
-    events: CascadeEvent[],
-    seriesLength: number,
-    horizon?: number
-  ): CascadeMarker[] => {
-    if (!events.length || seriesLength <= 0) return [];
-    return events
-      .map((e, i) => {
-        const safeStep =
-          Number.isFinite(e.step) && e.step >= 0 ? e.step : i + 1;
-        const scaledIndex =
-          horizon != null && Number.isFinite(horizon) && horizon > 0
-            ? Math.floor((safeStep / horizon) * seriesLength)
-            : safeStep;
-        const index = Math.max(0, Math.min(seriesLength - 1, scaledIndex));
-        return { index, type: `${e.sourceRisk}→${e.targetRisk}` };
-      })
-      .filter((m) => Number.isFinite(m.index));
-  };
-
-  // Prepared (not rendered yet): cascade events aligned to timeline indices
-  const cascadeMarkersA = mapCascadeToMarkers(
-    cascadeEventsA,
-    marginHistoryA.length,
-    simulationHorizon
-  );
-  const cascadeMarkersB = mapCascadeToMarkers(
-    cascadeEventsB,
-    displayMarginB.length,
-    simulationHorizon
-  );
-  // Keep marker mapping as-is, but compute the cascade start indicator from the same quarter logic
-  // used by the decision flow event list in `app/pilot-fastighet/page.tsx`.
-  const decisionTimeForCascade = 1; // scenario/decision at Q1
+  // CascadeEvent.step is propagation depth, not execution time. The curated
+  // cascade-start indicator below is presentation framing and does not position
+  // individual events from that field.
+  const decisionTimeForCascade = 1; // Curated scenario/decision presentation at M1.
   const cascadeStartIndexA = (() => {
     const seriesLengthA = marginHistoryA.length;
     if (seriesLengthA <= 0 || !cascadeEventsA || cascadeEventsA.length === 0) return null;
@@ -778,7 +733,7 @@ function MarginGraph({
         ...cascadeEventsA.map((e) => decisionTimeForCascade + (e.delaySteps ?? 1))
       ) || null;
     if (earliestQuarter == null) return null;
-    const idx = earliestQuarter - 1; // Qn -> index n-1
+    const idx = earliestQuarter - 1;
     return Math.max(0, Math.min(seriesLengthA - 1, idx));
   })();
 
@@ -790,19 +745,11 @@ function MarginGraph({
         ...cascadeEventsB.map((e) => decisionTimeForCascade + (e.delaySteps ?? 1))
       ) || null;
     if (earliestQuarter == null) return null;
-    const idx = earliestQuarter - 1; // Qn -> index n-1
+    const idx = earliestQuarter - 1;
     return Math.max(0, Math.min(seriesLengthB - 1, idx));
   })();
 
   const cascadeStartsLabel = uiLanguage === "sv" ? "Kaskad" : "Cascade";
-  // System event markers: unifies cascade markers rendering.
-  // Type controls color mapping only:
-  // decision -> green, reaction -> red
-  const systemEvents = [
-    ...cascadeMarkersA.slice(0, 1).map((m) => ({ index: m.index, type: "reaction" as const, label: m.type })),
-    ...cascadeMarkersB.slice(0, 1).map((m) => ({ index: m.index, type: "decision" as const, label: m.type })),
-  ];
-
   return (
     <div
       style={{
@@ -1623,64 +1570,6 @@ function MarginGraph({
           )
         )}
 
-      {/* Cascade markers (single render loop) */}
-      {systemEvents.length > 0 &&
-        (() => {
-          const occurrenceByIndexA = new Map<number, number>();
-          const occurrenceByIndexB = new Map<number, number>();
-
-          return systemEvents.map((e, i) => {
-            const fill = e.type === "decision" ? "#22c55e" : "#ff4d4f";
-            // Scenario A circle
-            const occurrenceA =
-              e.type === "reaction" ? occurrenceByIndexA.get(e.index) ?? 0 : 0; // 0,1,2...
-            if (e.type === "reaction") {
-              occurrenceByIndexA.set(e.index, occurrenceA + 1);
-            }
-            const vRawA = normalizedA[e.index];
-            const cyA = Number.isFinite(vRawA)
-              ? (() => {
-                  const vClampedA = Math.max(yMin, Math.min(yMax, vRawA));
-                  const baseOffsetPxA = 0;
-                  const stackOffsetPxA = 6;
-                  return scaleY(vClampedA) - baseOffsetPxA - stackOffsetPxA * occurrenceA;
-                })()
-              : null;
-
-            // Scenario B circle
-            const occurrenceB =
-              e.type === "decision" ? occurrenceByIndexB.get(e.index) ?? 0 : 0; // 0,1,2...
-            if (e.type === "decision") {
-              occurrenceByIndexB.set(e.index, occurrenceB + 1);
-            }
-            const vRawB = normalizedB[e.index];
-            const cyB = Number.isFinite(vRawB)
-              ? (() => {
-                  const vClampedB = Math.max(yMin, Math.min(yMax, vRawB));
-                  const baseOffsetPxB = 4; // small separation vs scenario A
-                  const stackOffsetPxB = 6;
-                  return scaleY(vClampedB) - baseOffsetPxB - stackOffsetPxB * occurrenceB;
-                })()
-              : null;
-
-            if (cyA == null && cyB == null) return null;
-
-            return (
-              <g key={i}>
-                {cyA != null && (
-                  <g opacity={0.95} stroke="white" strokeWidth={1.5}>
-                    {renderMarkerShape(scaleX(e.index), cyA, fill, "constraint")}
-                  </g>
-                )}
-                {cyB != null && (
-                  <g opacity={0.95} stroke="white" strokeWidth={1.5}>
-                    {renderMarkerShape(scaleX(e.index), cyB, fill, "constraint")}
-                  </g>
-                )}
-              </g>
-            );
-          });
-        })()}
       {driverActivationLineMarkers.map((event, index) => {
           console.log("driverEvent object:", event);
           return (

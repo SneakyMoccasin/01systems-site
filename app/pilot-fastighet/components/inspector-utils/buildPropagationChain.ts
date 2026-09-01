@@ -48,7 +48,7 @@ export function buildPropagationChain(
       nodes.push({
         label: `${sourceLabel} ↑ → ${targetLabel} ↑`,
         type: "interaction",
-        timing: event.step ?? null,
+        timing: null,
       });
     }
 
@@ -65,7 +65,7 @@ export function buildPropagationChain(
             ? `${constraintLabel} aktiveras`
             : `${constraintLabel} activated`,
         type: "constraint",
-        timing: constraintBreakQuarter,
+        timing: null,
       });
     }
 

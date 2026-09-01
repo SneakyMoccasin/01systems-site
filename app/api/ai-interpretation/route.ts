@@ -354,7 +354,7 @@ ${templates.marginTrend}: ${input.marginTrendText}
 ${templates.structuralDivergence}: ${input.structuralDivergenceText}
 ${templates.cascadeDelay}: ${input.cascadeDelaySteps} timestep(s) after decision
 ${templates.decisionFlow}: ${input.decisionFlowText || templates.noFlow}
-${templates.tipping}: ${input.tippingQuarter ?? templates.noTipping}
+${templates.tipping}: ${input.tippingQuarter != null ? `M${input.tippingQuarter}` : templates.noTipping}
 ${templates.currentMargin}: ${input.currentMargin} | ${templates.alternativeMargin}: ${input.alternativeMargin} | ${templates.difference}: ${input.marginImpact}
 
 ${templates.structureHeader}
@@ -558,7 +558,7 @@ export async function POST(req: Request) {
       .map((e: any) => {
         const translatedType =
           EVENT_TRANSLATIONS[e.type as keyof typeof EVENT_TRANSLATIONS]?.[uiLanguage] ?? e.type;
-        return `Q${e.quarter}: ${translatedType}`;
+        return `M${e.quarter}: ${translatedType}`;
       })
       .join("\n");
     const translatedCascadeText =

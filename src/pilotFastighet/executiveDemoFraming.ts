@@ -142,12 +142,12 @@ export function getExecutiveDemoSummaryCardCopy(lang: ExecutiveDemoLang) {
       lang === "sv" ? "Strukturell tolkning" : "Structural read",
     tippingRiskPeriod:
       lang === "sv" ? "Period med koncentrerat tryck" : "Period of concentrated pressure",
-    tippingRiskPeriodAround: (q: number) =>
-      lang === "sv" ? `Tryckperiod runt Q${q}` : `Pressure period around Q${q}`,
+    tippingRiskPeriodAround: (period: number) =>
+      lang === "sv" ? `Tryckperiod runt M${period}` : `Pressure period around M${period}`,
     tippingRiskWindow: (start: number, end: number) =>
       lang === "sv"
-        ? `Tryckperiod: Q${start}–Q${end}`
-        : `Pressure period: Q${start}–Q${end}`,
+        ? `Tryckperiod: M${start}–M${end}`
+        : `Pressure period: M${start}–M${end}`,
     tippingRiskLevel: {
       low: lang === "sv" ? "Begränsad spridning" : "Contained",
       moderate: lang === "sv" ? "Börjar koncentreras" : "Concentrating",
