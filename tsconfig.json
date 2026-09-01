@@ -47,6 +47,7 @@
     "pulse-demo",
     "_archive_disabled",
     "scripts",
+    "src/worldEngine/**",
     ".next/cache"
   ]
 }
