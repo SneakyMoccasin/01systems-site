@@ -15,7 +15,7 @@ import {
 import { runCascadeAnalysis } from "./runCascadeAnalysis";
 
 const VISIBLE_STEPS = 36;
-const TOTAL_TRANSITIONS = 37;
+const TOTAL_TRANSITIONS = 36;
 const DEMAND_LEVEL = { LOW: 0, MODERATE: 1, HIGH: 2, SEVERE: 3 } as const;
 
 type Fixture = {
@@ -125,7 +125,7 @@ function assertEveryVisiblePrefix(fixture: Fixture): void {
     const expectedB = legacyB.slice(0, prefix);
     const expectedBaseline = legacyBaseline.slice(0, prefix);
 
-    assert.equal(snapshot.isCompleted, false);
+    assert.equal(snapshot.isCompleted, prefix === VISIBLE_STEPS);
     assert.equal(snapshot.visibleStepCount, prefix);
     assert.deepEqual(snapshot.marginHistoryA, expectedA.map((state) => state.margin));
     assert.deepEqual(snapshot.marginHistoryB, expectedB.map((state) => state.margin));
@@ -165,33 +165,80 @@ test("executive-demo playback matches every legacy visible prefix exactly", () =
   assertEveryVisiblePrefix(executiveFixture);
 });
 
-test("completion preserves 36 visible states and exposes legacy state 37 separately", () => {
+test("state 36 is the sole terminal state and completes the visible playback", () => {
   const { playback, legacyA, legacyB } = buildPlayback(executiveFixture);
-  const visible = getPreconfiguredPlaybackSnapshot(playback, VISIBLE_STEPS);
-  const completed = getPreconfiguredPlaybackSnapshot(playback, TOTAL_TRANSITIONS);
+  const beforeCompletion = getPreconfiguredPlaybackSnapshot(
+    playback,
+    VISIBLE_STEPS - 1
+  );
+  const completed = getPreconfiguredPlaybackSnapshot(playback, VISIBLE_STEPS);
 
-  assert.equal(visible.isCompleted, false);
-  assert.equal(visible.currentStateA?.step, 36);
+  assert.equal(beforeCompletion.isCompleted, false);
+  assert.equal(beforeCompletion.currentStateA?.step, 35);
   assert.equal(completed.isCompleted, true);
-  assert.equal(completed.isCompatibilityPhase, true);
   assert.equal(completed.visibleStepCount, 36);
   assert.equal(completed.marginHistoryA.length, 36);
   assert.equal(completed.marginHistoryB.length, 36);
-  assert.deepEqual(completed.marginHistoryA, visible.marginHistoryA);
-  assert.deepEqual(completed.marginHistoryB, visible.marginHistoryB);
-  assert.deepEqual(completed.currentStateA, legacyA[36]);
-  assert.deepEqual(completed.currentStateB, legacyB[36]);
+  assert.deepEqual(completed.currentStateA, legacyA[35]);
+  assert.deepEqual(completed.currentStateB, legacyB[35]);
   assert.deepEqual(completed.riskStateA, legacyA[35].riskState);
   assert.deepEqual(completed.riskStateB, legacyB[35].riskState);
-  assert.deepEqual(playback.visibleTerminalStateA, legacyA[35]);
-  assert.deepEqual(playback.visibleTerminalStateB, legacyB[35]);
-  assert.deepEqual(playback.compatibilityTerminalStateA, legacyA[36]);
-  assert.deepEqual(playback.compatibilityTerminalStateB, legacyB[36]);
+  assert.deepEqual(playback.terminalStateA, legacyA[35]);
+  assert.deepEqual(playback.terminalStateB, legacyB[35]);
+  assert.throws(
+    () => getPreconfiguredPlaybackSnapshot(playback, VISIBLE_STEPS + 1),
+    /outside the supported range/
+  );
+
+  const extraTransition = runCascadeAnalysis({
+    executionMode: "preconfigured",
+    horizon: VISIBLE_STEPS + 1,
+    scenarioA: {
+      initialRiskState: executiveFixture.scenarioA,
+      initialDriverScores: executiveFixture.driverScoresA,
+    },
+    scenarioB: {
+      initialRiskState: executiveFixture.scenarioB,
+      initialDriverScores: executiveFixture.driverScoresB,
+    },
+    baseline: { initialRiskState: defaultRiskState },
+  });
+  assert.throws(
+    () => createPreconfiguredPlayback(extraTransition, VISIBLE_STEPS),
+    /exactly 36 post-transition states/
+  );
 });
 
-test("stopping preserves early, middle, and late revealed prefixes", () => {
+test("an arbitrary configured horizon is authoritative", () => {
+  const horizon = 4;
+  const analysis = runCascadeAnalysis({
+    executionMode: "preconfigured",
+    horizon,
+    scenarioA: {
+      initialRiskState: manualFixture.scenarioA,
+      initialDriverScores: manualFixture.driverScoresA,
+    },
+    scenarioB: {
+      initialRiskState: manualFixture.scenarioB,
+      initialDriverScores: manualFixture.driverScoresB,
+    },
+    baseline: { initialRiskState: defaultRiskState },
+  });
+  const playback = createPreconfiguredPlayback(analysis, horizon);
+
+  assert.equal(analysis.scenarioA.trajectory.length, horizon);
+  assert.equal(getPreconfiguredPlaybackSnapshot(playback, horizon - 1).isCompleted, false);
+  const completed = getPreconfiguredPlaybackSnapshot(playback, horizon);
+  assert.equal(completed.isCompleted, true);
+  assert.equal(completed.visibleStepCount, horizon);
+  assert.equal(completed.currentStateA?.step, horizon);
+  assert.deepEqual(completed.currentStateA, analysis.scenarioA.terminalState);
+  assert.throws(() => getPreconfiguredPlaybackSnapshot(playback, horizon + 1));
+});
+
+test("stopping preserves early, middle, and late preterminal prefixes", () => {
   const { playback } = buildPlayback(manualFixture);
-  for (const prefix of [2, 18, 36]) {
+  for (const prefix of [2, 18, 35]) {
     const stopped = getPreconfiguredPlaybackSnapshot(playback, prefix);
     const frozen = structuredClone(stopped);
     getPreconfiguredPlaybackSnapshot(playback, prefix + 1);
@@ -219,15 +266,52 @@ test("executive demo facade output and completion state equal legacy execution",
   assert.deepEqual(analysis.scenarioB.trajectory, legacyB);
   assert.deepEqual(analysis.baseline.trajectory, legacyBaseline);
   const completed = getPreconfiguredPlaybackSnapshot(playback, TOTAL_TRANSITIONS);
-  assert.deepEqual(completed.currentStateA, legacyA[36]);
-  assert.deepEqual(completed.currentStateB, legacyB[36]);
+  assert.equal(analysis.scenarioA.trajectory.length, 36);
+  assert.equal(analysis.scenarioB.trajectory.length, 36);
+  assert.equal(analysis.baseline.trajectory.length, 36);
+  assert.equal(analysis.scenarioA.terminalState.margin, -3);
+  assert.equal(analysis.scenarioB.terminalState.margin, 3);
+  assert.equal(analysis.baseline.terminalState.margin, 1);
+  assert.equal(analysis.comparison.terminalMarginDifference, 6);
+  assert.equal(analysis.scenarioA.cascadeHistory.length, 7);
+  assert.equal(analysis.scenarioB.cascadeHistory.length, 0);
+  assert.equal(
+    analysis.scenarioA.terminalState.registry.RefinancingConstraint.lifecycle,
+    "ACTIVE"
+  );
+  assert.equal(
+    analysis.scenarioA.terminalState.registry.RefinancingConstraint.activatedAtStep,
+    1
+  );
+  assert.equal(
+    analysis.scenarioB.terminalState.registry.RefinancingConstraint.lifecycle,
+    "INACTIVE"
+  );
+  assert.deepEqual(completed.currentStateA, legacyA[35]);
+  assert.deepEqual(completed.currentStateB, legacyB[35]);
+  assert.deepEqual(completed.riskStateA, legacyA[35].riskState);
+  assert.deepEqual(completed.riskStateB, legacyB[35].riskState);
+  assert.deepEqual(completed.driverScoresA, legacyA[35].driverScores);
+  assert.deepEqual(completed.driverScoresB, legacyB[35].driverScores);
+  assert.equal(completed.tippingMarginIndexA, 1);
+  assert.equal(completed.tippingMarginIndexB, null);
+  assert.equal(completed.steadyStateStep, 36);
 });
 
 test("React boundary uses one preconfigured facade call and no scheduled or engine stepping path", () => {
   const pageSource = readFileSync("app/pilot-fastighet/page.tsx", "utf8");
   assert.equal((pageSource.match(/runCascadeAnalysis\s*\(/g) ?? []).length, 1);
   assert.match(pageSource, /executionMode:\s*["']preconfigured["']/);
+  assert.match(pageSource, /horizon:\s*simulationHorizon\s*,/);
+  assert.doesNotMatch(pageSource, /horizon:\s*simulationHorizon\s*\+\s*1/);
+  assert.doesNotMatch(pageSource, /Compatibility|compatibility|state 37|state-37/);
   assert.doesNotMatch(pageSource, /new\s+RealEstateEngine\s*\(/);
   assert.doesNotMatch(pageSource, /\.stepForward\s*\(/);
   assert.doesNotMatch(pageSource, /ScheduledAction|scenarioAActions|scenarioBActions/);
+  assert.match(pageSource, /currentStateARef\.current\s*=\s*snapshot\.currentStateA/);
+  assert.match(pageSource, /currentStateBRef\.current\s*=\s*snapshot\.currentStateB/);
+  assert.match(pageSource, /engineState:\s*JSON\.parse\(JSON\.stringify\(stateA\)\)/);
+  assert.match(pageSource, /engineState:\s*JSON\.parse\(JSON\.stringify\(stateB\)\)/);
+  assert.match(pageSource, /constraintRegistryA=\{stateA\.registry\}/);
+  assert.match(pageSource, /constraintRegistryB=\{stateB\.registry\}/);
 });

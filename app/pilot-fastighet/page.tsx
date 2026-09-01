@@ -695,7 +695,7 @@ export default function PilotFastighetPage() {
 
     const analysis = runCascadeAnalysis({
       executionMode: "preconfigured",
-      horizon: simulationHorizon + 1,
+      horizon: simulationHorizon,
       scenarioA: {
         initialRiskState: structuredClone(effectiveRiskStateA),
         initialDriverScores: structuredClone(effectiveDriverScoresA),
@@ -750,16 +750,11 @@ export default function PilotFastighetPage() {
           currentStateARef.current = snapshot.currentStateA;
           currentStateBRef.current = snapshot.currentStateB;
 
-          if (snapshot.isCompatibilityPhase) {
+          if (snapshot.isCompleted) {
             if (intervalRef.current) {
               window.clearInterval(intervalRef.current);
               intervalRef.current = null;
             }
-            unstable_batchedUpdates(() => {
-              setHasSimulationCompleted(true);
-              setIsRunning(false);
-            });
-            return;
           }
 
           unstable_batchedUpdates(() => {
@@ -789,6 +784,10 @@ export default function PilotFastighetPage() {
             setDemandHistoryA([...snapshot.demandHistoryA]);
             setDemandHistoryB([...snapshot.demandHistoryB]);
             setMarginHistoryBaseline([...snapshot.marginHistoryBaseline]);
+            if (snapshot.isCompleted) {
+              setHasSimulationCompleted(true);
+              setIsRunning(false);
+            }
           });
         });
       } catch (err) {

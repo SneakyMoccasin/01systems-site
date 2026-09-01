@@ -19,16 +19,13 @@ export type PreconfiguredPlayback = {
   readonly analysis: AnalyticalResults;
   readonly visibleSteps: number;
   readonly completionTick: number;
-  readonly visibleTerminalStateA: EngineState;
-  readonly visibleTerminalStateB: EngineState;
-  readonly compatibilityTerminalStateA: EngineState;
-  readonly compatibilityTerminalStateB: EngineState;
+  readonly terminalStateA: EngineState;
+  readonly terminalStateB: EngineState;
 };
 
 export type PreconfiguredPlaybackSnapshot = {
   readonly tick: number;
   readonly visibleStepCount: number;
-  readonly isCompatibilityPhase: boolean;
   readonly isCompleted: boolean;
   readonly currentStateA: EngineState | null;
   readonly currentStateB: EngineState | null;
@@ -68,7 +65,7 @@ export function createPreconfiguredPlayback(
     throw new RangeError("Visible playback steps must be a positive integer.");
   }
 
-  const requiredSteps = visibleSteps + 1;
+  const requiredSteps = visibleSteps;
   assertTrajectoryLength("Scenario A trajectory", analysis.scenarioA.trajectory, requiredSteps);
   assertTrajectoryLength("Scenario B trajectory", analysis.scenarioB.trajectory, requiredSteps);
   assertTrajectoryLength("Baseline trajectory", analysis.baseline.trajectory, requiredSteps);
@@ -77,11 +74,8 @@ export function createPreconfiguredPlayback(
     analysis,
     visibleSteps,
     completionTick: requiredSteps,
-    visibleTerminalStateA: analysis.scenarioA.trajectory[visibleSteps - 1],
-    visibleTerminalStateB: analysis.scenarioB.trajectory[visibleSteps - 1],
-    // Temporary legacy compatibility: state 37 completes the run but is not graphed.
-    compatibilityTerminalStateA: analysis.scenarioA.trajectory[visibleSteps],
-    compatibilityTerminalStateB: analysis.scenarioB.trajectory[visibleSteps],
+    terminalStateA: analysis.scenarioA.terminalState,
+    terminalStateB: analysis.scenarioB.terminalState,
   };
 }
 
@@ -150,21 +144,16 @@ export function getPreconfiguredPlaybackSnapshot(
     0,
     visibleStepCount
   );
-  const isCompatibilityPhase = tick === playback.completionTick;
+  const isCompleted = tick === playback.completionTick;
   const visibleCurrentA = visibleA[visibleA.length - 1] ?? null;
   const visibleCurrentB = visibleB[visibleB.length - 1] ?? null;
 
   return {
     tick,
     visibleStepCount,
-    isCompatibilityPhase,
-    isCompleted: isCompatibilityPhase,
-    currentStateA: isCompatibilityPhase
-      ? playback.compatibilityTerminalStateA
-      : visibleCurrentA,
-    currentStateB: isCompatibilityPhase
-      ? playback.compatibilityTerminalStateB
-      : visibleCurrentB,
+    isCompleted,
+    currentStateA: visibleCurrentA,
+    currentStateB: visibleCurrentB,
     marginHistoryA: visibleA.map((state) => state.margin),
     marginHistoryB: visibleB.map((state) => state.margin),
     marginHistoryBaseline: visibleBaseline.map((state) => state.margin),
