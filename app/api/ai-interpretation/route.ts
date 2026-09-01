@@ -14,6 +14,7 @@ import {
   profileMeasureAsync,
   profileValue,
 } from "@/src/lib/runtimeProfile";
+import { buildScheduledInterpretationContext } from "@/src/pilotFastighet/analysis/scheduledInterpretationContext";
 
 type InterpretationLanguage = "sv" | "en";
 
@@ -403,6 +404,7 @@ export async function POST(req: Request) {
       dominantScenarioDifferenceChannel,
       question: executiveQuestion,
       executiveDemoMode: executiveDemoModeRaw,
+      executionContext,
     } = body;
     const uiLanguage: InterpretationLanguage = language === "sv" ? "sv" : "en";
     const executiveDemoMode =
@@ -757,7 +759,10 @@ ${qaLangInstruction}${executiveDemoMode ? getExecutiveDemoInterpretationAddon(ui
       }) +
       "\n\n" +
       langInstruction +
-      (executiveDemoMode ? getExecutiveDemoInterpretationAddon(uiLanguage) : "");
+      (executiveDemoMode ? getExecutiveDemoInterpretationAddon(uiLanguage) : "") +
+      (executionContext?.mode === "actions-over-time"
+        ? buildScheduledInterpretationContext(executionContext)
+        : "");
 
     const ollamaRequestBody = profileMeasure(
       "ai-interpretation.route.summary.serialize.ms",

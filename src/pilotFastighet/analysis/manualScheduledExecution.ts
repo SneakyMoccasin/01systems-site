@@ -7,9 +7,57 @@ import {
   isActionSupportedForScheduledExecution,
   type ReactExecutionMode,
   type ScenarioSchedules,
+  type ScenarioExecutionProvenance,
   type ScheduleScenarioId,
   type ScheduleValidationIssue,
 } from "./reactScheduledAnalysisBoundary";
+
+export type ScheduledFairComparisonFacts = Readonly<{
+  identicalInitialStates: boolean;
+  identicalActionSets: boolean;
+  timingOrOrderOnlyDifference: boolean;
+}>;
+
+export function getRevealedExecutionProvenance(
+  provenance: ScenarioExecutionProvenance,
+  revealedStep: number
+): ScenarioExecutionProvenance {
+  const visible = (entries: ScenarioExecutionProvenance["A"]) =>
+    entries
+      .filter((entry) => entry.actualExecutionStep <= revealedStep)
+      .map((entry) => structuredClone(entry))
+      .sort(
+        (left, right) =>
+          left.actualExecutionStep - right.actualExecutionStep ||
+          left.actionId.localeCompare(right.actionId)
+      );
+  return { A: visible(provenance.A), B: visible(provenance.B) };
+}
+
+export function getScheduledFairComparisonFacts(input: Readonly<{
+  initialStateA: RiskState;
+  initialStateB: RiskState;
+  schedules: ScenarioSchedules;
+}>): ScheduledFairComparisonFacts {
+  const actionSet = (scenario: "A" | "B") =>
+    [...new Set(input.schedules[scenario].map((entry) => entry.actionId))].sort();
+  const identicalInitialStates =
+    JSON.stringify(input.initialStateA) === JSON.stringify(input.initialStateB);
+  const identicalActionSets =
+    JSON.stringify(actionSet("A")) === JSON.stringify(actionSet("B"));
+  const scheduleSignature = (scenario: "A" | "B") =>
+    getOrderedScenarioSchedule(input.schedules, scenario).map(
+      (entry) => `${entry.actionId}:${entry.executionStep}`
+    );
+  return {
+    identicalInitialStates,
+    identicalActionSets,
+    timingOrOrderOnlyDifference:
+      identicalInitialStates &&
+      identicalActionSets &&
+      JSON.stringify(scheduleSignature("A")) !== JSON.stringify(scheduleSignature("B")),
+  };
+}
 
 export const DEFAULT_MANUAL_EXECUTION_MODE: ReactExecutionMode =
   "configured-start";

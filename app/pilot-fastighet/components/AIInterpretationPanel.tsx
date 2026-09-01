@@ -9,6 +9,11 @@ import {
   profileValue,
 } from "@/src/lib/runtimeProfile";
 import { logPulseCaughtRejection } from "@/src/pilotFastighet/pulseTraceUnhandledRejection";
+import type {
+  ScenarioExecutionProvenance,
+  ScenarioSchedules,
+} from "@/src/pilotFastighet/analysis/reactScheduledAnalysisBoundary";
+import type { ScheduledFairComparisonFacts } from "@/src/pilotFastighet/analysis/manualScheduledExecution";
 
 type Language = "sv" | "en";
 
@@ -140,6 +145,16 @@ type Props = {
   dominantScenarioDifferenceChannel?: string | null;
   /** Below-graph horizontal synthesis layout (executive demo real-estate only). */
   executiveInterpretationStrip?: boolean;
+  executionContext?:
+    | { mode: "configured-start" }
+    | {
+        mode: "actions-over-time";
+        plannedSchedules: ScenarioSchedules;
+        executedProvenance: ScenarioExecutionProvenance;
+        horizon: number;
+        naturalCompletion: boolean;
+        fairComparisonFacts: ScheduledFairComparisonFacts;
+      };
 };
 
 const AIInterpretationPanel: React.FC<Props> = ({
@@ -167,6 +182,7 @@ const AIInterpretationPanel: React.FC<Props> = ({
   propagationRootChanged,
   dominantScenarioDifferenceChannel = null,
   executiveInterpretationStrip = false,
+  executionContext = { mode: "configured-start" },
 }) => {
   profileCount("AIInterpretationPanel.render");
 
@@ -216,6 +232,7 @@ const AIInterpretationPanel: React.FC<Props> = ({
       propagationRootChanged,
       dominantScenarioDifferenceChannel,
       executiveDemoMode,
+      ...(executionContext.mode === "actions-over-time" ? { executionContext } : {}),
     };
     profileCount("AIInterpretationPanel.fetch.calls");
 
@@ -295,6 +312,7 @@ const AIInterpretationPanel: React.FC<Props> = ({
     cascadeEventsB?.length ?? 0,
     executiveDemoMode,
     primaryDriver ?? null,
+    JSON.stringify(executionContext),
   ]);
 
   useEffect(() => {

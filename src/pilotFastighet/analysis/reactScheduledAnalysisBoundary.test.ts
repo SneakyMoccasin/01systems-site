@@ -319,7 +319,8 @@ test("manual scheduled integration preserves the canonical boundary and LLM safe
   assert.match(pageSource, /executionMode:\s*["']configured-start["']/);
   assert.match(pageSource, /executionMode === ["']actions-over-time["']/);
   assert.match(pageSource, /effectiveExecutionMode === ["']actions-over-time["']/);
-  assert.match(pageSource, /Interpretation of action timing will be added in the next step\./);
+  assert.match(pageSource, /naturalCompletion:\s*naturallyCompletedRun/);
+  assert.match(pageSource, /executedProvenance:\s*revealedScheduledProvenance/);
   assert.match(actionPanelSource, /isActionSupportedForScheduledExecution/);
   assert.match(actionPanelSource, /Execution period/);
   assert.doesNotMatch(actionPanelSource, /driverDeltas|month|quarter|\bQ\d/);

@@ -29,6 +29,8 @@ import {
   formatManualScheduleIssue,
   getManualScheduleIssues,
   getOrderedScenarioSchedule,
+  getRevealedExecutionProvenance,
+  getScheduledFairComparisonFacts,
   prepareManualScheduledRunSource,
   resolveManualExecutionMode,
   toggleManualScheduledAction,
@@ -415,6 +417,10 @@ export default function PilotFastighetPage() {
   const [scenarioSchedules, setScenarioSchedules] = useState<ScenarioSchedules>(
     createEmptyScenarioSchedules
   );
+  const [scheduledProvenance, setScheduledProvenance] =
+    useState<ScenarioExecutionProvenance>({ A: [], B: [] });
+  const [revealedPlaybackStep, setRevealedPlaybackStep] = useState(0);
+  const [naturallyCompletedRun, setNaturallyCompletedRun] = useState(false);
 
   const editableScenario: "A" | "B" =
     activeScenario === "A" || activeScenario === "B"
@@ -428,6 +434,15 @@ export default function PilotFastighetPage() {
     effectiveExecutionMode === "actions-over-time"
       ? getManualScheduleIssues(scenarioSchedules, simulationHorizon)
       : [];
+  const revealedScheduledProvenance = getRevealedExecutionProvenance(
+    scheduledProvenance,
+    revealedPlaybackStep
+  );
+  const scheduledFairComparisonFacts = getScheduledFairComparisonFacts({
+    initialStateA: baseRiskStateA,
+    initialStateB: baseRiskStateB,
+    schedules: scenarioSchedules,
+  });
 
   const playbackRef = useRef<PreconfiguredPlayback | null>(null);
   const currentStateARef = useRef<EngineState | null>(null);
@@ -647,6 +662,9 @@ export default function PilotFastighetPage() {
   function resetRunState() {
     cancelPlayback();
     scheduledProvenanceRef.current = { A: [], B: [] };
+    setScheduledProvenance({ A: [], B: [] });
+    setRevealedPlaybackStep(0);
+    setNaturallyCompletedRun(false);
     playbackRef.current = null;
     currentStateARef.current = null;
     currentStateBRef.current = null;
@@ -691,6 +709,7 @@ export default function PilotFastighetPage() {
           });
     const { analysis } = boundaryResult;
     scheduledProvenanceRef.current = boundaryResult.provenance;
+    setScheduledProvenance(boundaryResult.provenance);
     const playback = createPreconfiguredPlayback(analysis, simulationHorizon);
     playbackRef.current = playback;
     currentStateARef.current = {
@@ -735,6 +754,7 @@ export default function PilotFastighetPage() {
           }
 
           playbackTick += 1;
+          setRevealedPlaybackStep(playbackTick);
           const snapshot = getPreconfiguredPlaybackSnapshot(playback, playbackTick);
           currentStateARef.current = snapshot.currentStateA;
           currentStateBRef.current = snapshot.currentStateB;
@@ -775,6 +795,7 @@ export default function PilotFastighetPage() {
             setMarginHistoryBaseline([...snapshot.marginHistoryBaseline]);
             if (snapshot.isCompleted) {
               setHasSimulationCompleted(true);
+              setNaturallyCompletedRun(true);
               setIsRunning(false);
             }
           });
@@ -2607,6 +2628,9 @@ export default function PilotFastighetPage() {
                   borderRadius: "8px",
                 }}
               >
+                <div style={{ color: "#e5e7eb", fontSize: 13, fontWeight: 700, marginBottom: 8 }}>
+                  {uiLanguage === "sv" ? "Planerade åtgärder" : "Planned actions"}
+                </div>
                 {(["A", "B"] as const).map((scenario) => {
                   const entries = getOrderedScenarioSchedule(scenarioSchedules, scenario);
                   return (
@@ -2645,6 +2669,37 @@ export default function PilotFastighetPage() {
                     )}
                   </div>
                 ))}
+                <div style={{ color: "#e5e7eb", fontSize: 13, fontWeight: 700, marginTop: 14, marginBottom: 8 }}>
+                  {uiLanguage === "sv" ? "Genomförda åtgärder" : "Executed actions"}
+                </div>
+                {(["A", "B"] as const).map((scenario) => {
+                  const entries = revealedScheduledProvenance[scenario];
+                  return (
+                    <div key={`executed-${scenario}`} style={{ marginBottom: scenario === "A" ? 10 : 0 }}>
+                      <div style={{ color: "#d1d5db", fontSize: 13, fontWeight: 600 }}>
+                        {`Scenario ${scenario}`}
+                      </div>
+                      {entries.length === 0 ? (
+                        <div style={{ color: "#9ca3af", fontSize: 12, marginTop: 3 }}>
+                          {uiLanguage === "sv" ? "Inga åtgärder genomförda ännu." : "No actions executed yet."}
+                        </div>
+                      ) : (
+                        <ul style={{ margin: "4px 0 0", paddingLeft: 20 }}>
+                          {entries.map((entry) => (
+                            <li key={`${entry.actionId}-${entry.actualExecutionStep}`} style={{ color: "#d1d5db", fontSize: 12 }}>
+                              {`${getActionPanelLabel(entry.actionId, uiLanguage)} — M${entry.actualExecutionStep}${entry.scheduledStep !== entry.actualExecutionStep ? ` (${uiLanguage === "sv" ? "planerad" : "planned"} M${entry.scheduledStep})` : ""}`}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  );
+                })}
+                {hasSimulationCompleted && !naturallyCompletedRun && (
+                  <div role="status" style={{ color: "#fbbf24", fontSize: 12, marginTop: 8 }}>
+                    {uiLanguage === "sv" ? "Körningen stoppades och visar ett partiellt resultat." : "The run was stopped and shows a partial result."}
+                  </div>
+                )}
               </div>
             )}
             {!executiveDemoMode &&
@@ -3396,24 +3451,6 @@ export default function PilotFastighetPage() {
                             : `Primary driver: ${systemStatusPrimaryDriverDisplayText}`}
                       </div>
                     </div>
-                    {effectiveExecutionMode === "actions-over-time" ? (
-                      <div
-                        role="status"
-                        style={{
-                          marginTop: "16px",
-                          padding: "14px",
-                          borderRadius: "12px",
-                          background: "rgba(30, 41, 59, 0.6)",
-                          border: "1px solid rgba(148, 163, 184, 0.2)",
-                          color: "#cbd5e1",
-                          fontSize: 13,
-                        }}
-                      >
-                        {uiLanguage === "sv"
-                          ? "Tolkning av åtgärdernas tidpunkter läggs till i nästa steg."
-                          : "Interpretation of action timing will be added in the next step."}
-                      </div>
-                    ) : (
                     <AIInterpretationPanel
                   language={uiLanguage}
                   executiveDemoMode={executiveDemoMode}
@@ -3435,7 +3472,11 @@ export default function PilotFastighetPage() {
                       type: "Capital constraint activated",
                     },
                   ].filter((e) => e.quarter > 0)}
-                  simulationCompleted={hasSimulationCompleted}
+                  simulationCompleted={
+                    effectiveExecutionMode === "actions-over-time"
+                      ? naturallyCompletedRun
+                      : hasSimulationCompleted
+                  }
                   currentMargin={finalA}
                   alternativeMargin={finalB}
                   marginImpact={finalB - finalA}
@@ -3462,8 +3503,19 @@ export default function PilotFastighetPage() {
                         : null
                     )
                   }
+                  executionContext={
+                    effectiveExecutionMode === "actions-over-time"
+                      ? {
+                          mode: "actions-over-time",
+                          plannedSchedules: scenarioSchedules,
+                          executedProvenance: revealedScheduledProvenance,
+                          horizon: simulationHorizon,
+                          naturalCompletion: naturallyCompletedRun,
+                          fairComparisonFacts: scheduledFairComparisonFacts,
+                        }
+                      : { mode: "configured-start" }
+                  }
                 />
-                    )}
                   </>
                 )}
                 </div>

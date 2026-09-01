@@ -12,6 +12,8 @@ import {
   formatManualScheduleIssue,
   getManualScheduleIssues,
   getOrderedScenarioSchedule,
+  getRevealedExecutionProvenance,
+  getScheduledFairComparisonFacts,
   prepareManualScheduledRunSource,
   resolveManualExecutionMode,
   toggleManualScheduledAction,
@@ -148,4 +150,36 @@ test("clean scheduled reruns never use terminal state and preserve exact provena
   assert.equal(source.scenarioA.initialDriverScores?.maintenanceIntensityRisk, 1);
   assert.equal(first.analysis.scenarioA.trajectory[0].driverScores.maintenanceIntensityRisk, 1);
   assert.equal(first.analysis.scenarioA.trajectory[1].driverScores.maintenanceIntensityRisk, 2);
+});
+
+test("revealed provenance includes only actually executed independent scenario records", () => {
+  const provenance = {
+    A: [
+      { scenario: "scenarioA", actionId: "delay_maintenance", scheduledStep: 2, actualExecutionStep: 2, appliedDriverDeltas: {} },
+      { scenario: "scenarioA", actionId: "early_refinancing", scheduledStep: 6, actualExecutionStep: 6, appliedDriverDeltas: {} },
+    ],
+    B: [
+      { scenario: "scenarioB", actionId: "secure_long_term_leases", scheduledStep: 3, actualExecutionStep: 3, appliedDriverDeltas: {} },
+    ],
+  } as const;
+  const revealed = getRevealedExecutionProvenance(provenance, 3);
+  assert.deepEqual(revealed.A.map((entry) => entry.actionId), ["delay_maintenance"]);
+  assert.deepEqual(revealed.B.map((entry) => entry.actionId), ["secure_long_term_leases"]);
+  assert.equal(JSON.stringify(revealed).includes("early_refinancing"), false);
+});
+
+test("fair-comparison predicates identify timing-only differences without prose inference", () => {
+  const facts = getScheduledFairComparisonFacts({
+    initialStateA: defaultRiskState,
+    initialStateB: structuredClone(defaultRiskState),
+    schedules: {
+      A: [{ actionId: "delay_maintenance", executionStep: 2 }],
+      B: [{ actionId: "delay_maintenance", executionStep: 5 }],
+    },
+  });
+  assert.deepEqual(facts, {
+    identicalInitialStates: true,
+    identicalActionSets: true,
+    timingOrOrderOnlyDifference: true,
+  });
 });
