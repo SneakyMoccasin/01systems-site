@@ -13,6 +13,10 @@ import {
 import type { ScheduledExecutionGraphMarker } from "@/src/pilotFastighet/analysis/scheduledExecutivePresentation";
 import { getExecutiveDemoSequenceProof } from "@/src/pilotFastighet/executiveDemoFraming";
 import { CASCADE_PRESENTATION } from "@/src/pilotFastighet/cascadePresentation";
+import {
+  resolveMarginGraphDomain,
+  resolveMarginGraphPresentedSeries,
+} from "@/src/pilotFastighet/analysis/marginGraphPresentation";
 
 const EXEC_SUSTAIN_THRESHOLD = 0.8;
 
@@ -50,7 +54,6 @@ export interface MarginGraphProps {
   demandHistoryB?: number[];
   driverEvents?: DomainEvent[];
   scenarioTargetDriverEvents?: DomainEvent[];
-  displayMarginB: number[];
   tippingMarginIndexA: number | null;
   tippingMarginIndexB: number | null;
   hoverIndex: number | null;
@@ -103,7 +106,6 @@ function MarginGraph({
   demandHistoryB = [],
   driverEvents = [],
   scenarioTargetDriverEvents = [],
-  displayMarginB,
   tippingMarginIndexA,
   tippingMarginIndexB,
   hoverIndex,
@@ -147,7 +149,7 @@ function MarginGraph({
   profileCount("MarginGraph.render");
   profileValue(
     "MarginGraph.series.points",
-    Math.max(marginHistoryA.length, displayMarginB.length),
+    Math.max(marginHistoryA.length, marginHistoryB.length),
     "points"
   );
   profileValue(
@@ -223,26 +225,13 @@ function MarginGraph({
       : 0.35;
   const graphBackground = execRealEstateGraphPassive ? "#0B1220" : theme.graphBg;
 
-  const baselineA = marginHistoryA[0] ?? 0;
-  const baselineB = marginHistoryB[0] ?? 0;
-  const normalizedA =
-    viewMode === "delta"
-      ? marginHistoryA.map(v =>
-          typeof v === "number" ? v - baselineA : v
-        )
-      : marginHistoryA;
-
-  const normalizedB =
-    viewMode === "delta"
-      ? marginHistoryB.map(v =>
-          typeof v === "number" ? v - baselineB : v
-        )
-      : marginHistoryB;
+  const { scenarioA: normalizedA, scenarioB: normalizedB } =
+    resolveMarginGraphPresentedSeries(marginHistoryA, marginHistoryB, viewMode);
 
   const divergenceIndex = (() => {
-    const n = Math.min(marginHistoryA.length, displayMarginB.length);
+    const n = Math.min(marginHistoryA.length, marginHistoryB.length);
     for (let i = 0; i < n; i++) {
-      if (Math.abs(marginHistoryA[i] - displayMarginB[i]) > 0.05) {
+      if (Math.abs(marginHistoryA[i] - marginHistoryB[i]) > 0.05) {
         return i;
       }
     }
@@ -291,7 +280,7 @@ function MarginGraph({
   const emitSelectMonthForIndex = (index: number | null) => {
     if (!onSelectMonth || index === null) return;
     const marginA = marginHistoryA[index];
-    const marginB = displayMarginB[index] ?? marginHistoryB[index];
+    const marginB = marginHistoryB[index];
     if (
       marginA === undefined ||
       marginB === undefined ||
@@ -312,24 +301,12 @@ function MarginGraph({
     return LEFT_PADDING + index * monthPixelWidth;
   };
 
-  const normalizedValues =
-    [...normalizedA, ...normalizedB].length > 0
-      ? [...normalizedA, ...normalizedB]
-      : [0];
-  const rawMin = Math.min(...normalizedValues);
-  const rawMax = Math.max(...normalizedValues);
-  const yMin =
-    viewMode === "delta"
-      ? Math.min(rawMin, 0)
-      : rawMin === rawMax
-      ? rawMin - 0.05
-      : rawMin;
-  const yMax =
-    viewMode === "delta"
-      ? Math.max(rawMax, 0)
-      : rawMin === rawMax
-      ? rawMax + 0.05
-      : rawMax;
+  const { min: yMin, max: yMax } = resolveMarginGraphDomain(
+    normalizedA,
+    normalizedB,
+    viewMode,
+    execRealEstateGraphPassive
+  );
 
   const TOP_PADDING = execRealEstateGraphPassive ? 7 : 12;
   const BOTTOM_PADDING = execRealEstateGraphPassive ? 5 : 8;
@@ -726,11 +703,11 @@ function MarginGraph({
   })();
 
   const riskStartIndex = (() => {
-    const n = Math.max(marginHistoryA.length, displayMarginB.length);
+    const n = Math.max(marginHistoryA.length, marginHistoryB.length);
     for (let i = 0; i < n; i++) {
       if (
         (marginHistoryA[i] !== undefined && marginHistoryA[i] < 0.3) ||
-        (displayMarginB[i] !== undefined && displayMarginB[i] < 0.3)
+        (marginHistoryB[i] !== undefined && marginHistoryB[i] < 0.3)
       )
         return i;
     }
@@ -754,7 +731,7 @@ function MarginGraph({
   })();
 
   const cascadeStartIndexB = (() => {
-    const seriesLengthB = displayMarginB.length;
+    const seriesLengthB = marginHistoryB.length;
     if (seriesLengthB <= 0 || !cascadeEventsB || cascadeEventsB.length === 0) return null;
     const earliestQuarter =
       Math.min(
@@ -1436,7 +1413,7 @@ function MarginGraph({
           })()}
         </g>
       )}
-      {hoverIndex !== null && displayMarginB[hoverIndex] !== undefined && (
+      {hoverIndex !== null && marginHistoryB[hoverIndex] !== undefined && (
         <g stroke="white" strokeWidth={1.5}>
           {(() => {
             const index = hoverIndex;
@@ -1528,7 +1505,7 @@ function MarginGraph({
         </>
       )}
       {/* Scenario B margin line (orange), only when B has data */}
-      {showB && displayMarginB.length > 0 && (
+      {showB && marginHistoryB.length > 0 && (
         <path
           d={buildSmoothPath(normalizedB, scaleX, scaleY)}
           fill="none"
@@ -1683,10 +1660,7 @@ function MarginGraph({
               </g>
             )}
             {showB &&
-              Number.isFinite(
-                displayMarginB[selectedMonthIndex] ??
-                  marginHistoryB[selectedMonthIndex]
-              ) && (
+              Number.isFinite(marginHistoryB[selectedMonthIndex]) && (
                 <g stroke="white" strokeWidth={2}>
                   {(() => {
                     const index = selectedMonthIndex;

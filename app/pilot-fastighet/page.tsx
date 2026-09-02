@@ -1446,11 +1446,6 @@ export default function PilotFastighetPage() {
       ? marginHistoryB[marginHistoryB.length - 1]
       : null;
 
-  const displayMarginB = useMemo(() => {
-    return marginHistoryA.length > 0 && marginHistoryB.length > 0
-      ? [marginHistoryA[0], ...marginHistoryB.slice(1)]
-      : marginHistoryB;
-  }, [marginHistoryA, marginHistoryB]);
   const scenarioLibraryForInspector = getScenarioLibrary(uiLanguage).filter((p) =>
     caseType === "real-estate"
       ? p.domain === "realEstate"
@@ -3610,7 +3605,6 @@ export default function PilotFastighetPage() {
                     caseType === "transport" ? domainEventsForGraph : []
                   }
                   scenarioTargetDriverEvents={scenarioTargetDriverEvents}
-                  displayMarginB={displayMarginB}
                   tippingMarginIndexA={tippingMarginIndexA}
                   tippingMarginIndexB={tippingMarginIndexB}
                   hoverIndex={hoverIndex}
