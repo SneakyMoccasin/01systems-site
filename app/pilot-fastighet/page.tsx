@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, type CSSProperties } from "react";
 import { unstable_batchedUpdates } from "react-dom";
 import { getSystemSnapshot } from "@/src/systemSnapshot/systemSnapshotStore";
 import type { EngineState, RiskState } from "@/src/pilotFastighet/RealEstateEngine";
@@ -81,6 +81,8 @@ import ActionPanel, {
   getActionPanelLabel,
 } from "./components/ActionPanel";
 import WorkspaceConfigurationShell from "./components/WorkspaceConfigurationShell";
+import AppearanceControl from "./components/AppearanceControl";
+import ScenarioSelectionControls from "./components/ScenarioSelectionControls";
 import MarginGraph, {
   MarginGraphLegendRow,
   type DomainEvent,
@@ -137,7 +139,16 @@ import {
   calculateScheduledExecutiveMetrics,
 } from "@/src/pilotFastighet/analysis/scheduledExecutivePresentation";
 import { getPilotStrategyColors } from "@/src/pilotFastighet/strategyColors";
-import { CASCADE_PRESENTATION } from "@/src/pilotFastighet/cascadePresentation";
+import { CASCADE_PRESENTATION, getCascadeThemeTokens } from "@/src/pilotFastighet/cascadePresentation";
+import {
+  readCascadeAppearancePreference,
+  DEFAULT_CASCADE_APPEARANCE,
+  resolveCascadeAppearance,
+  subscribeToSystemAppearance,
+  writeCascadeAppearancePreference,
+  type CascadeAppearancePreference,
+  type CascadeResolvedAppearance,
+} from "@/src/pilotFastighet/appearancePreference";
 import {
   CascadeGraphHeading,
   CascadeHumanJudgementBoundary,
@@ -378,7 +389,9 @@ export default function PilotFastighetPage() {
   const [transportScenarioTarget, setTransportScenarioTarget] = useState<string | null>(null);
   const [showDriverActivations, setShowDriverActivations] = useState(false);
   const [freezeFlash, setFreezeFlash] = useState<"A" | "B" | null>(null);
-  const [uiTheme, setUiTheme] = useState<"dark" | "light">("dark");
+  const [appearancePreference, setAppearancePreference] = useState<CascadeAppearancePreference>(DEFAULT_CASCADE_APPEARANCE);
+  const [uiTheme, setUiTheme] = useState<CascadeResolvedAppearance>("dark");
+  const [appearanceRestored, setAppearanceRestored] = useState(false);
   const [uiLanguage, setUiLanguage] = useState<Language>("sv");
   const [uiMode, setUiMode] = useState<"executive" | "expert">("executive");
   const [executiveDemoMode, setExecutiveDemoMode] = useState(false);
@@ -398,6 +411,22 @@ export default function PilotFastighetPage() {
   useEffect(() => {
     return installPulseUnhandledRejectionTracer();
   }, []);
+
+  useEffect(() => {
+    const preference = readCascadeAppearancePreference(window.localStorage);
+    const query = window.matchMedia("(prefers-color-scheme: dark)");
+    setAppearancePreference(preference);
+    setUiTheme(resolveCascadeAppearance(preference, query.matches));
+    setAppearanceRestored(true);
+  }, []);
+
+  useEffect(() => {
+    if (!appearanceRestored) return;
+    const query = window.matchMedia("(prefers-color-scheme: dark)");
+    writeCascadeAppearancePreference(window.localStorage, appearancePreference);
+    setUiTheme(resolveCascadeAppearance(appearancePreference, query.matches));
+    return subscribeToSystemAppearance(query, appearancePreference, setUiTheme);
+  }, [appearancePreference, appearanceRestored]);
 
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewChangesA, setPreviewChangesA] = useState<ScenarioChange[]>([]);
@@ -1384,32 +1413,14 @@ export default function PilotFastighetPage() {
     ? executiveSummary.structuralStatusA
     : "stable";
 
-  const THEME = {
-    dark: {
-      pageBg: CASCADE_PRESENTATION.surfaces.dark.page,
-      panelBg: CASCADE_PRESENTATION.surfaces.dark.panel,
-      panelBorder: CASCADE_PRESENTATION.borders.dark,
-      graphBg: CASCADE_PRESENTATION.surfaces.dark.graph,
-      graphBorder: CASCADE_PRESENTATION.borders.dark,
-      text: "#E5E7EB",
-      subtext: "#9CA3AF",
-      buttonBg: "#111827",
-      buttonBorder: "#374151",
-    },
-    light: {
-      pageBg: CASCADE_PRESENTATION.surfaces.light.page,
-      panelBg: CASCADE_PRESENTATION.surfaces.light.panel,
-      panelBorder: CASCADE_PRESENTATION.borders.light,
-      graphBg: CASCADE_PRESENTATION.surfaces.light.graph,
-      graphBorder: CASCADE_PRESENTATION.borders.light,
-      text: "#111827",
-      subtext: "#6B7280",
-      buttonBg: "#FFFFFF",
-      buttonBorder: "#D1D5DB",
-    },
-  } as const;
-
-  const theme = THEME[uiTheme];
+  const semanticTheme = getCascadeThemeTokens(uiTheme);
+  const theme = {
+    pageBg: semanticTheme.pageBackground, panelBg: semanticTheme.primarySurface,
+    panelBorder: semanticTheme.border, graphBg: semanticTheme.graphSurface,
+    graphBorder: semanticTheme.border, text: semanticTheme.primaryText,
+    subtext: semanticTheme.secondaryText, buttonBg: semanticTheme.controlBackground,
+    buttonBorder: semanticTheme.border,
+  };
   const t = UI_TEXT[uiLanguage];
   const pt = pulseLanguage[uiLanguage];
   const scenarioALabelText = executiveDemoMode
@@ -1791,26 +1802,27 @@ export default function PilotFastighetPage() {
       {effectiveExecutionMode === "actions-over-time" && (
         <div
           aria-label={uiLanguage === "sv" ? "Åtgärdsschema" : "Action schedule"}
-          className="border-t border-slate-800 pt-4"
+          className="border-t pt-4"
+          style={{ borderColor: semanticTheme.border }}
         >
-          <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <div className="mb-3 text-xs font-semibold uppercase tracking-wide" style={{ color: semanticTheme.mutedText }}>
             {uiLanguage === "sv" ? "Planerade åtgärder" : "Planned actions"}
           </div>
           {(["A", "B"] as const).map((scenario) => {
             const entries = getOrderedScenarioSchedule(scenarioSchedules, scenario);
             return (
               <div key={scenario} className={scenario === "A" ? "mb-3" : undefined}>
-                <div className="text-xs font-semibold text-slate-300">
+                <div className="text-xs font-semibold" style={{ color: semanticTheme.primaryText }}>
                   {`Scenario ${scenario}`}
                 </div>
                 {entries.length === 0 ? (
-                  <div className="mt-1 text-xs text-slate-500">
+                  <div className="mt-1 text-xs" style={{ color: semanticTheme.secondaryText }}>
                     {uiLanguage === "sv"
                       ? "Inga tidsatta åtgärder."
                       : "No timed actions."}
                   </div>
                 ) : (
-                  <ul className="mt-1 list-disc space-y-1 pl-5 text-xs text-slate-300">
+                  <ul className="mt-1 list-disc space-y-1 pl-5 text-xs" style={{ color: semanticTheme.secondaryText }}>
                     {entries.map((entry) => (
                       <li key={entry.actionId}>
                         {`${getActionPanelLabel(entry.actionId, uiLanguage)} — M${entry.executionStep}`}
@@ -1834,7 +1846,7 @@ export default function PilotFastighetPage() {
               )}
             </div>
           ))}
-          <div className="mb-3 mt-5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <div className="mb-3 mt-5 text-xs font-semibold uppercase tracking-wide" style={{ color: semanticTheme.mutedText }}>
             {uiLanguage === "sv" ? "Genomförda åtgärder" : "Executed actions"}
           </div>
           {(["A", "B"] as const).map((scenario) => {
@@ -1844,17 +1856,17 @@ export default function PilotFastighetPage() {
                 key={`executed-${scenario}`}
                 className={scenario === "A" ? "mb-3" : undefined}
               >
-                <div className="text-xs font-semibold text-slate-300">
+                <div className="text-xs font-semibold" style={{ color: semanticTheme.primaryText }}>
                   {`Scenario ${scenario}`}
                 </div>
                 {entries.length === 0 ? (
-                  <div className="mt-1 text-xs text-slate-500">
+                  <div className="mt-1 text-xs" style={{ color: semanticTheme.secondaryText }}>
                     {uiLanguage === "sv"
                       ? "Inga åtgärder genomförda ännu."
                       : "No actions executed yet."}
                   </div>
                 ) : (
-                  <ul className="mt-1 list-disc space-y-1 pl-5 text-xs text-slate-300">
+                  <ul className="mt-1 list-disc space-y-1 pl-5 text-xs" style={{ color: semanticTheme.secondaryText }}>
                     {entries.map((entry) => (
                       <li key={`${entry.actionId}-${entry.actualExecutionStep}`}>
                         {`${getActionPanelLabel(entry.actionId, uiLanguage)} — M${entry.actualExecutionStep}${entry.scheduledStep !== entry.actualExecutionStep ? ` (${uiLanguage === "sv" ? "planerad" : "planned"} M${entry.scheduledStep})` : ""}`}
@@ -1880,8 +1892,8 @@ export default function PilotFastighetPage() {
   const driverConfiguration = (
     <div className="space-y-6">
       {Object.entries(groupedParameters).map(([groupName, params]) => (
-        <section key={groupName} className="border-b border-slate-800 pb-5 last:border-0">
-          <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <section key={groupName} className="border-b pb-5 last:border-0" style={{ borderColor: semanticTheme.border }}>
+          <div className="mb-3 text-xs font-semibold uppercase tracking-wide" style={{ color: semanticTheme.mutedText }}>
             {groupName}
           </div>
           <div className="space-y-3">
@@ -1899,7 +1911,7 @@ export default function PilotFastighetPage() {
                     paddingLeft: "8px",
                   }}
                 >
-                  <span className="min-w-0 text-slate-300">
+                  <span className="min-w-0" style={{ color: semanticTheme.primaryText }}>
                     {pulseLanguage[uiLanguage].riskLabels[param.key] ??
                       (typeof param.label === "string"
                         ? param.label
@@ -1911,7 +1923,8 @@ export default function PilotFastighetPage() {
                     onChange={(event) => {
                       handleParameterChange(param.key, event.target.value as RiskLevel);
                     }}
-                    className="shrink-0 rounded-md border border-slate-700 bg-slate-950 px-2 py-1.5 text-xs text-slate-100 disabled:opacity-50"
+                    className="shrink-0 rounded-md border px-2 py-1.5 text-xs disabled:opacity-50"
+                    style={{ borderColor: semanticTheme.border, background: semanticTheme.controlBackground, color: semanticTheme.primaryText }}
                   >
                     <option value="LOW">LOW</option>
                     <option value="MODERATE">MODERATE</option>
@@ -1929,7 +1942,27 @@ export default function PilotFastighetPage() {
 
   return (
     <div
+      data-ce-appearance={uiTheme}
       style={{
+        "--ce-page-bg": semanticTheme.pageBackground,
+        "--ce-surface-primary": semanticTheme.primarySurface,
+        "--ce-surface-subtle": semanticTheme.subtleSurface,
+        "--ce-surface-elevated": semanticTheme.elevatedSurface,
+        "--ce-graph-bg": semanticTheme.graphSurface,
+        "--ce-border": semanticTheme.border,
+        "--ce-divider-strong": semanticTheme.strongDivider,
+        "--ce-text-primary": semanticTheme.primaryText,
+        "--ce-text-secondary": semanticTheme.secondaryText,
+        "--ce-text-muted": semanticTheme.mutedText,
+        "--ce-text-disabled": semanticTheme.disabledText,
+        "--ce-control-bg": semanticTheme.controlBackground,
+        "--ce-control-hover": semanticTheme.controlHover,
+        "--ce-control-selected": semanticTheme.selectedControl,
+        "--ce-focus-ring": semanticTheme.focusRing,
+        "--ce-shadow": semanticTheme.shadow,
+        "--ce-critical": semanticTheme.criticalState,
+        "--ce-scenario-a": semanticTheme.scenarioA,
+        "--ce-scenario-b": semanticTheme.scenarioB,
         pointerEvents: "auto",
         width: "100%",
         maxWidth: "100%",
@@ -1954,7 +1987,7 @@ export default function PilotFastighetPage() {
               boxSizing: "border-box",
             }
           : {}),
-      }}
+      } as CSSProperties}
     >
       <style jsx>{`
         @media (max-width: 820px) {
@@ -2115,31 +2148,7 @@ export default function PilotFastighetPage() {
               >
                 {uiLanguage === "sv" ? "SV" : "EN"}
               </button>
-              <button
-                type="button"
-                onClick={() => setUiTheme((t) => (t === "dark" ? "light" : "dark"))}
-                style={{
-                  borderRadius: "5px",
-                  cursor: "pointer",
-                  ...(execRealEstateLayout
-                    ? {
-                        padding: "4px 8px",
-                        fontSize: "10px",
-                        color: "#94a3b8",
-                        border: "1px solid rgba(55,65,81,0.45)",
-                        background: "rgba(15,23,42,0.55)",
-                      }
-                    : {
-                        padding: "5px 9px",
-                        fontSize: "11px",
-                        border: "1px solid #374151",
-                        background: "#111827",
-                        color: "#E5E7EB",
-                      }),
-                }}
-              >
-                {uiTheme === "dark" ? "Theme: Dark" : "Theme: Light"}
-              </button>
+              <AppearanceControl language={uiLanguage} value={appearancePreference} onChange={setAppearancePreference} />
               <button
                 type="button"
                 onClick={() => {
@@ -2216,39 +2225,25 @@ export default function PilotFastighetPage() {
                 style={{
                   padding: "6px 12px",
                   borderRadius: "6px",
-                  border: "1px solid #374151",
-                  background: "#111827",
-                  color: "#E5E7EB",
+                  border: `1px solid ${semanticTheme.border}`,
+                  background: semanticTheme.controlBackground,
+                  color: semanticTheme.primaryText,
                   fontSize: "12px",
                   cursor: "pointer",
                 }}
               >
                 {uiLanguage === "sv" ? "SV" : "EN"}
               </button>
-              <button
-                type="button"
-                onClick={() => setUiTheme((t) => (t === "dark" ? "light" : "dark"))}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: "6px",
-                  border: "1px solid #374151",
-                  background: "#111827",
-                  color: "#E5E7EB",
-                  fontSize: "12px",
-                  cursor: "pointer",
-                }}
-              >
-                {uiTheme === "dark" ? "Theme: Dark" : "Theme: Light"}
-              </button>
+              <AppearanceControl language={uiLanguage} value={appearancePreference} onChange={setAppearancePreference} />
               <button
                 type="button"
                 onClick={() => setShowHelp(!showHelp)}
                 style={{
                   padding: "6px 12px",
                   borderRadius: "6px",
-                  border: "1px solid #374151",
-                  background: "#111827",
-                  color: "#E5E7EB",
+                  border: `1px solid ${semanticTheme.border}`,
+                  background: semanticTheme.controlBackground,
+                  color: semanticTheme.primaryText,
                   fontSize: "12px",
                   cursor: "pointer",
                 }}
@@ -2263,9 +2258,9 @@ export default function PilotFastighetPage() {
                 style={{
                   padding: "6px 12px",
                   borderRadius: "6px",
-                  border: "1px solid #374151",
-                  background: "#111827",
-                  color: "#E5E7EB",
+                  border: `1px solid ${semanticTheme.border}`,
+                  background: semanticTheme.controlBackground,
+                  color: semanticTheme.primaryText,
                   fontSize: "12px",
                   cursor: "pointer",
                 }}
@@ -2278,9 +2273,9 @@ export default function PilotFastighetPage() {
                 style={{
                   padding: "6px 12px",
                   borderRadius: "6px",
-                  border: executiveDemoMode ? "1px solid #3b82f6" : "1px solid #374151",
-                  background: executiveDemoMode ? "#1e3a5f" : "#111827",
-                  color: "#E5E7EB",
+                  border: `1px solid ${semanticTheme.border}`,
+                  background: semanticTheme.controlBackground,
+                  color: semanticTheme.primaryText,
                   fontSize: "12px",
                   cursor: "pointer",
                 }}
@@ -2355,9 +2350,9 @@ export default function PilotFastighetPage() {
                   }
                 }}
                 style={{
-                  background: "#0e1117",
-                  color: "#e6edf3",
-                  border: "1px solid #2f333a",
+                  background: semanticTheme.controlBackground,
+                  color: semanticTheme.primaryText,
+                  border: `1px solid ${semanticTheme.border}`,
                   borderRadius: "6px",
                   padding: "6px 10px",
                   fontSize: "13px",
@@ -2399,9 +2394,9 @@ export default function PilotFastighetPage() {
                   }
                 }}
                 style={{
-                  background: "#0e1117",
-                  color: "#e6edf3",
-                  border: "1px solid #2f333a",
+                  background: semanticTheme.controlBackground,
+                  color: semanticTheme.primaryText,
+                  border: `1px solid ${semanticTheme.border}`,
                   borderRadius: "6px",
                   padding: "6px 10px",
                   fontSize: "13px",
@@ -2438,6 +2433,7 @@ export default function PilotFastighetPage() {
                 ? "px-1.5 py-0.5 text-[11px] rounded border bg-gray-800 text-gray-200"
                 : "px-2 py-1 rounded border bg-gray-800 text-gray-200"
             }
+            style={!executiveDemoMode ? { background: semanticTheme.controlBackground, color: semanticTheme.primaryText, borderColor: semanticTheme.border } : undefined}
           >
             <option value="accessibility">
               {executiveDemoMode
@@ -2460,66 +2456,19 @@ export default function PilotFastighetPage() {
                 : resolveTopLevelGoalLabel("avoid_tipping", caseType)}
             </option>
           </select>
-          <button
-            type="button"
-            className={activeScenario === "A" ? "active-button" : ""}
-            onClick={() => {
-              setShowA(true);
-              setShowB(false);
-              setActiveScenario("A");
+          <ScenarioSelectionControls
+            theme={uiTheme}
+            selected={showA && showB ? "BOTH" : showB ? "B" : "A"}
+            labelA={scenarioALabelText}
+            labelB={scenarioBLabelText}
+            labelBoth={pulseLanguage[uiLanguage].both}
+            compact={executiveDemoMode}
+            onSelect={(selection) => {
+              setShowA(selection === "A" || selection === "BOTH");
+              setShowB(selection === "B" || selection === "BOTH");
+              setActiveScenario(selection);
             }}
-            style={{
-              padding: executiveDemoMode ? "5px 11px" : "8px 16px",
-              fontSize: executiveDemoMode ? "11px" : undefined,
-              background: showA && !showB ? "#2f333a" : "#1a1a1a",
-              border: "1px solid #2f333a",
-              borderRadius: executiveDemoMode ? "5px" : "6px",
-              color: "#e6edf3",
-              cursor: "pointer",
-            }}
-          >
-            {scenarioALabelText}
-          </button>
-          <button
-            type="button"
-            className={activeScenario === "B" ? "active-button" : ""}
-            onClick={() => {
-              setShowA(false);
-              setShowB(true);
-              setActiveScenario("B");
-            }}
-            style={{
-              padding: executiveDemoMode ? "5px 11px" : "8px 16px",
-              fontSize: executiveDemoMode ? "11px" : undefined,
-              background: showB && !showA ? "#2f333a" : "#1a1a1a",
-              border: "1px solid #2f333a",
-              borderRadius: executiveDemoMode ? "5px" : "6px",
-              color: "#e6edf3",
-              cursor: "pointer",
-            }}
-          >
-            {scenarioBLabelText}
-          </button>
-          <button
-            type="button"
-            className={activeScenario === "BOTH" ? "active-button" : ""}
-            onClick={() => {
-              setShowA(true);
-              setShowB(true);
-              setActiveScenario("BOTH");
-            }}
-            style={{
-              padding: executiveDemoMode ? "5px 11px" : "8px 16px",
-              fontSize: executiveDemoMode ? "11px" : undefined,
-              background: showA && showB ? "#2f333a" : "#1a1a1a",
-              border: "1px solid #2f333a",
-              borderRadius: executiveDemoMode ? "5px" : "6px",
-              color: "#e6edf3",
-              cursor: "pointer",
-            }}
-          >
-            {pulseLanguage[uiLanguage].both}
-          </button>
+          />
           {!executiveDemoMode && (
             <>
               <button
@@ -2527,10 +2476,10 @@ export default function PilotFastighetPage() {
                 onClick={freezeScenarioA}
                 style={{
                   padding: "8px 16px",
-                  background: "#1a1a1a",
-                  border: "1px solid #2f333a",
+                  background: semanticTheme.controlBackground,
+                  border: `1px solid ${semanticTheme.border}`,
                   borderRadius: "6px",
-                  color: "#e6edf3",
+                  color: semanticTheme.primaryText,
                   cursor: "pointer",
                 }}
               >
@@ -2551,10 +2500,10 @@ export default function PilotFastighetPage() {
                 onClick={freezeScenarioB}
                 style={{
                   padding: "8px 16px",
-                  background: "#1a1a1a",
-                  border: "1px solid #2f333a",
+                  background: semanticTheme.controlBackground,
+                  border: `1px solid ${semanticTheme.border}`,
                   borderRadius: "6px",
-                  color: "#e6edf3",
+                  color: semanticTheme.primaryText,
                   cursor: "pointer",
                 }}
               >
@@ -2607,10 +2556,10 @@ export default function PilotFastighetPage() {
             style={{
               padding: executiveDemoMode ? "5px 11px" : "8px 16px",
               fontSize: executiveDemoMode ? "11px" : undefined,
-              background: "#1a1a1a",
-              border: "1px solid #2f333a",
+              background: executiveDemoMode ? "#1a1a1a" : semanticTheme.controlBackground,
+              border: executiveDemoMode ? "1px solid #2f333a" : `1px solid ${semanticTheme.border}`,
               borderRadius: executiveDemoMode ? "5px" : "6px",
-              color: "#e6edf3",
+              color: executiveDemoMode ? "#e6edf3" : semanticTheme.primaryText,
               cursor:
                 isRunning || scheduleValidationIssues.length > 0
                   ? "not-allowed"
@@ -2643,10 +2592,10 @@ export default function PilotFastighetPage() {
             style={{
               padding: executiveDemoMode ? "5px 11px" : "8px 16px",
               fontSize: executiveDemoMode ? "11px" : undefined,
-              background: "#1a1a1a",
-              border: "1px solid #2f333a",
+              background: executiveDemoMode ? "#1a1a1a" : semanticTheme.controlBackground,
+              border: executiveDemoMode ? "1px solid #2f333a" : `1px solid ${semanticTheme.border}`,
               borderRadius: executiveDemoMode ? "5px" : "6px",
-              color: "#e6edf3",
+              color: executiveDemoMode ? "#e6edf3" : semanticTheme.disabledText,
               cursor: !isRunning ? "not-allowed" : "pointer",
             }}
           >
@@ -2716,10 +2665,10 @@ export default function PilotFastighetPage() {
             style={{
               padding: executiveDemoMode ? "5px 11px" : "8px 16px",
               fontSize: executiveDemoMode ? "11px" : undefined,
-              background: "#1a1a1a",
-              border: "1px solid #2f333a",
+              background: executiveDemoMode ? "#1a1a1a" : semanticTheme.controlBackground,
+              border: executiveDemoMode ? "1px solid #2f333a" : `1px solid ${semanticTheme.border}`,
               borderRadius: executiveDemoMode ? "5px" : "6px",
-              color: "#e6edf3",
+              color: executiveDemoMode ? "#e6edf3" : semanticTheme.primaryText,
               cursor: "pointer",
             }}
           >
@@ -2752,11 +2701,11 @@ export default function PilotFastighetPage() {
             marginBottom: "12px",
             padding: "18px 20px",
             borderRadius: "8px",
-            background: "#0f172a",
-            border: "1px solid #374151",
+            background: semanticTheme.subtleSurface,
+            border: `1px solid ${semanticTheme.border}`,
             fontSize: "13px",
             lineHeight: "1.65",
-            color: "#E5E7EB",
+            color: semanticTheme.primaryText,
           }}
         >
           <h3 style={{ margin: "0 0 8px", fontSize: "15px", fontWeight: 700 }}>
@@ -2787,7 +2736,7 @@ export default function PilotFastighetPage() {
       {!executiveDemoMode &&
         selectedPilotCaseId &&
         PILOT_CASES.find((c) => c.id === selectedPilotCaseId) && (
-        <div style={{ marginBottom: "12px", fontSize: "12px", color: "#9ca3af" }}>
+        <div style={{ marginBottom: "12px", fontSize: "12px", color: semanticTheme.secondaryText }}>
           {PILOT_CASES.find((c) => c.id === selectedPilotCaseId)?.oneLiner}
         </div>
       )}
@@ -3027,6 +2976,7 @@ export default function PilotFastighetPage() {
           driversCount={impactContract.length}
           validationCount={scheduleValidationIssues.length}
           changed={isDirty}
+          appearance={semanticTheme}
           interventions={interventionConfiguration}
           drivers={driverConfiguration}
         >
@@ -3056,8 +3006,8 @@ export default function PilotFastighetPage() {
             style={{
               marginBottom: executiveDemoMode ? (execRealEstateLayout ? "6px" : "4px") : "24px",
               padding: executiveDemoMode ? (execRealEstateLayout ? "7px 14px 8px" : "4px 9px") : "16px 20px",
-              background: "#111827",
-              border: "1px solid #1f2937",
+              background: executiveDemoMode ? "#111827" : semanticTheme.primarySurface,
+              border: executiveDemoMode ? "1px solid #1f2937" : `1px solid ${semanticTheme.border}`,
               borderRadius: CASCADE_PRESENTATION.radii.panel,
             }}
           >
@@ -3073,7 +3023,7 @@ export default function PilotFastighetPage() {
                 <div
                   style={{
                     fontSize: execRealEstateLayout ? "10px" : executiveDemoMode ? "9px" : "12px",
-                    color: "#9CA3AF",
+                    color: executiveDemoMode ? "#9CA3AF" : semanticTheme.secondaryText,
                   }}
                 >
                   {executiveDemoMode
@@ -3095,7 +3045,7 @@ export default function PilotFastighetPage() {
                 <div
                   style={{
                     fontSize: execRealEstateLayout ? "10px" : executiveDemoMode ? "9px" : "12px",
-                    color: "#9CA3AF",
+                    color: executiveDemoMode ? "#9CA3AF" : semanticTheme.secondaryText,
                   }}
                 >
                   {executiveDemoMode
@@ -3117,7 +3067,7 @@ export default function PilotFastighetPage() {
                 <div
                   style={{
                     fontSize: execRealEstateLayout ? "10px" : executiveDemoMode ? "9px" : "12px",
-                    color: "#9CA3AF",
+                    color: executiveDemoMode ? "#9CA3AF" : semanticTheme.secondaryText,
                   }}
                 >
                   {executiveDemoMode
@@ -3139,7 +3089,7 @@ export default function PilotFastighetPage() {
                 style={{
                   marginLeft: "auto",
                   fontSize: execRealEstateLayout ? "10px" : executiveDemoMode ? "9px" : "12px",
-                  color: "#9CA3AF",
+                  color: executiveDemoMode ? "#9CA3AF" : semanticTheme.secondaryText,
                   fontWeight: 500,
                   textAlign: "right",
                 }}
@@ -3826,9 +3776,10 @@ export default function PilotFastighetPage() {
                       style={{
                         marginTop: "16px",
                         padding: "14px",
-                        borderRadius: "12px",
-                        background: "rgba(30, 41, 59, 0.6)",
-                        border: "1px solid rgba(148, 163, 184, 0.2)"
+                        borderRadius: CASCADE_PRESENTATION.radii.panel,
+                        background: semanticTheme.subtleSurface,
+                        border: `1px solid ${semanticTheme.border}`,
+                        color: semanticTheme.primaryText,
                       }}
                     >
                       <div style={{ fontWeight: 600, marginBottom: "8px" }}>
@@ -3941,8 +3892,9 @@ export default function PilotFastighetPage() {
               marginTop: 10,
               padding: 10,
               borderRadius: 6,
-              background: "#0f172a",
-              border: "1px solid #1e293b",
+              background: semanticTheme.subtleSurface,
+              border: `1px solid ${semanticTheme.border}`,
+              color: semanticTheme.primaryText,
               fontSize: 13,
               display: "flex",
               gap: 18,
@@ -3987,7 +3939,7 @@ export default function PilotFastighetPage() {
           <div
             style={{
               fontSize: 11,
-              color: "#9CA3AF",
+              color: semanticTheme.secondaryText,
               marginBottom: 4,
             }}
           >
@@ -4006,9 +3958,9 @@ export default function PilotFastighetPage() {
                 marginRight: 6,
                 padding: "4px 10px",
                 fontSize: 11,
-                border: "1px solid #374151",
-                background: simulationHorizon === q && customHorizon == null ? "#1F2937" : "#111827",
-                color: "#E5E7EB",
+                border: `1px solid ${simulationHorizon === q && customHorizon == null ? semanticTheme.focusRing : semanticTheme.border}`,
+                background: simulationHorizon === q && customHorizon == null ? semanticTheme.selectedControl : semanticTheme.controlBackground,
+                color: semanticTheme.primaryText,
                 borderRadius: 4,
                 cursor: "pointer",
               }}
@@ -4016,7 +3968,7 @@ export default function PilotFastighetPage() {
               {q}M
             </button>
           ))}
-          <span style={{ marginLeft: 8, fontSize: 11, color: "#9CA3AF" }}>{pt.pilotCustomHorizonLabel}</span>
+          <span style={{ marginLeft: 8, fontSize: 11, color: semanticTheme.secondaryText }}>{pt.pilotCustomHorizonLabel}</span>
           <input
             type="number"
             min={1}
@@ -4027,10 +3979,10 @@ export default function PilotFastighetPage() {
               width: "80px",
               marginLeft: "8px",
               padding: "4px 6px",
-              border: "1px solid #374151",
+              border: `1px solid ${semanticTheme.border}`,
               borderRadius: "4px",
-              background: "#111827",
-              color: "#e5e7eb",
+              background: semanticTheme.controlBackground,
+              color: semanticTheme.primaryText,
               fontSize: "12px",
             }}
             onChange={(e) => {
@@ -4240,7 +4192,7 @@ export default function PilotFastighetPage() {
           marginTop: "4px",
           marginBottom: "32px",
           fontSize: "12px",
-          color: "#9CA3AF",
+          color: semanticTheme.secondaryText,
         }}
       >
         <span>{pt.systemPressure}: </span>
@@ -4301,12 +4253,12 @@ export default function PilotFastighetPage() {
           style={{
             flex: "1 1 280px",
             padding: "16px",
-            background: "#1a1a1a",
-            border: "1px solid #2f333a",
+            background: semanticTheme.primarySurface,
+            border: `1px solid ${semanticTheme.border}`,
             borderRadius: "8px",
           }}
         >
-          <div style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px", color: "#9ca3af" }}>
+          <div style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px", color: semanticTheme.primaryText }}>
             {`Frozen Snapshots — ${scenarioALabelText}`}
           </div>
           {historyA.length === 0 ? (
@@ -4322,19 +4274,19 @@ export default function PilotFastighetPage() {
                     alignItems: "center",
                     marginBottom: "8px",
                     padding: "8px 0",
-                    background: "#111827",
+                    background: semanticTheme.subtleSurface,
                     border:
                       selectedSnapA === s.snapshotId || selectedSnapB === s.snapshotId
                         ? "1px solid #3b82f6"
-                        : "1px solid #1f2937",
+                        : `1px solid ${semanticTheme.border}`,
                     borderRadius: "4px",
                     transition: "background 0.15s ease, border 0.15s ease",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "#1f2937";
+                    e.currentTarget.style.background = semanticTheme.controlHover;
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "#111827";
+                    e.currentTarget.style.background = semanticTheme.subtleSurface;
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: "6px", flex: 1, minWidth: 0 }}>
@@ -4356,9 +4308,9 @@ export default function PilotFastighetPage() {
                             autoFocus
                             style={{
                               fontSize: "12px",
-                              color: "#e6edf3",
-                              background: "#0e1117",
-                              border: "1px solid #2f333a",
+                              color: semanticTheme.primaryText,
+                              background: semanticTheme.controlBackground,
+                              border: `1px solid ${semanticTheme.border}`,
                               borderRadius: "4px",
                               padding: "4px 6px",
                               width: "140px",
@@ -4367,7 +4319,7 @@ export default function PilotFastighetPage() {
                         ) : (
                           <>
                             <span
-                              style={{ fontSize: "12px", color: "#9ca3af", cursor: "pointer" }}
+                              style={{ fontSize: "12px", color: semanticTheme.primaryText, cursor: "pointer" }}
                               title="Double-click to rename"
                               onDoubleClick={() => {
                                 setEditingLabelId(s.snapshotId);
@@ -4401,7 +4353,7 @@ export default function PilotFastighetPage() {
                       <div
                         style={{
                           fontSize: "11px",
-                          color: "#9CA3AF",
+                          color: semanticTheme.mutedText,
                           marginTop: "4px",
                         }}
                       >
@@ -4415,10 +4367,10 @@ export default function PilotFastighetPage() {
                       onClick={() => setSelectedSnapA(s.snapshotId)}
                       style={{
                         padding: "4px 8px",
-                        background: "#0e1117",
-                        border: "1px solid #2f333a",
+                        background: semanticTheme.controlBackground,
+                        border: `1px solid ${semanticTheme.border}`,
                         borderRadius: "4px",
-                        color: "#e6edf3",
+                        color: semanticTheme.primaryText,
                         cursor: "pointer",
                         fontSize: "12px",
                       }}
@@ -4430,10 +4382,10 @@ export default function PilotFastighetPage() {
                       onClick={() => deleteSnapshotA(s.snapshotId)}
                       style={{
                         padding: "4px 8px",
-                        background: "#0e1117",
-                        border: "1px solid #2f333a",
+                        background: semanticTheme.controlBackground,
+                        border: `1px solid ${semanticTheme.border}`,
                         borderRadius: "4px",
-                        color: "#e6edf3",
+                        color: semanticTheme.primaryText,
                         cursor: "pointer",
                         fontSize: "12px",
                       }}
@@ -4450,12 +4402,12 @@ export default function PilotFastighetPage() {
           style={{
             flex: "1 1 280px",
             padding: "16px",
-            background: "#1a1a1a",
-            border: "1px solid #2f333a",
+            background: semanticTheme.primarySurface,
+            border: `1px solid ${semanticTheme.border}`,
             borderRadius: "8px",
           }}
         >
-          <div style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px", color: "#9ca3af" }}>
+          <div style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px", color: semanticTheme.primaryText }}>
             {`Frozen Snapshots — ${scenarioBLabelText}`}
           </div>
           {historyB.length === 0 ? (
@@ -4471,19 +4423,19 @@ export default function PilotFastighetPage() {
                     alignItems: "center",
                     marginBottom: "8px",
                     padding: "8px 0",
-                    background: "#111827",
+                    background: semanticTheme.subtleSurface,
                     border:
                       selectedSnapA === s.snapshotId || selectedSnapB === s.snapshotId
                         ? "1px solid #3b82f6"
-                        : "1px solid #1f2937",
+                        : `1px solid ${semanticTheme.border}`,
                     borderRadius: "4px",
                     transition: "background 0.15s ease, border 0.15s ease",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "#1f2937";
+                    e.currentTarget.style.background = semanticTheme.controlHover;
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "#111827";
+                    e.currentTarget.style.background = semanticTheme.subtleSurface;
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: "6px", flex: 1, minWidth: 0 }}>
@@ -4505,9 +4457,9 @@ export default function PilotFastighetPage() {
                             autoFocus
                             style={{
                               fontSize: "12px",
-                              color: "#e6edf3",
-                              background: "#0e1117",
-                              border: "1px solid #2f333a",
+                              color: semanticTheme.primaryText,
+                              background: semanticTheme.controlBackground,
+                              border: `1px solid ${semanticTheme.border}`,
                               borderRadius: "4px",
                               padding: "4px 6px",
                               width: "140px",
@@ -4516,7 +4468,7 @@ export default function PilotFastighetPage() {
                         ) : (
                           <>
                             <span
-                              style={{ fontSize: "12px", color: "#9ca3af", cursor: "pointer" }}
+                              style={{ fontSize: "12px", color: semanticTheme.primaryText, cursor: "pointer" }}
                               title="Double-click to rename"
                               onDoubleClick={() => {
                                 setEditingLabelId(s.snapshotId);
@@ -4550,7 +4502,7 @@ export default function PilotFastighetPage() {
                       <div
                         style={{
                           fontSize: "11px",
-                          color: "#9CA3AF",
+                          color: semanticTheme.mutedText,
                           marginTop: "4px",
                         }}
                       >
@@ -4564,10 +4516,10 @@ export default function PilotFastighetPage() {
                       onClick={() => setSelectedSnapB(s.snapshotId)}
                       style={{
                         padding: "4px 8px",
-                        background: "#0e1117",
-                        border: "1px solid #2f333a",
+                        background: semanticTheme.controlBackground,
+                        border: `1px solid ${semanticTheme.border}`,
                         borderRadius: "4px",
-                        color: "#e6edf3",
+                        color: semanticTheme.primaryText,
                         cursor: "pointer",
                         fontSize: "12px",
                       }}
@@ -4579,10 +4531,10 @@ export default function PilotFastighetPage() {
                       onClick={() => deleteSnapshotB(s.snapshotId)}
                       style={{
                         padding: "4px 8px",
-                        background: "#0e1117",
-                        border: "1px solid #2f333a",
+                        background: semanticTheme.controlBackground,
+                        border: `1px solid ${semanticTheme.border}`,
                         borderRadius: "4px",
-                        color: "#e6edf3",
+                        color: semanticTheme.primaryText,
                         cursor: "pointer",
                         fontSize: "12px",
                       }}
@@ -4602,12 +4554,12 @@ export default function PilotFastighetPage() {
           style={{
             marginTop: "32px",
             padding: "16px",
-            background: "#1a1a1a",
-            border: "1px solid #2f333a",
+            background: semanticTheme.primarySurface,
+            border: `1px solid ${semanticTheme.border}`,
             borderRadius: "8px",
           }}
         >
-          <div style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px", color: "#9ca3af" }}>
+          <div style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px", color: semanticTheme.primaryText }}>
             {`Compare Frozen Snapshots (${scenarioBLabelText} − ${scenarioALabelText})`}
           </div>
           <button
@@ -4617,10 +4569,10 @@ export default function PilotFastighetPage() {
               marginBottom: "12px",
               padding: "6px 10px",
               fontSize: "12px",
-              background: "#0e1117",
-              border: "1px solid #2f333a",
+              background: semanticTheme.controlBackground,
+              border: `1px solid ${semanticTheme.border}`,
               borderRadius: "4px",
-              color: "#9ca3af",
+              color: semanticTheme.secondaryText,
               cursor: "pointer",
             }}
           >
@@ -4992,12 +4944,6 @@ export default function PilotFastighetPage() {
         </div>
       )}
       </div>
-      <style jsx>{`
-        .active-button {
-          background-color: #3b82f6 !important;
-          color: white !important;
-        }
-      `}</style>
     </div>
   );
 }

@@ -63,11 +63,11 @@ export function CascadeModelPeriodKey({
         display: "inline-flex",
         alignItems: "center",
         width: "fit-content",
-        border: `1px solid ${CASCADE_PRESENTATION.borders.emphasis}`,
+        border: compact ? `1px solid ${CASCADE_PRESENTATION.borders.emphasis}` : "1px solid var(--ce-border, #334155)",
         borderRadius: CASCADE_PRESENTATION.radii.pill,
         padding: compact ? "2px 6px" : "3px 8px",
-        color: CASCADE_PRESENTATION.text.secondary,
-        background: "rgba(15, 23, 42, 0.62)",
+        color: compact ? CASCADE_PRESENTATION.text.secondary : "var(--ce-text-secondary, #9CA3AF)",
+        background: compact ? "rgba(15, 23, 42, 0.62)" : "var(--ce-surface-subtle, rgba(15, 23, 42, 0.62))",
         fontSize: compact ? 8.5 : 10,
         fontWeight: 650,
         letterSpacing: "0.02em",
@@ -109,7 +109,7 @@ export function CascadeScenarioIdentity({
         }}
       />
       <span>{scenario}</span>
-      {label && <span style={{ color: CASCADE_PRESENTATION.text.secondary, fontWeight: 500 }}>{label}</span>}
+      {label && <span style={{ color: "var(--ce-text-secondary, #9CA3AF)", fontWeight: 500 }}>{label}</span>}
     </span>
   );
 }
@@ -129,8 +129,8 @@ export function CascadeHumanJudgementBoundary({
         width: "fit-content",
         borderLeft: `2px solid ${CASCADE_PRESENTATION.constraints.neutral}`,
         padding: compact ? "3px 7px" : "5px 9px",
-        color: compact ? "#BAE6FD" : CASCADE_PRESENTATION.text.secondary,
-        background: "rgba(15, 23, 42, 0.42)",
+        color: compact ? "#BAE6FD" : "var(--ce-text-secondary, #9CA3AF)",
+        background: compact ? "rgba(15, 23, 42, 0.42)" : "var(--ce-surface-subtle, rgba(15, 23, 42, 0.42))",
         fontSize: compact ? 9 : 11,
         fontWeight: 650,
         lineHeight: 1.35,

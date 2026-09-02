@@ -18,6 +18,11 @@ const EXEC_SUSTAIN_THRESHOLD = 0.8;
 
 export interface MarginGraphTheme {
   graphBg: string;
+  graphBorder?: string;
+  text?: string;
+  subtext?: string;
+  buttonBg?: string;
+  buttonBorder?: string;
 }
 
 export type MarginGraphSelectMonthPayload = {
@@ -216,10 +221,7 @@ function MarginGraph({
       : seriesName === highlightedSeries
       ? 1
       : 0.35;
-  const graphBackground =
-    inspectionDepth === "executive"
-      ? "#0B1220"
-      : "#FFFFFF";
+  const graphBackground = execRealEstateGraphPassive ? "#0B1220" : theme.graphBg;
 
   const baselineA = marginHistoryA[0] ?? 0;
   const baselineB = marginHistoryB[0] ?? 0;
@@ -803,8 +805,9 @@ function MarginGraph({
           transform: translateX(-50%);
           padding: 6px 10px;
           font-size: 12px;
-          background: #0f172a;
-          color: #fff;
+          background: var(--ce-surface-elevated, #0f172a);
+          color: var(--ce-text-primary, #fff);
+          border: 1px solid var(--ce-border, #334155);
           border-radius: 6px;
           white-space: nowrap;
           pointer-events: none;
@@ -823,8 +826,8 @@ function MarginGraph({
           top: 28px;
           font-size: 12px;
           font-weight: 500;
-          color: #e5e7eb;
-          background: rgba(15, 23, 42, 0.85);
+          color: var(--ce-text-primary, #e5e7eb);
+          background: var(--ce-surface-elevated, rgba(15, 23, 42, 0.85));
           backdrop-filter: blur(2px);
           padding: 4px 8px;
           border-radius: 6px;
@@ -869,13 +872,13 @@ function MarginGraph({
       )}
       {!execRealEstateGraphPassive && (
       <div style={{ marginBottom: 8 }}>
-        <span style={{ marginRight: 6, color: "#9ca3af", fontSize: "11px" }}>
+        <span style={{ marginRight: 6, color: theme.subtext ?? "#9ca3af", fontSize: "11px" }}>
           {t.viewLabel}
         </span>
         <div
           style={{
             display: "inline-flex",
-            border: "1px solid #374151",
+            border: `1px solid ${theme.buttonBorder ?? "#374151"}`,
             borderRadius: 6,
             overflow: "hidden",
           }}
@@ -887,8 +890,8 @@ function MarginGraph({
             onMouseEnter={() => setHoveredViewMode("delta")}
             onMouseLeave={() => setHoveredViewMode(null)}
             style={{
-              background: viewMode === "delta" ? "#2563eb" : hoveredViewMode === "delta" ? "#111827" : "transparent",
-              color: viewMode === "delta" ? "#ffffff" : "#9ca3af",
+              background: viewMode === "delta" ? "var(--ce-control-selected, #2563eb)" : hoveredViewMode === "delta" ? (theme.buttonBg ?? "#111827") : "transparent",
+              color: viewMode === "delta" ? (theme.text ?? "#ffffff") : (theme.subtext ?? "#9ca3af"),
               border: "none",
               padding: "6px 10px",
             }}
@@ -905,8 +908,8 @@ function MarginGraph({
             onMouseEnter={() => setHoveredViewMode("absolute")}
             onMouseLeave={() => setHoveredViewMode(null)}
             style={{
-              background: viewMode === "absolute" ? "#2563eb" : hoveredViewMode === "absolute" ? "#111827" : "transparent",
-              color: viewMode === "absolute" ? "#ffffff" : "#9ca3af",
+              background: viewMode === "absolute" ? "var(--ce-control-selected, #2563eb)" : hoveredViewMode === "absolute" ? (theme.buttonBg ?? "#111827") : "transparent",
+              color: viewMode === "absolute" ? (theme.text ?? "#ffffff") : (theme.subtext ?? "#9ca3af"),
               border: "none",
               padding: "6px 10px",
             }}
@@ -920,7 +923,7 @@ function MarginGraph({
           style={{
             marginLeft: 12,
             fontSize: "11px",
-            color: "#9ca3af",
+            color: theme.subtext ?? "#9ca3af",
             display: "inline-flex",
             alignItems: "center",
             gap: 6,
@@ -968,7 +971,7 @@ function MarginGraph({
         style={{
           display: "block",
           background: graphBackground,
-          border: execRealEstateGraphPassive ? "1px solid rgba(51,65,85,0.55)" : "1px solid #e5e7eb",
+          border: execRealEstateGraphPassive ? "1px solid rgba(51,65,85,0.55)" : `1px solid ${theme.graphBorder ?? "#e5e7eb"}`,
           borderRadius: "4px",
           minHeight: svgDisplayHeightPx,
           minWidth: chartWidth,
@@ -1015,7 +1018,7 @@ function MarginGraph({
       <text
         x={14}
         y={150}
-        fill={execRealEstateGraphPassive ? "#64748b" : "#6b7280"}
+        fill={execRealEstateGraphPassive ? "#64748b" : (theme.subtext ?? "#6b7280")}
         fontSize={execRealEstateGraphPassive ? 10 : 11}
         fontWeight={500}
         transform="rotate(-90 14 150)"
@@ -1029,7 +1032,7 @@ function MarginGraph({
         y1={0}
         x2={LEFT_PADDING}
         y2={300}
-        stroke="#9ca3af"
+        stroke={theme.subtext ?? "#9ca3af"}
         strokeWidth={1}
       />
       {Array.from({ length: gridLevels }).map((_, i) => {
@@ -1042,7 +1045,7 @@ function MarginGraph({
             x2={chartWidth}
             y1={y}
             y2={y}
-            stroke={value === 0 ? "#6b7280" : "#e5e7eb"}
+            stroke={value === 0 ? (theme.subtext ?? "#6b7280") : (theme.graphBorder ?? "#e5e7eb")}
             strokeWidth={value === 0 ? 1.6 : 1}
             strokeOpacity={value === 0 ? 0.6 : 0.4}
           />
@@ -1056,7 +1059,7 @@ function MarginGraph({
           textAnchor="end"
           dominantBaseline="middle"
           fontSize={10}
-          fill="#9CA3AF"
+          fill={theme.subtext ?? "#9CA3AF"}
           opacity={0.75}
         >
           {`${Math.round(value * 10)}%`}
@@ -1068,7 +1071,7 @@ function MarginGraph({
           x2={chartWidth}
           y1={scaleY(EXEC_SUSTAIN_THRESHOLD)}
           y2={scaleY(EXEC_SUSTAIN_THRESHOLD)}
-          stroke="#9CA3AF"
+          stroke={theme.subtext ?? "#9CA3AF"}
           strokeWidth={1.25}
           strokeDasharray="6 4"
           opacity={0.85}
@@ -1081,14 +1084,14 @@ function MarginGraph({
             y1={scaleY(0)}
             x2={chartWidth}
             y2={scaleY(0)}
-            stroke={theme.graphBg === "#0b0f14" ? "#E5E7EB" : "#4B5563"}
+            stroke={theme.text ?? "#4B5563"}
             strokeWidth={2}
           />
           {viewMode === "absolute" && (
             <text
               x={LEFT_PADDING + 8}
               y={scaleY(0) - 8}
-              fill="#9CA3AF"
+              fill={theme.subtext ?? "#9CA3AF"}
               fontSize={10}
               fontWeight={500}
               textAnchor="start"
@@ -1491,7 +1494,7 @@ function MarginGraph({
           y1={0}
           x2={scaleX(0)}
           y2={height}
-          stroke="#9CA3AF"
+          stroke={theme.subtext ?? "#9CA3AF"}
           strokeWidth={2.4}
           strokeOpacity={0.4}
         />
@@ -1762,7 +1765,7 @@ function MarginGraph({
               y={height - 6}
               textAnchor="middle"
               fontSize={execRealEstateGraphPassive ? 8 : 10}
-              fill={execRealEstateGraphPassive ? (inSeparationWindow ? "#7a8698" : "#64748b") : "#9CA3AF"}
+              fill={execRealEstateGraphPassive ? (inSeparationWindow ? "#7a8698" : "#64748b") : (theme.subtext ?? "#9CA3AF")}
               opacity={execRealEstateGraphPassive ? (inSeparationWindow ? 0.69 : 0.62) : 0.8}
             >
               {`M${i + 1}`}

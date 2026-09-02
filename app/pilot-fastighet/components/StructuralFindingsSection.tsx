@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { CASCADE_PRESENTATION } from "@/src/pilotFastighet/cascadePresentation";
 import {
   STRUCTURAL_FINDINGS_FIELD_ORDER,
   type StructuralFindingsFieldId,
@@ -155,7 +154,7 @@ function renderCompleteValue(value: unknown, path: string): React.ReactNode {
       <dl style={{ display: "grid", gridTemplateColumns: "minmax(120px, auto) minmax(0, 1fr)", gap: "5px 14px", margin: 0 }}>
         {entries.map(([key, entry]) => (
           <React.Fragment key={`${path}-${key}`}>
-            <dt style={{ color: "#94a3b8" }}>{readableKey(key)}</dt>
+            <dt style={{ color: "var(--ce-text-secondary, #94a3b8)" }}>{readableKey(key)}</dt>
             <dd style={{ margin: 0, minWidth: 0, overflowWrap: "anywhere", wordBreak: "break-word" }}>{renderCompleteValue(entry, `${path}-${key}`)}</dd>
           </React.Fragment>
         ))}
@@ -199,7 +198,7 @@ function EvidenceSourceDetail({
   language: "sv" | "en";
 }) {
   return (
-    <div style={{ marginTop: 10, paddingTop: 8, borderTop: "1px solid rgba(148,163,184,0.13)", fontSize: 10.5, color: "#7f8da3" }}>
+    <div style={{ marginTop: 10, paddingTop: 8, borderTop: "1px solid var(--ce-border, rgba(148,163,184,0.13))", fontSize: 10.5, color: "var(--ce-text-muted, #7f8da3)" }}>
       <div style={{ letterSpacing: "0.01em" }}>{SOURCE_LABELS[field.source][language]}</div>
       {field.provenance.length > 0 && (
         <div data-testid={`findings-provenance-${field.id}`} style={{ display: "grid", gap: 8, marginTop: 6 }}>
@@ -211,7 +210,7 @@ function EvidenceSourceDetail({
                 {reference.scenario && <><dt>{language === "sv" ? "Scenarioscope" : "Scenario scope"}</dt><dd style={{ margin: 0 }}>{reference.scenario}</dd></>}
               </dl>
               {hasContent(reference.reference) && (
-                <details style={{ marginTop: 5, color: "#8f9bad" }}>
+                <details style={{ marginTop: 5, color: "var(--ce-text-secondary, #8f9bad)" }}>
                   <summary style={{ cursor: "pointer", userSelect: "none" }}>{language === "sv" ? "Källdetaljer" : "Source details"}</summary>
                   <div style={{ marginTop: 5, minWidth: 0, overflowWrap: "anywhere", wordBreak: "break-word", whiteSpace: "pre-wrap" }}>
                     {renderCompleteValue(reference.reference, `${field.id}-provenance-${index}`)}
@@ -250,11 +249,11 @@ function FindingEvidenceRow({
         style={{ width: "100%", display: "grid", gridTemplateColumns: "minmax(180px, .6fr) minmax(0, 1.4fr) auto", gap: 18, alignItems: "start", padding: "11px 0", border: 0, background: "transparent", color: "inherit", textAlign: "left", cursor: "pointer" }}
       >
         <span style={{ fontSize: 11.5, fontWeight: 600 }}>{LABELS[field.id][language]}</span>
-        <span style={{ minWidth: 0, color: "#aeb9c8", fontSize: 11.5, lineHeight: 1.45, overflowWrap: "anywhere", wordBreak: "break-word" }}>{conciseValue(field)}</span>
+        <span style={{ minWidth: 0, color: "var(--ce-text-primary, #aeb9c8)", fontSize: 11.5, lineHeight: 1.45, overflowWrap: "anywhere", wordBreak: "break-word" }}>{conciseValue(field)}</span>
         <span aria-hidden style={{ color: "#718096", transform: expanded ? "rotate(90deg)" : "none", transition: "transform 120ms ease" }}>›</span>
       </button>
       {expanded && (
-        <div id={detailId} role="region" aria-labelledby={controlId} style={{ padding: "0 24px 12px 0", color: "#d7dee8", fontSize: 12, lineHeight: 1.55 }}>
+        <div id={detailId} role="region" aria-labelledby={controlId} style={{ padding: "0 24px 12px 0", color: "var(--ce-text-primary, #d7dee8)", fontSize: 12, lineHeight: 1.55 }}>
           {renderCompleteValue(field.value, field.id)}
           <EvidenceSourceDetail field={field} language={language} />
         </div>
@@ -279,11 +278,11 @@ export default function StructuralFindingsSection({
   if (!model.analysisReady) {
     const empty = model.fields.emptyState;
     return (
-      <section aria-labelledby="structural-findings-title" style={{ background: CASCADE_PRESENTATION.surfaces.dark.analysis, border: `1px solid ${CASCADE_PRESENTATION.borders.dark}`, borderRadius: 6, padding: 12 }}>
-        <h2 id="structural-findings-title" style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#e5e7eb" }}>
+      <section aria-labelledby="structural-findings-title" style={{ background: "var(--ce-surface-subtle, #0F172A)", border: "1px solid var(--ce-border, #1F2937)", borderRadius: 6, padding: 12 }}>
+        <h2 id="structural-findings-title" style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "var(--ce-text-primary, #e5e7eb)" }}>
           {language === "sv" ? "Strukturella fynd" : "Structural Findings"}
         </h2>
-        <div style={{ marginTop: 10, color: "#94a3b8", fontSize: 12 }}>{empty ? renderCompleteValue(empty.value, empty.id) : "—"}</div>
+        <div style={{ marginTop: 10, color: "var(--ce-text-secondary, #94a3b8)", fontSize: 12 }}>{empty ? renderCompleteValue(empty.value, empty.id) : "—"}</div>
       </section>
     );
   }
@@ -310,13 +309,13 @@ export default function StructuralFindingsSection({
   };
 
   return (
-    <section aria-labelledby="structural-findings-title" data-mode={model.mode} style={{ background: CASCADE_PRESENTATION.surfaces.dark.analysis, border: `1px solid ${CASCADE_PRESENTATION.borders.dark}`, borderRadius: 6, padding: "12px 14px", color: "#e5e7eb" }}>
+    <section aria-labelledby="structural-findings-title" data-mode={model.mode} style={{ background: "var(--ce-surface-subtle, #0F172A)", border: "1px solid var(--ce-border, #1F2937)", borderRadius: 6, padding: "12px 14px", color: "var(--ce-text-primary, #e5e7eb)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 16 }}>
         <h2 id="structural-findings-title" style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>
           {language === "sv" ? "Strukturella fynd" : "Structural Findings"}
         </h2>
         {evidence.length > 0 && (
-          <button type="button" onClick={() => setExpanded(allExpanded ? new Set() : new Set(evidence.map((field) => field.id)))} style={{ border: 0, background: "transparent", color: "#94a3b8", padding: "2px 0", fontSize: 11, cursor: "pointer" }}>
+          <button type="button" onClick={() => setExpanded(allExpanded ? new Set() : new Set(evidence.map((field) => field.id)))} style={{ border: 0, background: "transparent", color: "var(--ce-text-secondary, #94a3b8)", padding: "2px 0", fontSize: 11, cursor: "pointer" }}>
             {allExpanded
               ? language === "sv" ? "Dölj alla" : "Collapse all"
               : language === "sv" ? "Visa alla" : "Expand all"}
@@ -332,8 +331,8 @@ export default function StructuralFindingsSection({
       <div className="findings-summary-grid" data-testid="findings-summary" style={{ display: "grid", gap: "14px 28px", marginTop: 14, paddingBottom: evidence.length > 0 ? 12 : 0 }}>
         {summary.map((field) => (
           <div key={field.id} data-summary-field={field.id} style={{ minWidth: 0, fontSize: 12 }}>
-            <div style={{ color: "#8f9bad", fontSize: 10.5, marginBottom: 4 }}>{LABELS[field.id][language]}</div>
-            <div style={{ color: "#e1e7ef", minWidth: 0, lineHeight: 1.45, overflowWrap: "anywhere", wordBreak: "break-word" }}>{conciseValue(field)}</div>
+            <div style={{ color: "var(--ce-text-muted, #8f9bad)", fontSize: 10.5, marginBottom: 4 }}>{LABELS[field.id][language]}</div>
+            <div style={{ color: "var(--ce-text-primary, #e1e7ef)", minWidth: 0, lineHeight: 1.45, overflowWrap: "anywhere", wordBreak: "break-word" }}>{conciseValue(field)}</div>
           </div>
         ))}
       </div>
@@ -341,7 +340,7 @@ export default function StructuralFindingsSection({
       <div data-testid="findings-evidence">
         {groups.map((group) => (
           <section key={group.id} data-findings-group={group.id} aria-labelledby={`findings-group-${group.id}`} style={{ marginTop: 10 }}>
-            <h3 id={`findings-group-${group.id}`} style={{ margin: 0, padding: "10px 0 7px", color: "#7f8da3", fontSize: 10.5, fontWeight: 600, letterSpacing: "0.035em", textTransform: "uppercase" }}>
+            <h3 id={`findings-group-${group.id}`} style={{ margin: 0, padding: "10px 0 7px", color: "var(--ce-text-muted, #7f8da3)", fontSize: 10.5, fontWeight: 600, letterSpacing: "0.035em", textTransform: "uppercase" }}>
               {GROUP_LABELS[group.id][language]}
             </h3>
             {group.fields.map((field) => (

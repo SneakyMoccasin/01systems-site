@@ -46,8 +46,8 @@ export const SnapshotCompare: React.FC<Props> = ({
       style={{
         marginTop: "0",
         padding: "24px",
-        background: "#111827",
-        border: "1px solid #1F2937",
+        background: "var(--ce-surface-primary, #111827)",
+        border: "1px solid var(--ce-border, #1F2937)",
         borderRadius: "6px",
         height: "100%",
         display: "flex",
@@ -61,7 +61,7 @@ export const SnapshotCompare: React.FC<Props> = ({
           fontWeight: 600,
           fontSize: "15px",
           letterSpacing: "0.02em",
-          color: "#E5E7EB",
+          color: "var(--ce-text-primary, #E5E7EB)",
         }}
       >
         Snapshot Compare
@@ -78,9 +78,9 @@ export const SnapshotCompare: React.FC<Props> = ({
         <div
           style={{
             padding: "16px",
-            background: "rgba(31, 41, 55, 0.4)",
+            background: "var(--ce-surface-subtle, rgba(31, 41, 55, 0.4))",
             borderRadius: "6px",
-            border: "1px solid #1F2937",
+            border: "1px solid var(--ce-border, #1F2937)",
           }}
         >
           <div
@@ -88,36 +88,36 @@ export const SnapshotCompare: React.FC<Props> = ({
               fontSize: "11px",
               fontWeight: 600,
               letterSpacing: "0.06em",
-              color: "#9CA3AF",
+              color: "var(--ce-text-secondary, #9CA3AF)",
               marginBottom: "12px",
             }}
           >
             Current Strategy
           </div>
-          <div style={{ fontSize: "12px", color: "#9CA3AF", marginBottom: "4px" }}>
+          <div style={{ fontSize: "12px", color: "var(--ce-text-secondary, #9CA3AF)", marginBottom: "4px" }}>
             Start
           </div>
-          <div style={{ fontSize: "15px", fontWeight: 500, color: "#F3F4F6", marginBottom: "12px" }}>
+          <div style={{ fontSize: "15px", fontWeight: 500, color: "var(--ce-text-primary, #F3F4F6)", marginBottom: "12px" }}>
             {baselineA.toFixed(2)}
           </div>
-          <div style={{ fontSize: "12px", color: "#9CA3AF", marginBottom: "4px" }}>
+          <div style={{ fontSize: "12px", color: "var(--ce-text-secondary, #9CA3AF)", marginBottom: "4px" }}>
             End
           </div>
-          <div style={{ fontSize: "15px", fontWeight: 500, color: "#F3F4F6", marginBottom: "12px" }}>
+          <div style={{ fontSize: "15px", fontWeight: 500, color: "var(--ce-text-primary, #F3F4F6)", marginBottom: "12px" }}>
             {finalA.toFixed(2)}
           </div>
-          <div style={{ fontSize: "12px", color: "#9CA3AF", marginBottom: "4px" }}>
+          <div style={{ fontSize: "12px", color: "var(--ce-text-secondary, #9CA3AF)", marginBottom: "4px" }}>
             Status
           </div>
-          <div style={{ fontSize: "13px", color: "#9CA3AF" }}>{structuralStatusA}</div>
+          <div style={{ fontSize: "13px", color: "var(--ce-text-secondary, #9CA3AF)" }}>{structuralStatusA}</div>
         </div>
 
         <div
           style={{
             padding: "16px",
-            background: "rgba(31, 41, 55, 0.4)",
+            background: "var(--ce-surface-subtle, rgba(31, 41, 55, 0.4))",
             borderRadius: "6px",
-            border: "1px solid #1F2937",
+            border: "1px solid var(--ce-border, #1F2937)",
           }}
         >
           <div
@@ -125,25 +125,25 @@ export const SnapshotCompare: React.FC<Props> = ({
               fontSize: "11px",
               fontWeight: 600,
               letterSpacing: "0.06em",
-              color: "#9CA3AF",
+              color: "var(--ce-text-secondary, #9CA3AF)",
               marginBottom: "12px",
             }}
           >
             Alternative Strategy
           </div>
-          <div style={{ fontSize: "12px", color: "#9CA3AF", marginBottom: "4px" }}>
+          <div style={{ fontSize: "12px", color: "var(--ce-text-secondary, #9CA3AF)", marginBottom: "4px" }}>
             Start
           </div>
-          <div style={{ fontSize: "15px", fontWeight: 500, color: "#F3F4F6", marginBottom: "12px" }}>
+          <div style={{ fontSize: "15px", fontWeight: 500, color: "var(--ce-text-primary, #F3F4F6)", marginBottom: "12px" }}>
             {baselineB.toFixed(2)}
           </div>
-          <div style={{ fontSize: "12px", color: "#9CA3AF", marginBottom: "4px" }}>
+          <div style={{ fontSize: "12px", color: "var(--ce-text-secondary, #9CA3AF)", marginBottom: "4px" }}>
             End
           </div>
-          <div style={{ fontSize: "15px", fontWeight: 500, color: "#F3F4F6", marginBottom: "12px" }}>
+          <div style={{ fontSize: "15px", fontWeight: 500, color: "var(--ce-text-primary, #F3F4F6)", marginBottom: "12px" }}>
             {finalB.toFixed(2)}
           </div>
-          <div style={{ fontSize: "12px", color: "#9CA3AF", marginBottom: "4px" }}>
+          <div style={{ fontSize: "12px", color: "var(--ce-text-secondary, #9CA3AF)", marginBottom: "4px" }}>
             Status
           </div>
           <div style={{ fontSize: "13px", fontWeight: 500, color: getStatusColor(structuralStatusB) }}>
@@ -156,7 +156,7 @@ export const SnapshotCompare: React.FC<Props> = ({
         style={{
           marginTop: "4px",
           paddingTop: "20px",
-          borderTop: "1px solid #1F2937",
+          borderTop: "1px solid var(--ce-border, #1F2937)",
           display: "flex",
           flexDirection: "column",
           gap: "12px",
@@ -165,13 +165,13 @@ export const SnapshotCompare: React.FC<Props> = ({
         <div
           style={{
             padding: "12px 16px",
-            background: "rgba(31, 41, 55, 0.6)",
+            background: "var(--ce-surface-subtle, rgba(31, 41, 55, 0.6))",
             borderRadius: "6px",
             borderLeft: "3px solid",
             borderLeftColor: deltaMargin < 0 ? "#DC2626" : deltaMargin > 0 ? "#059669" : "#6B7280",
           }}
         >
-          <div style={{ fontSize: "11px", color: "#9CA3AF", marginBottom: "4px" }}>
+          <div style={{ fontSize: "11px", color: "var(--ce-text-secondary, #9CA3AF)", marginBottom: "4px" }}>
             Δ Margin
           </div>
           <div
@@ -186,10 +186,10 @@ export const SnapshotCompare: React.FC<Props> = ({
           </div>
         </div>
         <div>
-          <div style={{ fontSize: "11px", color: "#9CA3AF", marginBottom: "4px" }}>
+          <div style={{ fontSize: "11px", color: "var(--ce-text-secondary, #9CA3AF)", marginBottom: "4px" }}>
             {tippingLabel}
           </div>
-          <div style={{ fontSize: "14px", color: "#E5E7EB" }}>
+          <div style={{ fontSize: "14px", color: "var(--ce-text-primary, #E5E7EB)" }}>
             {tippingStep ? "Tipping risk" : noTippingText}
           </div>
         </div>

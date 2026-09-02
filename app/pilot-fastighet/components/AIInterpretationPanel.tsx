@@ -14,7 +14,6 @@ import type {
   ScenarioSchedules,
 } from "@/src/pilotFastighet/analysis/reactScheduledAnalysisBoundary";
 import type { ScheduledFairComparisonFacts } from "@/src/pilotFastighet/analysis/manualScheduledExecution";
-import { CASCADE_PRESENTATION } from "@/src/pilotFastighet/cascadePresentation";
 
 type Language = "sv" | "en";
 
@@ -689,8 +688,8 @@ const AIInterpretationPanel: React.FC<Props> = ({
   return (
     <div
       style={{
-        background: CASCADE_PRESENTATION.surfaces.dark.analysis,
-        border: `1px solid ${CASCADE_PRESENTATION.borders.dark}`,
+        background: "var(--ce-surface-subtle, #0F172A)",
+        border: "1px solid var(--ce-border, #1F2937)",
         borderRadius: "6px",
         padding: "12px",
         marginTop: "16px",
@@ -701,7 +700,7 @@ const AIInterpretationPanel: React.FC<Props> = ({
           style={{
             fontSize: "13px",
             fontWeight: 600,
-            color: "#e5e7eb",
+            color: "var(--ce-text-primary, #e5e7eb)",
           }}
         >
           {t.aiInterpretation}
@@ -709,7 +708,7 @@ const AIInterpretationPanel: React.FC<Props> = ({
         <div
           style={{
             fontSize: "11px",
-            color: "#9CA3AF",
+            color: "var(--ce-text-secondary, #9CA3AF)",
             marginTop: "4px",
           }}
         >
@@ -718,7 +717,7 @@ const AIInterpretationPanel: React.FC<Props> = ({
       </div>
 
       {loading && (
-        <div style={{ fontSize: "12px", color: "#9CA3AF" }}>
+        <div style={{ fontSize: "12px", color: "var(--ce-text-secondary, #9CA3AF)" }}>
           {t.aiAnalysing}
         </div>
       )}
@@ -736,7 +735,7 @@ const AIInterpretationPanel: React.FC<Props> = ({
         >
           {parsedSections.length === 0
             ? aiText.split("\n").map((line, index) => (
-                <div key={index} style={{ color: "#E5E7EB", gridColumn: "1 / -1" }}>
+                <div key={index} style={{ color: "var(--ce-text-primary, #E5E7EB)", gridColumn: "1 / -1" }}>
                   {surfaceLine(line)}
                 </div>
               ))
@@ -745,7 +744,7 @@ const AIInterpretationPanel: React.FC<Props> = ({
                   <div
                     style={{
                       fontWeight: 600,
-                      color: "#9CA3AF",
+                      color: "var(--ce-text-secondary, #9CA3AF)",
                       marginTop: index > 0 ? "10px" : 0,
                     }}
                   >
@@ -753,7 +752,7 @@ const AIInterpretationPanel: React.FC<Props> = ({
                       sectionTitleMap[sec.title.toLowerCase()] ?? sec.title
                     )}
                   </div>
-                  <div style={{ color: "#E5E7EB" }}>{surfaceLine(sec.content)}</div>
+                  <div style={{ color: "var(--ce-text-primary, #E5E7EB)" }}>{surfaceLine(sec.content)}</div>
                 </React.Fragment>
               ))}
         </div>

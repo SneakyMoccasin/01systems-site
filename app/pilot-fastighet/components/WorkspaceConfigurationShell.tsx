@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
-import { CASCADE_PRESENTATION } from "@/src/pilotFastighet/cascadePresentation";
 
 export type WorkspaceConfigurationSection = "interventions" | "drivers";
 
@@ -67,6 +66,10 @@ type Props = {
   interventions: ReactNode;
   drivers: ReactNode;
   children?: ReactNode;
+  appearance?: {
+    border: string; strongDivider: string; primaryText: string; secondaryText: string;
+    elevatedSurface: string; controlBackground: string; criticalState: string; shadow: string;
+  };
 };
 
 export default function WorkspaceConfigurationShell({
@@ -79,6 +82,7 @@ export default function WorkspaceConfigurationShell({
   interventions,
   drivers,
   children,
+  appearance,
 }: Props) {
   const [state, setState] = useState<WorkspaceConfigurationState>(() => ({
     activeSection: null,
@@ -161,8 +165,8 @@ export default function WorkspaceConfigurationShell({
       aria-label={`${copy.configuration}: ${
         state.activeSection === "interventions" ? copy.interventions : copy.drivers
       }`}
-      className="flex h-full min-h-0 flex-col overflow-hidden bg-slate-950 text-slate-100"
-      style={{ borderColor: CASCADE_PRESENTATION.borders.dark }}
+      className="flex h-full min-h-0 flex-col overflow-hidden"
+      style={{ borderColor: "var(--ce-border)", background: "var(--ce-surface-elevated)", color: "var(--ce-text-primary)" }}
     >
       <header className="flex shrink-0 items-center gap-2 border-b border-slate-800 px-4 py-3">
         <div className="min-w-0 flex-1">
@@ -208,8 +212,8 @@ export default function WorkspaceConfigurationShell({
               aria-current={selected ? "page" : undefined}
               className="border-b-2 px-0 py-3 text-xs font-medium transition first:mr-5"
               style={{
-                color: selected ? "#E5E7EB" : "#94A3B8",
-                borderColor: selected ? "#64748B" : "transparent",
+                color: selected ? "var(--ce-text-primary)" : "var(--ce-text-secondary)",
+                borderColor: selected ? "var(--ce-divider-strong)" : "transparent",
               }}
             >
               {section === "interventions" ? copy.interventions : copy.drivers}
@@ -231,7 +235,19 @@ export default function WorkspaceConfigurationShell({
   const overlay =
     state.activeSection && typeof document !== "undefined"
       ? createPortal(
-          <div className={state.pinned ? "lg:hidden" : undefined}>
+          <div
+            className={state.pinned ? "lg:hidden" : undefined}
+            style={{
+              "--ce-border": appearance?.border,
+              "--ce-divider-strong": appearance?.strongDivider,
+              "--ce-text-primary": appearance?.primaryText,
+              "--ce-text-secondary": appearance?.secondaryText,
+              "--ce-surface-elevated": appearance?.elevatedSurface,
+              "--ce-control-bg": appearance?.controlBackground,
+              "--ce-critical": appearance?.criticalState,
+              "--ce-shadow": appearance?.shadow,
+            } as CSSProperties}
+          >
             <button
               type="button"
               aria-label={copy.closeOutside}
@@ -249,13 +265,14 @@ export default function WorkspaceConfigurationShell({
             <aside
               role="dialog"
               aria-modal="true"
-              className="ce-workspace-config-inspector overflow-hidden bg-slate-950"
+              className="ce-workspace-config-inspector overflow-hidden"
               style={{
                 position: "fixed",
                 right: 0,
                 zIndex: 2147483001,
-                border: `1px solid ${CASCADE_PRESENTATION.borders.dark}`,
-                boxShadow: "-8px 0 22px rgba(2, 6, 23, 0.16)",
+                border: "1px solid var(--ce-border)",
+                background: "var(--ce-surface-elevated)",
+                boxShadow: "-8px 0 22px var(--ce-shadow)",
                 "--ce-config-inspector-top": `${desktopInspectorTop}px`,
               } as CSSProperties}
             >
@@ -287,7 +304,8 @@ export default function WorkspaceConfigurationShell({
       <div
         ref={controlRowRef}
         data-testid="configuration-control-row"
-        className="mb-4 flex min-w-0 flex-wrap items-center justify-end gap-3 border-b border-slate-800 pb-3"
+        className="mb-4 flex min-w-0 flex-wrap items-center justify-end gap-3 border-b pb-3"
+        style={{ borderColor: "var(--ce-border)" }}
       >
         <div className="flex min-w-0 items-center gap-3 text-xs text-slate-500">
           {validationCount > 0 && (
@@ -305,11 +323,12 @@ export default function WorkspaceConfigurationShell({
           type="button"
           onClick={() => open("interventions")}
           aria-expanded={state.activeSection !== null}
-          className="inline-flex min-h-10 items-center gap-3 rounded-md border bg-transparent px-3 py-1.5 text-left transition hover:bg-slate-800/45"
+          className="inline-flex min-h-10 items-center gap-3 rounded-md border px-3 py-1.5 text-left transition"
           style={{
-            color: "#CBD5E1",
+            color: "var(--ce-text-primary)",
+            background: "var(--ce-control-bg)",
             borderColor:
-              validationCount > 0 ? "#7F1D1D" : CASCADE_PRESENTATION.borders.dark,
+              validationCount > 0 ? "var(--ce-critical)" : "var(--ce-border)",
           }}
         >
           <span className="text-sm font-medium">{copy.configuration}</span>
@@ -340,7 +359,7 @@ export default function WorkspaceConfigurationShell({
       >
         <div className="min-w-0 max-w-full overflow-x-hidden">{children}</div>
         {state.pinned && state.activeSection && (
-          <aside className="hidden min-h-[520px] max-h-[calc(100vh-32px)] overflow-hidden rounded-lg border border-slate-800 lg:sticky lg:top-4 lg:block">
+          <aside className="hidden min-h-[520px] max-h-[calc(100vh-32px)] overflow-hidden rounded-lg border lg:sticky lg:top-4 lg:block" style={{ borderColor: "var(--ce-border)", background: "var(--ce-surface-elevated)", boxShadow: "0 8px 24px var(--ce-shadow)" }}>
             {panel}
           </aside>
         )}

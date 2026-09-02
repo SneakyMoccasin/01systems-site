@@ -247,7 +247,7 @@ export default function ActionPanel({
                   className="min-w-0 flex-1 text-left"
                   onClick={() => toggleScheduledAction?.(action)}
                   style={{
-                    color: scheduledEntry ? "#FFFFFF" : "#D1D5DB",
+                    color: scheduledEntry ? "var(--ce-text-primary, #FFFFFF)" : "var(--ce-text-secondary, #D1D5DB)",
                     fontWeight: scheduledEntry ? 600 : 500,
                   }}
                 >
@@ -268,7 +268,8 @@ export default function ActionPanel({
                         event.stopPropagation();
                         updateScheduledActionStep?.(action, Number(event.target.value));
                       }}
-                      className="w-full min-w-24 rounded border border-gray-600 bg-gray-900 px-2 py-1.5 text-sm text-gray-100 sm:w-auto"
+                      className="w-full min-w-24 rounded border px-2 py-1.5 text-sm sm:w-auto"
+                      style={{ borderColor: "var(--ce-border)", background: "var(--ce-control-bg)", color: "var(--ce-text-primary)" }}
                     >
                       {Array.from({ length: simulationHorizon }, (_, index) => index + 1).map(
                         (step) => (
@@ -285,12 +286,12 @@ export default function ActionPanel({
           return (
             <button
               key={action}
-              className="relative px-3 py-2 pl-6 text-left rounded-lg border transition hover:bg-gray-700/60"
+              className="relative px-3 py-2 pl-6 text-left rounded-lg border transition"
               onClick={() => applyAction(action)}
               style={{
                 background,
                 borderColor,
-                color: isSelected ? "#FFFFFF" : "#D1D5DB",
+                color: isSelected ? "var(--ce-text-primary, #FFFFFF)" : "var(--ce-text-secondary, #D1D5DB)",
                 boxShadow: isShared
                   ? `inset 0 0 0 1px ${withAlpha(strategyColors.baseline, 0.26)}, inset 0 0 0 2px ${withAlpha(strategyColors.goal, 0.18)}`
                   : inBaseline
