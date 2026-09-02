@@ -3420,9 +3420,12 @@ export default function PilotFastighetPage() {
         )}
         <div
           className={execRealEstateLayout ? "executive-demo-results-layout" : undefined}
+          data-testid="analysis-results-layout"
           style={{
-            display: execRealEstateLayout ? "grid" : "flex",
-            flexDirection: execRealEstateLayout ? undefined : "row",
+            display: execRealEstateLayout
+              ? "grid"
+              : executiveDemoMode ? "flex" : "block",
+            flexDirection: executiveDemoMode && !execRealEstateLayout ? "row" : undefined,
             gridTemplateColumns: execRealEstateLayout
               ? "minmax(300px, 0.35fr) minmax(0, 0.65fr)"
               : undefined,
@@ -3448,12 +3451,12 @@ export default function PilotFastighetPage() {
                     overflowX: "hidden",
                   }
                 : {
-                    flex: executiveDemoMode ? "0 0 clamp(284px, 30vw, 304px)" : "1 1 0",
+                    flex: executiveDemoMode ? "0 0 clamp(284px, 30vw, 304px)" : undefined,
                     minWidth: 0,
-                    maxWidth: executiveDemoMode ? 304 : "min(100%, 420px)",
-                    background: executiveDemoMode ? "transparent" : "#111827",
-                    borderRadius: executiveDemoMode ? 0 : 8,
-                    padding: executiveDemoMode ? 0 : 12,
+                    maxWidth: executiveDemoMode ? 304 : "100%",
+                    background: "transparent",
+                    borderRadius: 0,
+                    padding: 0,
                     overflowX: "hidden",
                   }
             }
@@ -3540,7 +3543,7 @@ export default function PilotFastighetPage() {
                   language={uiLanguage}
                 />
               )}
-              {effectiveExecutionMode === "configured-start" && (
+              {executiveDemoMode && effectiveExecutionMode === "configured-start" && (
               <AIInspectorPanel
                 language={uiLanguage}
                 scenarioALabel={selectedScenarioALabel}
@@ -3595,8 +3598,9 @@ export default function PilotFastighetPage() {
                     overflowX: "hidden",
                   }
                 : {
-                    flex: executiveDemoMode ? "1 1 0" : "2.2 1 0",
+                    flex: executiveDemoMode ? "1 1 0" : undefined,
                     minWidth: 0,
+                    width: "100%",
                   }
             }
           >
@@ -3646,6 +3650,7 @@ export default function PilotFastighetPage() {
                       : {}),
                   }}
                 >
+                <div data-testid="structural-margin-region" style={{ width: "100%" }}>
                 <MarginGraph
                   marginHistoryA={marginHistoryA}
                   marginHistoryB={marginHistoryB}
@@ -3708,6 +3713,51 @@ export default function PilotFastighetPage() {
                   scenarioTarget={transportScenarioTarget}
                   showDriverActivations={showDriverActivations}
                 />
+                </div>
+                {!executiveDemoMode && effectiveExecutionMode === "configured-start" && (
+                  <div data-testid="normal-structural-findings-region" style={{ marginTop: 16, width: "100%" }}>
+                    <AIInspectorPanel
+                      language={uiLanguage}
+                      scenarioALabel={selectedScenarioALabel}
+                      scenarioBLabel={selectedScenarioBLabel}
+                      tippingQuarter={
+                        tippingMarginIndexB != null ? tippingMarginIndexB + 1 : null
+                      }
+                      currentMargin={finalA}
+                      alternativeMargin={finalB}
+                      marginImpact={finalB - finalA}
+                      marginHistoryA={marginHistoryA}
+                      marginHistoryB={marginHistoryB}
+                      cascadeEvents={cascadeEvents}
+                      cascadeEventsA={cascadeEventsA}
+                      cascadeEventsB={cascadeEventsB}
+                      seriesLengthA={marginHistoryA.length}
+                      seriesLengthB={marginHistoryB.length}
+                      simulationHorizon={simulationHorizon}
+                      primaryDriverA={primaryDriverA}
+                      primaryDriverB={primaryDriverB}
+                      primaryDriver={primaryDriver}
+                      systemPressure={systemPressure}
+                      constraintBreakQuarter={estimatedTimeToBreach}
+                      constraintRegistryA={stateA.registry}
+                      constraintRegistryB={stateB.registry}
+                      constraintRegistry={stateB.registry}
+                      structuralStatus={t.structuralStatus[structuralStatusKey]}
+                      selectedMonthIndex={selectedMonthData?.monthIndex ?? null}
+                      selectedMarginValueA={selectedMonthData?.marginA ?? null}
+                      selectedMarginValueB={selectedMonthData?.marginB ?? null}
+                      selectedGoal={selectedGoal}
+                      scenarioTarget={transportScenarioTarget}
+                      selectedActions={selectedActionsForPanel}
+                      inspectionMode={uiMode}
+                      caseType={caseType}
+                      dominantScenarioDifferenceChannel={
+                        transportContext?.dominantScenarioDifferenceChannel ?? null
+                      }
+                      executiveDemoMode={false}
+                    />
+                  </div>
+                )}
                 {executiveDemoMode && caseType === "real-estate" && (
                   <div
                     style={{

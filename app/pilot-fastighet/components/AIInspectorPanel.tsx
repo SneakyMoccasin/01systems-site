@@ -49,6 +49,7 @@ import {
   buildStructuralFindingsPresentationModel,
   structuralFindingsValue,
 } from "@/src/pilotFastighet/analysis/structuralFindingsPresentationModel";
+import StructuralFindingsSection from "./StructuralFindingsSection";
 
 function toReadableLabel(
   driverId: TransportSystemDriverId | string | null | undefined,
@@ -441,6 +442,13 @@ type Props = {
  * The legacy component identifier is retained to avoid unrelated code churn;
  * the product-facing name is Structural Findings / Strukturella fynd.
  */
+function shouldUseSharedFindingsRenderer(
+  executiveDemoMode: boolean,
+  inspectionMode: "executive" | "expert"
+): boolean {
+  return !executiveDemoMode || inspectionMode === "expert";
+}
+
 const AIInspectorPanel: React.FC<Props> = ({
   language = "en",
   scenarioALabel,
@@ -1563,9 +1571,25 @@ const AIInspectorPanel: React.FC<Props> = ({
     },
     visibility: {
       emptyState: !analysisReady,
+      scenarioIdentities:
+        caseType === "real-estate" && scenarioALabel != null && scenarioBLabel != null,
+      analysisGoal:
+        inspectionMode === "executive" && seriesLengthA > 0 && seriesLengthB > 0,
       analysisFocus: resolvedScenarioLabel != null,
       caseMetadata: shouldShowCaseHeader,
       goalDirection: goalDirectionIndicatorMessage != null,
+      decisionEffectSummary: analysisReady,
+      executiveSummaryLines:
+        analysisReady && caseType === "transport" && executiveInspectorSummaryLines.length > 0,
+      policyDriver:
+        analysisReady &&
+        (resolvedPolicyDriver != null || transportInspectorContext?.policyLeverLabel != null),
+      systemDriver:
+        analysisReady &&
+        (resolvedSystemDriver != null || transportInspectorContext?.systemDriverLabel != null),
+      primaryDriver: analysisReady,
+      systemPressure: analysisReady,
+      structuralStatus: analysisReady,
       upstreamDependencies:
         inspectionMode === "expert" && simulationCascadeEvents.length > 0,
       dominantScenarioDifferenceChannel: dominantScenarioChannelText != null,
@@ -2080,6 +2104,10 @@ const AIInspectorPanel: React.FC<Props> = ({
       </div>
     );
   }
+  if (shouldUseSharedFindingsRenderer(executiveDemoMode, inspectionMode)) {
+    return <StructuralFindingsSection model={findingsPresentationModel} />;
+  }
+
 
   return (
     <div
