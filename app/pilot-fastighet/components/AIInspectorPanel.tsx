@@ -44,6 +44,7 @@ import {
   constraintSourceStepToDisplayedPeriod,
   formatDisplayedPeriod,
 } from "@/src/pilotFastighet/analysis/periodPresentation";
+import { CASCADE_PRESENTATION } from "@/src/pilotFastighet/cascadePresentation";
 
 function toReadableLabel(
   driverId: TransportSystemDriverId | string | null | undefined,
@@ -1655,8 +1656,8 @@ const AIInspectorPanel: React.FC<Props> = ({
       return (
         <div
           style={{
-            background: "#0f172a",
-            border: "1px solid #1f2937",
+            background: CASCADE_PRESENTATION.surfaces.dark.analysis,
+            border: `1px solid ${CASCADE_PRESENTATION.borders.dark}`,
             borderRadius: "8px",
             padding: "16px",
             marginTop: 0,
@@ -1789,8 +1790,8 @@ const AIInspectorPanel: React.FC<Props> = ({
     return (
       <div
         style={{
-          background: "#0f172a",
-          border: "1px solid #1f2937",
+          background: CASCADE_PRESENTATION.surfaces.dark.analysis,
+          border: `1px solid ${CASCADE_PRESENTATION.borders.dark}`,
           borderRadius: "8px",
           padding: "16px 18px",
           marginTop: 0,
@@ -1868,8 +1869,8 @@ const AIInspectorPanel: React.FC<Props> = ({
   return (
     <div
       style={{
-        background: "#0f172a",
-        border: "1px solid #1f2937",
+        background: CASCADE_PRESENTATION.surfaces.dark.analysis,
+        border: `1px solid ${CASCADE_PRESENTATION.borders.dark}`,
         borderRadius: "6px",
         padding: "12px",
         marginTop: 0,

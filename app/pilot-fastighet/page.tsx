@@ -118,6 +118,7 @@ import {
   getExecutiveDemoMarginStripLabels,
   getExecutiveDemoPlaybackInitiativesNote,
   getExecutiveDemoScenarioComparisonStrip,
+  getExecutiveDemoSequenceProof,
 } from "@/src/pilotFastighet/executiveDemoFraming";
 import {
   getScheduledExecutiveDemoRunSource,
@@ -132,6 +133,13 @@ import {
   calculateScheduledExecutiveMetrics,
 } from "@/src/pilotFastighet/analysis/scheduledExecutivePresentation";
 import { getPilotStrategyColors } from "@/src/pilotFastighet/strategyColors";
+import { CASCADE_PRESENTATION } from "@/src/pilotFastighet/cascadePresentation";
+import {
+  CascadeGraphHeading,
+  CascadeHumanJudgementBoundary,
+  CascadeModelPeriodKey,
+  CascadeScenarioIdentity,
+} from "./components/CascadePresentation";
 import { surfaceOrgDemoText } from "@/src/pilotFastighet/executiveDemoTransformation";
 import {
   installPulseUnhandledRejectionTracer,
@@ -1374,22 +1382,22 @@ export default function PilotFastighetPage() {
 
   const THEME = {
     dark: {
-      pageBg: "#0e1117",
-      panelBg: "#111827",
-      panelBorder: "#1F2937",
-      graphBg: "#0b0f14",
-      graphBorder: "#1f2937",
+      pageBg: CASCADE_PRESENTATION.surfaces.dark.page,
+      panelBg: CASCADE_PRESENTATION.surfaces.dark.panel,
+      panelBorder: CASCADE_PRESENTATION.borders.dark,
+      graphBg: CASCADE_PRESENTATION.surfaces.dark.graph,
+      graphBorder: CASCADE_PRESENTATION.borders.dark,
       text: "#E5E7EB",
       subtext: "#9CA3AF",
       buttonBg: "#111827",
       buttonBorder: "#374151",
     },
     light: {
-      pageBg: "#F9FAFB",
-      panelBg: "#FFFFFF",
-      panelBorder: "#E5E7EB",
-      graphBg: "#FFFFFF",
-      graphBorder: "#E5E7EB",
+      pageBg: CASCADE_PRESENTATION.surfaces.light.page,
+      panelBg: CASCADE_PRESENTATION.surfaces.light.panel,
+      panelBorder: CASCADE_PRESENTATION.borders.light,
+      graphBg: CASCADE_PRESENTATION.surfaces.light.graph,
+      graphBorder: CASCADE_PRESENTATION.borders.light,
       text: "#111827",
       subtext: "#6B7280",
       buttonBg: "#FFFFFF",
@@ -1788,6 +1796,14 @@ export default function PilotFastighetPage() {
           : {}),
       }}
     >
+      <style jsx>{`
+        @media (max-width: 820px) {
+          .executive-demo-results-layout {
+            grid-template-columns: minmax(0, 1fr) !important;
+            gap: 10px !important;
+          }
+        }
+      `}</style>
       <div
         style={{
           padding: execRealEstateLayout
@@ -1848,31 +1864,43 @@ export default function PilotFastighetPage() {
               >
                 {getExecutiveDemoHero(uiLanguage).title}
               </h1>
-              <p
+              <div
                 style={{
-                  fontSize: execRealEstateLayout ? "12px" : "11px",
-                  margin: execRealEstateLayout ? "0 0 5px 0" : "0 0 2px 0",
-                  color: theme.text,
-                  lineHeight: execRealEstateLayout ? 1.32 : 1.26,
-                  fontWeight: 600,
-                  maxWidth: execRealEstateLayout ? "min(1280px, 96%)" : "920px",
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: "6px",
+                  marginBottom: "7px",
                 }}
               >
-                {getExecutiveDemoHero(uiLanguage).problemStatement}
-              </p>
+                {[getExecutiveDemoSequenceProof(uiLanguage).sameStart, getExecutiveDemoSequenceProof(uiLanguage).sameActionSet].map((label) => (
+                  <span
+                    key={label}
+                    style={{
+                      border: "1px solid rgba(125, 211, 252, 0.36)",
+                      borderRadius: 999,
+                      padding: "3px 8px",
+                      color: "#bae6fd",
+                      background: "rgba(12, 74, 110, 0.24)",
+                      fontSize: "9px",
+                      fontWeight: 750,
+                      letterSpacing: "0.055em",
+                    }}
+                  >
+                    {label}
+                  </span>
+                ))}
+              </div>
               <p
                 style={{
-                  fontSize: execRealEstateLayout ? "11px" : "10px",
-                  margin: execRealEstateLayout ? "5px 0 0 0" : "0 0 1px 0",
-                  color: theme.subtext,
-                  lineHeight: execRealEstateLayout ? 1.38 : 1.28,
+                  fontSize: execRealEstateLayout ? "11.5px" : "10px",
+                  margin: "0",
+                  color: theme.text,
+                  lineHeight: execRealEstateLayout ? 1.38 : 1.3,
+                  fontWeight: 600,
                   maxWidth: execRealEstateLayout ? "min(1240px, 94%)" : "920px",
                 }}
               >
-                {getExecutiveDemoHero(uiLanguage).subtitle}{" "}
-                <span style={{ color: theme.subtext, opacity: 0.9 }}>
-                  {getExecutiveDemoHero(uiLanguage).valueLine}
-                </span>
+                {getExecutiveDemoSequenceProof(uiLanguage).fairComparison}
               </p>
               {!execRealEstateLayout && (
               <p
@@ -2866,7 +2894,7 @@ export default function PilotFastighetPage() {
               padding: executiveDemoMode ? (execRealEstateLayout ? "7px 14px 8px" : "4px 9px") : "16px 20px",
               background: "#111827",
               border: "1px solid #1f2937",
-              borderRadius: "8px",
+              borderRadius: CASCADE_PRESENTATION.radii.panel,
             }}
           >
             <div
@@ -3091,17 +3119,19 @@ export default function PilotFastighetPage() {
         }}
       >
         <div className={executiveDemoMode ? "flex flex-col gap-0" : "flex flex-col gap-1.5"}>
+          <CascadeGraphHeading
+            language={uiLanguage}
+            compact={executiveDemoMode}
+            textColor={theme.text}
+            mutedColor={theme.subtext}
+            context={
+              executiveDemoMode
+                ? getExecutiveDemoGraphFraming(uiLanguage).title
+                : pt.transportGraphSectionTitle
+            }
+          />
           {executiveDemoMode ? (
             <>
-              <div
-                className={
-                  execRealEstateLayout
-                    ? "font-semibold text-slate-100 text-[11px] leading-tight tracking-tight"
-                    : "font-semibold text-slate-100 text-[10px] leading-none tracking-tight"
-                }
-              >
-                {getExecutiveDemoGraphFraming(uiLanguage).title}
-              </div>
               {execRealEstateLayout && (
                 <p
                   className="text-[9px] text-slate-400 leading-snug max-w-[52rem] mt-1 mb-0 font-medium"
@@ -3125,9 +3155,6 @@ export default function PilotFastighetPage() {
             </>
           ) : (
             <>
-              <div className="font-medium text-slate-200 text-sm">
-                {pt.transportGraphSectionTitle}
-              </div>
               <div className="text-xs text-slate-500">
                 {caseType === "real-estate"
                   ? `${pt.transportGraphFocusPrefix} ${pt.transportGraphFocusRealEstate}`
@@ -3164,6 +3191,19 @@ export default function PilotFastighetPage() {
               </button>
             </>
           )}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: CASCADE_PRESENTATION.spacing.sm,
+              flexWrap: "wrap",
+              marginTop: executiveDemoMode ? 4 : 6,
+              marginBottom: executiveDemoMode ? 3 : 5,
+            }}
+          >
+            <CascadeModelPeriodKey language={uiLanguage} compact={executiveDemoMode} />
+            <CascadeHumanJudgementBoundary language={uiLanguage} compact={executiveDemoMode} />
+          </div>
         </div>
         <MarginGraphLegendRow
           uiLanguage={uiLanguage}
@@ -3215,6 +3255,7 @@ export default function PilotFastighetPage() {
           </div>
         )}
         <div
+          className={execRealEstateLayout ? "executive-demo-results-layout" : undefined}
           style={{
             display: execRealEstateLayout ? "grid" : "flex",
             flexDirection: execRealEstateLayout ? undefined : "row",
@@ -3270,62 +3311,62 @@ export default function PilotFastighetPage() {
                     {uiLanguage === "sv" ? "Sekvensanalys" : "Sequence analysis"}
                   </div>
                   <div style={{ color: "#94a3b8", marginBottom: 10 }}>
-                    {uiLanguage === "sv"
-                      ? "Identiska startvillkor · samma åtgärder · endast tidpunkt och ordning skiljer sig"
-                      : "Identical starting conditions · same actions · only timing and order differ"}
+                    {getExecutiveDemoSequenceProof(uiLanguage).onlyDifference}
                   </div>
-                  {(["A", "B"] as const).map((scenario) => (
-                    <div key={`executive-schedule-${scenario}`} style={{ marginBottom: 9 }}>
-                      <div style={{ fontWeight: 650 }}>
-                        {`${scenario}: ${getScheduledExecutiveScenarioLabel(scenario, uiLanguage)}`}
-                      </div>
-                      <div style={{ color: "#94a3b8", marginTop: 2 }}>
-                        {uiLanguage === "sv" ? "Planerat" : "Planned"}
-                      </div>
-                      <ul style={{ margin: "2px 0 0", paddingLeft: 18, listStyle: "disc outside" }}>
-                        {getOrderedScenarioSchedule(SCHEDULED_EXECUTIVE_DEMO_SCHEDULES, scenario).map((entry) => (
-                          <li key={`planned-${scenario}-${entry.actionId}`}>
-                            {`${getActionPanelLabel(entry.actionId, uiLanguage)} — M${entry.executionStep}`}
-                          </li>
-                        ))}
-                      </ul>
-                      <div style={{ color: "#94a3b8", marginTop: 4 }}>
-                        {uiLanguage === "sv" ? "Genomfört" : "Executed"}
-                      </div>
-                      {revealedScheduledProvenance[scenario].length === 0 ? (
-                        <div style={{ color: "#64748b" }}>
-                          {uiLanguage === "sv" ? "Inga ännu" : "None yet"}
-                        </div>
-                      ) : (
-                        <ul style={{ margin: "2px 0 0", paddingLeft: 18, listStyle: "disc outside" }}>
-                          {revealedScheduledProvenance[scenario].map((entry) => (
-                            <li key={`executed-${scenario}-${entry.actionId}`}>
-                              {`${getActionPanelLabel(entry.actionId, uiLanguage)} — M${entry.actualExecutionStep}`}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
+                  <div
+                    role="table"
+                    aria-label={uiLanguage === "sv" ? "Jämförelse av åtgärdsordning" : "Action sequence comparison"}
+                    style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 72px 72px", gap: "6px 8px", alignItems: "center" }}
+                  >
+                    <div />
+                    <div role="columnheader" style={{ textAlign: "center" }}>
+                      <CascadeScenarioIdentity
+                        scenario="A"
+                        label={uiLanguage === "sv" ? "Sekvens" : "Sequence"}
+                        compact
+                      />
                     </div>
-                  ))}
-                  <dl style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "4px 10px", margin: "10px 0 0", borderTop: "1px solid #334155", paddingTop: 9 }}>
-                    <dt>{uiLanguage === "sv" ? "Största marginalskillnad" : "Maximum margin separation"}</dt>
-                    <dd style={{ margin: 0, fontWeight: 650 }}>{scheduledExecutiveMetrics.maximumMarginSeparation.toFixed(2)}</dd>
-                    <dt>{uiLanguage === "sv" ? "Synlig begränsning A / B" : "Visible constraint A / B"}</dt>
-                    <dd style={{ margin: 0, fontWeight: 650 }}>{`${scheduledExecutiveMetrics.visibleConstraintPeriodA ? `M${scheduledExecutiveMetrics.visibleConstraintPeriodA}` : "—"} / ${scheduledExecutiveMetrics.visibleConstraintPeriodB ? `M${scheduledExecutiveMetrics.visibleConstraintPeriodB}` : "—"}`}</dd>
-                    <dt>{uiLanguage === "sv" ? "Nedre gräns A / B" : "Lower clamp A / B"}</dt>
-                    <dd style={{ margin: 0, fontWeight: 650 }}>{`${scheduledExecutiveMetrics.firstLowerClampPeriodA ? `M${scheduledExecutiveMetrics.firstLowerClampPeriodA}` : "—"} / ${scheduledExecutiveMetrics.firstLowerClampPeriodB ? `M${scheduledExecutiveMetrics.firstLowerClampPeriodB}` : "—"}`}</dd>
-                    <dt>{uiLanguage === "sv" ? "Terminal marginal A / B" : "Terminal margin A / B"}</dt>
-                    <dd style={{ margin: 0, fontWeight: 650 }}>{hasSimulationCompleted ? `${scheduledExecutiveMetrics.terminalMarginA.toFixed(0)} / ${scheduledExecutiveMetrics.terminalMarginB.toFixed(0)}` : "— / —"}</dd>
+                    <div role="columnheader" style={{ textAlign: "center" }}>
+                      <CascadeScenarioIdentity
+                        scenario="B"
+                        label={uiLanguage === "sv" ? "Sekvens" : "Sequence"}
+                        compact
+                      />
+                    </div>
+                    {(["delay_maintenance", "early_refinancing", "secure_long_term_leases"] as const).map((actionId) => {
+                      const stepA = SCHEDULED_EXECUTIVE_DEMO_SCHEDULES.A.find((entry) => entry.actionId === actionId)?.executionStep;
+                      const stepB = SCHEDULED_EXECUTIVE_DEMO_SCHEDULES.B.find((entry) => entry.actionId === actionId)?.executionStep;
+                      return (
+                        <div key={`aligned-${actionId}`} role="row" style={{ display: "contents" }}>
+                          <div role="rowheader" style={{ color: "#cbd5e1", minWidth: 0 }}>
+                            {getActionPanelLabel(actionId, uiLanguage)}
+                          </div>
+                          <div role="cell" style={{ borderRadius: 5, padding: "3px 5px", textAlign: "center", color: "#dbeafe", background: "rgba(37, 99, 235, 0.16)", border: "1px solid rgba(59, 130, 246, 0.28)", fontWeight: 700 }}>
+                            {stepA ? `M${stepA}` : "—"}
+                          </div>
+                          <div role="cell" style={{ borderRadius: 5, padding: "3px 5px", textAlign: "center", color: "#fef3c7", background: "rgba(217, 119, 6, 0.16)", border: "1px solid rgba(245, 158, 11, 0.28)", fontWeight: 700 }}>
+                            {stepB ? `M${stepB}` : "—"}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div style={{ marginTop: 11, paddingTop: 9, borderTop: "1px solid #334155", color: "#cbd5e1" }}>
+                    <p style={{ margin: 0 }}>{getExecutiveDemoSequenceProof(uiLanguage).inheritedState}</p>
+                    <p style={{ margin: "4px 0 0", fontWeight: 650 }}>{getExecutiveDemoSequenceProof(uiLanguage).structuralPaths}</p>
+                  </div>
+                  <dl style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "5px 10px", margin: "10px 0 0", borderTop: "1px solid #334155", paddingTop: 9 }}>
+                    <dt>{uiLanguage === "sv" ? "Konfigurerad begränsning synlig" : "Configured constraint visible"}</dt>
+                    <dd style={{ margin: 0, fontWeight: 700 }}>
+                      {`${scheduledExecutiveMetrics.visibleConstraintPeriodA != null ? `A M${scheduledExecutiveMetrics.visibleConstraintPeriodA}` : "A —"} · ${scheduledExecutiveMetrics.visibleConstraintPeriodB != null ? `B M${scheduledExecutiveMetrics.visibleConstraintPeriodB}` : "B —"}`}
+                    </dd>
                     <dt>{uiLanguage === "sv" ? "Konvergens" : "Convergence"}</dt>
-                    <dd style={{ margin: 0, fontWeight: 650 }}>{scheduledExecutiveMetrics.convergencePeriod ? `M${scheduledExecutiveMetrics.convergencePeriod}` : "—"}</dd>
+                    <dd style={{ margin: 0, fontWeight: 700 }}>
+                      {scheduledExecutiveMetrics.convergencePeriod != null
+                        ? `M${scheduledExecutiveMetrics.convergencePeriod} · ${getExecutiveDemoSequenceProof(uiLanguage).sameTerminalMargin}`
+                        : "—"}
+                    </dd>
                   </dl>
-                  {hasSimulationCompleted && (
-                    <p style={{ color: "#cbd5e1", margin: "10px 0 0" }}>
-                      {uiLanguage === "sv"
-                        ? "Förloppen skiljer sig materiellt innan de konvergerar vid samma terminala marginal."
-                        : "The paths differ materially before converging at the same terminal margin."}
-                    </p>
-                  )}
                 </section>
               )}
               {caseType === "transport" && !executiveDemoMode && (
@@ -3484,6 +3525,16 @@ export default function PilotFastighetPage() {
                   executionMarkers={
                     executiveDemoMode && caseType === "real-estate"
                       ? scheduledExecutiveGraphMarkers
+                      : undefined
+                  }
+                  executiveSequenceAnnotations={
+                    executiveDemoMode && caseType === "real-estate"
+                      ? {
+                          firstDivergencePeriod: scheduledExecutiveMetrics.firstDivergencePeriod,
+                          constraintPeriodA: scheduledExecutiveMetrics.visibleConstraintPeriodA,
+                          constraintPeriodB: scheduledExecutiveMetrics.visibleConstraintPeriodB,
+                          convergencePeriod: scheduledExecutiveMetrics.convergencePeriod,
+                        }
                       : undefined
                   }
                   scenarioALabel={scenarioALabel}

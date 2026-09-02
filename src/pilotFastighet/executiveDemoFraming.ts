@@ -2,7 +2,41 @@
  * Presentation copy for Executive Demo Mode only (no simulation changes).
  */
 
+import { getCascadePresentationCopy } from "./cascadePresentation";
+
 export type ExecutiveDemoLang = "sv" | "en";
+
+export function getExecutiveDemoSequenceProof(lang: ExecutiveDemoLang) {
+  const sharedCopy = getCascadePresentationCopy(lang);
+  return {
+    sameStart: lang === "sv" ? "SAMMA START ✓" : "SAME START ✓",
+    sameActionSet:
+      lang === "sv" ? "SAMMA ÅTGÄRDSUPPSÄTTNING ✓" : "SAME ACTION SET ✓",
+    fairComparison:
+      lang === "sv"
+        ? "Samma startvillkor. Samma beslut. Olika ordning och modellperioder."
+        : "Same starting conditions. Same decisions. Different order and model timing.",
+    onlyDifference:
+      lang === "sv"
+        ? "Endast ordning och modellperioder skiljer sig."
+        : "Only order and model timing differ.",
+    inheritedState:
+      lang === "sv"
+        ? "Varje åtgärd möter det tillstånd som tidigare åtgärder har skapat."
+        : "Each action enters the state created by the actions before it.",
+    structuralPaths:
+      lang === "sv"
+        ? "Olika sekvenser skapar olika strukturella förlopp inom den konfigurerade modellen."
+        : "Different sequences create different structural paths within the configured model.",
+    boundary: sharedCopy.comparisonBoundary,
+    modelPeriod: sharedCopy.modelPeriod,
+    pathsDiverge: lang === "sv" ? "Förloppen skiljer sig" : "Paths diverge",
+    constraint: lang === "sv" ? "begränsning" : "constraint",
+    pathsConverge: lang === "sv" ? "Förloppen konvergerar" : "Paths converge",
+    sameTerminalMargin:
+      lang === "sv" ? "Samma terminala marginal" : "Same terminal margin",
+  };
+}
 
 export function getExecutiveDemoHero(lang: ExecutiveDemoLang) {
   return {
@@ -76,8 +110,8 @@ export function getExecutiveDemoGraphFraming(lang: ExecutiveDemoLang) {
     /** One line: instant “what am I looking at?” for executives */
     purposeLine:
       lang === "sv"
-        ? "Kurvan visar hur den strukturella marginalen utvecklas månad för månad i varje sekvens."
-        : "This chart shows how structural margin develops month by month in each sequence.",
+        ? "Kurvan visar hur den strukturella marginalen utvecklas över modellperioder i varje sekvens."
+        : "This chart shows how structural margin develops across model periods in each sequence.",
     lead:
       lang === "sv"
         ? "Orange = stabilisering först · Blått = belastning först."

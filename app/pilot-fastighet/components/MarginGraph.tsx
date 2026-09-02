@@ -11,6 +11,8 @@ import {
   profileValue,
 } from "@/src/lib/runtimeProfile";
 import type { ScheduledExecutionGraphMarker } from "@/src/pilotFastighet/analysis/scheduledExecutivePresentation";
+import { getExecutiveDemoSequenceProof } from "@/src/pilotFastighet/executiveDemoFraming";
+import { CASCADE_PRESENTATION } from "@/src/pilotFastighet/cascadePresentation";
 
 const EXEC_SUSTAIN_THRESHOLD = 0.8;
 
@@ -79,6 +81,13 @@ export interface MarginGraphProps {
   executiveNarrativeMarkers?: { monthIndex: number; label: string }[];
   /** Revealed facade-provenance executions for the scheduled executive demo only. */
   executionMarkers?: readonly ScheduledExecutionGraphMarker[];
+  /** Presentation-only proof annotations for the verified scheduled executive fixture. */
+  executiveSequenceAnnotations?: {
+    firstDivergencePeriod: number | null;
+    constraintPeriodA: number | null;
+    constraintPeriodB: number | null;
+    convergencePeriod: number | null;
+  };
   caseType?: "transport" | "real-estate" | null;
 }
 
@@ -119,6 +128,7 @@ function MarginGraph({
   executiveDemoMode = false,
   executiveNarrativeMarkers,
   executionMarkers = [],
+  executiveSequenceAnnotations,
   caseType = null,
 }: MarginGraphProps) {
   const execRiskLabelOpts =
@@ -322,8 +332,8 @@ function MarginGraph({
   const TOP_PADDING = execRealEstateGraphPassive ? 7 : 12;
   const BOTTOM_PADDING = execRealEstateGraphPassive ? 5 : 8;
   const gridLevels = 4;
-  const SERIES_COLOR_A = "#3B82F6"; // A = blue, B = orange (do not change)
-  const SERIES_COLOR_B = "#F59E0B";
+  const SERIES_COLOR_A = CASCADE_PRESENTATION.scenarios.A.color;
+  const SERIES_COLOR_B = CASCADE_PRESENTATION.scenarios.B.color;
   const range = Math.max(yMax - yMin, 1e-9);
   const scaleY = (value: number) =>
     TOP_PADDING +
@@ -754,6 +764,15 @@ function MarginGraph({
   })();
 
   const cascadeStartsLabel = uiLanguage === "sv" ? "Kaskad" : "Cascade";
+  const sequenceProof = getExecutiveDemoSequenceProof(uiLanguage);
+  const shortExecutionLabel = (actionId: ScheduledExecutionGraphMarker["actionId"]) => {
+    const labels = {
+      delay_maintenance: uiLanguage === "sv" ? "Underhåll" : "Maint.",
+      early_refinancing: uiLanguage === "sv" ? "Refinans." : "Refi.",
+      secure_long_term_leases: uiLanguage === "sv" ? "Hyresavtal" : "Leases",
+    } as const;
+    return actionId in labels ? labels[actionId as keyof typeof labels] : "";
+  };
   return (
     <div
       style={{
@@ -824,6 +843,30 @@ function MarginGraph({
           stroke-width: 3;
         }
       `}</style>
+      {execRealEstateGraphPassive && executiveSequenceAnnotations && (
+        <div
+          aria-label={uiLanguage === "sv" ? "Viktiga sekvensresultat" : "Key sequence results"}
+          style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "7px", color: "#cbd5e1", fontSize: "9px" }}
+        >
+          <span style={{ color: "#94a3b8", padding: "4px 0", marginRight: 2 }}>
+            {sequenceProof.modelPeriod}
+          </span>
+          <span style={{ border: "1px solid #334155", borderRadius: 999, padding: "3px 7px", background: "rgba(15,23,42,0.72)" }}>
+            {`${sequenceProof.pathsDiverge} · M${executiveSequenceAnnotations.firstDivergencePeriod ?? "—"}`}
+          </span>
+          <span style={{ border: "1px solid rgba(59,130,246,0.38)", borderRadius: 999, padding: "3px 7px", background: "rgba(37,99,235,0.12)", color: "#bfdbfe" }}>
+            {`A ${sequenceProof.constraint} · ${executiveSequenceAnnotations.constraintPeriodA != null ? `M${executiveSequenceAnnotations.constraintPeriodA}` : "—"}`}
+          </span>
+          <span style={{ border: "1px solid rgba(245,158,11,0.38)", borderRadius: 999, padding: "3px 7px", background: "rgba(217,119,6,0.12)", color: "#fde68a" }}>
+            {`B ${sequenceProof.constraint} · ${executiveSequenceAnnotations.constraintPeriodB != null ? `M${executiveSequenceAnnotations.constraintPeriodB}` : "—"}`}
+          </span>
+          <span style={{ border: "1px solid #475569", borderRadius: 999, padding: "3px 7px", background: "rgba(30,41,59,0.72)" }}>
+            {executiveSequenceAnnotations.convergencePeriod != null
+              ? `${sequenceProof.pathsConverge} · M${executiveSequenceAnnotations.convergencePeriod} · ${sequenceProof.sameTerminalMargin}`
+              : `${sequenceProof.pathsConverge} · —`}
+          </span>
+        </div>
+      )}
       {!execRealEstateGraphPassive && (
       <div style={{ marginBottom: 8 }}>
         <span style={{ marginRight: 6, color: "#9ca3af", fontSize: "11px" }}>
@@ -1582,6 +1625,21 @@ function MarginGraph({
               >
                 {marker.scenario}
               </text>
+              <text
+                x={x + 10}
+                y={markerY + 2.8}
+                textAnchor="start"
+                fontSize={7.5}
+                fontWeight={650}
+                fill={color}
+                stroke="#0b1220"
+                strokeWidth={2.2}
+                paintOrder="stroke"
+                pointerEvents="none"
+                aria-hidden="true"
+              >
+                {shortExecutionLabel(marker.actionId)}
+              </text>
             </g>
           );
         })}
@@ -1636,7 +1694,7 @@ function MarginGraph({
                     return renderMarkerShape(
                       scaleX(index),
                       scaleY(value),
-                      execRealEstateGraphPassive ? "#d97706" : "#ef4444",
+                      strategyColors.goal,
                       isBaselinePoint
                         ? "baseline"
                         : isTippingPoint
@@ -1836,7 +1894,7 @@ export function MarginGraphLegendRow({
             style={{
               width: compactExecutivePresentation ? "9px" : "10px",
               height: "2px",
-              background: "#3B82F6",
+              borderTop: `2px solid ${CASCADE_PRESENTATION.scenarios.A.color}`,
               opacity: compactExecutivePresentation ? 0.75 : 1,
             }}
           />
@@ -1847,7 +1905,7 @@ export function MarginGraphLegendRow({
             style={{
               width: compactExecutivePresentation ? "9px" : "10px",
               height: "2px",
-              background: "#F59E0B",
+              borderTop: `2px dashed ${CASCADE_PRESENTATION.scenarios.B.color}`,
               opacity: compactExecutivePresentation ? 0.75 : 1,
             }}
           />

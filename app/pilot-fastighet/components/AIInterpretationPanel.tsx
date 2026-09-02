@@ -14,6 +14,7 @@ import type {
   ScenarioSchedules,
 } from "@/src/pilotFastighet/analysis/reactScheduledAnalysisBoundary";
 import type { ScheduledFairComparisonFacts } from "@/src/pilotFastighet/analysis/manualScheduledExecution";
+import { CASCADE_PRESENTATION } from "@/src/pilotFastighet/cascadePresentation";
 
 type Language = "sv" | "en";
 
@@ -688,8 +689,8 @@ const AIInterpretationPanel: React.FC<Props> = ({
   return (
     <div
       style={{
-        background: "#0f172a",
-        border: "1px solid #1f2937",
+        background: CASCADE_PRESENTATION.surfaces.dark.analysis,
+        border: `1px solid ${CASCADE_PRESENTATION.borders.dark}`,
         borderRadius: "6px",
         padding: "12px",
         marginTop: "16px",

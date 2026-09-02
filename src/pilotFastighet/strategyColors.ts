@@ -1,18 +1,16 @@
 "use client";
 
+import { CASCADE_PRESENTATION } from "./cascadePresentation";
+
 export type StrategyColors = {
   baseline: string;
   goal: string;
 };
 
 export function getPilotStrategyColors(execRealEstateGraphPassive: boolean): StrategyColors {
-  return execRealEstateGraphPassive
-    ? {
-        baseline: "#2563eb",
-        goal: "#d97706",
-      }
-    : {
-        baseline: "#3b82f6",
-        goal: "#ef4444",
-      };
+  void execRealEstateGraphPassive;
+  return {
+    baseline: CASCADE_PRESENTATION.scenarios.A.color,
+    goal: CASCADE_PRESENTATION.scenarios.B.color,
+  };
 }

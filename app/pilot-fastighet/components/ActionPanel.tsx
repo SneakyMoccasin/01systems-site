@@ -5,6 +5,7 @@ import {
 } from "@/src/pilotFastighet/actionEffects";
 import { defaultRiskState } from "@/src/pilotFastighet/presetRiskMapping";
 import type { StrategyColors } from "@/src/pilotFastighet/strategyColors";
+import { CASCADE_PRESENTATION } from "@/src/pilotFastighet/cascadePresentation";
 import {
   isActionSupportedForScheduledExecution,
   type ReactExecutionMode,
@@ -132,7 +133,10 @@ export default function ActionPanel({
   selectedActionsA = [],
   selectedActionsB = [],
   strategyView = "baseline",
-  strategyColors = { baseline: "#3b82f6", goal: "#ef4444" },
+  strategyColors = {
+    baseline: CASCADE_PRESENTATION.scenarios.A.color,
+    goal: CASCADE_PRESENTATION.scenarios.B.color,
+  },
   applyAction,
   executiveDemoMode = false,
   executionMode = "configured-start",
