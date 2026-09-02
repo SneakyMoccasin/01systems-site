@@ -5,6 +5,12 @@ import {
 import type { DriverScoreState } from "../driverScoreState";
 import type { RiskLevel } from "../impactContract";
 import type { RiskState } from "../RealEstateEngine";
+import type { DomainKey } from "@/src/i18n/pulseLanguage";
+import {
+  getExecutableProfileIdForDomain,
+  resolveExecutableDomainProfile,
+  type ExecutableDomainProfile,
+} from "../executableDomainProfile";
 import {
   createCleanRunSourceSnapshot,
   type CleanRunSourceSnapshot,
@@ -16,6 +22,7 @@ export type ConfiguredScenarioSelection = Readonly<{
 }>;
 
 export type ConfiguredRunSelection = Readonly<{
+  domainId: DomainKey;
   scenarioA: ConfiguredScenarioSelection;
   scenarioB: ConfiguredScenarioSelection;
   baselineRiskState: RiskState;
@@ -55,11 +62,13 @@ const PREVIEW_PARAMETER_TO_DRIVER: Readonly<Record<string, string>> = {
 };
 
 export function resolveConfiguredScenarioSource(
-  selection: ConfiguredScenarioSelection
+  selection: ConfiguredScenarioSelection,
+  profile?: ExecutableDomainProfile
 ): ResolvedConfiguredScenarioSource {
   const resolved = resolveActionDrivenState(
     structuredClone(selection.baseRiskState),
-    [...selection.selectedActions]
+    [...selection.selectedActions],
+    profile
   );
   return Object.freeze({
     initialRiskState: Object.freeze(structuredClone(resolved.riskState)),
@@ -70,9 +79,14 @@ export function resolveConfiguredScenarioSource(
 export function prepareOrdinaryConfiguredRunSource(
   selection: ConfiguredRunSelection
 ): CleanRunSourceSnapshot {
-  const scenarioA = resolveConfiguredScenarioSource(selection.scenarioA);
-  const scenarioB = resolveConfiguredScenarioSource(selection.scenarioB);
+  const profile = resolveExecutableDomainProfile(
+    getExecutableProfileIdForDomain(selection.domainId),
+    selection.domainId
+  );
+  const scenarioA = resolveConfiguredScenarioSource(selection.scenarioA, profile);
+  const scenarioB = resolveConfiguredScenarioSource(selection.scenarioB, profile);
   return prepareExplicitConfiguredRunSource({
+    domainId: selection.domainId,
     scenarioA,
     scenarioB,
     baselineRiskState: selection.baselineRiskState,
@@ -80,11 +94,14 @@ export function prepareOrdinaryConfiguredRunSource(
 }
 
 export function prepareExplicitConfiguredRunSource(input: Readonly<{
+  domainId: DomainKey;
   scenarioA: ExplicitOneRunScenarioSource;
   scenarioB: ExplicitOneRunScenarioSource;
   baselineRiskState: RiskState;
 }>): CleanRunSourceSnapshot {
   return createCleanRunSourceSnapshot({
+    domainId: input.domainId,
+    profileId: getExecutableProfileIdForDomain(input.domainId),
     scenarioA: {
       baseRiskState: input.scenarioA.initialRiskState,
       baseDriverScores: input.scenarioA.initialDriverScores,
@@ -115,11 +132,17 @@ export function prepareScenarioPreviewRun(input: Readonly<{
   changesA: readonly ScenarioChange[];
   changesB: readonly ScenarioChange[];
 }>): ScenarioPreviewPreparation {
+  const profile = resolveExecutableDomainProfile(
+    getExecutableProfileIdForDomain(input.configuredSelection.domainId),
+    input.configuredSelection.domainId
+  );
   const cleanScenarioA = resolveConfiguredScenarioSource(
-    input.configuredSelection.scenarioA
+    input.configuredSelection.scenarioA,
+    profile
   );
   const cleanScenarioB = resolveConfiguredScenarioSource(
-    input.configuredSelection.scenarioB
+    input.configuredSelection.scenarioB,
+    profile
   );
   const previewRiskStateA = applyPreviewChangesToRiskState(
     cleanScenarioA.initialRiskState,
@@ -147,14 +170,15 @@ export function prepareScenarioPreviewRun(input: Readonly<{
   const persistedScenarioA = resolveConfiguredScenarioSource({
     baseRiskState: persistedBaseRiskStateA,
     selectedActions: input.configuredSelection.scenarioA.selectedActions,
-  });
+  }, profile);
   const persistedScenarioB = resolveConfiguredScenarioSource({
     baseRiskState: persistedBaseRiskStateB,
     selectedActions: input.configuredSelection.scenarioB.selectedActions,
-  });
+  }, profile);
 
   return Object.freeze({
     runSource: prepareExplicitConfiguredRunSource({
+      domainId: input.configuredSelection.domainId,
       scenarioA: {
         initialRiskState: previewRiskStateA,
         initialDriverScores: cleanScenarioA.initialDriverScores,

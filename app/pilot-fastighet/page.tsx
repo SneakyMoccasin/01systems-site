@@ -688,6 +688,7 @@ export default function PilotFastighetPage() {
 
   function getConfiguredRunSelection(): ConfiguredRunSelection {
     return {
+      domainId: domain,
       scenarioA: { baseRiskState: baseRiskStateA, selectedActions: selectedActionsA },
       scenarioB: { baseRiskState: baseRiskStateB, selectedActions: selectedActionsB },
       baselineRiskState: riskStateBaseline,
@@ -2529,6 +2530,7 @@ export default function PilotFastighetPage() {
                 startSimulation(
                   "manual",
                   prepareManualScheduledRunSource({
+                    domainId: domain,
                     baseRiskStateA,
                     baseRiskStateB,
                     baselineRiskState: riskStateBaseline,

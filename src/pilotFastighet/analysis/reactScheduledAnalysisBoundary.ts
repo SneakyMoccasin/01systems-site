@@ -15,6 +15,11 @@ import {
   type ScheduledAnalyticalResults,
   type ScheduledCascadeAnalysisInput,
 } from "./runCascadeAnalysis";
+import type { DomainKey } from "@/src/i18n/pulseLanguage";
+import {
+  resolveExecutableDomainProfile,
+  type ExecutableProfileId,
+} from "../executableDomainProfile";
 
 export type ScheduleScenarioId = "A" | "B";
 export type ReactExecutionMode = "configured-start" | "actions-over-time";
@@ -30,6 +35,10 @@ export type ConfiguredScenarioRunSource = Readonly<{
 }>;
 
 export type CleanRunSourceSnapshot = Readonly<{
+  profileId: ExecutableProfileId;
+  domainId: DomainKey;
+  modelVersion: string;
+  calibrationVersion: string;
   scenarioA: Readonly<PreconfiguredScenarioInput>;
   scenarioB: Readonly<PreconfiguredScenarioInput>;
   baseline: Readonly<PreconfiguredScenarioInput>;
@@ -43,7 +52,22 @@ export type ScenarioExecutionProvenance = Readonly<{
 export type ReactAnalysisBoundaryResult = Readonly<{
   analysis: AnalyticalResults | ScheduledAnalyticalResults;
   provenance: ScenarioExecutionProvenance;
+  executionProfile: Readonly<{
+    profileId: ExecutableProfileId;
+    domainId: DomainKey;
+    modelVersion: string;
+    calibrationVersion: string;
+  }>;
 }>;
+
+function getExecutionProfileMetadata(runSource: CleanRunSourceSnapshot) {
+  return Object.freeze({
+    profileId: runSource.profileId,
+    domainId: runSource.domainId,
+    modelVersion: runSource.modelVersion,
+    calibrationVersion: runSource.calibrationVersion,
+  });
+}
 
 export type ScheduleValidationIssue = Readonly<{
   scenario: ScheduleScenarioId;
@@ -352,11 +376,18 @@ function cloneScenarioSource(
 }
 
 export function createCleanRunSourceSnapshot(input: Readonly<{
+  profileId: ExecutableProfileId;
+  domainId: DomainKey;
   scenarioA: ConfiguredScenarioRunSource;
   scenarioB: ConfiguredScenarioRunSource;
   baseline: ConfiguredScenarioRunSource;
 }>): CleanRunSourceSnapshot {
+  const profile = resolveExecutableDomainProfile(input.profileId, input.domainId);
   return Object.freeze({
+    profileId: profile.profileId,
+    domainId: profile.domainId,
+    modelVersion: profile.modelVersion,
+    calibrationVersion: profile.calibrationVersion,
     scenarioA: cloneScenarioSource(input.scenarioA),
     scenarioB: cloneScenarioSource(input.scenarioB),
     baseline: cloneScenarioSource(input.baseline),
@@ -371,6 +402,7 @@ export function prepareScheduledFacadeInput(input: Readonly<{
   assertValidScenarioSchedules(input.schedules, input.horizon);
   return {
     executionMode: "scheduled",
+    profileId: input.runSource.profileId,
     horizon: input.horizon,
     scenarioA: structuredClone(input.runSource.scenarioA),
     scenarioB: structuredClone(input.runSource.scenarioB),
@@ -417,16 +449,19 @@ export function runReactAnalysisBoundary(
         schedules: ScenarioSchedules;
       }>
 ): ReactAnalysisBoundaryResult {
+  resolveExecutableDomainProfile(input.runSource.profileId, input.runSource.domainId);
   if (input.executionMode === "configured-start") {
     return {
       analysis: runCascadeAnalysis({
         executionMode: "preconfigured",
+        profileId: input.runSource.profileId,
         horizon: input.horizon,
         scenarioA: structuredClone(input.runSource.scenarioA),
         scenarioB: structuredClone(input.runSource.scenarioB),
         baseline: structuredClone(input.runSource.baseline),
       }),
       provenance: emptyProvenance(),
+      executionProfile: getExecutionProfileMetadata(input.runSource),
     };
   }
 
@@ -434,5 +469,6 @@ export function runReactAnalysisBoundary(
   return {
     analysis,
     provenance: splitProvenance(analysis.executionProvenance),
+    executionProfile: getExecutionProfileMetadata(input.runSource),
   };
 }

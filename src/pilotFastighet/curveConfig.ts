@@ -125,9 +125,11 @@ export function resolveLogistic(
 export function getImpactMultiplier(
   parameterKey: string,
   level: RiskLevel | number,
-  step?: number
+  step?: number,
+  curveConfiguration: Readonly<Record<string, ParameterCurveConfig>> =
+    PARAMETER_CURVE_CONFIG
 ): number {
-  const config = PARAMETER_CURVE_CONFIG[parameterKey];
+  const config = curveConfiguration[parameterKey];
   if (!config) return 1;
 
   const { curve, amplitude } = config;

@@ -1,7 +1,6 @@
 import type { ConstraintRegistry } from "./constraintState";
 import { createInitialConstraintRegistry } from "./constraintState";
 import type { ParameterKey, RiskLevel } from "./impactContract";
-import { REAL_ESTATE_IMPACT_CONTRACT } from "./impactContract";
 import { simulateConstraintsStep } from "./simulateConstraintsStep";
 import { computeDimensionMultipliers } from "./computeDimensionMultipliers";
 import { propagateRisks, type CascadeEvent } from "./riskPropagation";
@@ -17,14 +16,14 @@ import {
   profileMeasure,
   profileValue,
 } from "@/src/lib/runtimeProfile";
+import {
+  resolveLegacyCompatibilityProfile,
+  type ExecutableDomainProfile,
+} from "./executableDomainProfile";
 
 export type RiskState = Record<string, RiskLevel>;
 
 export type DriverDeltas = Readonly<Partial<Record<ParameterKey, number>>>;
-
-const SUPPORTED_DRIVER_KEYS = new Set<string>(
-  REAL_ESTATE_IMPACT_CONTRACT.map((parameter) => parameter.key)
-);
 
 export type EngineState = {
   step: number;
@@ -39,11 +38,17 @@ export class RealEstateEngine {
   private baselineMargin: number;
   private sensitivity: number;
   private state: EngineState;
+  private readonly profile: ExecutableDomainProfile;
 
-  constructor(initialRiskState?: RiskState, initialDriverScores?: DriverScoreState) {
+  constructor(
+    initialRiskState?: RiskState,
+    initialDriverScores?: DriverScoreState,
+    profile: ExecutableDomainProfile = resolveLegacyCompatibilityProfile()
+  ) {
+    this.profile = profile;
     const riskState =
       initialRiskState ??
-      REAL_ESTATE_IMPACT_CONTRACT.reduce((acc, param) => {
+      profile.impactContract.reduce((acc, param) => {
         acc[param.key] = "MODERATE";
         return acc;
       }, {} as RiskState);
@@ -69,7 +74,7 @@ export class RealEstateEngine {
     const entries = Object.entries(deltas);
 
     for (const [driver, delta] of entries) {
-      if (!SUPPORTED_DRIVER_KEYS.has(driver)) {
+      if (!this.profile.applicableDrivers.includes(driver as ParameterKey)) {
         throw new Error(`Unsupported driver: ${driver}`);
       }
       if (typeof delta !== "number" || !Number.isFinite(delta)) {
@@ -128,14 +133,15 @@ export class RealEstateEngine {
       // If the system is already underwater, financing pressure typically spikes.
       const escalatedRiskState: RiskState = { ...riskState };
       const escalatedDriverScores: DriverScoreState = { ...driverScores };
-      if (margin < -1.0) {
-        const current = escalatedRiskState.interestRateExposureRisk;
+      for (const rule of this.profile.marginEscalationRules) {
+        if (margin >= rule.marginBelow) continue;
+        const current = escalatedRiskState[rule.driver];
         if (current === "LOW" || current == null) {
-          escalatedRiskState.interestRateExposureRisk = "MODERATE";
-          escalatedDriverScores.interestRateExposureRisk = riskLevelToScore("MODERATE");
+          escalatedRiskState[rule.driver] = rule.lowTarget;
+          escalatedDriverScores[rule.driver] = riskLevelToScore(rule.lowTarget);
         } else if (current === "MODERATE") {
-          escalatedRiskState.interestRateExposureRisk = "HIGH";
-          escalatedDriverScores.interestRateExposureRisk = riskLevelToScore("HIGH");
+          escalatedRiskState[rule.driver] = rule.moderateTarget;
+          escalatedDriverScores[rule.driver] = riskLevelToScore(rule.moderateTarget);
         }
       }
       if (process.env.NEXT_PUBLIC_PULSE_PROFILE) {
@@ -146,7 +152,10 @@ export class RealEstateEngine {
         });
       }
 
-      const { next: propagatedState, events } = propagateRisks(escalatedRiskState);
+      const { next: propagatedState, events } = propagateRisks(
+        escalatedRiskState,
+        this.profile.propagationRules
+      );
       if (process.env.NEXT_PUBLIC_PULSE_PROFILE) {
         console.log("AFTER PROPAGATION", {
           interestRateExposureRisk: (propagatedState as RiskState).interestRateExposureRisk,
@@ -168,6 +177,7 @@ export class RealEstateEngine {
         leverageLevel: riskStateForTick.leverageLevelRisk ?? "MODERATE",
         step,
         registry,
+        profile: this.profile,
       });
 
       if (process.env.NEXT_PUBLIC_PULSE_PROFILE) {
@@ -179,7 +189,9 @@ export class RealEstateEngine {
       const baseMultipliers = computeDimensionMultipliers(
         riskStateForTick,
         step,
-        driverScoresForTick
+        driverScoresForTick,
+        this.profile.impactContract,
+        this.profile.curveConfiguration
       );
 
       const adjustedCost = result.multipliersAfterConstraints.cost;
@@ -204,7 +216,10 @@ export class RealEstateEngine {
 
       const nextMargin = margin - erosion + pullToBaseline;
 
-      const clampedNextMargin = Math.max(-3, Math.min(3, nextMargin));
+      const clampedNextMargin = Math.max(
+        this.profile.clampPolicy.minimum,
+        Math.min(this.profile.clampPolicy.maximum, nextMargin)
+      );
 
       if (process.env.NEXT_PUBLIC_PULSE_PROFILE) {
         console.log("MARGIN INPUT", {

@@ -21,6 +21,7 @@ const HORIZON = 36;
 
 function selection(overrides?: Partial<ConfiguredRunSelection>): ConfiguredRunSelection {
   return {
+    domainId: "realEstate",
     scenarioA: {
       baseRiskState: structuredClone(defaultRiskState),
       selectedActions: [],
@@ -156,6 +157,7 @@ test("configuration, action, domain-like base, and horizon changes are authorita
 test("executive demo explicit source reproduces its exact configured facade result", () => {
   const demo = getExecutiveDemoPlaybackRiskStates();
   const source = prepareExplicitConfiguredRunSource({
+    domainId: "realEstate",
     scenarioA: {
       initialRiskState: demo.riskStateA,
       initialDriverScores: buildDriverScoreState(demo.riskStateA),
@@ -229,6 +231,7 @@ test("preview preserves temporary and persisted scenario policy exactly", () => 
   );
 
   const ordinaryAfterPreview = prepareOrdinaryConfiguredRunSource({
+    domainId: "realEstate",
     scenarioA: {
       baseRiskState: preview.persistedBaseRiskStateA,
       selectedActions: configured.scenarioA.selectedActions,

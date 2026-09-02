@@ -1,6 +1,7 @@
 import type { RiskLevel } from "./impactContract";
 import { computeDimensionMultipliers } from "./computeDimensionMultipliers";
 import type { ConstraintRegistry } from "./constraintState";
+import type { ExecutableDomainProfile } from "./executableDomainProfile";
 import {
   profileCount,
   profileMeasure,
@@ -17,6 +18,7 @@ export type SimulationInput = {
   leverageLevel: RiskLevel;
   step: number;
   registry: ConstraintRegistry;
+  profile?: ExecutableDomainProfile;
 };
 
 export type SimulationOutput = {
@@ -32,7 +34,10 @@ export function simulateConstraintsStep(
   return profileMeasure("simulateConstraintsStep.ms", () => {
     const baseMultipliers = computeDimensionMultipliers(
       input.riskState,
-      input.step
+      input.step,
+      undefined,
+      input.profile?.impactContract,
+      input.profile?.curveConfiguration
     );
 
     if (process.env.NEXT_PUBLIC_PULSE_PROFILE) {
@@ -48,8 +53,9 @@ export function simulateConstraintsStep(
     const updatedRegistry = { ...input.registry };
 
     const rawThreshold = (input.riskState as Record<string, unknown>).sustainThreshold;
-    const sustainThreshold =
-      typeof rawThreshold === "number" ? rawThreshold : 0.8;
+    const sustainThreshold = typeof rawThreshold === "number"
+      ? rawThreshold
+      : input.profile?.constraints.refinancingMarginThreshold ?? 0.8;
 
     if (
       input.margin != null &&
@@ -67,26 +73,30 @@ export function simulateConstraintsStep(
     // Apply constraint effects to multipliers.
     let multipliersAfterConstraints = { ...baseMultipliers };
 
+    const constraintEffects = input.profile?.constraints.activeEffects;
     if (updatedRegistry.RefinancingConstraint.lifecycle === "ACTIVE") {
+      const effect = constraintEffects?.RefinancingConstraint;
       multipliersAfterConstraints = {
         ...multipliersAfterConstraints,
-        cost: multipliersAfterConstraints.cost * 1.15, // +15% cost
-        recovery: multipliersAfterConstraints.recovery * 0.8, // -20% recovery
+        cost: multipliersAfterConstraints.cost * (effect?.cost ?? 1.15),
+        recovery: multipliersAfterConstraints.recovery * (effect?.recovery ?? 0.8),
       };
     }
 
     if (updatedRegistry.LiquidityConstraint.lifecycle === "ACTIVE") {
+      const effect = constraintEffects?.LiquidityConstraint;
       multipliersAfterConstraints = {
         ...multipliersAfterConstraints,
-        cost: multipliersAfterConstraints.cost * 1.1, // +10% cost
-        load: multipliersAfterConstraints.load * 1.05, // +5% load
+        cost: multipliersAfterConstraints.cost * (effect?.cost ?? 1.1),
+        load: multipliersAfterConstraints.load * (effect?.load ?? 1.05),
       };
     }
 
     if (updatedRegistry.CovenantConstraint.lifecycle === "ACTIVE") {
+      const effect = constraintEffects?.CovenantConstraint;
       multipliersAfterConstraints = {
         ...multipliersAfterConstraints,
-        recovery: multipliersAfterConstraints.recovery * 0.6, // -40% recovery
+        recovery: multipliersAfterConstraints.recovery * (effect?.recovery ?? 0.6),
       };
     }
 

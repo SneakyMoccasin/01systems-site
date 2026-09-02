@@ -5,6 +5,7 @@ import {
   materializeRiskStateFromScores,
   type DriverScoreState,
 } from "./driverScoreState";
+import type { ExecutableDomainProfile } from "./executableDomainProfile";
 
 export type ActionEffectsMap = Record<string, number>;
 
@@ -128,14 +129,16 @@ export function actionHasOnlyModeledDrivers(
 
 export function applyActionEffectsToRiskState(
   baseState: Record<string, RiskLevel>,
-  actions: readonly string[]
+  actions: readonly string[],
+  profile?: ExecutableDomainProfile
 ): Record<string, RiskLevel> {
-  return resolveActionDrivenState(baseState, actions).riskState;
+  return resolveActionDrivenState(baseState, actions, profile).riskState;
 }
 
 export function resolveActionDrivenState(
   baseState: Record<string, RiskLevel>,
-  actions: readonly string[]
+  actions: readonly string[],
+  profile?: ExecutableDomainProfile
 ): {
   riskState: Record<string, RiskLevel>;
   driverScores: DriverScoreState;
@@ -144,7 +147,7 @@ export function resolveActionDrivenState(
   const cumulativeDeltas = new Map<string, number>();
 
   for (const action of actions) {
-    const effects = ACTION_EFFECTS[action as ActionKey];
+    const effects = profile?.actionEffects[action as ActionKey] ?? ACTION_EFFECTS[action as ActionKey];
     if (!effects) continue;
 
     for (const [driver, delta] of Object.entries(effects)) {

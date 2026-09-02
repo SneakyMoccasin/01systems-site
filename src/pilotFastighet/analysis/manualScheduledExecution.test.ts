@@ -126,6 +126,7 @@ test("clean scheduled reruns never use terminal state and preserve exact provena
     B: [{ actionId: "early_refinancing", executionStep: 3 }],
   } as const satisfies ScenarioSchedules;
   const source = prepareManualScheduledRunSource({
+    domainId: "realEstate",
     baseRiskStateA: defaultRiskState,
     baseRiskStateB: defaultRiskState,
     baselineRiskState: defaultRiskState,

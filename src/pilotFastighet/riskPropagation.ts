@@ -71,7 +71,10 @@ export type CascadeEvent = {
 };
 
 export function propagateRisks(
-  riskState: Record<string, RiskLevel>
+  riskState: Record<string, RiskLevel>,
+  propagationRules: Readonly<
+    Record<string, readonly Readonly<{ target: string; level: RiskLevel }>[]>
+  > = RISK_PROPAGATION
 ): { next: Record<string, RiskLevel>; events: CascadeEvent[] } {
   profileCount("propagateRisks.calls");
   return profileMeasure("propagateRisks.ms", () => {
@@ -110,7 +113,7 @@ export function propagateRisks(
       iteration += 1;
       changed = false;
 
-      for (const [source, effects] of Object.entries(RISK_PROPAGATION)) {
+      for (const [source, effects] of Object.entries(propagationRules)) {
         const level = next[source] as RiskLevel | undefined;
 
         if (isPropagationTriggerLevel(source, level)) {

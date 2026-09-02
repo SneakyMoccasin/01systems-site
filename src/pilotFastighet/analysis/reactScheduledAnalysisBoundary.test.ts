@@ -27,6 +27,8 @@ const HORIZON = 6;
 
 function cleanSource() {
   return createCleanRunSourceSnapshot({
+    domainId: "realEstate",
+    profileId: "legacy-real-estate-v1",
     scenarioA: {
       baseRiskState: defaultRiskState,
       baseDriverScores: buildDriverScoreState(defaultRiskState),
@@ -207,6 +209,8 @@ test("clean run-source snapshots clone precise configured inputs and remain immu
   const scores = buildDriverScoreState(riskState);
   scores.tenantStabilityRisk = 0.5;
   const source = createCleanRunSourceSnapshot({
+    domainId: "realEstate",
+    profileId: "legacy-real-estate-v1",
     scenarioA: { baseRiskState: riskState, baseDriverScores: scores },
     scenarioB: { baseRiskState: riskState, baseDriverScores: scores },
     baseline: { baseRiskState: riskState },

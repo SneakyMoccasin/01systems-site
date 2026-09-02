@@ -1,6 +1,8 @@
 import type { ActionKey } from "../actionEffects";
 import { buildDriverScoreState } from "../driverScoreState";
 import type { RiskState } from "../RealEstateEngine";
+import type { DomainKey } from "@/src/i18n/pulseLanguage";
+import { getExecutableProfileIdForDomain } from "../executableDomainProfile";
 import {
   createCleanRunSourceSnapshot,
   getScenarioScheduleValidationIssues,
@@ -141,11 +143,14 @@ export function formatManualScheduleIssue(
 }
 
 export function prepareManualScheduledRunSource(input: Readonly<{
+  domainId: DomainKey;
   baseRiskStateA: RiskState;
   baseRiskStateB: RiskState;
   baselineRiskState: RiskState;
 }>) {
   return createCleanRunSourceSnapshot({
+    domainId: input.domainId,
+    profileId: getExecutableProfileIdForDomain(input.domainId),
     scenarioA: {
       baseRiskState: input.baseRiskStateA,
       baseDriverScores: buildDriverScoreState(input.baseRiskStateA),

@@ -5,6 +5,7 @@ import {
   createCleanRunSourceSnapshot,
   type ScenarioSchedules,
 } from "./analysis/reactScheduledAnalysisBoundary";
+import { getExecutableProfileIdForDomain } from "./executableDomainProfile";
 
 export const SCHEDULED_EXECUTIVE_DEMO_ID =
   "same-actions-different-order" as const;
@@ -28,6 +29,8 @@ export function getScheduledExecutiveDemoRunSource() {
   const initialRiskState = structuredClone(defaultRiskState);
   const initialDriverScores = buildDriverScoreState(initialRiskState);
   return createCleanRunSourceSnapshot({
+    domainId: "realEstate",
+    profileId: getExecutableProfileIdForDomain("realEstate"),
     scenarioA: {
       baseRiskState: initialRiskState,
       baseDriverScores: initialDriverScores,

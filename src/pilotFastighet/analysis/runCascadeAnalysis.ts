@@ -7,9 +7,15 @@ import {
 import type { CascadeEvent } from "../riskPropagation";
 import type { ConstraintRegistry } from "../constraintState";
 import type { DriverScoreState } from "../driverScoreState";
-import { ACTION_EFFECTS, type ActionKey } from "../actionEffects";
-import { REAL_ESTATE_IMPACT_CONTRACT } from "../impactContract";
+import type { ActionKey } from "../actionEffects";
+import type { ParameterKey } from "../impactContract";
 import { defaultRiskState } from "../presetRiskMapping";
+import {
+  resolveExecutableDomainProfile,
+  resolveLegacyCompatibilityProfile,
+  type ExecutableDomainProfile,
+  type ExecutableProfileId,
+} from "../executableDomainProfile";
 
 export type PreconfiguredScenarioInput = {
   initialRiskState: RiskState;
@@ -21,6 +27,8 @@ type CommonCascadeAnalysisInput = {
   scenarioB: PreconfiguredScenarioInput;
   baseline?: PreconfiguredScenarioInput;
   horizon: number;
+  /** Omitted only by the explicit historical/test compatibility path. */
+  profileId?: ExecutableProfileId;
 };
 
 export type PreconfiguredCascadeAnalysisInput = CommonCascadeAnalysisInput & {
@@ -87,10 +95,6 @@ type NormalizedScheduledAction = ScheduledAction & {
   driverDeltas: DriverDeltas;
 };
 
-const SUPPORTED_DRIVER_KEYS = new Set<string>(
-  REAL_ESTATE_IMPACT_CONTRACT.map((parameter) => parameter.key)
-);
-
 function compareCanonicalStrings(left: string, right: string): number {
   if (left < right) return -1;
   if (left > right) return 1;
@@ -106,7 +110,8 @@ function validateHorizon(horizon: number): void {
 function normalizeScheduledActions(
   value: unknown,
   horizon: number,
-  collectionName: string
+  collectionName: string,
+  profile: ExecutableDomainProfile
 ): NormalizedScheduledAction[] {
   if (!Array.isArray(value)) {
     throw new TypeError(`${collectionName} must be an array.`);
@@ -126,7 +131,7 @@ function normalizeScheduledActions(
     const actionId = action.actionId;
     if (
       typeof actionId !== "string" ||
-      !Object.prototype.hasOwnProperty.call(ACTION_EFFECTS, actionId)
+      !Object.prototype.hasOwnProperty.call(profile.actionEffects, actionId)
     ) {
       throw new Error(`${collectionName}[${index}] has an unknown action ID.`);
     }
@@ -141,13 +146,13 @@ function normalizeScheduledActions(
       );
     }
 
-    const canonicalEffect = ACTION_EFFECTS[actionId as ActionKey];
+    const canonicalEffect = profile.actionEffects[actionId as ActionKey];
     const normalizedEntries = Object.entries(canonicalEffect).sort(([left], [right]) =>
       compareCanonicalStrings(left, right)
     );
     const unsupportedDrivers = normalizedEntries
       .map(([driver]) => driver)
-      .filter((driver) => !SUPPORTED_DRIVER_KEYS.has(driver));
+      .filter((driver) => !profile.applicableDrivers.includes(driver as ParameterKey));
     if (unsupportedDrivers.length > 0) {
       throw new Error(
         `Scheduled action ${actionId} has unsupported drivers: ${unsupportedDrivers.join(
@@ -181,7 +186,10 @@ function compareScheduledActions(
   );
 }
 
-function validateExecutionInput(input: CascadeAnalysisInput): {
+function validateExecutionInput(
+  input: CascadeAnalysisInput,
+  profile: ExecutableDomainProfile
+): {
   scenarioAActions: NormalizedScheduledAction[];
   scenarioBActions: NormalizedScheduledAction[];
 } | null {
@@ -190,12 +198,14 @@ function validateExecutionInput(input: CascadeAnalysisInput): {
       scenarioAActions: normalizeScheduledActions(
         input.scenarioAActions,
         input.horizon,
-        "scenarioAActions"
+        "scenarioAActions",
+        profile
       ),
       scenarioBActions: normalizeScheduledActions(
         input.scenarioBActions,
         input.horizon,
-        "scenarioBActions"
+        "scenarioBActions",
+        profile
       ),
     };
   }
@@ -212,13 +222,15 @@ function validateExecutionInput(input: CascadeAnalysisInput): {
 
 function runPreconfiguredScenario(
   input: PreconfiguredScenarioInput,
-  horizon: number
+  horizon: number,
+  profile: ExecutableDomainProfile
 ): ScenarioAnalysisResult {
   const engine = new RealEstateEngine(
     structuredClone(input.initialRiskState),
     input.initialDriverScores
       ? structuredClone(input.initialDriverScores)
-      : undefined
+      : undefined,
+    profile
   );
   const trajectory: EngineState[] = [];
 
@@ -248,7 +260,8 @@ function runScheduledScenario(
   input: PreconfiguredScenarioInput,
   horizon: number,
   scenario: "scenarioA" | "scenarioB",
-  scheduledActions: readonly NormalizedScheduledAction[]
+  scheduledActions: readonly NormalizedScheduledAction[],
+  profile: ExecutableDomainProfile
 ): {
   result: ScenarioAnalysisResult;
   provenance: ScheduledActionExecution[];
@@ -257,7 +270,8 @@ function runScheduledScenario(
     structuredClone(input.initialRiskState),
     input.initialDriverScores
       ? structuredClone(input.initialDriverScores)
-      : undefined
+      : undefined,
+    profile
   );
   const trajectory: EngineState[] = [];
   const provenance: ScheduledActionExecution[] = [];
@@ -360,24 +374,30 @@ export function runCascadeAnalysis(
   input: CascadeAnalysisInput
 ): AnalyticalResults | ScheduledAnalyticalResults {
   validateHorizon(input.horizon);
-  const scheduledInput = validateExecutionInput(input);
+  const profile = input.profileId
+    ? resolveExecutableDomainProfile(input.profileId)
+    : resolveLegacyCompatibilityProfile();
+  const scheduledInput = validateExecutionInput(input, profile);
 
   if (scheduledInput) {
     const scenarioA = runScheduledScenario(
       input.scenarioA,
       input.horizon,
       "scenarioA",
-      scheduledInput.scenarioAActions
+      scheduledInput.scenarioAActions,
+      profile
     );
     const scenarioB = runScheduledScenario(
       input.scenarioB,
       input.horizon,
       "scenarioB",
-      scheduledInput.scenarioBActions
+      scheduledInput.scenarioBActions,
+      profile
     );
     const baseline = runPreconfiguredScenario(
       input.baseline ?? { initialRiskState: defaultRiskState },
-      input.horizon
+      input.horizon,
+      profile
     );
 
     return {
@@ -389,11 +409,12 @@ export function runCascadeAnalysis(
     };
   }
 
-  const scenarioA = runPreconfiguredScenario(input.scenarioA, input.horizon);
-  const scenarioB = runPreconfiguredScenario(input.scenarioB, input.horizon);
+  const scenarioA = runPreconfiguredScenario(input.scenarioA, input.horizon, profile);
+  const scenarioB = runPreconfiguredScenario(input.scenarioB, input.horizon, profile);
   const baseline = runPreconfiguredScenario(
     input.baseline ?? { initialRiskState: defaultRiskState },
-    input.horizon
+    input.horizon,
+    profile
   );
 
   return {
