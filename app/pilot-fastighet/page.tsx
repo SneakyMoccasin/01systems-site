@@ -81,6 +81,7 @@ import ActionPanel, {
   getActionPanelLabel,
 } from "./components/ActionPanel";
 import WorkspaceConfigurationShell from "./components/WorkspaceConfigurationShell";
+import ModelSetupSection from "./components/ModelSetupSection";
 import AppearanceControl from "./components/AppearanceControl";
 import ScenarioSelectionControls from "./components/ScenarioSelectionControls";
 import MarginGraph, {
@@ -1260,6 +1261,42 @@ export default function PilotFastighetPage() {
     () => VISIBLE_PILOT_CASES.filter((c) => c.domain === domain),
     [domain]
   );
+  const modelSetupTemplates = useMemo(
+    () =>
+      visiblePilotCases.map((pilotCase) => ({
+        id: pilotCase.id,
+        title:
+          CASE_TRANSLATIONS[pilotCase.title as keyof typeof CASE_TRANSLATIONS]?.[
+            uiLanguage
+          ] ?? pilotCase.title,
+        description: pilotCase.oneLiner,
+      })),
+    [visiblePilotCases, uiLanguage]
+  );
+  const loadPilotCaseTemplate = (id: string) => {
+    const pilotCase = PILOT_CASES.find((candidate) => candidate.id === id);
+    if (!pilotCase || pilotCase.domain !== domain) return;
+
+    setSelectedPilotCaseId(id);
+    setSimulationSource("case");
+    setBaseRiskStateA(structuredClone(pilotCase.riskStateA));
+    setBaseRiskStateB(structuredClone(pilotCase.riskStateB));
+    setRiskStateA(structuredClone(pilotCase.riskStateA));
+    setRiskStateB(structuredClone(pilotCase.riskStateB));
+    setDriverScoresA(buildDriverScoreState(pilotCase.riskStateA));
+    setDriverScoresB(buildDriverScoreState(pilotCase.riskStateB));
+    setSelectedActionsA([]);
+    setSelectedActionsB([]);
+    setScenarioSchedules(clearAllScenarioSchedules());
+    setIsDirty(true);
+    setHasSimulationCompleted(false);
+    setIsRunning(false);
+    resetRunState();
+  };
+  const returnToManualConfiguration = () => {
+    setSelectedPilotCaseId("");
+    setSimulationSource("manual");
+  };
   const resolveTopLevelGoalLabel = (
     goal:
       | "accessibility"
@@ -2363,48 +2400,6 @@ export default function PilotFastighetPage() {
                   {uiLanguage === "sv" ? "Åtgärder över tid" : "Actions over time"}
                 </option>
               </select>
-              <label style={{ fontSize: "13px", marginRight: "6px", color: theme.subtext }}>Case</label>
-              <select
-                value={selectedPilotCaseId}
-                onChange={(e) => {
-                  const id = e.target.value;
-                  setSelectedPilotCaseId(id);
-                  setSimulationSource("case");
-                  if (id === "") return;
-                  const pilotCase = PILOT_CASES.find((c) => c.id === id);
-                  if (pilotCase) {
-                    setBaseRiskStateA(structuredClone(pilotCase.riskStateA));
-                    setBaseRiskStateB(structuredClone(pilotCase.riskStateB));
-                    setRiskStateA(structuredClone(pilotCase.riskStateA));
-                    setRiskStateB(structuredClone(pilotCase.riskStateB));
-                    setDriverScoresA(buildDriverScoreState(pilotCase.riskStateA));
-                    setDriverScoresB(buildDriverScoreState(pilotCase.riskStateB));
-                    setSelectedActionsA([]);
-                    setSelectedActionsB([]);
-                    setScenarioSchedules(clearAllScenarioSchedules());
-                    setIsDirty(true);
-                    setHasSimulationCompleted(false);
-                    setIsRunning(false);
-                    resetRunState();
-                  }
-                }}
-                style={{
-                  background: semanticTheme.controlBackground,
-                  color: semanticTheme.primaryText,
-                  border: `1px solid ${semanticTheme.border}`,
-                  borderRadius: "6px",
-                  padding: "6px 10px",
-                  fontSize: "13px",
-                  marginRight: "16px",
-                }}
-              >
-                <option value="">Custom</option>
-                {visiblePilotCases.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {CASE_TRANSLATIONS[c.title as keyof typeof CASE_TRANSLATIONS]?.[uiLanguage] ?? c.title}
-                  </option>
-                ))}
-              </select>
             </>
           )}
           <label
@@ -2728,14 +2723,6 @@ export default function PilotFastighetPage() {
           </ol>
         </div>
       )}
-      {!executiveDemoMode &&
-        selectedPilotCaseId &&
-        PILOT_CASES.find((c) => c.id === selectedPilotCaseId) && (
-        <div style={{ marginBottom: "12px", fontSize: "12px", color: semanticTheme.secondaryText }}>
-          {PILOT_CASES.find((c) => c.id === selectedPilotCaseId)?.oneLiner}
-        </div>
-      )}
-
       <div
         style={{
           marginTop: execRealEstateLayout ? "0px" : executiveDemoMode ? "-1px" : "24px",
@@ -2972,6 +2959,17 @@ export default function PilotFastighetPage() {
           validationCount={scheduleValidationIssues.length}
           changed={isDirty}
           appearance={semanticTheme}
+          modelSetup={
+            <ModelSetupSection
+              key={domain}
+              language={uiLanguage}
+              templates={modelSetupTemplates}
+              loadedTemplateId={selectedPilotCaseId}
+              changed={isDirty}
+              onLoadTemplate={loadPilotCaseTemplate}
+              onReturnToManual={returnToManualConfiguration}
+            />
+          }
           interventions={interventionConfiguration}
           drivers={driverConfiguration}
         >

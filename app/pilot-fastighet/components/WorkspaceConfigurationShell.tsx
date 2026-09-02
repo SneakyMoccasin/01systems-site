@@ -65,6 +65,7 @@ type Props = {
   changed?: boolean;
   interventions: ReactNode;
   drivers: ReactNode;
+  modelSetup?: ReactNode;
   children?: ReactNode;
   appearance?: {
     border: string; strongDivider: string; primaryText: string; secondaryText: string;
@@ -81,6 +82,7 @@ export default function WorkspaceConfigurationShell({
   changed = false,
   interventions,
   drivers,
+  modelSetup,
   children,
   appearance,
 }: Props) {
@@ -197,6 +199,8 @@ export default function WorkspaceConfigurationShell({
           ×
         </button>
       </header>
+
+      {modelSetup}
 
       <nav
         aria-label={copy.configuration}
