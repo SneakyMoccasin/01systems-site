@@ -45,6 +45,10 @@ import {
   formatDisplayedPeriod,
 } from "@/src/pilotFastighet/analysis/periodPresentation";
 import { CASCADE_PRESENTATION } from "@/src/pilotFastighet/cascadePresentation";
+import {
+  buildStructuralFindingsPresentationModel,
+  structuralFindingsValue,
+} from "@/src/pilotFastighet/analysis/structuralFindingsPresentationModel";
 
 function toReadableLabel(
   driverId: TransportSystemDriverId | string | null | undefined,
@@ -1436,6 +1440,182 @@ const AIInspectorPanel: React.FC<Props> = ({
   const scenarioDifferenceDisplayText = executiveDemoMode
     ? getScenarioDifferenceText(marginImpact, language, true)
     : scenarioDifferenceText;
+  const findingsPresentationModel = buildStructuralFindingsPresentationModel({
+    mode: executiveDemoMode
+      ? "executive-demo"
+      : inspectionMode === "expert"
+        ? "expert"
+        : "normal",
+    language: uiLanguage,
+    analysisReady,
+    values: {
+      emptyState:
+        language === "sv" ? "Ingen simulering körd ännu." : "No simulation run yet.",
+      scenarioIdentities: {
+        scenarioA: scenarioALabel,
+        scenarioB: scenarioBLabel,
+        baseline: scenarioALegendLabel,
+        goalStrategy: scenarioBLegendLabel,
+        header: scenarioHeader,
+      },
+      analysisGoal: resolvedAnalysisGoalLabel,
+      analysisFocus: resolvedScenarioLabel,
+      caseMetadata: shouldShowCaseHeader ? scenarioHeader : null,
+      goalDirection: goalDirectionIndicatorMessage,
+      decisionEffectSummary: decisionEffectSummaryMessage ?? decisionEffectText,
+      executiveSummaryLines: executiveInspectorSummaryLines,
+      policyDriver: {
+        label: policyDriverLabel,
+        value: policyDriver,
+        transportLabel: transportInspectorContext?.policyLeverLabel ?? null,
+      },
+      systemDriver: {
+        label: systemDriverLabel,
+        value: systemDriver,
+        transportLabel: transportInspectorContext?.systemDriverLabel ?? null,
+      },
+      primaryDriver: {
+        key: primaryDriver,
+        scenarioA: primaryDriverA,
+        scenarioB: primaryDriverB,
+        displayLabel: primaryDriverDisplayLabel,
+        fallback: primaryDriverFallbackText,
+        influence: primaryDriverInfluenceText,
+      },
+      systemPressure: {
+        value: systemPressure,
+        executiveLabel: systemPressureExecutiveLabel,
+      },
+      structuralStatus: {
+        value: structuralStatus,
+        heading: structuralStateHeading,
+        selectedState: structuralStateText,
+      },
+      dominantConstraint: {
+        message: dominantConstraintMessage,
+        label: executiveSummaryConstraintLabel,
+        breachEstimate,
+        executiveBreachEstimate: breachEstimateExecutiveLabel,
+      },
+      propagationRoot: propagationRootComparisonMessage,
+      propagationChain: {
+        nodes: structuralPropagationChain,
+        transportLabel: transportInspectorContext?.propagationChainLabel ?? null,
+        pathwayComparison: cascadePathwayComparisonMessage,
+      },
+      upstreamDependencies: simulationCascadeEvents,
+      dominantScenarioDifferenceChannel: dominantScenarioChannelText,
+      constraintOrderingDifferences: constraintOrderingMessages,
+      constraintComparisonStatements: constraintComparisonMessages,
+      structuralGoalStatements: {
+        messages: structuralGoalMessages,
+        summary: structuralGoalSummaryMessage,
+        conditionedStatus: goalConditionedSystemStatusMessage,
+      },
+      margins: {
+        scenarioA: currentMargin,
+        scenarioB: alternativeMargin,
+        difference: marginImpact,
+        selectedA: selectedMarginValueA,
+        selectedB: selectedMarginValueB,
+        selectedDifference,
+      },
+      forwardDecisionFlexibility: marginTrend,
+      goalConflict: goalConflictText,
+      goalProgress: goalProgressText,
+      goalRisk: goalRiskText,
+      strategyDifference: {
+        text: scenarioDifferenceDisplayText,
+        hasStructuralDivergence,
+      },
+      firstStructuralDivergence: firstDivergenceMonth,
+      domainEvents: { all: domainEvents, active: activeDomainEvents },
+      tippingWindow: {
+        period: tippingQuarter,
+        heading: tippingWindowHeading,
+        text: tippingWindowText,
+      },
+      cascadeStatus: {
+        heading: cascadeStatusHeading,
+        text: cascadeStatusText,
+        detected: cascadeDetected,
+      },
+      expertDiagnostics: {
+        driverInteractionDepthText,
+        constraintLifecycleText,
+        cascadeStructureText,
+        marginPropagationMechanicsText,
+        horizon: simulationHorizon,
+        seriesLengthA,
+        seriesLengthB,
+        selectedMonthIndex,
+      },
+      executiveDemoSections:
+        executiveDemoMode && inspectionMode === "executive"
+          ? {
+              configuredSignals:
+                caseType === "real-estate"
+                  ? getExecutiveDemoInspectorSignalBlocks(language)
+                  : null,
+              decisionAnalytic: getExecutiveDemoInspectorDecisionAnalytic(language),
+            }
+          : null,
+    },
+    visibility: {
+      emptyState: !analysisReady,
+      analysisFocus: resolvedScenarioLabel != null,
+      caseMetadata: shouldShowCaseHeader,
+      goalDirection: goalDirectionIndicatorMessage != null,
+      upstreamDependencies:
+        inspectionMode === "expert" && simulationCascadeEvents.length > 0,
+      dominantScenarioDifferenceChannel: dominantScenarioChannelText != null,
+      goalConflict: goalConflictText != null,
+      goalProgress: goalProgressText != null,
+      goalRisk: goalRiskText != null,
+      firstStructuralDivergence: firstDivergenceMonth != null,
+      expertDiagnostics: inspectionMode === "expert",
+      executiveDemoSections:
+        executiveDemoMode && inspectionMode === "executive",
+    },
+    provenance: {
+      scenarioIdentities: [
+        { kind: "configured-selection", reference: { scenarioALabel, scenarioBLabel } },
+      ],
+      analysisGoal: [
+        { kind: "configured-selection", reference: { selectedGoal, goalType: resolvedGoalType } },
+      ],
+      systemPressure: [
+        { kind: "analysis-result", scenario: "comparison", reference: systemPressure },
+      ],
+      dominantConstraint: [
+        { kind: "constraint-registry", scenario: "A", reference: constraintRegistryA },
+        { kind: "constraint-registry", scenario: "B", reference: constraintRegistryB },
+      ],
+      propagationChain: [
+        { kind: "cascade-events", scenario: "comparison", reference: simulationCascadeEvents },
+      ],
+      margins: [
+        { kind: "analysis-result", scenario: "comparison", reference: { currentMargin, alternativeMargin, marginImpact } },
+      ],
+    },
+  });
+  const findingsAnalysisReady = findingsPresentationModel.analysisReady;
+  const findingsExecutiveSummaryLines = structuralFindingsValue<string[]>(
+    findingsPresentationModel,
+    "executiveSummaryLines"
+  );
+  const findingsGoalConflict = structuralFindingsValue<string | null>(
+    findingsPresentationModel,
+    "goalConflict"
+  );
+  const findingsGoalProgress = structuralFindingsValue<string | null>(
+    findingsPresentationModel,
+    "goalProgress"
+  );
+  const findingsGoalRisk = structuralFindingsValue<string | null>(
+    findingsPresentationModel,
+    "goalRisk"
+  );
   const localizePropagationNodeLabel = (label: string) => {
     if (
       executiveDemoMode &&
@@ -1648,11 +1828,46 @@ const AIInspectorPanel: React.FC<Props> = ({
         : language === "sv"
           ? "Genomföringsflexibiliteten förblir strukturellt intakt över horisonten."
           : "Execution flexibility remains structurally intact across the horizon.";
+    const executiveFindingsPresentationModel =
+      buildStructuralFindingsPresentationModel({
+        mode: "executive-demo",
+        language: uiLanguage,
+        analysisReady: findingsAnalysisReady,
+        values: {
+          ...Object.fromEntries(
+            findingsPresentationModel.orderedFields.map((field) => [
+              field.id,
+              field.value,
+            ])
+          ),
+          executiveDemoSections: {
+            headings: demoHeadings,
+            analysisGoal: resolvedAnalysisGoalLabel,
+            mainLead,
+            mainSecondary,
+            spreadSummary: executiveDemoSpreadSummary,
+            spreadSecondary: spreadSecond,
+            decisionAnalytic: demoDecisionCombo,
+            earlyLines,
+            decisionEffect: decisionEffectText,
+            strategyDifference: scenarioDifferenceDisplayText,
+            forwardFlexibility: forwardFlex,
+            marginDelta:
+              typeof marginImpact === "number"
+                ? marginImpact.toFixed(2) : String(marginImpact),
+            configuredSignals:
+              caseType === "real-estate"
+                ? getExecutiveDemoInspectorSignalBlocks(language)
+                : null,
+          },
+        },
+      });
+    void executiveFindingsPresentationModel;
 
     const deltaStr =
       typeof marginImpact === "number" ? marginImpact.toFixed(2) : String(marginImpact);
 
-    if (!analysisReady) {
+    if (!findingsAnalysisReady) {
       return (
         <div
           style={{
@@ -1983,9 +2198,9 @@ const AIInspectorPanel: React.FC<Props> = ({
             <span>{scenarioHeader}</span>
           </div>
         )}
-        {analysisReady &&
+        {findingsAnalysisReady &&
           caseType === "transport" &&
-          executiveInspectorSummaryLines.length > 0 && (
+          findingsExecutiveSummaryLines.length > 0 && (
             <div style={{ marginTop: "2px" }}>
               <div style={{ color: "#9CA3AF", marginBottom: "4px" }}>
                 {language === "sv" ? "Sammanfattning" : "Summary"}
@@ -1998,13 +2213,13 @@ const AIInspectorPanel: React.FC<Props> = ({
                   lineHeight: 1.45,
                 }}
               >
-                {executiveInspectorSummaryLines.map((line, index) => (
+                {findingsExecutiveSummaryLines.map((line, index) => (
                   <div key={`executive-summary-line-${index}`}>{line}</div>
                 ))}
               </div>
             </div>
           )}
-        {analysisReady && inspectionMode === "expert" && (
+        {findingsAnalysisReady && inspectionMode === "expert" && (
           <>
             {resolvedPolicyDriver && (
               <div>
@@ -2061,7 +2276,7 @@ const AIInspectorPanel: React.FC<Props> = ({
             )}
           </>
         )}
-        {analysisReady && caseType === "transport" && primaryDriver && (
+        {findingsAnalysisReady && caseType === "transport" && primaryDriver && (
           <div className="mb-2">
             <strong>
               {language === "sv" ? "Policy-drivare:" : "Policy driver:"}
@@ -2085,7 +2300,7 @@ const AIInspectorPanel: React.FC<Props> = ({
             )}
           </div>
         )}
-        {analysisReady && caseType === "transport" && primaryDriver && (
+        {findingsAnalysisReady && caseType === "transport" && primaryDriver && (
           <div className="mb-2">
             <strong>
               {language === "sv" ? "Systemdrivare:" : "System driver:"}
@@ -2096,7 +2311,7 @@ const AIInspectorPanel: React.FC<Props> = ({
             )}
           </div>
         )}
-        {analysisReady && (
+        {findingsAnalysisReady && (
           <div>
             {isRealEstate
               ? language === "sv"
@@ -2115,7 +2330,7 @@ const AIInspectorPanel: React.FC<Props> = ({
                   }`}
           </div>
         )}
-        {analysisReady && caseType === "transport" && executiveSummaryMessage && (
+        {findingsAnalysisReady && caseType === "transport" && executiveSummaryMessage && (
           <div
             style={{
               marginTop: "6px",
@@ -2131,7 +2346,7 @@ const AIInspectorPanel: React.FC<Props> = ({
             {executiveSummaryMessage}
           </div>
         )}
-        {!analysisReady ? (
+        {!findingsAnalysisReady ? (
           <div style={{ opacity: 0.7 }}>
             {language === "sv"
               ? "Ingen simulering körd ännu"
@@ -2996,7 +3211,7 @@ const AIInspectorPanel: React.FC<Props> = ({
           </div>
         </div>
 
-        {goalConflictText && (
+        {findingsGoalConflict && (
           <div
             style={{
               fontSize: "13px",
@@ -3005,20 +3220,20 @@ const AIInspectorPanel: React.FC<Props> = ({
               fontWeight: 500,
             }}
           >
-            {goalConflictText}
+            {findingsGoalConflict}
           </div>
         )}
-        {goalProgressText && (
+        {findingsGoalProgress && (
           <div>
             <div style={{ fontSize: "13px", fontWeight: 600, marginBottom: "4px" }}>
               {uiLanguage === "sv" ? "Måluppfyllelse" : "Goal progress"}
             </div>
             <div style={{ fontSize: "13px", color: "#9ca3af", marginBottom: "10px" }}>
-              {goalProgressText}
+              {findingsGoalProgress}
             </div>
           </div>
         )}
-        {goalRiskText && (
+        {findingsGoalRisk && (
           <div
             style={{
               fontSize: "13px",
@@ -3026,7 +3241,7 @@ const AIInspectorPanel: React.FC<Props> = ({
               marginBottom: "12px",
             }}
           >
-            {goalRiskText}
+            {findingsGoalRisk}
           </div>
         )}
         <div>
