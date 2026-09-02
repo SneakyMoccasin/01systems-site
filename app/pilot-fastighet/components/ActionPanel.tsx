@@ -32,6 +32,18 @@ type ActionKey =
 
 type DomainKey = "realEstate" | "municipal" | "consulting";
 
+export function getActionPanelItemCount(
+  domain: DomainKey,
+  executionMode: ReactExecutionMode
+): number {
+  return (DOMAIN_ACTIONS[domain] ?? DOMAIN_ACTIONS.consulting).filter(
+    (action) =>
+      actionHasOnlyModeledDrivers(action, Object.keys(defaultRiskState)) &&
+      (executionMode === "configured-start" ||
+        isActionSupportedForScheduledExecution(action))
+  ).length;
+}
+
 const interventionLabels = {
   increase_service_frequency: {
     sv: "Öka turtäthet",

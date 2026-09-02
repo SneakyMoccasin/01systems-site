@@ -76,7 +76,11 @@ import { buildConstraintComparisonMessages } from "./components/inspector-utils/
 import { buildStructuralGoalMessages } from "./components/inspector-utils/buildStructuralGoalMessages";
 import { buildDominantConstraintMessage } from "./components/inspector-utils/buildDominantConstraintMessage";
 import { DEFAULT_GOAL_TYPE } from "./components/inspector-utils/goalTypes";
-import ActionPanel, { getActionPanelLabel } from "./components/ActionPanel";
+import ActionPanel, {
+  getActionPanelItemCount,
+  getActionPanelLabel,
+} from "./components/ActionPanel";
+import WorkspaceConfigurationShell from "./components/WorkspaceConfigurationShell";
 import MarginGraph, {
   MarginGraphLegendRow,
   type DomainEvent,
@@ -1767,6 +1771,162 @@ export default function PilotFastighetPage() {
 
   const execRealEstateLayout = executiveDemoMode && caseType === "real-estate";
 
+  const interventionConfiguration = (
+    <>
+      <ActionPanel
+        language={uiLanguage}
+        domain={domain}
+        selectedActionsA={selectedActionsA}
+        selectedActionsB={selectedActionsB}
+        strategyView={strategyView}
+        strategyColors={strategyColors}
+        applyAction={applyAction}
+        executionMode={effectiveExecutionMode}
+        schedules={scenarioSchedules}
+        editableScenario={editableScenario}
+        simulationHorizon={simulationHorizon}
+        toggleScheduledAction={toggleTimedAction}
+        updateScheduledActionStep={updateTimedActionStep}
+      />
+      {effectiveExecutionMode === "actions-over-time" && (
+        <div
+          aria-label={uiLanguage === "sv" ? "Åtgärdsschema" : "Action schedule"}
+          className="border-t border-slate-800 pt-4"
+        >
+          <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            {uiLanguage === "sv" ? "Planerade åtgärder" : "Planned actions"}
+          </div>
+          {(["A", "B"] as const).map((scenario) => {
+            const entries = getOrderedScenarioSchedule(scenarioSchedules, scenario);
+            return (
+              <div key={scenario} className={scenario === "A" ? "mb-3" : undefined}>
+                <div className="text-xs font-semibold text-slate-300">
+                  {`Scenario ${scenario}`}
+                </div>
+                {entries.length === 0 ? (
+                  <div className="mt-1 text-xs text-slate-500">
+                    {uiLanguage === "sv"
+                      ? "Inga tidsatta åtgärder."
+                      : "No timed actions."}
+                  </div>
+                ) : (
+                  <ul className="mt-1 list-disc space-y-1 pl-5 text-xs text-slate-300">
+                    {entries.map((entry) => (
+                      <li key={entry.actionId}>
+                        {`${getActionPanelLabel(entry.actionId, uiLanguage)} — M${entry.executionStep}`}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            );
+          })}
+          {scheduleValidationIssues.map((issue) => (
+            <div
+              key={`${issue.scenario}-${issue.actionId}-${String(issue.executionStep)}`}
+              role="alert"
+              className="mt-2 text-xs text-red-300"
+            >
+              {formatManualScheduleIssue(
+                issue,
+                getActionPanelLabel(issue.actionId, uiLanguage),
+                uiLanguage
+              )}
+            </div>
+          ))}
+          <div className="mb-3 mt-5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            {uiLanguage === "sv" ? "Genomförda åtgärder" : "Executed actions"}
+          </div>
+          {(["A", "B"] as const).map((scenario) => {
+            const entries = revealedScheduledProvenance[scenario];
+            return (
+              <div
+                key={`executed-${scenario}`}
+                className={scenario === "A" ? "mb-3" : undefined}
+              >
+                <div className="text-xs font-semibold text-slate-300">
+                  {`Scenario ${scenario}`}
+                </div>
+                {entries.length === 0 ? (
+                  <div className="mt-1 text-xs text-slate-500">
+                    {uiLanguage === "sv"
+                      ? "Inga åtgärder genomförda ännu."
+                      : "No actions executed yet."}
+                  </div>
+                ) : (
+                  <ul className="mt-1 list-disc space-y-1 pl-5 text-xs text-slate-300">
+                    {entries.map((entry) => (
+                      <li key={`${entry.actionId}-${entry.actualExecutionStep}`}>
+                        {`${getActionPanelLabel(entry.actionId, uiLanguage)} — M${entry.actualExecutionStep}${entry.scheduledStep !== entry.actualExecutionStep ? ` (${uiLanguage === "sv" ? "planerad" : "planned"} M${entry.scheduledStep})` : ""}`}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            );
+          })}
+          {hasSimulationCompleted && !naturallyCompletedRun && (
+            <div role="status" className="mt-2 text-xs text-amber-300">
+              {uiLanguage === "sv"
+                ? "Körningen stoppades och visar ett partiellt resultat."
+                : "The run was stopped and shows a partial result."}
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  );
+
+  const driverConfiguration = (
+    <div className="space-y-6">
+      {Object.entries(groupedParameters).map(([groupName, params]) => (
+        <section key={groupName} className="border-b border-slate-800 pb-5 last:border-0">
+          <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            {groupName}
+          </div>
+          <div className="space-y-3">
+            {params.map((param) => {
+              const isGoalRelevant =
+                selectedGoal && goalRelevantDrivers[selectedGoal]?.includes(param.key);
+              return (
+                <label
+                  key={param.key}
+                  className="flex min-w-0 items-center justify-between gap-3 text-sm"
+                  style={{
+                    borderLeft: isGoalRelevant
+                      ? `2px solid ${CASCADE_PRESENTATION.scenarios.A.color}`
+                      : "2px solid transparent",
+                    paddingLeft: "8px",
+                  }}
+                >
+                  <span className="min-w-0 text-slate-300">
+                    {pulseLanguage[uiLanguage].riskLabels[param.key] ??
+                      (typeof param.label === "string"
+                        ? param.label
+                        : param.label[uiLanguage])}
+                  </span>
+                  <select
+                    value={activeRiskState[param.key]}
+                    disabled={!isEditableScenario}
+                    onChange={(event) => {
+                      handleParameterChange(param.key, event.target.value as RiskLevel);
+                    }}
+                    className="shrink-0 rounded-md border border-slate-700 bg-slate-950 px-2 py-1.5 text-xs text-slate-100 disabled:opacity-50"
+                  >
+                    <option value="LOW">LOW</option>
+                    <option value="MODERATE">MODERATE</option>
+                    <option value="HIGH">HIGH</option>
+                    <option value="SEVERE">SEVERE</option>
+                  </select>
+                </label>
+              );
+            })}
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+
   return (
     <div
       style={{
@@ -2632,12 +2792,6 @@ export default function PilotFastighetPage() {
         </div>
       )}
 
-      {!executiveDemoMode && isDirty && (
-        <div style={{ marginBottom: "12px", fontSize: "13px", color: "#9ca3af" }}>
-          {pt.actionNeedsStart}
-        </div>
-      )}
-
       <div
         style={{
           marginTop: execRealEstateLayout ? "0px" : executiveDemoMode ? "-1px" : "24px",
@@ -2646,7 +2800,7 @@ export default function PilotFastighetPage() {
             ? "minmax(0, 1fr)"
             : executiveDemoMode
               ? "minmax(0, 1fr) minmax(146px, 184px)"
-              : "minmax(0, 420px) minmax(0, 1fr)",
+              : "minmax(0, 1fr)",
           gap: executiveDemoMode ? (execRealEstateLayout ? "16px" : "7px") : "24px",
           alignItems: "start",
           minWidth: 0,
@@ -2657,7 +2811,7 @@ export default function PilotFastighetPage() {
             : {}),
         }}
       >
-        {!(executiveDemoMode && execRealEstateLayout) && (
+        {executiveDemoMode && !execRealEstateLayout && (
         <div
           style={{
             position: "sticky",
@@ -2866,6 +3020,16 @@ export default function PilotFastighetPage() {
           </div>
         </div>
         )}
+        <WorkspaceConfigurationShell
+          enabled={!executiveDemoMode}
+          language={uiLanguage}
+          interventionsCount={getActionPanelItemCount(domain, effectiveExecutionMode)}
+          driversCount={impactContract.length}
+          validationCount={scheduleValidationIssues.length}
+          changed={isDirty}
+          interventions={interventionConfiguration}
+          drivers={driverConfiguration}
+        >
         <div
           style={{
             minWidth: 0,
@@ -2876,7 +3040,7 @@ export default function PilotFastighetPage() {
                 ? "1 / -1"
                 : executiveDemoMode
                   ? "1 / 2"
-                  : "2 / 3",
+                  : "1 / -1",
             ...(execRealEstateLayout
               ? {
                   display: "flex",
@@ -4455,6 +4619,7 @@ export default function PilotFastighetPage() {
         </>
       )}
         </div>
+      </WorkspaceConfigurationShell>
       </div>
 
       {uiMode === "expert" && (
