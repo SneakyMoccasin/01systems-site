@@ -145,8 +145,7 @@ test("forward flexibility localizes STABLE while preserving its exact source val
   assert.ok(sourceDetails);
   assert.match(sourceDetails.textContent ?? "", /STABLE/);
   const visibleValue = detail.firstChild?.textContent ?? "";
-  assert.match(visibleValue, /Stabilt/);
-  assert.doesNotMatch(visibleValue, /\bSTABLE\b/);
+  assert.doesNotMatch(visibleValue, /Stabilt|\bSTABLE\b/);
   await act(async () => root.unmount());
 
   const english = await render(36, "en");

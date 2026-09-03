@@ -8,6 +8,11 @@ import {
   type StructuralFindingsPresentationModel,
   type StructuralFindingsSourceClassification,
 } from "@/src/pilotFastighet/analysis/structuralFindingsPresentationModel";
+import {
+  constraintSourceStepToDisplayedPeriod,
+  formatDisplayedPeriod,
+  trajectoryIndexToDisplayedPeriod,
+} from "@/src/pilotFastighet/analysis/periodPresentation";
 
 const SUMMARY_PRIORITY = [
   "analysisFocus",
@@ -164,6 +169,107 @@ function renderCompleteValue(value: unknown, path: string): React.ReactNode {
   return String(value);
 }
 
+type FindingsLanguage = "sv" | "en";
+
+const EXECUTIVE_DETAIL_LABELS: Readonly<Record<string, { sv: string; en: string }>> = {
+  value: { sv: "Värde", en: "Value" }, heading: { sv: "Rubrik", en: "Heading" },
+  selectedState: { sv: "Valt tillstånd", en: "Selected state" }, all: { sv: "Alla", en: "All" },
+  active: { sv: "Aktiva", en: "Active" }, month: { sv: "Periodindex", en: "Period index" },
+  selectedMonthIndex: { sv: "Periodindex", en: "Period index" }, period: { sv: "Modellperiod", en: "Model period" },
+  label: { sv: "Etikett", en: "Label" }, detected: { sv: "Identifierad", en: "Detected" },
+  body: { sv: "Brödtext", en: "Body" }, title: { sv: "Titel", en: "Title" },
+  type: { sv: "Typ", en: "Type" }, nodes: { sv: "Noder", en: "Nodes" },
+  scenarioA: { sv: "Scenario A", en: "Scenario A" }, scenarioB: { sv: "Scenario B", en: "Scenario B" },
+  baseline: { sv: "Baslinje", en: "Baseline" }, goalStrategy: { sv: "Målstrategi", en: "Goal strategy" },
+  header: { sv: "Rubrik", en: "Heading" }, key: { sv: "Internt ID", en: "Internal ID" },
+  displayLabel: { sv: "Visningsetikett", en: "Display label" }, fallback: { sv: "Reservvärde", en: "Fallback" },
+  influence: { sv: "Påverkan", en: "Influence" }, executiveLabel: { sv: "Exekutiv etikett", en: "Executive label" },
+  message: { sv: "Meddelande", en: "Message" }, breachEstimate: { sv: "Uppskattad begränsningsperiod", en: "Estimated constraint period" },
+  executiveBreachEstimate: { sv: "Exekutiv begränsningsetikett", en: "Executive constraint label" },
+  transportLabel: { sv: "Transportetikett", en: "Transport label" }, pathwayComparison: { sv: "Jämförelse av spridningsvägar", en: "Pathway comparison" },
+  messages: { sv: "Meddelanden", en: "Messages" }, summary: { sv: "Sammanfattning", en: "Summary" },
+  conditionedStatus: { sv: "Villkorad status", en: "Conditioned status" }, difference: { sv: "Skillnad", en: "Difference" },
+  selectedA: { sv: "Valt värde A", en: "Selected value A" }, selectedB: { sv: "Valt värde B", en: "Selected value B" },
+  selectedDifference: { sv: "Vald skillnad", en: "Selected difference" }, text: { sv: "Text", en: "Text" },
+  hasStructuralDivergence: { sv: "Strukturell divergens", en: "Structural divergence" }, horizon: { sv: "Analyshorisont", en: "Analysis horizon" },
+  seriesLengthA: { sv: "Serielängd A", en: "Series length A" }, seriesLengthB: { sv: "Serielängd B", en: "Series length B" },
+  driverInteractionDepthText: { sv: "Samspel mellan drivkrafter", en: "Driver interaction depth" },
+  constraintLifecycleText: { sv: "Begränsningens livscykel", en: "Constraint lifecycle" },
+  cascadeStructureText: { sv: "Kaskadstruktur", en: "Cascade structure" },
+  marginPropagationMechanicsText: { sv: "Marginalens spridningsmekanik", en: "Margin propagation mechanics" },
+  sourceRisk: { sv: "Internt käll-ID", en: "Internal source ID" }, targetRisk: { sv: "Internt mål-ID", en: "Internal target ID" },
+  level: { sv: "Nivå", en: "Level" }, iteration: { sv: "Spridningsdjup", en: "Propagation depth" },
+  step: { sv: "Spridningsdjup", en: "Propagation depth" }, delaySteps: { sv: "Fördröjningssteg", en: "Delay steps" },
+  actionId: { sv: "Internt åtgärds-ID", en: "Internal action ID" }, scheduledStep: { sv: "Planerad modellperiod", en: "Scheduled model period" },
+  actualExecutionStep: { sv: "Faktisk modellperiod", en: "Actual model period" },
+  appliedDriverDeltas: { sv: "Tillämpade drivkraftsförändringar", en: "Applied driver deltas" },
+  lifecycle: { sv: "Livscykel", en: "Lifecycle" }, activatedAtStep: { sv: "Aktiveringsindex", en: "Activation index" },
+  lastUpdatedStep: { sv: "Senast uppdaterat index", en: "Last-updated index" },
+};
+
+const RAW_TECHNICAL_KEYS = new Set([
+  "key", "type", "sourceRisk", "targetRisk", "actionId", "selectedGoal", "goalType",
+  "lifecycle", "constraintType", "driverId", "primaryDriverKey",
+]);
+
+function executiveDetailLabel(key: string, language: FindingsLanguage): string {
+  const known = EXECUTIVE_DETAIL_LABELS[key];
+  if (known) return known[language];
+  return `${language === "sv" ? "Internt ID" : "Internal ID"} · ${key}`;
+}
+
+function equalCollections(left: unknown, right: unknown): boolean {
+  return Array.isArray(left) && Array.isArray(right) && JSON.stringify(left) === JSON.stringify(right);
+}
+
+function formatExecutiveSemanticText(value: string, language: FindingsLanguage): string {
+  if (value === "refinancing risk") return language === "sv" ? "Refinansieringsrisk" : "Refinancing risk";
+  return value;
+}
+
+function formatExecutivePrimitive(value: string | number | boolean, key: string | undefined, language: FindingsLanguage): React.ReactNode {
+  if (typeof value === "boolean") return value ? (language === "sv" ? "Ja" : "Yes") : (language === "sv" ? "Nej" : "No");
+  if (typeof value === "number") {
+    if (key === "month" || key === "selectedMonthIndex") return `${value} (${formatDisplayedPeriod(trajectoryIndexToDisplayedPeriod(value))})`;
+    if (key === "activatedAtStep" || key === "lastUpdatedStep") return `${value} (${formatDisplayedPeriod(constraintSourceStepToDisplayedPeriod(value))})`;
+    if (key === "period" || key === "scheduledStep" || key === "actualExecutionStep") return formatDisplayedPeriod(value);
+    return String(value);
+  }
+  if (value === "refinancing risk") {
+    return <>{formatExecutiveSemanticText(value, language)} <span style={{ color: "var(--ce-text-muted, #7f8da3)" }}>({language === "sv" ? "råvärde" : "raw value"}: {value})</span></>;
+  }
+  if (RAW_TECHNICAL_KEYS.has(key ?? "")) {
+    return <><span style={{ color: "var(--ce-text-muted, #7f8da3)" }}>{language === "sv" ? "Råvärde" : "Raw value"}: </span>{value}</>;
+  }
+  return value;
+}
+
+function renderExecutiveCompleteValue(value: unknown, path: string, language: FindingsLanguage, key?: string): React.ReactNode {
+  if (value == null || value === "") return null;
+  if (["string", "number", "boolean"].includes(typeof value)) {
+    return formatExecutivePrimitive(value as string | number | boolean, key, language);
+  }
+  if (Array.isArray(value)) {
+    const applicable = value.filter(hasContent);
+    if (applicable.length === 0) return null;
+    return <div style={{ display: "grid", gap: 4 }}>{applicable.map((entry, index) => <div key={`${path}-${index}`}>{renderExecutiveCompleteValue(entry, `${path}-${index}`, language)}</div>)}</div>;
+  }
+  if (typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    const entries = Object.entries(record).filter(([entryKey, entry]) => hasContent(entry) && !(entryKey === "active" && equalCollections(record.all, entry)));
+    if (entries.length === 0) return null;
+    return <dl style={{ display: "grid", gridTemplateColumns: "minmax(150px, auto) minmax(0, 1fr)", gap: "5px 14px", margin: 0 }}>{entries.map(([entryKey, entry]) => <React.Fragment key={`${path}-${entryKey}`}><dt style={{ color: "var(--ce-text-secondary, #94a3b8)" }}>{executiveDetailLabel(entryKey, language)}</dt><dd style={{ margin: 0, minWidth: 0, overflowWrap: "anywhere", wordBreak: "break-word" }}>{renderExecutiveCompleteValue(entry, `${path}-${entryKey}`, language, entryKey)}</dd></React.Fragment>)}</dl>;
+  }
+  return null;
+}
+
+function renderExecutiveSourceReference(value: unknown, path: string, language: FindingsLanguage): React.ReactNode {
+  if (value != null && ["string", "number", "boolean"].includes(typeof value)) {
+    return <dl style={{ display: "grid", gridTemplateColumns: "minmax(150px, auto) minmax(0, 1fr)", gap: "5px 14px", margin: 0 }}><dt style={{ color: "var(--ce-text-secondary, #94a3b8)" }}>{language === "sv" ? "Råvärde" : "Raw value"}</dt><dd style={{ margin: 0, minWidth: 0, overflowWrap: "anywhere" }}>{formatExecutivePrimitive(value as string | number | boolean, undefined, language)}</dd></dl>;
+  }
+  return renderExecutiveCompleteValue(value, path, language);
+}
+
 function firstReadableArrayValue(value: readonly unknown[]): string | null {
   for (const entry of value) {
     if (typeof entry === "string" || typeof entry === "number") return String(entry);
@@ -196,8 +302,9 @@ function conciseValue(
   }
   if (typeof value === "string" || typeof value === "number") return String(value);
   if (Array.isArray(value)) {
+    const readable = firstReadableArrayValue(value.filter(hasContent));
     return executive
-      ? firstReadableArrayValue(value.filter(hasContent))
+      ? readable == null ? null : formatExecutiveSemanticText(readable, language)
       : value.filter(hasContent).slice(0, 2).map(String).join(" · ");
   }
   if (value && typeof value === "object") {
@@ -232,13 +339,15 @@ function conciseValue(
     ];
     for (const key of [...new Set(preferred)]) {
       if (hasContent(record[key]) && ["string", "number"].includes(typeof record[key])) {
-        return String(record[key]);
+        return executive && typeof record[key] === "string"
+          ? formatExecutiveSemanticText(record[key], language)
+          : String(record[key]);
       }
     }
     for (const key of executive ? ["configuredSignals", "earlyLines", "revealedActions", "nodes", "active", "all", "messages"] : []) {
       if (Array.isArray(record[key])) {
         const readable = firstReadableArrayValue(record[key] as readonly unknown[]);
-        if (readable) return readable;
+        if (readable) return formatExecutiveSemanticText(readable, language);
       }
     }
   }
@@ -272,7 +381,7 @@ function renderExecutiveSections(value: unknown, language: "sv" | "en") {
       {rows.map((row) => (
         <React.Fragment key={row.label}>
           <dt style={{ color: "var(--ce-text-secondary, #94a3b8)" }}>{row.label}</dt>
-          <dd style={{ margin: 0, minWidth: 0, overflowWrap: "anywhere" }}>{renderCompleteValue(row.value, row.label)}</dd>
+          <dd style={{ margin: 0, minWidth: 0, overflowWrap: "anywhere" }}>{renderExecutiveCompleteValue(row.value, row.label, language)}</dd>
         </React.Fragment>
       ))}
     </dl>
@@ -282,9 +391,11 @@ function renderExecutiveSections(value: unknown, language: "sv" | "en") {
 function EvidenceSourceDetail({
   field,
   language,
+  executive,
 }: {
   field: StructuralFindingsPresentationField;
   language: "sv" | "en";
+  executive: boolean;
 }) {
   return (
     <div style={{ marginTop: 10, paddingTop: 8, borderTop: "1px solid var(--ce-border, rgba(148,163,184,0.13))", fontSize: 10.5, color: "var(--ce-text-muted, #7f8da3)" }}>
@@ -294,15 +405,17 @@ function EvidenceSourceDetail({
           {field.provenance.map((reference, index) => (
             <div key={`${reference.kind}-${reference.scenario ?? "none"}-${index}`}>
               <dl style={{ display: "grid", gridTemplateColumns: "minmax(88px, auto) minmax(0, 1fr)", gap: "3px 12px", margin: 0 }}>
-                <dt>{language === "sv" ? "Livscykel" : "Lifecycle"}</dt>
-                <dd style={{ margin: 0, overflowWrap: "anywhere" }}>{readableKey(reference.kind)}</dd>
-                {reference.scenario && <><dt>{language === "sv" ? "Scenarioscope" : "Scenario scope"}</dt><dd style={{ margin: 0 }}>{reference.scenario}</dd></>}
+                <dt>{language === "sv" ? "Källtyp" : "Source type"}</dt>
+                <dd style={{ margin: 0, overflowWrap: "anywhere" }}><span style={{ color: "var(--ce-text-muted, #7f8da3)" }}>{language === "sv" ? "Källreferens" : "Source reference"}: </span>{reference.kind}</dd>
+                {reference.scenario && <><dt>{language === "sv" ? "Scenarioomfattning" : "Scenario scope"}</dt><dd style={{ margin: 0 }}>{reference.scenario}</dd></>}
               </dl>
               {hasContent(reference.reference) && (
                 <details style={{ marginTop: 5, color: "var(--ce-text-secondary, #8f9bad)" }}>
                   <summary style={{ cursor: "pointer", userSelect: "none" }}>{language === "sv" ? "Källdetaljer" : "Source details"}</summary>
                   <div style={{ marginTop: 5, minWidth: 0, overflowWrap: "anywhere", wordBreak: "break-word", whiteSpace: "pre-wrap" }}>
-                    {renderCompleteValue(reference.reference, `${field.id}-provenance-${index}`)}
+                    {executive
+                      ? renderExecutiveSourceReference(reference.reference, `${field.id}-provenance-${index}`, language)
+                      : renderCompleteValue(reference.reference, `${field.id}-provenance-${index}`)}
                   </div>
                 </details>
               )}
@@ -345,12 +458,14 @@ function FindingEvidenceRow({
       </button>
       {expanded && (
         <div id={detailId} role="region" aria-labelledby={controlId} style={{ padding: "0 24px 12px 0", color: "var(--ce-text-primary, #d7dee8)", fontSize: 12, lineHeight: 1.55 }}>
-          {executive && field.id === "forwardDecisionFlexibility"
-            ? formatForwardDecisionFlexibility(field.value, language)
+          {executive && (typeof field.value === "string" || typeof field.value === "number" || typeof field.value === "boolean")
+            ? null
             : field.id === "executiveDemoSections"
             ? renderExecutiveSections(field.value, language)
-            : renderCompleteValue(field.value, field.id)}
-          <EvidenceSourceDetail field={field} language={language} />
+            : executive
+              ? renderExecutiveCompleteValue(field.value, field.id, language)
+              : renderCompleteValue(field.value, field.id)}
+          <EvidenceSourceDetail field={field} language={language} executive={executive} />
         </div>
       )}
     </div>
