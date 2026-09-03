@@ -13,6 +13,7 @@ export type ExecutableProfileId =
   | "legacy-consulting-v1";
 
 export type ExecutableConstraintPolicy = Readonly<{
+  refinancingEnabled: boolean;
   refinancingMarginThreshold: number;
   activeEffects: Readonly<
     Record<"RefinancingConstraint" | "LiquidityConstraint" | "CovenantConstraint", Readonly<{
@@ -64,6 +65,7 @@ const LEGACY_EXECUTABLE_CONTRACT = deepFreeze({
   actionEffects: structuredClone(ACTION_EFFECTS),
   propagationRules: structuredClone(RISK_PROPAGATION),
   constraints: {
+    refinancingEnabled: true,
     refinancingMarginThreshold: 0.8,
     activeEffects: {
       RefinancingConstraint: { cost: 1.15, recovery: 0.8 },
@@ -89,7 +91,11 @@ const LEGACY_EXECUTABLE_CONTRACT = deepFreeze({
 
 function createLegacyProfile(
   profileId: ExecutableProfileId,
-  domainId: DomainKey
+  domainId: DomainKey,
+  overrides?: Readonly<{
+    constraints?: ExecutableConstraintPolicy;
+    marginEscalationRules?: readonly ExecutableMarginEscalationRule[];
+  }>
 ): ExecutableDomainProfile {
   return deepFreeze({
     profileId,
@@ -97,12 +103,19 @@ function createLegacyProfile(
     modelVersion: "pilot-fastighet-v0.4",
     calibrationVersion: "legacy-global-v1",
     ...LEGACY_EXECUTABLE_CONTRACT,
+    ...overrides,
   }) as ExecutableDomainProfile;
 }
 
 const PROFILES = deepFreeze({
   "legacy-real-estate-v1": createLegacyProfile("legacy-real-estate-v1", "realEstate"),
-  "legacy-municipal-v1": createLegacyProfile("legacy-municipal-v1", "municipal"),
+  "legacy-municipal-v1": createLegacyProfile("legacy-municipal-v1", "municipal", {
+    constraints: {
+      ...LEGACY_EXECUTABLE_CONTRACT.constraints,
+      refinancingEnabled: false,
+    },
+    marginEscalationRules: [],
+  }),
   "legacy-consulting-v1": createLegacyProfile("legacy-consulting-v1", "consulting"),
 } satisfies Record<ExecutableProfileId, ExecutableDomainProfile>);
 

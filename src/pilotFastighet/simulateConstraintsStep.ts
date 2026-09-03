@@ -58,6 +58,7 @@ export function simulateConstraintsStep(
       : input.profile?.constraints.refinancingMarginThreshold ?? 0.8;
 
     if (
+      (input.profile?.constraints.refinancingEnabled ?? true) &&
       input.margin != null &&
       input.margin < sustainThreshold &&
       updatedRegistry.RefinancingConstraint.lifecycle !== "ACTIVE"
@@ -74,7 +75,10 @@ export function simulateConstraintsStep(
     let multipliersAfterConstraints = { ...baseMultipliers };
 
     const constraintEffects = input.profile?.constraints.activeEffects;
-    if (updatedRegistry.RefinancingConstraint.lifecycle === "ACTIVE") {
+    if (
+      (input.profile?.constraints.refinancingEnabled ?? true) &&
+      updatedRegistry.RefinancingConstraint.lifecycle === "ACTIVE"
+    ) {
       const effect = constraintEffects?.RefinancingConstraint;
       multipliersAfterConstraints = {
         ...multipliersAfterConstraints,

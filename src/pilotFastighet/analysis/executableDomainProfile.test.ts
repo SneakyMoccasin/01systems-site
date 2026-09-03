@@ -59,16 +59,43 @@ test("Phase-1 profiles preserve the exact global executable contracts", () => {
     assert.deepEqual(profile.actionEffects, ACTION_EFFECTS);
     assert.deepEqual(profile.propagationRules, RISK_PROPAGATION);
     assert.equal(profile.constraints.refinancingMarginThreshold, 0.8);
-    assert.deepEqual(profile.marginEscalationRules, [
-      {
-        marginBelow: -1,
-        driver: "interestRateExposureRisk",
-        lowTarget: "MODERATE",
-        moderateTarget: "HIGH",
-      },
-    ]);
     assert.deepEqual(profile.clampPolicy, { minimum: -3, maximum: 3 });
   }
+  const legacyEscalation = [
+    {
+      marginBelow: -1,
+      driver: "interestRateExposureRisk",
+      lowTarget: "MODERATE",
+      moderateTarget: "HIGH",
+    },
+  ];
+  assert.equal(
+    resolveExecutableDomainProfile("legacy-real-estate-v1").constraints
+      .refinancingEnabled,
+    true
+  );
+  assert.deepEqual(
+    resolveExecutableDomainProfile("legacy-real-estate-v1").marginEscalationRules,
+    legacyEscalation
+  );
+  assert.equal(
+    resolveExecutableDomainProfile("legacy-consulting-v1").constraints
+      .refinancingEnabled,
+    true
+  );
+  assert.deepEqual(
+    resolveExecutableDomainProfile("legacy-consulting-v1").marginEscalationRules,
+    legacyEscalation
+  );
+  assert.equal(
+    resolveExecutableDomainProfile("legacy-municipal-v1").constraints
+      .refinancingEnabled,
+    false
+  );
+  assert.deepEqual(
+    resolveExecutableDomainProfile("legacy-municipal-v1").marginEscalationRules,
+    []
+  );
 });
 
 test("normal configured selection derives its trusted profile from domain only", () => {
@@ -128,7 +155,7 @@ test("configured and scheduled boundaries carry one unchanged profile identity",
   });
 });
 
-test("all Phase-1 profiles reproduce profile-less legacy histories exactly", () => {
+test("Real Estate and Consulting retain profile-less legacy histories exactly", () => {
   const legacy = runCascadeAnalysis({
     horizon: 12,
     scenarioA: { initialRiskState: structuredClone(defaultRiskState) },
@@ -136,7 +163,10 @@ test("all Phase-1 profiles reproduce profile-less legacy histories exactly", () 
   });
   assert.equal(resolveLegacyCompatibilityProfile().profileId, "legacy-real-estate-v1");
 
-  for (const profileId of Object.values(DOMAIN_PROFILES)) {
+  for (const profileId of [
+    DOMAIN_PROFILES.realEstate,
+    DOMAIN_PROFILES.consulting,
+  ]) {
     const profiled = runCascadeAnalysis({
       profileId,
       horizon: 12,
