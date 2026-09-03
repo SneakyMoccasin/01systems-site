@@ -16,6 +16,7 @@ const CascadeRendererTransport: React.FC<Props> = ({
   language = "en",
 }) => {
   const context = resolveTransportInspectorContext({
+    useExecutableActionPresentation: true,
     language,
     selectedActions,
     primaryDriverKey: primaryDriver,

@@ -21,12 +21,34 @@ export type EngineRiskKey =
   | "operational_capacity"
   | "transit_signal_priority"
   | "budget_pressure"
+  | "energyExposureRisk"
+  | "operationalEfficiencyRisk"
   | "demandRisk"
   | "tenantStabilityRisk"
   | "maintenanceIntensityRisk"
   | "capitalCommitmentRigidityRisk";
 
 export type DriverInfluenceDirection = "increase" | "decrease";
+
+export type TransportActionPresentationId =
+  | "increase_service_frequency"
+  | "reduce_travel_time"
+  | "expand_cycling_infrastructure"
+  | "electrify_bus_fleet"
+  | "transit_signal_priority"
+  | "reduce_parking_supply";
+
+export type TransportActionPresentation = Readonly<{
+  actionId: TransportActionPresentationId;
+  actionLabel: Readonly<{ sv: string; en: string }>;
+  operationalDescription: Readonly<{ sv: string; en: string }>;
+  effects: readonly Readonly<{
+    driverId: EngineRiskKey;
+    direction: DriverInfluenceDirection;
+    role: "represented-benefit" | "represented-trade-off" | "represented-effect";
+    label: Readonly<{ sv: string; en: string }>;
+  }>[];
+}>;
 
 export type TransportDriverDefinition = {
   id: TransportSystemDriverId;
@@ -340,6 +362,95 @@ export const TRANSPORT_POLICY_ACTION_LABELS = {
     en: "Expand capacity",
   },
 };
+
+/**
+ * Deterministic presentation of the currently executable Municipal action effects.
+ * Numeric magnitudes remain owned exclusively by the executable profile.
+ */
+export const TRANSPORT_ACTION_PRESENTATION: Readonly<
+  Record<TransportActionPresentationId, TransportActionPresentation>
+> = {
+  increase_service_frequency: {
+    actionId: "increase_service_frequency",
+    actionLabel: { sv: "Öka turtäthet", en: "Increase service frequency" },
+    operationalDescription: {
+      sv: "Ökar turtätheten. Modellen representerar förbättrad tillgänglighet samt minskad tillgänglig operativ kapacitet och ökat budgettryck som avvägningar.",
+      en: "Increases service frequency. The model represents improved accessibility, with reduced available operational capacity and increased budget pressure as trade-offs.",
+    },
+    effects: [
+      { driverId: "accessibility", direction: "increase", role: "represented-benefit", label: { sv: "Tillgängligheten ökar", en: "Accessibility increases" } },
+      { driverId: "operational_capacity", direction: "decrease", role: "represented-trade-off", label: { sv: "Tillgänglig operativ kapacitet minskar", en: "Available operational capacity decreases" } },
+      { driverId: "budget_pressure", direction: "increase", role: "represented-trade-off", label: { sv: "Budgettrycket ökar", en: "Budget pressure increases" } },
+    ],
+  },
+  reduce_travel_time: {
+    actionId: "reduce_travel_time",
+    actionLabel: { sv: "Minska restid", en: "Reduce travel time" },
+    operationalDescription: {
+      sv: "Minskar restiden. Modellen representerar ökad färdmedelsattraktivitet.",
+      en: "Reduces travel time. The model represents increased modal attractiveness.",
+    },
+    effects: [
+      { driverId: "modal_attractiveness", direction: "increase", role: "represented-benefit", label: { sv: "Färdmedelsattraktiviteten ökar", en: "Modal attractiveness increases" } },
+    ],
+  },
+  expand_cycling_infrastructure: {
+    actionId: "expand_cycling_infrastructure",
+    actionLabel: { sv: "Bygg ut cykelinfrastruktur", en: "Expand cycling infrastructure" },
+    operationalDescription: {
+      sv: "Bygger ut cykelinfrastrukturen. Modellen representerar ökad färdmedelsattraktivitet, minskat trängseltryck och ökat budgettryck som genomförandeavvägning.",
+      en: "Expands cycling infrastructure. The model represents increased modal attractiveness, reduced congestion pressure, and increased budget pressure as the implementation trade-off.",
+    },
+    effects: [
+      { driverId: "modal_attractiveness", direction: "increase", role: "represented-benefit", label: { sv: "Färdmedelsattraktiviteten ökar", en: "Modal attractiveness increases" } },
+      { driverId: "congestion_pressure", direction: "decrease", role: "represented-benefit", label: { sv: "Trängseltrycket minskar", en: "Congestion pressure decreases" } },
+      { driverId: "budget_pressure", direction: "increase", role: "represented-trade-off", label: { sv: "Budgettrycket ökar", en: "Budget pressure increases" } },
+    ],
+  },
+  electrify_bus_fleet: {
+    actionId: "electrify_bus_fleet",
+    actionLabel: { sv: "Elektrifiera bussflotta", en: "Electrify bus fleet" },
+    operationalDescription: {
+      sv: "Elektrifierar bussflottan. Modellen representerar minskad energiexponeringsrisk och drifteffektivitetsrisk samt ökad kapitalbindning som avvägning.",
+      en: "Electrifies the bus fleet. The model represents reduced energy-exposure and operational-efficiency risk, with increased capital-commitment rigidity as the trade-off.",
+    },
+    effects: [
+      { driverId: "energyExposureRisk", direction: "decrease", role: "represented-benefit", label: { sv: "Energiexponeringsrisken minskar", en: "Energy-exposure risk decreases" } },
+      { driverId: "operationalEfficiencyRisk", direction: "decrease", role: "represented-benefit", label: { sv: "Drifteffektivitetsrisken minskar", en: "Operational-efficiency risk decreases" } },
+      { driverId: "capitalCommitmentRigidityRisk", direction: "increase", role: "represented-trade-off", label: { sv: "Kapitalbindningen ökar", en: "Capital-commitment rigidity increases" } },
+    ],
+  },
+  transit_signal_priority: {
+    actionId: "transit_signal_priority",
+    actionLabel: { sv: "Signalprioritera kollektivtrafik", en: "Transit signal priority" },
+    operationalDescription: {
+      sv: "Prioriterar kollektivtrafiken i signaler. Modellen representerar ökad signalprioritet för kollektivtrafik.",
+      en: "Prioritizes transit at signals. The model represents increased transit signal priority.",
+    },
+    effects: [
+      { driverId: "transit_signal_priority", direction: "increase", role: "represented-effect", label: { sv: "Signalprioriteten för kollektivtrafik ökar", en: "Transit signal priority increases" } },
+    ],
+  },
+  reduce_parking_supply: {
+    actionId: "reduce_parking_supply",
+    actionLabel: { sv: "Minska parkeringsutbud", en: "Reduce parking supply" },
+    operationalDescription: {
+      sv: "Minskar parkeringsutbudet. Den nuvarande modellen representerar endast ökad negativ efterfrågerisk; ingen effekt på färdmedelsval, trängsel eller tillgänglighet beräknas.",
+      en: "Reduces parking supply. The current model represents only increased adverse demand risk; no mode-shift, congestion, or accessibility effect is calculated.",
+    },
+    effects: [
+      { driverId: "demandRisk", direction: "increase", role: "represented-trade-off", label: { sv: "Den negativa efterfrågerisken ökar", en: "Adverse demand risk increases" } },
+    ],
+  },
+};
+
+export function getTransportActionPresentation(
+  actionId: string
+): TransportActionPresentation | null {
+  return TRANSPORT_ACTION_PRESENTATION[
+    actionId as TransportActionPresentationId
+  ] ?? null;
+}
 
 export const TRANSPORT_POLICY_LEVER_MAPPINGS: Record<
   TransportPolicyLeverId,

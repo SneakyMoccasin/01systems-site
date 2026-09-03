@@ -712,6 +712,7 @@ const AIInspectorPanel: React.FC<Props> = ({
     executiveDemoMode
   );
   const transportInspectorContext = resolveTransportInspectorContext({
+    useExecutableActionPresentation: true,
     language: uiLanguage,
     selectedActions,
     policyDriverKey,
@@ -2297,6 +2298,26 @@ const AIInspectorPanel: React.FC<Props> = ({
                   </span>
                   <span>{transportInspectorContext.systemDriverLabel}</span>
                 </div>
+                {transportInspectorContext.operationalDescription && (
+                  <div style={{ marginTop: "4px" }}>
+                    {transportInspectorContext.operationalDescription}
+                  </div>
+                )}
+                {transportInspectorContext.representedEffects &&
+                  transportInspectorContext.representedEffects.length > 0 && (
+                    <div style={{ marginTop: "4px" }}>
+                      <span style={{ color: "#9CA3AF" }}>
+                        {uiLanguage === "sv"
+                          ? "Representerade effekter:"
+                          : "Represented effects:"}
+                      </span>
+                      {transportInspectorContext.representedEffects.map((effect) => (
+                        <div key={`${effect.driverId}:${effect.direction}`}>
+                          • {effect.label}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 <div style={{ color: "#9CA3AF" }}>
                   {transportInspectorContext.propagationChainLabel}
                 </div>

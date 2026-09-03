@@ -1,5 +1,6 @@
 import {
   getTransportPolicyExplanationLabel,
+  getTransportActionPresentation,
   TRANSPORT_ENGINE_RISK_LABELS,
   TRANSPORT_POLICY_LEVER_MAPPINGS,
   TRANSPORT_SYSTEM_DRIVERS,
@@ -140,6 +141,13 @@ export type TransportInspectorContext = {
   propagationChainLabel: string;
   primaryDriver: TransportSystemDriverId;
   dominantScenarioDifferenceChannel?: string | null;
+  operationalDescription?: string;
+  representedEffects?: readonly Readonly<{
+    driverId: string;
+    direction: "increase" | "decrease";
+    role: "represented-benefit" | "represented-trade-off" | "represented-effect";
+    label: string;
+  }>[];
 };
 
 type ResolveArgs = {
@@ -152,6 +160,8 @@ type ResolveArgs = {
   cascadeEventsB?: CascadeEvent[];
   primaryPropagationSignatureA?: string | null;
   primaryPropagationSignatureB?: string | null;
+  /** Deterministic UI only. Omit to preserve the existing AI-route context. */
+  useExecutableActionPresentation?: boolean;
 };
 
 export function resolveTransportInspectorContext(
@@ -170,6 +180,7 @@ export function resolveTransportInspectorContext(
       cascadeEventsB,
       primaryPropagationSignatureA,
       primaryPropagationSignatureB,
+      useExecutableActionPresentation = false,
     } = args;
 
     profileValue(
@@ -179,11 +190,18 @@ export function resolveTransportInspectorContext(
     );
 
     const latestAction = selectedActions[selectedActions.length - 1];
+    const actionPresentation = useExecutableActionPresentation
+      ? getTransportActionPresentation(latestAction)
+      : null;
     const policyLever = latestAction ? ACTION_TO_POLICY_LEVER[latestAction] : undefined;
-    if (!policyLever) return null;
+    if (!policyLever && !actionPresentation) return null;
 
-    const leverMapping = TRANSPORT_POLICY_LEVER_MAPPINGS[policyLever];
-    if (!leverMapping || leverMapping.influences.length === 0) return null;
+    const leverMapping = policyLever
+      ? TRANSPORT_POLICY_LEVER_MAPPINGS[policyLever]
+      : null;
+    if (!actionPresentation && (!leverMapping || leverMapping.influences.length === 0)) {
+      return null;
+    }
 
     const selectedTransportDriver =
       primaryDriverKey ??
@@ -192,12 +210,16 @@ export function resolveTransportInspectorContext(
         : cascadeEventsA && cascadeEventsA.length > 0
         ? (cascadeEventsA[0].sourceRisk as TransportSystemDriverId)
         : null);
-    if (!selectedTransportDriver) return null;
+    const firstPresentedDriver = actionPresentation?.effects[0]?.driverId ?? null;
+    if (!selectedTransportDriver && !firstPresentedDriver) return null;
 
     const normalizedSelectedDriver =
       normalizeTransportDriverKey(selectedTransportDriver) ??
-      (selectedTransportDriver as TransportSystemDriverId);
-    const policyLeverLabel = localizePolicyLeverName(policyLever, language);
+      normalizeTransportDriverKey(firstPresentedDriver) ??
+      ((selectedTransportDriver ?? firstPresentedDriver) as TransportSystemDriverId);
+    const policyLeverLabel = actionPresentation
+      ? actionPresentation.actionLabel[language]
+      : localizePolicyLeverName(policyLever as TransportPolicyLeverId, language);
     const systemDriverLabel = normalizedSelectedDriver
       ? getTransportPolicyExplanationLabel(
           normalizedSelectedDriver,
@@ -211,9 +233,7 @@ export function resolveTransportInspectorContext(
         ]) ||
       null;
 
-    if (!driverDef) return null;
-
-    const propagationChainSteps = driverDef.propagationChain
+    const propagationChainSteps = (driverDef?.propagationChain ?? [])
       .map((step) => mapRiskLabelToPolicyLabel(step, language))
       .filter(Boolean);
     const propagationChainLabel =
@@ -248,13 +268,15 @@ export function resolveTransportInspectorContext(
 
     profileValue(
       "resolveTransportInspectorContext.propagationChain.length",
-      driverDef.propagationChain.length,
+      driverDef?.propagationChain.length ?? 0,
       "steps"
     );
 
     return {
       policyLeverLabel:
-        policyDriverKey
+        actionPresentation
+          ? policyLeverLabel
+          : policyDriverKey
           ? getTransportPolicyExplanationLabel(policyDriverKey, language)
           : null,
       systemDriverLabel:
@@ -264,6 +286,18 @@ export function resolveTransportInspectorContext(
       propagationChainLabel,
       primaryDriver: normalizedSelectedDriver,
       dominantScenarioDifferenceChannel,
+      ...(actionPresentation
+        ? {
+            operationalDescription:
+              actionPresentation.operationalDescription[language],
+            representedEffects: actionPresentation.effects.map((effect) => ({
+              driverId: effect.driverId,
+              direction: effect.direction,
+              role: effect.role,
+              label: effect.label[language],
+            })),
+          }
+        : {}),
     };
   });
 }

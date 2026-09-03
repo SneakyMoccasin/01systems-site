@@ -1317,6 +1317,7 @@ export default function PilotFastighetPage() {
     if (caseType !== "transport") return null;
 
     return resolveTransportInspectorContext({
+      useExecutableActionPresentation: true,
       language: uiLanguage,
       selectedActions: selectedActionsA,
       cascadeEventsA,
@@ -1327,6 +1328,7 @@ export default function PilotFastighetPage() {
     if (caseType !== "transport") return null;
 
     return resolveTransportInspectorContext({
+      useExecutableActionPresentation: true,
       language: uiLanguage,
       selectedActions: selectedActionsB,
       cascadeEventsB,
@@ -1337,6 +1339,7 @@ export default function PilotFastighetPage() {
     if (caseType !== "transport") return null;
 
     return resolveTransportInspectorContext({
+      useExecutableActionPresentation: true,
       language: uiLanguage,
       selectedActions: selectedActionsForPanel,
       cascadeEventsA,
@@ -1363,6 +1366,7 @@ export default function PilotFastighetPage() {
     caseType === "transport"
       ? buildDomainPropagationEvents(
           resolveTransportInspectorContext({
+            useExecutableActionPresentation: true,
             language: uiLanguage,
             selectedActions: selectedActionsForPanel,
             primaryDriverKey: transportScenarioTarget,
@@ -1381,6 +1385,7 @@ export default function PilotFastighetPage() {
       ? [
           ...buildDomainPropagationEvents(
             resolveTransportInspectorContext({
+              useExecutableActionPresentation: true,
               language: uiLanguage,
               selectedActions: selectedActionsForPanel,
               primaryDriverKey: transportScenarioTarget,

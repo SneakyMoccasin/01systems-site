@@ -66,6 +66,7 @@ const WhyPanel: React.FC<Props> = ({
   const nodesB = formatCascadeChain(cascadeEventsB, getRiskLabel);
   const nodes = nodesB.length > 0 ? nodesB : nodesA;
   const transportInspectorContext = resolveTransportInspectorContext({
+    useExecutableActionPresentation: true,
     language: uiLanguage,
     selectedActions,
     primaryDriverKey: primaryDriver,
