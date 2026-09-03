@@ -3551,48 +3551,6 @@ export default function PilotFastighetPage() {
                   }}
                 />
               )}
-              {executiveDemoMode && effectiveExecutionMode === "configured-start" && (
-              <AIInspectorPanel
-                language={uiLanguage}
-                scenarioALabel={selectedScenarioALabel}
-                scenarioBLabel={selectedScenarioBLabel}
-                tippingQuarter={
-                  tippingMarginIndexB != null ? tippingMarginIndexB + 1 : null
-                }
-                currentMargin={finalA}
-                alternativeMargin={finalB}
-                marginImpact={finalB - finalA}
-                marginHistoryA={marginHistoryA}
-                marginHistoryB={marginHistoryB}
-                cascadeEvents={cascadeEvents}
-                cascadeEventsA={cascadeEventsA}
-                cascadeEventsB={cascadeEventsB}
-                seriesLengthA={marginHistoryA.length}
-                seriesLengthB={marginHistoryB.length}
-                simulationHorizon={simulationHorizon}
-                primaryDriverA={primaryDriverA}
-                primaryDriverB={primaryDriverB}
-                primaryDriver={primaryDriver}
-                systemPressure={systemPressure}
-                constraintBreakQuarter={estimatedTimeToBreach}
-                constraintRegistryA={stateA.registry}
-                constraintRegistryB={stateB.registry}
-                constraintRegistry={stateB.registry}
-                structuralStatus={t.structuralStatus[structuralStatusKey]}
-                selectedMonthIndex={selectedMonthData?.monthIndex ?? null}
-                selectedMarginValueA={selectedMonthData?.marginA ?? null}
-                selectedMarginValueB={selectedMonthData?.marginB ?? null}
-                selectedGoal={selectedGoal}
-                scenarioTarget={transportScenarioTarget}
-                selectedActions={selectedActionsForPanel}
-                inspectionMode={uiMode}
-                caseType={caseType}
-                dominantScenarioDifferenceChannel={
-                  transportContext?.dominantScenarioDifferenceChannel ?? null
-                }
-                executiveDemoMode={executiveDemoMode}
-              />
-              )}
           </div>
           <div
             style={
@@ -3762,6 +3720,46 @@ export default function PilotFastighetPage() {
                         transportContext?.dominantScenarioDifferenceChannel ?? null
                       }
                       executiveDemoMode={false}
+                    />
+                  </div>
+                )}
+                {executiveDemoMode && caseType === "real-estate" && (
+                  <div data-testid="executive-structural-findings" style={{ marginTop: 12 }}>
+                    <AIInspectorPanel
+                      language={uiLanguage}
+                      scenarioALabel={selectedScenarioALabel}
+                      scenarioBLabel={selectedScenarioBLabel}
+                      tippingQuarter={tippingMarginIndexB != null ? tippingMarginIndexB + 1 : null}
+                      currentMargin={finalA}
+                      alternativeMargin={finalB}
+                      marginImpact={finalB - finalA}
+                      marginHistoryA={marginHistoryA}
+                      marginHistoryB={marginHistoryB}
+                      cascadeEvents={cascadeEvents}
+                      cascadeEventsA={cascadeEventsA}
+                      cascadeEventsB={cascadeEventsB}
+                      seriesLengthA={marginHistoryA.length}
+                      seriesLengthB={marginHistoryB.length}
+                      simulationHorizon={simulationHorizon}
+                      primaryDriverA={primaryDriverA}
+                      primaryDriverB={primaryDriverB}
+                      primaryDriver={primaryDriver}
+                      systemPressure={systemPressure}
+                      constraintBreakQuarter={estimatedTimeToBreach}
+                      constraintRegistryA={stateA.registry}
+                      constraintRegistryB={stateB.registry}
+                      constraintRegistry={stateB.registry}
+                      structuralStatus={t.structuralStatus[structuralStatusKey]}
+                      selectedMonthIndex={selectedMonthData?.monthIndex ?? null}
+                      selectedMarginValueA={selectedMonthData?.marginA ?? null}
+                      selectedMarginValueB={selectedMonthData?.marginB ?? null}
+                      selectedGoal={selectedGoal}
+                      scenarioTarget={transportScenarioTarget}
+                      selectedActions={selectedActionsForPanel}
+                      inspectionMode={uiMode}
+                      caseType={caseType}
+                      dominantScenarioDifferenceChannel={transportContext?.dominantScenarioDifferenceChannel ?? null}
+                      executiveDemoMode
                     />
                   </div>
                 )}

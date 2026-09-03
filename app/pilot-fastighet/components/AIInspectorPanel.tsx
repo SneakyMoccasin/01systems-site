@@ -50,6 +50,7 @@ import {
   structuralFindingsValue,
 } from "@/src/pilotFastighet/analysis/structuralFindingsPresentationModel";
 import StructuralFindingsSection from "./StructuralFindingsSection";
+import { revealExecutiveFindings } from "@/src/pilotFastighet/analysis/executiveFindingsPresentation";
 
 function toReadableLabel(
   driverId: TransportSystemDriverId | string | null | undefined,
@@ -1887,7 +1888,14 @@ const AIInspectorPanel: React.FC<Props> = ({
           },
         },
       });
-    void executiveFindingsPresentationModel;
+    const revealedExecutiveFindings = revealExecutiveFindings(
+      executiveFindingsPresentationModel,
+      Math.max(seriesLengthA, seriesLengthB),
+      simulationHorizon ?? 36
+    );
+    return <StructuralFindingsSection model={revealedExecutiveFindings} />;
+
+    /* c8 ignore start -- retired Executive renderer retained for audit history. */
 
     const deltaStr =
       typeof marginImpact === "number" ? marginImpact.toFixed(2) : String(marginImpact);
@@ -2104,6 +2112,7 @@ const AIInspectorPanel: React.FC<Props> = ({
         </ExecutiveDemoSection>
       </div>
     );
+    /* c8 ignore stop */
   }
   if (shouldUseSharedFindingsRenderer(executiveDemoMode, inspectionMode)) {
     return <StructuralFindingsSection model={findingsPresentationModel} />;

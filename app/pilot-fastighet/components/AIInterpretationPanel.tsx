@@ -487,8 +487,6 @@ const AIInterpretationPanel: React.FC<Props> = ({
     parsedSections,
   ]);
 
-  const stripAccentColors = ["#38bdf8", "#a78bfa", "#34d399", "#fbbf24"] as const;
-
   const stripIdleHint =
     uiLanguage === "sv"
       ? "Kör simulering för att generera syntes."
@@ -565,9 +563,8 @@ const AIInterpretationPanel: React.FC<Props> = ({
           <div
             style={{
               display: "grid",
-              gridTemplateColumns:
-                "minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.07fr)",
-              gap: "16px",
+              gridTemplateColumns: "minmax(0, 1fr)",
+              gap: 0,
               minWidth: 0,
             }}
           >
@@ -576,11 +573,9 @@ const AIInterpretationPanel: React.FC<Props> = ({
                 key={i}
                 style={{
                   height: "88px",
-                  borderRadius: "11px",
+                  borderRadius: 0,
                   background: "var(--ce-surface-subtle)",
-                  border: "1px solid var(--ce-border)",
-                  borderLeftWidth: "3px",
-                  borderLeftColor: stripAccentColors[i % stripAccentColors.length],
+                  borderTop: "1px solid var(--ce-border)",
                 }}
               />
             ))}
@@ -609,11 +604,9 @@ const AIInterpretationPanel: React.FC<Props> = ({
             }}
           >
             <div
+              data-testid="executive-ai-interpretation-rows"
               style={{
-                display: "grid",
-                gridTemplateColumns:
-                  "minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.07fr)",
-                gap: "16px",
+                display: "block",
                 width: "100%",
                 minWidth: 0,
                 boxSizing: "border-box",
@@ -623,13 +616,11 @@ const AIInterpretationPanel: React.FC<Props> = ({
                 <div
                   key={`${sec.title}-${index}`}
                   style={{
-                    padding:
-                      index === 3 ? "11px 17px 11px 14px" : "11px 16px 11px 14px",
-                    borderRadius: "8px",
-                    background: "var(--ce-surface-subtle)",
-                    border: "1px solid var(--ce-border)",
-                    borderLeft: `3px solid ${stripAccentColors[index % stripAccentColors.length]}`,
-                    minHeight: "90px",
+                    display: "grid",
+                    gridTemplateColumns: "minmax(150px, 0.32fr) minmax(0, 1fr)",
+                    gap: "12px 22px",
+                    padding: "11px 0",
+                    borderTop: "1px solid var(--ce-border)",
                     minWidth: 0,
                   }}
                 >
