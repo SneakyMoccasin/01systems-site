@@ -57,7 +57,9 @@ test("Phase-1 profiles preserve the exact global executable contracts", () => {
   for (const profileId of Object.values(DOMAIN_PROFILES)) {
     const profile = resolveExecutableDomainProfile(profileId);
     assert.deepEqual(profile.actionEffects, ACTION_EFFECTS);
-    assert.deepEqual(profile.propagationRules, RISK_PROPAGATION);
+    if (profile.domainId !== "municipal") {
+      assert.deepEqual(profile.propagationRules, RISK_PROPAGATION);
+    }
     assert.equal(profile.constraints.refinancingMarginThreshold, 0.8);
     assert.deepEqual(profile.clampPolicy, { minimum: -3, maximum: 3 });
   }
@@ -110,7 +112,7 @@ test("normal configured selection derives its trusted profile from domain only",
   assert.equal(source.domainId, "municipal");
   assert.equal(source.profileId, "legacy-municipal-v1");
   assert.equal(source.modelVersion, "pilot-fastighet-v0.4");
-  assert.equal(source.calibrationVersion, "legacy-global-v1");
+  assert.equal(source.calibrationVersion, "transport-propagation-isolated-v1");
 });
 
 test("configured and scheduled boundaries carry one unchanged profile identity", () => {

@@ -85,7 +85,7 @@ test("Transport refinancing remains inactive across and beyond the supported mar
 test("Transport retains all action, propagation, curve, clamp, and threshold data", () => {
   const profile = resolveExecutableDomainProfile("legacy-municipal-v1");
   assert.deepEqual(profile.actionEffects, ACTION_EFFECTS);
-  assert.deepEqual(profile.propagationRules, RISK_PROPAGATION);
+  assert.notDeepEqual(profile.propagationRules, RISK_PROPAGATION);
   assert.deepEqual(profile.curveConfiguration, PARAMETER_CURVE_CONFIG);
   assert.deepEqual(profile.clampPolicy, { minimum: -3, maximum: 3 });
   assert.equal(profile.constraints.refinancingMarginThreshold, 0.8);

@@ -35,7 +35,7 @@ export type ExecutableDomainProfile = Readonly<{
   profileId: ExecutableProfileId;
   domainId: DomainKey;
   modelVersion: "pilot-fastighet-v0.4";
-  calibrationVersion: "legacy-global-v1";
+  calibrationVersion: "legacy-global-v1" | "transport-propagation-isolated-v1";
   applicableDrivers: readonly ParameterKey[];
   defaultState: Readonly<Record<string, RiskLevel>>;
   actionEffects: Readonly<Record<ActionKey, Readonly<ActionEffectsMap>>>;
@@ -93,8 +93,10 @@ function createLegacyProfile(
   profileId: ExecutableProfileId,
   domainId: DomainKey,
   overrides?: Readonly<{
+    calibrationVersion?: ExecutableDomainProfile["calibrationVersion"];
     constraints?: ExecutableConstraintPolicy;
     marginEscalationRules?: readonly ExecutableMarginEscalationRule[];
+    propagationRules?: ExecutableDomainProfile["propagationRules"];
   }>
 ): ExecutableDomainProfile {
   return deepFreeze({
@@ -107,14 +109,44 @@ function createLegacyProfile(
   }) as ExecutableDomainProfile;
 }
 
+const MUNICIPAL_EXCLUDED_PROPAGATION_EDGES = new Set([
+  "interestRateExposureRisk->refinancingRisk",
+  "interestRateExposureRisk->leverageLevelRisk",
+  "leverageLevelRisk->liquidityPressure",
+  "leverageLevelRisk->capitalCommitmentRigidityRisk",
+  "refinancingRisk->leverageLevelRisk",
+  "refinancingRisk->liquidityPressure",
+  "refinancingRisk->capitalCommitmentRigidityRisk",
+  "liquidityPressure->capitalCommitmentRigidityRisk",
+  "congestion_pressure->modal_attractiveness",
+  "modal_attractiveness->accessibility",
+  "transit_signal_priority->operational_capacity",
+]);
+
+const MUNICIPAL_PROPAGATION_RULES = deepFreeze(
+  Object.fromEntries(
+    Object.entries(LEGACY_EXECUTABLE_CONTRACT.propagationRules)
+      .map(([source, effects]) => [
+        source,
+        effects.filter(
+          ({ target }) =>
+            !MUNICIPAL_EXCLUDED_PROPAGATION_EDGES.has(`${source}->${target}`)
+        ),
+      ] as const)
+      .filter(([, effects]) => effects.length > 0)
+  )
+) as ExecutableDomainProfile["propagationRules"];
+
 const PROFILES = deepFreeze({
   "legacy-real-estate-v1": createLegacyProfile("legacy-real-estate-v1", "realEstate"),
   "legacy-municipal-v1": createLegacyProfile("legacy-municipal-v1", "municipal", {
+    calibrationVersion: "transport-propagation-isolated-v1",
     constraints: {
       ...LEGACY_EXECUTABLE_CONTRACT.constraints,
       refinancingEnabled: false,
     },
     marginEscalationRules: [],
+    propagationRules: MUNICIPAL_PROPAGATION_RULES,
   }),
   "legacy-consulting-v1": createLegacyProfile("legacy-consulting-v1", "consulting"),
 } satisfies Record<ExecutableProfileId, ExecutableDomainProfile>);
