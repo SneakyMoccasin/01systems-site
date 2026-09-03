@@ -147,7 +147,7 @@ import {
   calculateScheduledExecutiveMetrics,
 } from "@/src/pilotFastighet/analysis/scheduledExecutivePresentation";
 import { getPilotStrategyColors } from "@/src/pilotFastighet/strategyColors";
-import { CASCADE_PRESENTATION, getCascadeThemeTokens } from "@/src/pilotFastighet/cascadePresentation";
+import { CASCADE_PRESENTATION, getCascadeGraphPresentation, getCascadeThemeTokens, getCascadeVerificationBadgeStyle } from "@/src/pilotFastighet/cascadePresentation";
 import {
   readCascadeAppearancePreference,
   DEFAULT_CASCADE_APPEARANCE,
@@ -1457,12 +1457,14 @@ export default function PilotFastighetPage() {
     : "stable";
 
   const semanticTheme = getCascadeThemeTokens(uiTheme);
+  const graphPresentation = getCascadeGraphPresentation(uiTheme);
+  const verificationBadgeStyle = getCascadeVerificationBadgeStyle(uiTheme);
   const theme = {
     pageBg: semanticTheme.pageBackground, panelBg: semanticTheme.primarySurface,
-    panelBorder: semanticTheme.border, graphBg: semanticTheme.graphSurface,
-    graphBorder: semanticTheme.border, text: semanticTheme.primaryText,
-    subtext: semanticTheme.secondaryText, buttonBg: semanticTheme.controlBackground,
-    buttonBorder: semanticTheme.border,
+    panelBorder: semanticTheme.border, graphBg: graphPresentation.surface,
+    graphBorder: graphPresentation.border, text: graphPresentation.text,
+    subtext: graphPresentation.secondaryText, buttonBg: graphPresentation.controlSurface,
+    buttonBorder: graphPresentation.border,
   };
   const t = UI_TEXT[uiLanguage];
   const pt = pulseLanguage[uiLanguage];
@@ -2106,13 +2108,15 @@ export default function PilotFastighetPage() {
                 {[getExecutiveDemoSequenceProof(uiLanguage).sameStart, getExecutiveDemoSequenceProof(uiLanguage).sameActionSet].map((label) => (
                   <span
                     key={label}
+                    data-testid="executive-verification-badge"
                     style={{
-                      border: "1px solid rgba(125, 211, 252, 0.36)",
+                      border: verificationBadgeStyle.border,
                       borderRadius: 999,
                       padding: "3px 8px",
-                      color: "#bae6fd",
-                      background: "rgba(12, 74, 110, 0.24)",
-                      fontSize: "9px",
+                      color: verificationBadgeStyle.color,
+                      background: verificationBadgeStyle.background,
+                      fontSize: `${verificationBadgeStyle.fontSize}px`,
+                      opacity: verificationBadgeStyle.opacity,
                       fontWeight: 750,
                       letterSpacing: "0.055em",
                     }}
@@ -2171,16 +2175,16 @@ export default function PilotFastighetPage() {
                     ? {
                         padding: "4px 8px",
                         fontSize: "10px",
-                        color: "#94a3b8",
-                        border: "1px solid rgba(55,65,81,0.45)",
-                        background: "rgba(15,23,42,0.55)",
+                        color: semanticTheme.secondaryText,
+                        border: `1px solid ${semanticTheme.border}`,
+                        background: semanticTheme.controlBackground,
                       }
                     : {
                         padding: "5px 9px",
                         fontSize: "11px",
-                        border: "1px solid #374151",
-                        background: "#111827",
-                        color: "#E5E7EB",
+                        border: `1px solid ${semanticTheme.border}`,
+                        background: semanticTheme.controlBackground,
+                        color: semanticTheme.primaryText,
                       }),
                 }}
               >
@@ -2199,16 +2203,16 @@ export default function PilotFastighetPage() {
                     ? {
                         padding: "4px 8px",
                         fontSize: "10px",
-                        color: "#94a3b8",
-                        border: "1px solid rgba(55,65,81,0.45)",
-                        background: "rgba(15,23,42,0.55)",
+                        color: semanticTheme.secondaryText,
+                        border: `1px solid ${semanticTheme.border}`,
+                        background: semanticTheme.controlBackground,
                       }
                     : {
                         padding: "5px 9px",
                         fontSize: "11px",
-                        border: "1px solid #374151",
-                        background: "#111827",
-                        color: "#E5E7EB",
+                        border: `1px solid ${semanticTheme.border}`,
+                        background: semanticTheme.controlBackground,
+                        color: semanticTheme.primaryText,
                       }),
                 }}
               >
@@ -2224,9 +2228,9 @@ export default function PilotFastighetPage() {
                     ? {
                         padding: "4px 8px",
                         fontSize: "10px",
-                        color: "#a8b4c4",
-                        border: "1px solid rgba(59,130,246,0.32)",
-                        background: "rgba(30,58,95,0.35)",
+                        color: semanticTheme.primaryText,
+                        border: `1px solid ${semanticTheme.border}`,
+                        background: semanticTheme.controlBackground,
                       }
                     : {
                         padding: "5px 9px",
@@ -2553,10 +2557,10 @@ export default function PilotFastighetPage() {
             style={{
               padding: executiveDemoMode ? "5px 11px" : "8px 16px",
               fontSize: executiveDemoMode ? "11px" : undefined,
-              background: executiveDemoMode ? "#1a1a1a" : semanticTheme.controlBackground,
-              border: executiveDemoMode ? "1px solid #2f333a" : `1px solid ${semanticTheme.border}`,
+              background: semanticTheme.controlBackground,
+              border: `1px solid ${semanticTheme.border}`,
               borderRadius: executiveDemoMode ? "5px" : "6px",
-              color: executiveDemoMode ? "#e6edf3" : semanticTheme.primaryText,
+              color: semanticTheme.primaryText,
               cursor:
                 isRunning || scheduleValidationIssues.length > 0
                   ? "not-allowed"
@@ -2589,10 +2593,10 @@ export default function PilotFastighetPage() {
             style={{
               padding: executiveDemoMode ? "5px 11px" : "8px 16px",
               fontSize: executiveDemoMode ? "11px" : undefined,
-              background: executiveDemoMode ? "#1a1a1a" : semanticTheme.controlBackground,
-              border: executiveDemoMode ? "1px solid #2f333a" : `1px solid ${semanticTheme.border}`,
+              background: semanticTheme.controlBackground,
+              border: `1px solid ${semanticTheme.border}`,
               borderRadius: executiveDemoMode ? "5px" : "6px",
-              color: executiveDemoMode ? "#e6edf3" : semanticTheme.disabledText,
+              color: !isRunning ? semanticTheme.disabledText : semanticTheme.primaryText,
               cursor: !isRunning ? "not-allowed" : "pointer",
             }}
           >
@@ -2662,10 +2666,10 @@ export default function PilotFastighetPage() {
             style={{
               padding: executiveDemoMode ? "5px 11px" : "8px 16px",
               fontSize: executiveDemoMode ? "11px" : undefined,
-              background: executiveDemoMode ? "#1a1a1a" : semanticTheme.controlBackground,
-              border: executiveDemoMode ? "1px solid #2f333a" : `1px solid ${semanticTheme.border}`,
+              background: semanticTheme.controlBackground,
+              border: `1px solid ${semanticTheme.border}`,
               borderRadius: executiveDemoMode ? "5px" : "6px",
-              color: executiveDemoMode ? "#e6edf3" : semanticTheme.primaryText,
+              color: semanticTheme.primaryText,
               cursor: "pointer",
             }}
           >
@@ -2673,18 +2677,19 @@ export default function PilotFastighetPage() {
           </button>
           {execRealEstateLayout && (
             <div
-              className="shrink-0 flex items-center gap-1.5 rounded-full border border-slate-600/65 bg-slate-900/75 px-2.5 py-1 max-h-[38px] max-w-[258px]"
+              className="flex max-h-[38px] max-w-[258px] shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1"
+              style={{ borderColor: semanticTheme.border, background: semanticTheme.subtleSurface }}
               role="note"
               title={`${getScheduledExecutiveDemoTitle(uiLanguage)} — ${getExecutiveDemoPlaybackInitiativesNote(uiLanguage)}`}
             >
-              <span className="shrink-0 rounded-sm border border-sky-900/60 bg-blue-950/80 px-[5px] py-[1px] text-[7.5px] font-bold uppercase tracking-wider text-sky-300">
+              <span className="shrink-0 rounded-sm border px-[5px] py-[1px] text-[10px] font-bold uppercase tracking-wider" style={{ borderColor: semanticTheme.scenarioA, color: semanticTheme.primaryText }}>
                 Demo
               </span>
               <div className="min-w-0 overflow-hidden leading-tight">
-                <div className="truncate text-[9.5px] font-semibold text-slate-100">
+                <div className="truncate text-xs font-semibold" style={{ color: semanticTheme.primaryText }}>
                   {getScheduledExecutiveDemoTitle(uiLanguage)}
                 </div>
-                <div className="truncate text-[8px] text-slate-500">
+                <div className="truncate text-[11px]" style={{ color: semanticTheme.secondaryText }}>
                   {getExecutiveDemoPlaybackInitiativesNote(uiLanguage)}
                 </div>
               </div>
@@ -2765,16 +2770,14 @@ export default function PilotFastighetPage() {
             }}
           >
             {executiveDemoMode ? (
-              <div
-                className="rounded-md border border-slate-600/70 bg-slate-900/60 px-2 py-1 text-gray-200"
-              >
-                <div className="text-[9px] font-semibold uppercase tracking-wide text-slate-500 mb-0">
+              <div className="rounded-md border px-2 py-1" style={{ borderColor: semanticTheme.border, background: semanticTheme.subtleSurface, color: semanticTheme.primaryText }}>
+                <div className="mb-0 text-[11px] font-semibold uppercase tracking-wide" style={{ color: semanticTheme.mutedText }}>
                   {uiLanguage === "sv" ? "Demo" : "Demo"}
                 </div>
-                <div className="text-[11px] font-medium text-slate-100 leading-snug">
+                <div className="text-xs font-medium leading-snug" style={{ color: semanticTheme.primaryText }}>
                   {getScheduledExecutiveDemoTitle(uiLanguage)}
                 </div>
-                <p className="text-[9px] text-slate-500 leading-snug m-0 mt-1">
+                <p className="m-0 mt-1 text-[11px] leading-snug" style={{ color: semanticTheme.secondaryText }}>
                   {getExecutiveDemoPlaybackInitiativesNote(uiLanguage)}
                 </p>
               </div>
@@ -3006,8 +3009,8 @@ export default function PilotFastighetPage() {
             style={{
               marginBottom: executiveDemoMode ? (execRealEstateLayout ? "6px" : "4px") : "24px",
               padding: executiveDemoMode ? (execRealEstateLayout ? "7px 14px 8px" : "4px 9px") : "16px 20px",
-              background: executiveDemoMode ? "#111827" : semanticTheme.primarySurface,
-              border: executiveDemoMode ? "1px solid #1f2937" : `1px solid ${semanticTheme.border}`,
+              background: semanticTheme.primarySurface,
+              border: `1px solid ${semanticTheme.border}`,
               borderRadius: CASCADE_PRESENTATION.radii.panel,
             }}
           >
@@ -3023,7 +3026,7 @@ export default function PilotFastighetPage() {
                 <div
                   style={{
                     fontSize: execRealEstateLayout ? "10px" : executiveDemoMode ? "9px" : "12px",
-                    color: executiveDemoMode ? "#9CA3AF" : semanticTheme.secondaryText,
+                    color: semanticTheme.secondaryText,
                   }}
                 >
                   {executiveDemoMode
@@ -3045,7 +3048,7 @@ export default function PilotFastighetPage() {
                 <div
                   style={{
                     fontSize: execRealEstateLayout ? "10px" : executiveDemoMode ? "9px" : "12px",
-                    color: executiveDemoMode ? "#9CA3AF" : semanticTheme.secondaryText,
+                    color: semanticTheme.secondaryText,
                   }}
                 >
                   {executiveDemoMode
@@ -3067,7 +3070,7 @@ export default function PilotFastighetPage() {
                 <div
                   style={{
                     fontSize: execRealEstateLayout ? "10px" : executiveDemoMode ? "9px" : "12px",
-                    color: executiveDemoMode ? "#9CA3AF" : semanticTheme.secondaryText,
+                    color: semanticTheme.secondaryText,
                   }}
                 >
                   {executiveDemoMode
@@ -3089,7 +3092,7 @@ export default function PilotFastighetPage() {
                 style={{
                   marginLeft: "auto",
                   fontSize: execRealEstateLayout ? "10px" : executiveDemoMode ? "9px" : "12px",
-                  color: executiveDemoMode ? "#9CA3AF" : semanticTheme.secondaryText,
+                  color: semanticTheme.secondaryText,
                   fontWeight: 500,
                   textAlign: "right",
                 }}
@@ -3118,8 +3121,8 @@ export default function PilotFastighetPage() {
                     flex: "1 1 240px",
                     minWidth: 0,
                     padding: execRealEstateLayout ? "7px 9px 8px" : "5px 8px",
-                    background: "rgba(15, 23, 42, 0.75)",
-                    border: "1px solid #334155",
+                    background: semanticTheme.subtleSurface,
+                    border: `1px solid ${semanticTheme.border}`,
                     borderRadius: "6px",
                   }}
                 >
@@ -3127,7 +3130,7 @@ export default function PilotFastighetPage() {
                     style={{
                       fontSize: "8.5px",
                       fontWeight: 700,
-                      color: "#94a3b8",
+                      color: semanticTheme.mutedText,
                       letterSpacing: "0.04em",
                     }}
                   >
@@ -3136,7 +3139,7 @@ export default function PilotFastighetPage() {
                   <p
                     style={{
                       margin: execRealEstateLayout ? "1px 0 0" : "2px 0 0",
-                      color: "#e2e8f0",
+                      color: semanticTheme.primaryText,
                       fontSize: "10px",
                       lineHeight: execRealEstateLayout ? 1.28 : 1.3,
                     }}
@@ -3151,8 +3154,8 @@ export default function PilotFastighetPage() {
                     flex: "1 1 240px",
                     minWidth: 0,
                     padding: execRealEstateLayout ? "7px 9px 8px" : "5px 8px",
-                    background: "rgba(15, 23, 42, 0.75)",
-                    border: "1px solid #334155",
+                    background: semanticTheme.subtleSurface,
+                    border: `1px solid ${semanticTheme.border}`,
                     borderRadius: "6px",
                   }}
                 >
@@ -3160,7 +3163,7 @@ export default function PilotFastighetPage() {
                     style={{
                       fontSize: "8.5px",
                       fontWeight: 700,
-                      color: "#94a3b8",
+                      color: semanticTheme.mutedText,
                       letterSpacing: "0.04em",
                     }}
                   >
@@ -3169,7 +3172,7 @@ export default function PilotFastighetPage() {
                   <p
                     style={{
                       margin: execRealEstateLayout ? "1px 0 0" : "2px 0 0",
-                      color: "#e2e8f0",
+                      color: semanticTheme.primaryText,
                       fontSize: "10px",
                       lineHeight: execRealEstateLayout ? 1.28 : 1.3,
                     }}
@@ -3248,21 +3251,18 @@ export default function PilotFastighetPage() {
             <>
               {execRealEstateLayout && (
                 <p
-                  className="text-[9px] text-slate-400 leading-snug max-w-[52rem] mt-1 mb-0 font-medium"
-                  style={{ letterSpacing: "0.01em" }}
+                  className="mb-0 mt-1 max-w-[52rem] text-[11px] font-medium leading-snug"
+                  style={{ letterSpacing: "0.01em", color: semanticTheme.secondaryText }}
                 >
                   {getExecutiveDemoGraphFraming(uiLanguage).purposeLine}
                 </p>
               )}
               <div
-                className={
-                  execRealEstateLayout
-                    ? "text-[9.5px] text-slate-500 leading-[1.32] max-w-[52rem] mt-1"
-                    : "text-[9px] text-slate-500 leading-snug max-w-3xl mt-0.5"
-                }
+                className={execRealEstateLayout ? "mt-1 max-w-[52rem] text-[11px] leading-[1.32]" : "mt-0.5 max-w-3xl text-[11px] leading-snug"}
+                style={{ color: semanticTheme.secondaryText }}
               >
                 {getExecutiveDemoGraphFraming(uiLanguage).lead}{" "}
-                <span className="text-slate-600">
+                <span style={{ color: semanticTheme.mutedText }}>
                   {getExecutiveDemoGraphFraming(uiLanguage).nonOptimization}
                 </span>
               </div>
@@ -3416,10 +3416,10 @@ export default function PilotFastighetPage() {
                   aria-label={uiLanguage === "sv" ? "Sekvensanalys" : "Sequence analysis"}
                   style={{
                     padding: "12px",
-                    background: "#111827",
-                    border: "1px solid #334155",
+                    background: semanticTheme.subtleSurface,
+                    border: `1px solid ${semanticTheme.border}`,
                     borderRadius: 8,
-                    color: "#e5e7eb",
+                    color: semanticTheme.primaryText,
                     fontSize: 11,
                     lineHeight: 1.45,
                   }}
@@ -3427,7 +3427,7 @@ export default function PilotFastighetPage() {
                   <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
                     {uiLanguage === "sv" ? "Sekvensanalys" : "Sequence analysis"}
                   </div>
-                  <div style={{ color: "#94a3b8", marginBottom: 10 }}>
+                  <div style={{ color: semanticTheme.secondaryText, marginBottom: 10 }}>
                     {getExecutiveDemoSequenceProof(uiLanguage).onlyDifference}
                   </div>
                   <div
@@ -3455,24 +3455,24 @@ export default function PilotFastighetPage() {
                       const stepB = SCHEDULED_EXECUTIVE_DEMO_SCHEDULES.B.find((entry) => entry.actionId === actionId)?.executionStep;
                       return (
                         <div key={`aligned-${actionId}`} role="row" style={{ display: "contents" }}>
-                          <div role="rowheader" style={{ color: "#cbd5e1", minWidth: 0 }}>
+                          <div role="rowheader" style={{ color: semanticTheme.primaryText, minWidth: 0 }}>
                             {getActionPanelLabel(actionId, uiLanguage)}
                           </div>
-                          <div role="cell" style={{ borderRadius: 5, padding: "3px 5px", textAlign: "center", color: "#dbeafe", background: "rgba(37, 99, 235, 0.16)", border: "1px solid rgba(59, 130, 246, 0.28)", fontWeight: 700 }}>
+                          <div role="cell" style={{ borderRadius: 5, padding: "3px 5px", textAlign: "center", color: semanticTheme.primaryText, background: semanticTheme.subtleSurface, border: "1px solid rgba(59, 130, 246, 0.55)", fontWeight: 700 }}>
                             {stepA ? `M${stepA}` : "—"}
                           </div>
-                          <div role="cell" style={{ borderRadius: 5, padding: "3px 5px", textAlign: "center", color: "#fef3c7", background: "rgba(217, 119, 6, 0.16)", border: "1px solid rgba(245, 158, 11, 0.28)", fontWeight: 700 }}>
+                          <div role="cell" style={{ borderRadius: 5, padding: "3px 5px", textAlign: "center", color: semanticTheme.primaryText, background: semanticTheme.subtleSurface, border: "1px solid rgba(245, 158, 11, 0.65)", fontWeight: 700 }}>
                             {stepB ? `M${stepB}` : "—"}
                           </div>
                         </div>
                       );
                     })}
                   </div>
-                  <div style={{ marginTop: 11, paddingTop: 9, borderTop: "1px solid #334155", color: "#cbd5e1" }}>
+                  <div style={{ marginTop: 11, paddingTop: 9, borderTop: `1px solid ${semanticTheme.border}`, color: semanticTheme.primaryText }}>
                     <p style={{ margin: 0 }}>{getExecutiveDemoSequenceProof(uiLanguage).inheritedState}</p>
                     <p style={{ margin: "4px 0 0", fontWeight: 650 }}>{getExecutiveDemoSequenceProof(uiLanguage).structuralPaths}</p>
                   </div>
-                  <dl style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "5px 10px", margin: "10px 0 0", borderTop: "1px solid #334155", paddingTop: 9 }}>
+                  <dl style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "5px 10px", margin: "10px 0 0", borderTop: `1px solid ${semanticTheme.border}`, paddingTop: 9 }}>
                     <dt>{uiLanguage === "sv" ? "Konfigurerad begränsning synlig" : "Configured constraint visible"}</dt>
                     <dd style={{ margin: 0, fontWeight: 700 }}>
                       {`${scheduledExecutiveMetrics.visibleConstraintPeriodA != null ? `A M${scheduledExecutiveMetrics.visibleConstraintPeriodA}` : "A —"} · ${scheduledExecutiveMetrics.visibleConstraintPeriodB != null ? `B M${scheduledExecutiveMetrics.visibleConstraintPeriodB}` : "B —"}`}

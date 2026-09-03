@@ -12,7 +12,7 @@ import {
 } from "@/src/lib/runtimeProfile";
 import type { ScheduledExecutionGraphMarker } from "@/src/pilotFastighet/analysis/scheduledExecutivePresentation";
 import { getExecutiveDemoSequenceProof } from "@/src/pilotFastighet/executiveDemoFraming";
-import { CASCADE_PRESENTATION } from "@/src/pilotFastighet/cascadePresentation";
+import { CASCADE_PRESENTATION, getCascadeGraphAnnotationBand, getCascadeGraphTickIndexes, hasCascadeGraphOverflow, resolveCascadeAnnotationLayout, resolveCascadeGraphChartWidth, resolveCascadeGraphFramePeriods, resolveCascadeGraphX } from "@/src/pilotFastighet/cascadePresentation";
 import {
   resolveMarginGraphDomain,
   resolveMarginGraphPresentedSeries,
@@ -223,7 +223,7 @@ function MarginGraph({
       : seriesName === highlightedSeries
       ? 1
       : 0.35;
-  const graphBackground = execRealEstateGraphPassive ? "#0B1220" : theme.graphBg;
+  const graphBackground = theme.graphBg;
 
   const { scenarioA: normalizedA, scenarioB: normalizedB } =
     resolveMarginGraphPresentedSeries(marginHistoryA, marginHistoryB, viewMode);
@@ -239,21 +239,40 @@ function MarginGraph({
   })();
   const LEFT_PADDING = 48;
   const RIGHT_PADDING = 18;
-  const totalSteps = Math.max(marginHistoryA.length, marginHistoryB.length, 1);
+  const totalSteps = resolveCascadeGraphFramePeriods({
+    executiveDemo: execRealEstateGraphPassive,
+    simulationHorizon,
+    revealedSeriesA: marginHistoryA.length,
+    revealedSeriesB: marginHistoryB.length,
+  });
+  const revealedSteps = Math.max(marginHistoryA.length, marginHistoryB.length);
   const height = 300;
-  const monthPixelWidth = execRealEstateGraphPassive ? 59 : 60;
+  const monthPixelWidth = 60;
   const timelineMonths = Array.from({ length: totalSteps }, (_, i) => i + 1);
-  const totalTimelineWidth = timelineMonths.length * monthPixelWidth;
-  const chartWidth = Math.max(monthPixelWidth, totalTimelineWidth);
+  const executiveMinimumWidth = 720;
+  const chartWidth = resolveCascadeGraphChartWidth({
+    executiveDemo: execRealEstateGraphPassive,
+    containerWidth,
+    totalPeriods: timelineMonths.length,
+    normalPeriodWidth: monthPixelWidth,
+    executiveMinimumWidth,
+  });
+  const totalTimelineWidth = chartWidth;
   /** Executive RE: readable trajectory height for recordings (~340–360px band). */
   const svgDisplayHeightPx = execRealEstateGraphPassive ? 336 : 480;
-  const graphWidth = Math.max(
-    monthPixelWidth,
-    Math.max(totalSteps - 1, 0) * monthPixelWidth
-  );
-  const visibleMonths = Math.max(1, Math.floor(containerWidth / monthPixelWidth) || 1);
+  const graphWidth = execRealEstateGraphPassive
+    ? Math.max(1, chartWidth - LEFT_PADDING - RIGHT_PADDING)
+    : Math.max(monthPixelWidth, Math.max(totalSteps - 1, 0) * monthPixelWidth);
+  const periodPixelWidth = execRealEstateGraphPassive
+    ? graphWidth / Math.max(totalSteps - 1, 1)
+    : monthPixelWidth;
+  const visibleMonths = Math.max(1, Math.floor(containerWidth / periodPixelWidth) || 1);
   const maxScrollOffset = Math.max(0, timelineMonths.length - visibleMonths);
   const maxScrollLeft = Math.max(0, totalTimelineWidth - containerWidth);
+  const hasHorizontalOverflow = hasCascadeGraphOverflow(
+    totalTimelineWidth,
+    containerWidth
+  );
   const visibleRatio =
     totalTimelineWidth > 0 ? Math.min(1, containerWidth / totalTimelineWidth) : 1;
   const thumbWidth = Math.max(
@@ -272,7 +291,7 @@ function MarginGraph({
     const viewBoxX = ((clientX - rect.left) / rect.width) * chartWidth;
     const x = viewBoxX - LEFT_PADDING;
     const clampedX = Math.max(0, Math.min(x, graphWidth));
-    const index = Math.round(clampedX / monthPixelWidth);
+    const index = Math.round(clampedX / periodPixelWidth);
     if (index >= 0 && index < marginHistoryA.length) return index;
     return null;
   };
@@ -298,8 +317,31 @@ function MarginGraph({
   };
 
   const scaleX = (index: number) => {
-    return LEFT_PADDING + index * monthPixelWidth;
+    return execRealEstateGraphPassive
+      ? resolveCascadeGraphX(index, totalSteps, chartWidth, LEFT_PADDING, RIGHT_PADDING)
+      : LEFT_PADDING + index * periodPixelWidth;
   };
+
+  const requiredTickIndexes = [
+    selectedMonthIndex,
+    ...(executiveNarrativeMarkers ?? []).map((marker) => marker.monthIndex),
+    ...executionMarkers.map((marker) => marker.graphIndex),
+    executiveSequenceAnnotations?.firstDivergencePeriod != null
+      ? executiveSequenceAnnotations.firstDivergencePeriod - 1
+      : undefined,
+    executiveSequenceAnnotations?.constraintPeriodA != null
+      ? executiveSequenceAnnotations.constraintPeriodA - 1
+      : undefined,
+    executiveSequenceAnnotations?.constraintPeriodB != null
+      ? executiveSequenceAnnotations.constraintPeriodB - 1
+      : undefined,
+    executiveSequenceAnnotations?.convergencePeriod != null
+      ? executiveSequenceAnnotations.convergencePeriod - 1
+      : undefined,
+  ].filter((index): index is number => index != null);
+  const visibleTickIndexes = new Set(
+    getCascadeGraphTickIndexes(totalSteps, graphWidth, requiredTickIndexes)
+  );
 
   const { min: yMin, max: yMax } = resolveMarginGraphDomain(
     normalizedA,
@@ -308,7 +350,8 @@ function MarginGraph({
     execRealEstateGraphPassive
   );
 
-  const TOP_PADDING = execRealEstateGraphPassive ? 7 : 12;
+  const annotationBand = getCascadeGraphAnnotationBand(execRealEstateGraphPassive);
+  const TOP_PADDING = annotationBand.topInset;
   const BOTTOM_PADDING = execRealEstateGraphPassive ? 5 : 8;
   const gridLevels = 4;
   const SERIES_COLOR_A = CASCADE_PRESENTATION.scenarios.A.color;
@@ -346,10 +389,10 @@ function MarginGraph({
 
   React.useEffect(() => {
     if (!scrollContainerRef.current) return;
-    const nextScrollLeft = Math.min(scrollOffset * monthPixelWidth, maxScrollLeft);
+    const nextScrollLeft = Math.min(scrollOffset * periodPixelWidth, maxScrollLeft);
     scrollContainerRef.current.scrollLeft = nextScrollLeft;
     setScrollLeft(nextScrollLeft);
-  }, [scrollOffset, monthPixelWidth, maxScrollLeft]);
+  }, [scrollOffset, periodPixelWidth, maxScrollLeft]);
 
   const syncScrollPosition = React.useCallback(
     (nextScrollLeft: number) => {
@@ -358,9 +401,9 @@ function MarginGraph({
         scrollContainerRef.current.scrollLeft = clamped;
       }
       setScrollLeft(clamped);
-      setScrollOffset(Math.round(clamped / monthPixelWidth));
+      setScrollOffset(Math.round(clamped / periodPixelWidth));
     },
-    [maxScrollLeft, monthPixelWidth]
+    [maxScrollLeft, periodPixelWidth]
   );
 
   const updateScrollFromSliderClientX = React.useCallback(
@@ -826,21 +869,21 @@ function MarginGraph({
       {execRealEstateGraphPassive && executiveSequenceAnnotations && (
         <div
           aria-label={uiLanguage === "sv" ? "Viktiga sekvensresultat" : "Key sequence results"}
-          style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "7px", color: "#cbd5e1", fontSize: "9px" }}
+          style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "7px", color: "var(--ce-text-primary)", fontSize: "10px" }}
         >
-          <span style={{ color: "#94a3b8", padding: "4px 0", marginRight: 2 }}>
+          <span style={{ color: "var(--ce-text-secondary)", padding: "4px 0", marginRight: 2 }}>
             {sequenceProof.modelPeriod}
           </span>
-          <span style={{ border: "1px solid #334155", borderRadius: 999, padding: "3px 7px", background: "rgba(15,23,42,0.72)" }}>
+          <span style={{ border: "1px solid var(--ce-border)", borderRadius: 999, padding: "3px 7px", background: "var(--ce-surface-subtle)" }}>
             {`${sequenceProof.pathsDiverge} · M${executiveSequenceAnnotations.firstDivergencePeriod ?? "—"}`}
           </span>
-          <span style={{ border: "1px solid rgba(59,130,246,0.38)", borderRadius: 999, padding: "3px 7px", background: "rgba(37,99,235,0.12)", color: "#bfdbfe" }}>
+          <span style={{ border: "1px solid rgba(59,130,246,0.55)", borderRadius: 999, padding: "3px 7px", background: "var(--ce-surface-subtle)", color: "var(--ce-text-primary)" }}>
             {`A ${sequenceProof.constraint} · ${executiveSequenceAnnotations.constraintPeriodA != null ? `M${executiveSequenceAnnotations.constraintPeriodA}` : "—"}`}
           </span>
-          <span style={{ border: "1px solid rgba(245,158,11,0.38)", borderRadius: 999, padding: "3px 7px", background: "rgba(217,119,6,0.12)", color: "#fde68a" }}>
+          <span style={{ border: "1px solid rgba(245,158,11,0.65)", borderRadius: 999, padding: "3px 7px", background: "var(--ce-surface-subtle)", color: "var(--ce-text-primary)" }}>
             {`B ${sequenceProof.constraint} · ${executiveSequenceAnnotations.constraintPeriodB != null ? `M${executiveSequenceAnnotations.constraintPeriodB}` : "—"}`}
           </span>
-          <span style={{ border: "1px solid #475569", borderRadius: 999, padding: "3px 7px", background: "rgba(30,41,59,0.72)" }}>
+          <span style={{ border: "1px solid var(--ce-divider-strong)", borderRadius: 999, padding: "3px 7px", background: "var(--ce-surface-subtle)" }}>
             {executiveSequenceAnnotations.convergencePeriod != null
               ? `${sequenceProof.pathsConverge} · M${executiveSequenceAnnotations.convergencePeriod} · ${sequenceProof.sameTerminalMargin}`
               : `${sequenceProof.pathsConverge} · —`}
@@ -919,14 +962,14 @@ function MarginGraph({
         ref={scrollContainerRef}
         style={{
           width: "100%",
-          overflowX: "auto",
+          overflowX: hasHorizontalOverflow ? "auto" : "hidden",
           overflowY: "hidden",
           background: "transparent",
         }}
         onScroll={(e) => {
           setScrollLeft(e.currentTarget.scrollLeft);
           const nextOffset = Math.round(
-            e.currentTarget.scrollLeft / monthPixelWidth
+            e.currentTarget.scrollLeft / periodPixelWidth
           );
           setScrollOffset((prev) =>
             prev === nextOffset ? prev : Math.min(nextOffset, maxScrollOffset)
@@ -948,10 +991,11 @@ function MarginGraph({
         style={{
           display: "block",
           background: graphBackground,
-          border: execRealEstateGraphPassive ? "1px solid rgba(51,65,85,0.55)" : `1px solid ${theme.graphBorder ?? "#e5e7eb"}`,
+          border: `1px solid ${theme.graphBorder ?? "#e5e7eb"}`,
           borderRadius: "4px",
           minHeight: svgDisplayHeightPx,
           minWidth: chartWidth,
+          boxSizing: "border-box",
         }}
         onMouseMove={(e) => {
           const idx = resolveIndexFromClientX(e.currentTarget, e.clientX);
@@ -965,29 +1009,20 @@ function MarginGraph({
         }}
         onMouseLeave={() => setHoverIndex(null)}
       >
-      <defs>
-        {execRealEstateGraphPassive && (
-          <linearGradient id="execMicroDivergenceTint" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="rgba(37,99,235,0.055)" />
-            <stop offset="48%" stopColor="rgba(51,102,204,0.032)" />
-            <stop offset="100%" stopColor="rgba(217,119,6,0.028)" />
-          </linearGradient>
-        )}
-      </defs>
       <rect x={0} y={0} width={chartWidth} height={300} fill={graphBackground} />
       {execRealEstateGraphPassive &&
         totalSteps > 4 &&
         (() => {
-          const bandX0 = scaleX(1) - monthPixelWidth * 0.3;
-          const bandW = scaleX(4) - scaleX(1) + monthPixelWidth * 0.65;
+          const bandX0 = scaleX(1) - periodPixelWidth * 0.3;
+          const bandW = scaleX(4) - scaleX(1) + periodPixelWidth * 0.65;
           return bandW > 2 ? (
             <rect
               x={bandX0}
               y={plotAreaY}
               width={bandW}
               height={plotAreaH}
-              fill="url(#execMicroDivergenceTint)"
-              opacity={0.68}
+              fill={theme.buttonBg ?? graphBackground}
+              opacity={0.45}
               style={{ pointerEvents: "none" }}
             />
           ) : null;
@@ -995,12 +1030,12 @@ function MarginGraph({
       <text
         x={14}
         y={150}
-        fill={execRealEstateGraphPassive ? "#64748b" : (theme.subtext ?? "#6b7280")}
+        fill={theme.subtext ?? "#6b7280"}
         fontSize={execRealEstateGraphPassive ? 10 : 11}
         fontWeight={500}
         transform="rotate(-90 14 150)"
         textAnchor="middle"
-        opacity={execRealEstateGraphPassive ? 0.82 : 1}
+        opacity={1}
       >
         {marginLabel}
       </text>
@@ -1135,9 +1170,9 @@ function MarginGraph({
           />
           <text
             x={tippingBandCenterX}
-            y={plotAreaY - 4}
+            y={annotationBand.headingY}
             fill="#b91c1c"
-            fontSize={9}
+            fontSize={10}
             fontWeight={600}
             textAnchor="middle"
             opacity={emphasisOpacity("tippingRisk")}
@@ -1254,12 +1289,17 @@ function MarginGraph({
         executiveNarrativeMarkers.length > 0 &&
         executiveNarrativeMarkers.map((marker, markerIdx) => {
           const { monthIndex } = marker;
-          if (monthIndex < 0 || monthIndex >= totalSteps) return null;
+          if (monthIndex < 0 || monthIndex >= revealedSteps) return null;
           const xi = scaleX(monthIndex);
+          const annotationLayout = resolveCascadeAnnotationLayout({
+            anchorX: xi,
+            chartWidth,
+            ordinal: markerIdx,
+          });
           const labelY =
-            TOP_PADDING +
-            (execRealEstateGraphPassive ? 13 : 16) +
-            markerIdx * (execRealEstateGraphPassive ? 10 : 11);
+            (execRealEstateGraphPassive
+              ? annotationBand.lanes[annotationLayout.lane]
+              : TOP_PADDING + 16 + annotationLayout.lane * 14);
           const inSeparationWindow =
             execRealEstateGraphPassive && monthIndex >= 1 && monthIndex <= 4;
           return (
@@ -1269,7 +1309,7 @@ function MarginGraph({
                 x2={xi}
                 y1={plotAreaY}
                 y2={plotAreaY + plotAreaH}
-                stroke={inSeparationWindow ? "#6e7b8f" : "#64748b"}
+                stroke={theme.subtext ?? "#64748b"}
                 strokeDasharray={inSeparationWindow ? "3 5" : "3 6"}
                 strokeWidth={
                   execRealEstateGraphPassive
@@ -1287,24 +1327,12 @@ function MarginGraph({
                 }
               />
               <text
-                x={xi + 10}
+                x={annotationLayout.labelX}
                 y={labelY + 2}
-                fontSize={execRealEstateGraphPassive ? 9 : 9}
-                fill={
-                  execRealEstateGraphPassive
-                    ? inSeparationWindow
-                      ? "#d8dee9"
-                      : "#cbd5e1"
-                    : "#dbeafe"
-                }
+                fontSize={execRealEstateGraphPassive ? 10 : 9}
+                fill={theme.text ?? "#dbeafe"}
                 fontWeight={600}
-                opacity={
-                  execRealEstateGraphPassive
-                    ? inSeparationWindow
-                      ? 0.91
-                      : 0.88
-                    : 0.95
-                }
+                opacity={1}
               >
                 {marker.label}
               </text>
@@ -1599,7 +1627,7 @@ function MarginGraph({
                 textAnchor="middle"
                 fontSize={7}
                 fontWeight={800}
-                fill="#0b1220"
+                fill="#101828"
                 pointerEvents="none"
                 aria-hidden="true"
               >
@@ -1612,7 +1640,7 @@ function MarginGraph({
                 fontSize={7.5}
                 fontWeight={650}
                 fill={color}
-                stroke="#0b1220"
+                stroke={graphBackground}
                 strokeWidth={2.2}
                 paintOrder="stroke"
                 pointerEvents="none"
@@ -1731,6 +1759,7 @@ function MarginGraph({
           );
         })}
       {timelineMonths.map((month, i) => {
+          if (!visibleTickIndexes.has(i)) return null;
           const inSeparationWindow = execRealEstateGraphPassive && i >= 1 && i <= 4;
           return (
             <text
@@ -1739,8 +1768,8 @@ function MarginGraph({
               y={height - 6}
               textAnchor="middle"
               fontSize={execRealEstateGraphPassive ? 8 : 10}
-              fill={execRealEstateGraphPassive ? (inSeparationWindow ? "#7a8698" : "#64748b") : (theme.subtext ?? "#9CA3AF")}
-              opacity={execRealEstateGraphPassive ? (inSeparationWindow ? 0.69 : 0.62) : 0.8}
+              fill={theme.subtext ?? "#9CA3AF"}
+              opacity={1}
             >
               {`M${i + 1}`}
             </text>
@@ -1777,6 +1806,7 @@ function MarginGraph({
             ))}
         </div>
       </div>
+      {hasHorizontalOverflow && (
       <div style={{ width: "100%", marginTop: execRealEstateGraphPassive ? "2px" : "6px" }}>
         <div
           ref={sliderTrackRef}
@@ -1814,6 +1844,7 @@ function MarginGraph({
           />
         </div>
       </div>
+      )}
     </div>
   );
 }

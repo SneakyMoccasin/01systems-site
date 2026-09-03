@@ -27,6 +27,120 @@ export function getCascadeThemeTokens(theme: CascadeThemeId) {
   return CASCADE_THEME_TOKENS[theme];
 }
 
+export function getCascadeGraphPresentation(theme: CascadeThemeId) {
+  const tokens = getCascadeThemeTokens(theme);
+  return {
+    surface: tokens.graphSurface,
+    outerSurface: tokens.primarySurface,
+    border: tokens.border,
+    axis: tokens.secondaryText,
+    grid: tokens.border,
+    text: tokens.primaryText,
+    secondaryText: tokens.secondaryText,
+    reference: tokens.strongDivider,
+    tooltipSurface: tokens.elevatedSurface,
+    focus: tokens.focusRing,
+    controlSurface: tokens.controlBackground,
+  } as const;
+}
+
+export function resolveCascadeGraphFramePeriods(input: {
+  executiveDemo: boolean;
+  simulationHorizon?: number;
+  revealedSeriesA: number;
+  revealedSeriesB: number;
+}): number {
+  const revealed = Math.max(input.revealedSeriesA, input.revealedSeriesB, 1);
+  return input.executiveDemo
+    ? Math.max(input.simulationHorizon ?? 1, revealed)
+    : revealed;
+}
+
+export function getCascadeGraphTickIndexes(
+  totalPeriods: number,
+  plotWidth: number,
+  requiredIndexes: readonly number[] = []
+): readonly number[] {
+  if (totalPeriods <= 0) return [];
+  const maximumLabels = Math.max(2, Math.floor(plotWidth / 42));
+  const stride = Math.max(1, Math.ceil(totalPeriods / maximumLabels));
+  const indexes = new Set<number>([0, totalPeriods - 1]);
+  for (let index = 0; index < totalPeriods; index += stride) indexes.add(index);
+  for (const index of requiredIndexes) {
+    if (index >= 0 && index < totalPeriods) indexes.add(index);
+  }
+  return [...indexes].sort((a, b) => a - b);
+}
+
+export function resolveCascadeAnnotationLayout(input: {
+  anchorX: number;
+  chartWidth: number;
+  ordinal: number;
+  leftInset?: number;
+  rightInset?: number;
+  estimatedLabelWidth?: number;
+}) {
+  const leftInset = input.leftInset ?? 54;
+  const rightInset = input.rightInset ?? 12;
+  const labelWidth = input.estimatedLabelWidth ?? 116;
+  const maximumX = Math.max(leftInset, input.chartWidth - rightInset - labelWidth);
+  return {
+    labelX: Math.max(leftInset, Math.min(input.anchorX + 8, maximumX)),
+    lane: input.ordinal % 3,
+  } as const;
+}
+
+export function resolveCascadeGraphX(
+  index: number,
+  totalPeriods: number,
+  chartWidth: number,
+  leftInset = 48,
+  rightInset = 18
+): number {
+  const plotWidth = Math.max(1, chartWidth - leftInset - rightInset);
+  return leftInset + (index / Math.max(totalPeriods - 1, 1)) * plotWidth;
+}
+
+export function resolveCascadeGraphChartWidth(input: {
+  executiveDemo: boolean;
+  containerWidth: number;
+  totalPeriods: number;
+  normalPeriodWidth?: number;
+  executiveMinimumWidth?: number;
+}): number {
+  const normalPeriodWidth = input.normalPeriodWidth ?? 60;
+  if (!input.executiveDemo) {
+    return Math.max(normalPeriodWidth, input.totalPeriods * normalPeriodWidth);
+  }
+  const minimum = input.executiveMinimumWidth ?? 720;
+  return Math.max(input.containerWidth || minimum, minimum);
+}
+
+export function hasCascadeGraphOverflow(
+  scrollWidth: number,
+  clientWidth: number,
+  tolerance = 1.5
+): boolean {
+  return scrollWidth - clientWidth > tolerance;
+}
+
+export function getCascadeGraphAnnotationBand(executiveDemo: boolean) {
+  return executiveDemo
+    ? { topInset: 64, headingY: 58, lanes: [16, 31, 46] as const }
+    : { topInset: 12, headingY: 8, lanes: [16, 30, 44] as const };
+}
+
+export function getCascadeVerificationBadgeStyle(theme: CascadeThemeId) {
+  const tokens = getCascadeThemeTokens(theme);
+  return {
+    color: tokens.primaryText,
+    background: tokens.subtleSurface,
+    border: `1px solid ${tokens.strongDivider}`,
+    fontSize: 12,
+    opacity: 1,
+  } as const;
+}
+
 export type CascadeScenarioControlId = CascadeScenarioId | "BOTH";
 
 export function getCascadeScenarioControlColors(

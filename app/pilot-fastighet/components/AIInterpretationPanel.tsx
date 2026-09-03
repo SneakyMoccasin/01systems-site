@@ -520,12 +520,9 @@ const AIInterpretationPanel: React.FC<Props> = ({
         style={{
           marginTop: "0px",
           padding: "8px 16px 8px 15px",
-          borderRadius: "12px",
-          background:
-            "linear-gradient(165deg, rgba(15,23,42,0.96) 0%, rgba(10,15,26,0.99) 100%)",
-          border: "1px solid rgba(71,85,105,0.4)",
-          boxShadow:
-            "inset 0 1px 0 rgba(148,163,184,0.055), 0 16px 44px rgba(0,0,0,0.34)",
+          borderRadius: "8px",
+          background: "var(--ce-surface-primary)",
+          border: "1px solid var(--ce-border)",
         }}
       >
         <div
@@ -544,7 +541,7 @@ const AIInterpretationPanel: React.FC<Props> = ({
               style={{
                 fontSize: "13px",
                 fontWeight: 600,
-                color: "#f8fafc",
+                color: "var(--ce-text-primary)",
                 letterSpacing: "-0.02em",
               }}
             >
@@ -553,7 +550,7 @@ const AIInterpretationPanel: React.FC<Props> = ({
             <div
               style={{
                 fontSize: "11px",
-                color: "#64748b",
+                color: "var(--ce-text-secondary)",
                 marginTop: "3px",
                 fontWeight: 500,
                 lineHeight: 1.42,
@@ -580,8 +577,8 @@ const AIInterpretationPanel: React.FC<Props> = ({
                 style={{
                   height: "88px",
                   borderRadius: "11px",
-                  background: "rgba(30,41,59,0.48)",
-                  border: "1px solid rgba(51,65,85,0.32)",
+                  background: "var(--ce-surface-subtle)",
+                  border: "1px solid var(--ce-border)",
                   borderLeftWidth: "3px",
                   borderLeftColor: stripAccentColors[i % stripAccentColors.length],
                 }}
@@ -591,13 +588,13 @@ const AIInterpretationPanel: React.FC<Props> = ({
         )}
 
         {!loading && !simulationCompleted && (
-          <div style={{ fontSize: "11px", color: "#64748b", lineHeight: 1.45 }}>
+          <div style={{ fontSize: "12px", color: "var(--ce-text-secondary)", lineHeight: 1.45 }}>
             {stripIdleHint}
           </div>
         )}
 
         {!loading && simulationCompleted && !aiText && (
-          <div style={{ fontSize: "11px", color: "#64748b" }}>{stripEmptyHint}</div>
+          <div style={{ fontSize: "12px", color: "var(--ce-text-secondary)" }}>{stripEmptyHint}</div>
         )}
 
         {!loading && aiText && stripCards.length > 0 && (
@@ -628,14 +625,12 @@ const AIInterpretationPanel: React.FC<Props> = ({
                   style={{
                     padding:
                       index === 3 ? "11px 17px 11px 14px" : "11px 16px 11px 14px",
-                    borderRadius: "11px",
-                    background: "rgba(11,16,26,0.68)",
-                    border: "1px solid rgba(71,85,105,0.34)",
+                    borderRadius: "8px",
+                    background: "var(--ce-surface-subtle)",
+                    border: "1px solid var(--ce-border)",
                     borderLeft: `3px solid ${stripAccentColors[index % stripAccentColors.length]}`,
                     minHeight: "90px",
                     minWidth: 0,
-                    boxShadow:
-                      "inset 0 1px 0 rgba(148,163,184,0.05), 0 12px 32px rgba(0,0,0,0.3)",
                   }}
                 >
                   <div
@@ -644,7 +639,7 @@ const AIInterpretationPanel: React.FC<Props> = ({
                       fontWeight: 700,
                       letterSpacing: "0.095em",
                       textTransform: "uppercase",
-                      color: "#aebdd4",
+                      color: "var(--ce-text-muted)",
                       marginBottom: "7px",
                     }}
                   >
@@ -658,7 +653,7 @@ const AIInterpretationPanel: React.FC<Props> = ({
                     style={{
                       fontSize: "12px",
                       lineHeight: 1.56,
-                      color: "#e9eef6",
+                      color: "var(--ce-text-primary)",
                       fontWeight: 400,
                       overflowWrap: "break-word",
                       wordBreak: "break-word",

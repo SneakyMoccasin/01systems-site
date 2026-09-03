@@ -78,7 +78,7 @@ test("Light graph and visible secondary surfaces use resolved semantic tokens wh
   const graph = readFileSync("app/pilot-fastighet/components/MarginGraph.tsx", "utf8");
   const page = readFileSync("app/pilot-fastighet/page.tsx", "utf8");
   const snapshot = readFileSync("src/pilotFastighet/components/SnapshotCompare.tsx", "utf8");
-  assert.match(graph, /execRealEstateGraphPassive \? "#0B1220" : theme\.graphBg/);
+  assert.match(graph, /const graphBackground = theme\.graphBg/);
   assert.doesNotMatch(graph, /inspectionDepth === "executive"\s*\? "#0B1220"/);
   assert.equal(CASCADE_THEME_TOKENS.light.graphSurface, "#FCFCFD");
   assert.equal(CASCADE_THEME_TOKENS.dark.graphSurface, "#0B0F14");
@@ -166,7 +166,7 @@ test("primary first-view surfaces consume semantic tokens and Executive Demo bra
   const graph = readFileSync("app/pilot-fastighet/components/MarginGraph.tsx", "utf8");
   const ai = readFileSync("app/pilot-fastighet/components/AIInterpretationPanel.tsx", "utf8");
   assert.match(page, /data-ce-appearance/);
-  assert.match(page, /executiveDemoMode \? "#111827" : semanticTheme\.primarySurface/);
+  assert.match(page, /background: semanticTheme\.primarySurface/);
   for (const source of [findings, configuration, graph, ai]) assert.match(source, /--ce-|theme\./);
   assert.match(page, /executiveDemoMode/);
   assert.match(graph, /CASCADE_PRESENTATION\.scenarios\.A\.color/);
