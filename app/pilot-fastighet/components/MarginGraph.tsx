@@ -12,7 +12,7 @@ import {
 } from "@/src/lib/runtimeProfile";
 import type { ScheduledExecutionGraphMarker } from "@/src/pilotFastighet/analysis/scheduledExecutivePresentation";
 import { getExecutiveDemoSequenceProof } from "@/src/pilotFastighet/executiveDemoFraming";
-import { CASCADE_PRESENTATION, getCascadeGraphAnnotationBand, getCascadeGraphTickIndexes, hasCascadeGraphOverflow, resolveCascadeAnnotationLayout, resolveCascadeGraphChartWidth, resolveCascadeGraphFramePeriods, resolveCascadeGraphX } from "@/src/pilotFastighet/cascadePresentation";
+import { CASCADE_PRESENTATION, getCascadeGraphAnnotationBand, getCascadeGraphTickIndexes, hasCascadeGraphOverflow, resolveCascadeAnnotationLayout, resolveCascadeEarlyAnnotationPlacement, resolveCascadeGraphChartWidth, resolveCascadeGraphFramePeriods, resolveCascadeGraphX, type CascadeEarlyAnnotationIdentity } from "@/src/pilotFastighet/cascadePresentation";
 import {
   resolveMarginGraphDomain,
   resolveMarginGraphPresentedSeries,
@@ -1172,7 +1172,7 @@ function MarginGraph({
             x={tippingBandCenterX}
             y={annotationBand.headingY}
             fill="#b91c1c"
-            fontSize={10}
+            fontSize={execRealEstateGraphPassive ? 12 : 10}
             fontWeight={600}
             textAnchor="middle"
             opacity={emphasisOpacity("tippingRisk")}
@@ -1218,6 +1218,14 @@ function MarginGraph({
           if (!match) return null;
 
           const x = scaleX(match.monthIndex);
+          const earlyPlacement = execRealEstateGraphPassive && match.monthIndex <= 2
+            ? resolveCascadeEarlyAnnotationPlacement({
+                identity: "dominant-constraint",
+                chartWidth,
+                estimatedLabelWidth: 184,
+                estimatedLabelHeight: 28,
+              })
+            : null;
 
           return (
             <g opacity={execRealEstateGraphPassive ? 0.82 : 1}>
@@ -1231,10 +1239,23 @@ function MarginGraph({
                 strokeWidth={execRealEstateGraphPassive ? 1.1 : 1.5}
               />
 
+              {earlyPlacement && (
+                <line
+                  x1={x}
+                  y1={plotAreaY}
+                  x2={earlyPlacement.labelX - 4}
+                  y2={earlyPlacement.labelY - 4}
+                  stroke="#64748b"
+                  strokeWidth={1}
+                  opacity={0.65}
+                  aria-hidden="true"
+                />
+              )}
+
               <text
-                x={x + 6}
-                y={plotAreaY + 12}
-                fontSize={execRealEstateGraphPassive ? 8 : 10}
+                x={earlyPlacement?.labelX ?? x + 6}
+                y={earlyPlacement?.labelY ?? plotAreaY + 12}
+                fontSize={execRealEstateGraphPassive ? 12 : 10}
                 fill={execRealEstateGraphPassive ? "#64748b" : "#666"}
               >
                 {uiLanguage === "sv"
@@ -1243,9 +1264,9 @@ function MarginGraph({
               </text>
 
               <text
-                x={x + 6}
-                y={plotAreaY + 24}
-                fontSize={execRealEstateGraphPassive ? 8 : 10}
+                x={earlyPlacement?.labelX ?? x + 6}
+                y={(earlyPlacement?.labelY ?? plotAreaY + 12) + 14}
+                fontSize={execRealEstateGraphPassive ? 12 : 10}
                 fill={execRealEstateGraphPassive ? "#788499" : "#666"}
               >
                 {mapDominantPortfolioConstraintKeyToPolicyLabel(
@@ -1270,10 +1291,33 @@ function MarginGraph({
               strokeWidth={execRealEstateGraphPassive ? 1.08 : 1.25}
               opacity={execRealEstateGraphPassive ? 0.62 : 0.9}
             />
+            {execRealEstateGraphPassive && divergenceMonthIndex <= 2 && (() => {
+              const placement = resolveCascadeEarlyAnnotationPlacement({
+                identity: "structural-divergence",
+                chartWidth,
+                estimatedLabelWidth: 150,
+              });
+              return (
+                <line
+                  x1={scaleX(divergenceMonthIndex)}
+                  y1={plotAreaY}
+                  x2={placement.labelX - 4}
+                  y2={placement.labelY - 4}
+                  stroke="#64748b"
+                  strokeWidth={1}
+                  opacity={0.65}
+                  aria-hidden="true"
+                />
+              );
+            })()}
             <text
-              x={scaleX(divergenceMonthIndex) + 6}
-              y={plotAreaY + 36}
-              fontSize={execRealEstateGraphPassive ? 8 : 10}
+              x={execRealEstateGraphPassive && divergenceMonthIndex <= 2
+                ? resolveCascadeEarlyAnnotationPlacement({ identity: "structural-divergence", chartWidth, estimatedLabelWidth: 150 }).labelX
+                : scaleX(divergenceMonthIndex) + 6}
+              y={execRealEstateGraphPassive && divergenceMonthIndex <= 2
+                ? resolveCascadeEarlyAnnotationPlacement({ identity: "structural-divergence", chartWidth, estimatedLabelWidth: 150 }).labelY
+                : plotAreaY + 36}
+              fontSize={execRealEstateGraphPassive ? 12 : 10}
               fill={execRealEstateGraphPassive ? "#64748b" : "#666"}
               opacity={execRealEstateGraphPassive ? 0.75 : 1}
             >
@@ -1574,6 +1618,19 @@ function MarginGraph({
             )
           );
           const color = marker.scenario === "A" ? SERIES_COLOR_A : SERIES_COLOR_B;
+          const earlyIdentity: CascadeEarlyAnnotationIdentity | null =
+            marker.actualExecutionStep === 1
+              ? marker.scenario === "A" ? "execution-a-m1" : "execution-b-m1"
+              : marker.actualExecutionStep === 3 && marker.scenario === "B"
+                ? "execution-b-m3"
+                : null;
+          const earlyLabelPlacement = earlyIdentity
+            ? resolveCascadeEarlyAnnotationPlacement({
+                identity: earlyIdentity,
+                chartWidth,
+                estimatedLabelWidth: 132,
+              })
+            : null;
           return (
             <g
               key={`${marker.scenario}-${marker.actionId}-${marker.actualExecutionStep}`}
@@ -1633,11 +1690,23 @@ function MarginGraph({
               >
                 {marker.scenario}
               </text>
+              {earlyLabelPlacement && (
+                <line
+                  x1={x}
+                  y1={markerY}
+                  x2={earlyLabelPlacement.labelX - 4}
+                  y2={earlyLabelPlacement.labelY - 4}
+                  stroke={color}
+                  strokeWidth={1}
+                  opacity={0.72}
+                  aria-hidden="true"
+                />
+              )}
               <text
-                x={x + 10}
-                y={markerY + 2.8}
+                x={earlyLabelPlacement?.labelX ?? x + 10}
+                y={earlyLabelPlacement?.labelY ?? markerY + 2.8}
                 textAnchor="start"
-                fontSize={7.5}
+                fontSize={12}
                 fontWeight={650}
                 fill={color}
                 stroke={graphBackground}

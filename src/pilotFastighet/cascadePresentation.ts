@@ -126,8 +126,51 @@ export function hasCascadeGraphOverflow(
 
 export function getCascadeGraphAnnotationBand(executiveDemo: boolean) {
   return executiveDemo
-    ? { topInset: 64, headingY: 58, lanes: [16, 31, 46] as const }
+    ? { topInset: 64, headingY: 58, lanes: [14, 29, 44] as const }
     : { topInset: 12, headingY: 8, lanes: [16, 30, 44] as const };
+}
+
+export type CascadeEarlyAnnotationIdentity =
+  | "structural-divergence"
+  | "dominant-constraint"
+  | "execution-a-m1"
+  | "execution-b-m1"
+  | "execution-b-m3";
+
+/** Stable Executive M1–M3 label placement; analytical anchors are not changed. */
+export function resolveCascadeEarlyAnnotationPlacement(input: Readonly<{
+  identity: CascadeEarlyAnnotationIdentity;
+  chartWidth: number;
+  estimatedLabelWidth: number;
+  estimatedLabelHeight?: number;
+}>) {
+  const band = getCascadeGraphAnnotationBand(true);
+  const specification: Record<CascadeEarlyAnnotationIdentity, { column: 0 | 1; lane: 0 | 1 | 2 }> = {
+    "structural-divergence": { column: 0, lane: 0 },
+    "dominant-constraint": { column: 1, lane: 0 },
+    "execution-a-m1": { column: 0, lane: 1 },
+    "execution-b-m1": { column: 0, lane: 2 },
+    "execution-b-m3": { column: 1, lane: 2 },
+  };
+  const { column, lane } = specification[input.identity];
+  const leftInset = 54;
+  const rightInset = 12;
+  const available = Math.max(0, input.chartWidth - leftInset - rightInset);
+  const columnStep = Math.min(190, Math.max(148, available * 0.26));
+  const maximumX = Math.max(leftInset, input.chartWidth - rightInset - input.estimatedLabelWidth);
+  const labelX = Math.min(leftInset + column * columnStep, maximumX);
+  const labelY = band.lanes[lane] ?? band.lanes[0];
+  return {
+    labelX,
+    labelY,
+    lane,
+    bounds: {
+      x: labelX,
+      y: labelY - 11,
+      width: input.estimatedLabelWidth,
+      height: input.estimatedLabelHeight ?? 14,
+    },
+  } as const;
 }
 
 export function getCascadeVerificationBadgeStyle(theme: CascadeThemeId) {
