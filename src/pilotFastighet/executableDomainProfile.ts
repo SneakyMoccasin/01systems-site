@@ -35,7 +35,9 @@ export type ExecutableDomainProfile = Readonly<{
   profileId: ExecutableProfileId;
   domainId: DomainKey;
   modelVersion: "pilot-fastighet-v0.4";
-  calibrationVersion: "legacy-global-v1" | "transport-propagation-isolated-v1";
+  calibrationVersion:
+    | "legacy-global-v1"
+    | "transport-causal-subset-v2";
   applicableDrivers: readonly ParameterKey[];
   defaultState: Readonly<Record<string, RiskLevel>>;
   actionEffects: Readonly<Record<ActionKey, Readonly<ActionEffectsMap>>>;
@@ -109,18 +111,10 @@ function createLegacyProfile(
   }) as ExecutableDomainProfile;
 }
 
-const MUNICIPAL_EXCLUDED_PROPAGATION_EDGES = new Set([
-  "interestRateExposureRisk->refinancingRisk",
-  "interestRateExposureRisk->leverageLevelRisk",
-  "leverageLevelRisk->liquidityPressure",
-  "leverageLevelRisk->capitalCommitmentRigidityRisk",
-  "refinancingRisk->leverageLevelRisk",
-  "refinancingRisk->liquidityPressure",
-  "refinancingRisk->capitalCommitmentRigidityRisk",
-  "liquidityPressure->capitalCommitmentRigidityRisk",
-  "congestion_pressure->modal_attractiveness",
-  "modal_attractiveness->accessibility",
-  "transit_signal_priority->operational_capacity",
+const MUNICIPAL_APPROVED_PROPAGATION_EDGES = new Set([
+  "accessibility->demandRisk",
+  "budget_pressure->capitalCommitmentRigidityRisk",
+  "operationalEfficiencyRisk->maintenanceIntensityRisk",
 ]);
 
 const MUNICIPAL_PROPAGATION_RULES = deepFreeze(
@@ -130,7 +124,7 @@ const MUNICIPAL_PROPAGATION_RULES = deepFreeze(
         source,
         effects.filter(
           ({ target }) =>
-            !MUNICIPAL_EXCLUDED_PROPAGATION_EDGES.has(`${source}->${target}`)
+            MUNICIPAL_APPROVED_PROPAGATION_EDGES.has(`${source}->${target}`)
         ),
       ] as const)
       .filter(([, effects]) => effects.length > 0)
@@ -140,7 +134,7 @@ const MUNICIPAL_PROPAGATION_RULES = deepFreeze(
 const PROFILES = deepFreeze({
   "legacy-real-estate-v1": createLegacyProfile("legacy-real-estate-v1", "realEstate"),
   "legacy-municipal-v1": createLegacyProfile("legacy-municipal-v1", "municipal", {
-    calibrationVersion: "transport-propagation-isolated-v1",
+    calibrationVersion: "transport-causal-subset-v2",
     constraints: {
       ...LEGACY_EXECUTABLE_CONTRACT.constraints,
       refinancingEnabled: false,

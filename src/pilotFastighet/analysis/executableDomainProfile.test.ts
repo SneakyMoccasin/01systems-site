@@ -112,7 +112,7 @@ test("normal configured selection derives its trusted profile from domain only",
   assert.equal(source.domainId, "municipal");
   assert.equal(source.profileId, "legacy-municipal-v1");
   assert.equal(source.modelVersion, "pilot-fastighet-v0.4");
-  assert.equal(source.calibrationVersion, "transport-propagation-isolated-v1");
+  assert.equal(source.calibrationVersion, "transport-causal-subset-v2");
 });
 
 test("configured and scheduled boundaries carry one unchanged profile identity", () => {
