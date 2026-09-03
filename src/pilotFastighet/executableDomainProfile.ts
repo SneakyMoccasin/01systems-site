@@ -12,6 +12,13 @@ export type ExecutableProfileId =
   | "legacy-municipal-v1"
   | "legacy-consulting-v1";
 
+export type ExecutableIdentity = Readonly<{
+  domainId: DomainKey;
+  profileId: ExecutableProfileId;
+  modelVersion: string;
+  calibrationVersion: string;
+}>;
+
 export type ExecutableConstraintPolicy = Readonly<{
   refinancingEnabled: boolean;
   refinancingMarginThreshold: number;

@@ -24,6 +24,15 @@ import {
   type ScenarioExecutionProvenance,
   type ScenarioSchedules,
 } from "@/src/pilotFastighet/analysis/reactScheduledAnalysisBoundary";
+import type { ExecutableIdentity } from "@/src/pilotFastighet/executableDomainProfile";
+import {
+  calculateCompatibleSavedMarginDelta,
+  createSavedRunSnapshot,
+  evaluateSavedRunPair,
+  getSavedRunMismatchMessage,
+  loadSavedRunHistory,
+  type SavedRunSnapshot,
+} from "@/src/pilotFastighet/analysis/savedRunPersistence";
 import {
   DEFAULT_MANUAL_EXECUTION_MODE,
   formatManualScheduleIssue,
@@ -293,15 +302,10 @@ const TOP_LEVEL_GOAL_LABELS = {
 
 function loadHistory(key: string) {
   if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
+  return loadSavedRunHistory(localStorage, key);
 }
 
-function saveHistory(key: string, history: any[]) {
+function saveHistory(key: string, history: readonly SavedRunSnapshot[]) {
   if (typeof window === "undefined") return;
   localStorage.setItem(key, JSON.stringify(history));
 }
@@ -325,18 +329,6 @@ export default function PilotFastighetPage() {
   profileCount("PilotFastighetPage.render");
 
   type ScenarioId = "A" | "B" | "BOTH";
-
-  type FrozenSnapshot = {
-    snapshotId: string;
-    label?: string;
-    createdAt: number;
-    engineState: EngineState;
-    metadata: {
-      caseId: string | null;
-      scenario: "A" | "B";
-      modelVersion: string;
-    };
-  };
 
   const [riskStateBaseline, setRiskStateBaseline] = useState<
     Record<string, RiskLevel>
@@ -363,9 +355,9 @@ export default function PilotFastighetPage() {
   const [showA, setShowA] = useState(true);
   const [showB, setShowB] = useState(true);
 
-  const [historyA, setHistoryA] = useState<FrozenSnapshot[]>([]);
-  const [historyB, setHistoryB] = useState<FrozenSnapshot[]>([]);
-  const [historyBaseline, setHistoryBaseline] = useState<FrozenSnapshot[]>([]);
+  const [historyA, setHistoryA] = useState<SavedRunSnapshot[]>([]);
+  const [historyB, setHistoryB] = useState<SavedRunSnapshot[]>([]);
+  const [historyBaseline, setHistoryBaseline] = useState<SavedRunSnapshot[]>([]);
   const [selectedSnapA, setSelectedSnapA] = useState<string>("");
   const [selectedSnapB, setSelectedSnapB] = useState<string>("");
   const [snapshotLabels, setSnapshotLabels] = useState<Record<string, string>>(
@@ -492,6 +484,8 @@ export default function PilotFastighetPage() {
   });
 
   const playbackRef = useRef<PreconfiguredPlayback | null>(null);
+  const pendingExecutionIdentityRef = useRef<ExecutableIdentity | null>(null);
+  const completedExecutionIdentityRef = useRef<ExecutableIdentity | null>(null);
   const currentStateARef = useRef<EngineState | null>(null);
   const currentStateBRef = useRef<EngineState | null>(null);
   const playbackGenerationRef = useRef(0);
@@ -710,6 +704,8 @@ export default function PilotFastighetPage() {
     setRevealedPlaybackStep(0);
     setNaturallyCompletedRun(false);
     playbackRef.current = null;
+    pendingExecutionIdentityRef.current = null;
+    completedExecutionIdentityRef.current = null;
     currentStateARef.current = null;
     currentStateBRef.current = null;
     setMarginHistoryA([]);
@@ -752,6 +748,7 @@ export default function PilotFastighetPage() {
             runSource,
           });
     const { analysis } = boundaryResult;
+    pendingExecutionIdentityRef.current = boundaryResult.executionProfile;
     scheduledProvenanceRef.current = boundaryResult.provenance;
     setScheduledProvenance(boundaryResult.provenance);
     const playback = createPreconfiguredPlayback(analysis, simulationHorizon);
@@ -838,6 +835,7 @@ export default function PilotFastighetPage() {
             setDemandHistoryB([...snapshot.demandHistoryB]);
             setMarginHistoryBaseline([...snapshot.marginHistoryBaseline]);
             if (snapshot.isCompleted) {
+              completedExecutionIdentityRef.current = pendingExecutionIdentityRef.current;
               setHasSimulationCompleted(true);
               setNaturallyCompletedRun(true);
               setIsRunning(false);
@@ -898,17 +896,17 @@ export default function PilotFastighetPage() {
   const isEditableScenario = activeScenario === "A" || activeScenario === "B";
 
   function freezeScenarioA() {
-    const snap: FrozenSnapshot = {
+    const executionIdentity = completedExecutionIdentityRef.current;
+    if (!executionIdentity) return;
+    const snap = createSavedRunSnapshot({
       snapshotId: new Date().toISOString(),
       label: "Scenario A",
       createdAt: Date.now(),
       engineState: JSON.parse(JSON.stringify(stateA)),
-      metadata: {
-        caseId: selectedPilotCaseId ?? null,
-        scenario: "A",
-        modelVersion: "pilot-fastighet-v0.4",
-      },
-    };
+      caseId: selectedPilotCaseId ?? null,
+      scenario: "A",
+      executionIdentity,
+    });
     const next = [snap, ...historyA];
     setHistoryA(next);
     saveHistory(STORAGE_KEY_A, next);
@@ -917,17 +915,17 @@ export default function PilotFastighetPage() {
   }
 
   function freezeScenarioB() {
-    const snap: FrozenSnapshot = {
+    const executionIdentity = completedExecutionIdentityRef.current;
+    if (!executionIdentity) return;
+    const snap = createSavedRunSnapshot({
       snapshotId: new Date().toISOString(),
       label: "Scenario B",
       createdAt: Date.now(),
       engineState: JSON.parse(JSON.stringify(stateB)),
-      metadata: {
-        caseId: selectedPilotCaseId ?? null,
-        scenario: "B",
-        modelVersion: "pilot-fastighet-v0.4",
-      },
-    };
+      caseId: selectedPilotCaseId ?? null,
+      scenario: "B",
+      executionIdentity,
+    });
     const next = [snap, ...historyB];
     setHistoryB(next);
     saveHistory(STORAGE_KEY_B, next);
@@ -951,6 +949,10 @@ export default function PilotFastighetPage() {
 
   const snapA = historyA.find((s) => s.snapshotId === selectedSnapA) ?? null;
   const snapB = historyB.find((s) => s.snapshotId === selectedSnapB) ?? null;
+  const frozenComparisonPolicy =
+    snapA != null && snapB != null
+      ? evaluateSavedRunPair(snapA, snapB)
+      : null;
 
   const tippingIndexA = findTippingIndex(historyA);
   const tippingIndexB = findTippingIndex(historyB);
@@ -961,7 +963,7 @@ export default function PilotFastighetPage() {
 
   const deltaMargin =
     snapA != null && snapB != null
-      ? snapB.engineState.margin - snapA.engineState.margin
+      ? calculateCompatibleSavedMarginDelta(snapA, snapB) ?? undefined
       : undefined;
   const lifecycleA =
     snapA?.engineState?.registry?.RefinancingConstraint?.lifecycle ?? undefined;
@@ -979,7 +981,7 @@ export default function PilotFastighetPage() {
         })
       : null;
 
-  function getDisplayLabel(snap: FrozenSnapshot): string {
+  function getDisplayLabel(snap: SavedRunSnapshot): string {
     return snapshotLabels[snap.snapshotId] ?? snap.label ?? snap.snapshotId;
   }
 
@@ -4582,33 +4584,56 @@ export default function PilotFastighetPage() {
             <br />
             <strong>{`${scenarioBLabelText}:`}</strong> {snapB.engineState.margin.toFixed(3)}
             <br />
-            <strong>Margin impact:</strong> {(snapB.engineState.margin - snapA.engineState.margin).toFixed(3)}
-            <br />
-            <strong>Tipping (ACTIVE):</strong>{" "}
-{tippingStepA != null ? `${scenarioALabelText}: M${tippingStepA}` : `${scenarioALabelText}: never`} |{" "}
-              {tippingStepB != null ? `${scenarioBLabelText}: M${tippingStepB}` : `${scenarioBLabelText}: never`}
-            <br />
-            {executiveConclusion != null && (
+            {frozenComparisonPolicy != null &&
+            !frozenComparisonPolicy.comparable ? (
+              <div
+                role="status"
+                style={{
+                  marginTop: "12px",
+                  padding: "10px 12px",
+                  color: semanticTheme.secondaryText,
+                  background: semanticTheme.subtleSurface,
+                  border: `1px solid ${semanticTheme.border}`,
+                  borderRadius: "4px",
+                }}
+              >
+                {getSavedRunMismatchMessage(
+                  frozenComparisonPolicy,
+                  uiLanguage
+                )}
+              </div>
+            ) : (
               <>
-                <strong>Conclusion:</strong> {executiveConclusion.title}
+                <strong>Margin impact:</strong>{" "}
+                {(snapB.engineState.margin - snapA.engineState.margin).toFixed(3)}
                 <br />
-                {executiveConclusion.tags.length > 0 && (
+                <strong>Tipping (ACTIVE):</strong>{" "}
+                {tippingStepA != null ? `${scenarioALabelText}: M${tippingStepA}` : `${scenarioALabelText}: never`} |{" "}
+                {tippingStepB != null ? `${scenarioBLabelText}: M${tippingStepB}` : `${scenarioBLabelText}: never`}
+                <br />
+                {executiveConclusion != null && (
                   <>
-                    <strong>Tags:</strong> {executiveConclusion.tags.join(", ")}
+                    <strong>Conclusion:</strong> {executiveConclusion.title}
                     <br />
+                    {executiveConclusion.tags.length > 0 && (
+                      <>
+                        <strong>Tags:</strong> {executiveConclusion.tags.join(", ")}
+                        <br />
+                      </>
+                    )}
                   </>
                 )}
-              </>
-            )}
-            {showTechnicalDetails && (
-              <>
-                <strong>{`Refinancing lifecycle (${scenarioALabelText}):`}</strong> {snapA.engineState.registry.RefinancingConstraint.lifecycle}
-                <br />
-                <strong>{`Refinancing lifecycle (${scenarioBLabelText}):`}</strong> {snapB.engineState.registry.RefinancingConstraint.lifecycle}
-                <br />
-                <strong>{`Step (${scenarioALabelText}):`}</strong> {snapA.engineState.step}
-                <br />
-                <strong>{`Step (${scenarioBLabelText}):`}</strong> {snapB.engineState.step}
+                {showTechnicalDetails && (
+                  <>
+                    <strong>{`Refinancing lifecycle (${scenarioALabelText}):`}</strong> {snapA.engineState.registry.RefinancingConstraint.lifecycle}
+                    <br />
+                    <strong>{`Refinancing lifecycle (${scenarioBLabelText}):`}</strong> {snapB.engineState.registry.RefinancingConstraint.lifecycle}
+                    <br />
+                    <strong>{`Step (${scenarioALabelText}):`}</strong> {snapA.engineState.step}
+                    <br />
+                    <strong>{`Step (${scenarioBLabelText}):`}</strong> {snapB.engineState.step}
+                  </>
+                )}
               </>
             )}
           </div>

@@ -18,6 +18,7 @@ import {
 import type { DomainKey } from "@/src/i18n/pulseLanguage";
 import {
   resolveExecutableDomainProfile,
+  type ExecutableIdentity,
   type ExecutableProfileId,
 } from "../executableDomainProfile";
 
@@ -52,12 +53,7 @@ export type ScenarioExecutionProvenance = Readonly<{
 export type ReactAnalysisBoundaryResult = Readonly<{
   analysis: AnalyticalResults | ScheduledAnalyticalResults;
   provenance: ScenarioExecutionProvenance;
-  executionProfile: Readonly<{
-    profileId: ExecutableProfileId;
-    domainId: DomainKey;
-    modelVersion: string;
-    calibrationVersion: string;
-  }>;
+  executionProfile: ExecutableIdentity;
 }>;
 
 function getExecutionProfileMetadata(runSource: CleanRunSourceSnapshot) {
