@@ -707,7 +707,7 @@ const AIInterpretationPanel: React.FC<Props> = ({
         </div>
         <div
           style={{
-            fontSize: "11px",
+            fontSize: "12px",
             color: "var(--ce-text-secondary, #9CA3AF)",
             marginTop: "4px",
           }}

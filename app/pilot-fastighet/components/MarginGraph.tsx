@@ -849,7 +849,7 @@ function MarginGraph({
       )}
       {!execRealEstateGraphPassive && (
       <div style={{ marginBottom: 8 }}>
-        <span style={{ marginRight: 6, color: theme.subtext ?? "#9ca3af", fontSize: "11px" }}>
+        <span style={{ marginRight: 6, color: "var(--ce-text-secondary, #9ca3af)", fontSize: "12px" }}>
           {t.viewLabel}
         </span>
         <div
@@ -899,8 +899,8 @@ function MarginGraph({
         <label
           style={{
             marginLeft: 12,
-            fontSize: "11px",
-            color: theme.subtext ?? "#9ca3af",
+            fontSize: "12px",
+            color: "var(--ce-text-secondary, #9ca3af)",
             display: "inline-flex",
             alignItems: "center",
             gap: 6,
@@ -1847,11 +1847,11 @@ export function MarginGraphLegendRow({
       : "Stabilised structural margin level";
   const labelStyle = {
     fontSize: compactExecutivePresentation ? "9.5px" : "11px",
-    color: compactExecutivePresentation ? "#94a3b8" : "#9CA3AF",
+    color: compactExecutivePresentation ? "#94a3b8" : "var(--ce-text-secondary, #9CA3AF)",
   } as const;
   const rowStyle = {
     fontSize: compactExecutivePresentation ? "11px" : "12px",
-    color: "#9CA3AF",
+    color: compactExecutivePresentation ? "#9CA3AF" : "var(--ce-text-secondary, #9CA3AF)",
     display: "flex",
     gap: compactExecutivePresentation ? "8px" : "12px",
     alignItems: "center",
@@ -1932,7 +1932,7 @@ export function MarginGraphLegendRow({
         )}
       </div>
       {!compactExecutivePresentation && (
-      <div style={{ marginBottom: "6px", fontSize: "12px", opacity: 0.85 }}>
+      <div style={{ marginBottom: "6px", fontSize: "12px", color: "var(--ce-text-secondary, #9CA3AF)" }}>
         {scenarioComparisonLabel}
       </div>
       )}

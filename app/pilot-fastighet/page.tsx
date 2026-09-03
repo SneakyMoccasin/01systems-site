@@ -65,14 +65,11 @@ import { SnapshotCompare } from "@/src/pilotFastighet/components/SnapshotCompare
 import { ExecutiveSummaryCard } from "@/app/pilot-fastighet/components/ExecutiveSummaryCard";
 import AIInterpretationPanel from "./components/AIInterpretationPanel";
 import PromptDock from "./components/PromptDock";
-import ScenarioPromptDock from "./components/ScenarioPromptDock";
-import ScenarioLibrary from "./components/ScenarioLibrary";
 import ScenarioInterpretationPanel from "./components/ScenarioInterpretationPanel";
 import WhyPanel from "./components/WhyPanel";
 import ScenarioOutcomePanel from "./components/ScenarioOutcomePanel";
 import SystemDriversPanel from "./components/SystemDriversPanel";
 import DecisionExplanationPanel from "./components/DecisionExplanationPanel";
-import ScenarioPreviewPanel from "./components/ScenarioPreviewPanel";
 import AIInspectorPanel from "./components/AIInspectorPanel";
 import ScenarioPresetsPanel from "@/app/pilot-fastighet/components/ScenarioPresetsPanel";
 import { mapRiskLabelToPolicyLabel } from "@/app/pilot-fastighet/components/inspector-utils/mapRiskLabelToPolicyLabel";
@@ -3272,7 +3269,7 @@ export default function PilotFastighetPage() {
             </>
           ) : (
             <>
-              <div className="text-xs text-slate-500">
+              <div className="text-xs" style={{ color: semanticTheme.secondaryText }}>
                 {caseType === "real-estate"
                   ? `${pt.transportGraphFocusPrefix} ${pt.transportGraphFocusRealEstate}`
                   : `${pt.transportGraphFocusPrefix} ${
@@ -3288,15 +3285,15 @@ export default function PilotFastighetPage() {
                     }`}
               </div>
 
-              <div className="text-xs text-slate-400 leading-relaxed max-w-xl">
+              <div className="max-w-xl text-xs leading-relaxed" style={{ color: semanticTheme.secondaryText }}>
                 {caseType === "real-estate"
                   ? pt.transportGraphDescriptionRealEstate
                   : pt.transportGraphDescriptionTransport}
               </div>
               <button
                 onClick={() => setShowDriverActivations((prev) => !prev)}
-                className="text-xs text-slate-400 hover:text-slate-200"
-                style={{ alignSelf: "flex-start" }}
+                className="text-xs"
+                style={{ alignSelf: "flex-start", color: semanticTheme.secondaryText }}
               >
                 {caseType === "real-estate"
                   ? showDriverActivations
@@ -4044,135 +4041,6 @@ export default function PilotFastighetPage() {
           <option value="consulting">{pt.pilotDomainTitle.consulting}</option>
         </select>
         )}
-        {!executiveDemoMode && (
-          <>
-        <div>
-        <ScenarioLibrary
-          domain={domain}
-          language={uiLanguage}
-          scenarioTarget={editableScenario}
-          onScenarioTargetChange={
-            activeScenario === "BOTH"
-              ? (target) => {
-                  setManualScenarioTarget(target);
-                }
-              : undefined
-          }
-          onSelectScenario={(presetId) => {
-            const presetLibrary = getScenarioLibrary(uiLanguage);
-            const preset = presetLibrary.find((p) => p.id === presetId);
-            const prompt = preset?.prompt ?? "";
-            const nextPresetState = getRiskStateAfterPreset(presetId) as RiskState;
-            const selectedActionKeys = preset?.actionKeys ?? [];
-            const knownActionKeys = new Set(Object.keys(ACTION_EFFECTS));
-            const applicableActions = selectedActionKeys.filter((a) => knownActionKeys.has(a));
-            const missingActionKeys = selectedActionKeys.filter((a) => !knownActionKeys.has(a));
-            if (missingActionKeys.length > 0) {
-              console.warn("[PULSE TRANSPORT] Missing intervention keys:", missingActionKeys);
-            }
-            const resolvedScenarioState = resolveActionDrivenState(
-              nextPresetState,
-              applicableActions
-            );
-            const applyTo = editableScenario;
-
-            if (editableScenario === "A") {
-              setBaseRiskStateA(structuredClone(nextPresetState));
-              setRiskStateA(
-                structuredClone(
-                  effectiveExecutionMode === "actions-over-time"
-                    ? nextPresetState
-                    : resolvedScenarioState.riskState
-                )
-              );
-              setDriverScoresA(
-                effectiveExecutionMode === "actions-over-time"
-                  ? buildDriverScoreState(nextPresetState)
-                  : resolvedScenarioState.driverScores
-              );
-              setScenarioPromptA(prompt);
-              setAppliedScenarioAId(presetId);
-              setSelectedActionsA(applicableActions);
-              setScenarioSchedules((current) => clearScenarioSchedule(current, "A"));
-            }
-            if (editableScenario === "B") {
-              setBaseRiskStateB(structuredClone(nextPresetState));
-              setRiskStateB(
-                structuredClone(
-                  effectiveExecutionMode === "actions-over-time"
-                    ? nextPresetState
-                    : resolvedScenarioState.riskState
-                )
-              );
-              setDriverScoresB(
-                effectiveExecutionMode === "actions-over-time"
-                  ? buildDriverScoreState(nextPresetState)
-                  : resolvedScenarioState.driverScores
-              );
-              setScenarioPromptB(prompt);
-              setAppliedScenarioBId(presetId);
-              setSelectedActionsB(applicableActions);
-              setScenarioSchedules((current) => clearScenarioSchedule(current, "B"));
-            }
-
-            if (applyTo === "A") {
-              setScenarioALabel(preset?.id ?? "");
-            } else {
-              setScenarioBLabel(preset?.id ?? "");
-            }
-
-            setIsDirty(true);
-            if (presetId === "interest-shock") {
-            }
-          }}
-        />
-        </div>
-        <ScenarioPromptDock
-          language={uiLanguage}
-          onScenarioSubmit={handleScenarioSubmit}
-          scenarioHistory={scenarioHistory}
-          onSimulationSourceChange={(source) => setSimulationSource(source)}
-          scenarioPromptA={scenarioPromptA}
-          scenarioPromptB={scenarioPromptB}
-          onScenarioPromptAChange={setScenarioPromptA}
-          onScenarioPromptBChange={setScenarioPromptB}
-        />
-        <ScenarioPreviewPanel
-          visible={previewVisible}
-          changesA={previewChangesA}
-          changesB={previewChangesB}
-          scenarioTextA={previewScenarioTextA}
-          scenarioTextB={previewScenarioTextB}
-          language={uiLanguage}
-          onApply={() => {
-            const preview = prepareScenarioPreviewRun({
-              configuredSelection: getConfiguredRunSelection(),
-              editableScenario,
-              changesA: previewChangesA,
-              changesB: previewChangesB,
-            });
-            if (editableScenario === "A") {
-              setBaseRiskStateA(structuredClone(preview.persistedBaseRiskStateA));
-              setRiskStateA(structuredClone(preview.persistedScenarioA.initialRiskState));
-              setDriverScoresA(
-                structuredClone(preview.persistedScenarioA.initialDriverScores)
-              );
-            } else {
-              setBaseRiskStateB(structuredClone(preview.persistedBaseRiskStateB));
-              setRiskStateB(structuredClone(preview.persistedScenarioB.initialRiskState));
-              setDriverScoresB(
-                structuredClone(preview.persistedScenarioB.initialDriverScores)
-              );
-            }
-            startSimulation("manual", preview.runSource);
-            setPreviewVisible(false);
-          }}
-          onCancel={() => {
-            setPreviewVisible(false);
-          }}
-        />
-          </>
-        )}
         {false && (
           <PromptDock
             language={uiLanguage}
@@ -4264,7 +4132,7 @@ export default function PilotFastighetPage() {
             {`Frozen Snapshots — ${scenarioALabelText}`}
           </div>
           {historyA.length === 0 ? (
-            <div style={{ fontSize: "13px", color: "#6b7280" }}>No snapshots yet.</div>
+            <div style={{ fontSize: "13px", color: semanticTheme.mutedText }}>No snapshots yet.</div>
           ) : (
             <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
               {historyA.map((s) => (
@@ -4340,7 +4208,7 @@ export default function PilotFastighetPage() {
                                 padding: "2px 4px",
                                 background: "transparent",
                                 border: "none",
-                                color: "#6b7280",
+                                color: semanticTheme.secondaryText,
                                 cursor: "pointer",
                                 fontSize: "12px",
                               }}
@@ -4413,7 +4281,7 @@ export default function PilotFastighetPage() {
             {`Frozen Snapshots — ${scenarioBLabelText}`}
           </div>
           {historyB.length === 0 ? (
-            <div style={{ fontSize: "13px", color: "#6b7280" }}>No snapshots yet.</div>
+            <div style={{ fontSize: "13px", color: semanticTheme.mutedText }}>No snapshots yet.</div>
           ) : (
             <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
               {historyB.map((s) => (
@@ -4489,7 +4357,7 @@ export default function PilotFastighetPage() {
                                 padding: "2px 4px",
                                 background: "transparent",
                                 border: "none",
-                                color: "#6b7280",
+                                color: semanticTheme.secondaryText,
                                 cursor: "pointer",
                                 fontSize: "12px",
                               }}

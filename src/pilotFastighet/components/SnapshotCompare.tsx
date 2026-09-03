@@ -85,7 +85,7 @@ export const SnapshotCompare: React.FC<Props> = ({
         >
           <div
             style={{
-              fontSize: "11px",
+              fontSize: "12px",
               fontWeight: 600,
               letterSpacing: "0.06em",
               color: "var(--ce-text-secondary, #9CA3AF)",
@@ -122,7 +122,7 @@ export const SnapshotCompare: React.FC<Props> = ({
         >
           <div
             style={{
-              fontSize: "11px",
+              fontSize: "12px",
               fontWeight: 600,
               letterSpacing: "0.06em",
               color: "var(--ce-text-secondary, #9CA3AF)",
@@ -171,7 +171,7 @@ export const SnapshotCompare: React.FC<Props> = ({
             borderLeftColor: deltaMargin < 0 ? "#DC2626" : deltaMargin > 0 ? "#059669" : "#6B7280",
           }}
         >
-          <div style={{ fontSize: "11px", color: "var(--ce-text-secondary, #9CA3AF)", marginBottom: "4px" }}>
+          <div style={{ fontSize: "12px", color: "var(--ce-text-secondary, #9CA3AF)", marginBottom: "4px" }}>
             Δ Margin
           </div>
           <div
@@ -186,7 +186,7 @@ export const SnapshotCompare: React.FC<Props> = ({
           </div>
         </div>
         <div>
-          <div style={{ fontSize: "11px", color: "var(--ce-text-secondary, #9CA3AF)", marginBottom: "4px" }}>
+          <div style={{ fontSize: "12px", color: "var(--ce-text-secondary, #9CA3AF)", marginBottom: "4px" }}>
             {tippingLabel}
           </div>
           <div style={{ fontSize: "14px", color: "var(--ce-text-primary, #E5E7EB)" }}>

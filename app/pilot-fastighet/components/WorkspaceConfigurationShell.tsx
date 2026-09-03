@@ -68,7 +68,7 @@ type Props = {
   modelSetup?: ReactNode;
   children?: ReactNode;
   appearance?: {
-    border: string; strongDivider: string; primaryText: string; secondaryText: string;
+    border: string; strongDivider: string; primaryText: string; secondaryText: string; mutedText: string;
     elevatedSurface: string; controlBackground: string; criticalState: string; shadow: string;
   };
 };
@@ -170,12 +170,12 @@ export default function WorkspaceConfigurationShell({
       className="flex h-full min-h-0 flex-col overflow-hidden"
       style={{ borderColor: "var(--ce-border)", background: "var(--ce-surface-elevated)", color: "var(--ce-text-primary)" }}
     >
-      <header className="flex shrink-0 items-center gap-2 border-b border-slate-800 px-4 py-3">
+      <header className="flex shrink-0 items-center gap-2 border-b px-4 py-3" style={{ borderColor: "var(--ce-border)" }}>
         <div className="min-w-0 flex-1">
-          <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+          <div className="text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: "var(--ce-text-muted)" }}>
             {copy.configuration}
           </div>
-          <div className="mt-0.5 text-sm font-semibold text-slate-100">
+          <div className="mt-0.5 text-sm font-semibold" style={{ color: "var(--ce-text-primary)" }}>
             {state.activeSection === "interventions"
               ? copy.interventions
               : copy.drivers}
@@ -186,7 +186,8 @@ export default function WorkspaceConfigurationShell({
           aria-label={state.pinned ? copy.unpin : copy.pin}
           aria-pressed={state.pinned}
           onClick={togglePin}
-          className="hidden rounded-md border border-slate-700 bg-transparent px-2.5 py-1.5 text-xs font-medium text-slate-400 transition hover:border-slate-600 hover:text-slate-100 lg:inline-flex"
+          className="hidden rounded-md border bg-transparent px-2.5 py-1.5 text-xs font-medium transition lg:inline-flex"
+          style={{ borderColor: "var(--ce-border)", color: "var(--ce-text-secondary)" }}
         >
           {state.pinned ? copy.unpin : copy.pin}
         </button>
@@ -194,7 +195,8 @@ export default function WorkspaceConfigurationShell({
           type="button"
           aria-label={copy.close}
           onClick={close}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-700 bg-transparent text-lg leading-none text-slate-400 transition hover:border-slate-600 hover:text-slate-100"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md border bg-transparent text-lg leading-none transition"
+          style={{ borderColor: "var(--ce-border)", color: "var(--ce-text-secondary)", outlineColor: "var(--ce-focus-ring)" }}
         >
           ×
         </button>
@@ -204,7 +206,8 @@ export default function WorkspaceConfigurationShell({
 
       <nav
         aria-label={copy.configuration}
-        className="flex shrink-0 border-b border-slate-800 px-4"
+        className="flex shrink-0 border-b px-4"
+        style={{ borderColor: "var(--ce-border)" }}
       >
         {(["interventions", "drivers"] as const).map((section) => {
           const selected = state.activeSection === section;
@@ -246,6 +249,7 @@ export default function WorkspaceConfigurationShell({
               "--ce-divider-strong": appearance?.strongDivider,
               "--ce-text-primary": appearance?.primaryText,
               "--ce-text-secondary": appearance?.secondaryText,
+              "--ce-text-muted": appearance?.mutedText,
               "--ce-surface-elevated": appearance?.elevatedSurface,
               "--ce-control-bg": appearance?.controlBackground,
               "--ce-critical": appearance?.criticalState,
@@ -311,7 +315,7 @@ export default function WorkspaceConfigurationShell({
         className="mb-4 flex min-w-0 flex-wrap items-center justify-end gap-3 border-b pb-3"
         style={{ borderColor: "var(--ce-border)" }}
       >
-        <div className="flex min-w-0 items-center gap-3 text-xs text-slate-500">
+        <div className="flex min-w-0 items-center gap-3 text-xs" style={{ color: "var(--ce-text-secondary)" }}>
           {validationCount > 0 && (
             <button
               type="button"
@@ -336,7 +340,7 @@ export default function WorkspaceConfigurationShell({
           }}
         >
           <span className="text-sm font-medium">{copy.configuration}</span>
-          <span className="border-l border-slate-700 pl-3 text-[11px] font-normal text-slate-500">
+          <span className="border-l pl-3 text-xs font-normal" style={{ borderColor: "var(--ce-border)", color: "var(--ce-text-secondary)" }}>
             {`${copy.interventions} ${interventionsCount} · ${copy.drivers} ${driversCount}`}
           </span>
           {(validationCount > 0 || changed) && (

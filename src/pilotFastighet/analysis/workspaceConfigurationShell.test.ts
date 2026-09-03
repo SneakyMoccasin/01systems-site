@@ -298,12 +298,12 @@ test("normal workspace capabilities remain mounted outside the configuration she
     "MarginGraph",
     "AIInspectorPanel",
     "AIInterpretationPanel",
-    "ScenarioLibrary",
-    "ScenarioPromptDock",
-    "ScenarioPreviewPanel",
     "SnapshotCompare",
   ]) {
     assert.match(PAGE, new RegExp(`<${component}\\b`), component);
+  }
+  for (const retiredSurface of ["ScenarioLibrary", "ScenarioPromptDock", "ScenarioPreviewPanel"]) {
+    assert.doesNotMatch(PAGE, new RegExp(`<${retiredSurface}\\b`), retiredSurface);
   }
   assert.match(PAGE, /historyA/);
   assert.match(PAGE, /historyB/);

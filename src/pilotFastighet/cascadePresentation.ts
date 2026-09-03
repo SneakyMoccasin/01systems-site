@@ -16,8 +16,8 @@ export const CASCADE_THEME_TOKENS = {
   light: {
     pageBackground: "#F5F6F8", primarySurface: "#FFFFFF", subtleSurface: "#F7F8FA",
     elevatedSurface: "#FFFFFF", graphSurface: "#FCFCFD", border: "#D0D5DD",
-    strongDivider: "#B8C0CC", primaryText: "#111827", secondaryText: "#374151",
-    mutedText: "#667085", disabledText: "#98A2B3", controlBackground: "#FFFFFF", controlHover: "#F2F4F7",
+    strongDivider: "#B8C0CC", primaryText: "#101828", secondaryText: "#344054",
+    mutedText: "#475467", disabledText: "#98A2B3", controlBackground: "#FFFFFF", controlHover: "#F2F4F7",
     selectedControl: "#E7ECF3", focusRing: "#2563EB", shadow: "rgba(15, 23, 42, 0.10)",
     criticalState: "#DC2626", scenarioA: "#3B82F6", scenarioB: "#F59E0B",
   },
