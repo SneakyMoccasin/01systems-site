@@ -63,7 +63,7 @@ function EffectList({
             : getRiskLabel(riskKey);
         const arrow = isIncrease(change) ? "↑" : "↓";
         return (
-          <li key={`${change.parameter}-${idx}`} style={{ fontSize: "12px", color: "#374151", marginBottom: "4px" }}>
+          <li key={`${change.parameter}-${idx}`} style={{ fontSize: "12px", color: "var(--ce-text-primary)", marginBottom: "4px", overflowWrap: "anywhere" }}>
             {label} {arrow}
           </li>
         );
@@ -87,8 +87,8 @@ const ScenarioInterpretationPanel: React.FC<Props> = ({
   return (
     <div
       style={{
-        background: "#111827",
-        border: "1px solid #1f2937",
+        background: "var(--ce-surface-subtle)",
+        border: "1px solid var(--ce-border)",
         borderRadius: "6px",
         padding: "10px",
         marginTop: "16px",
@@ -98,7 +98,7 @@ const ScenarioInterpretationPanel: React.FC<Props> = ({
         style={{
           fontSize: "13px",
           fontWeight: 600,
-          color: "#e5e7eb",
+          color: "var(--ce-text-primary)",
           marginBottom: "8px",
         }}
       >
@@ -109,7 +109,7 @@ const ScenarioInterpretationPanel: React.FC<Props> = ({
           <div
             style={{
               fontSize: "12px",
-              color: "#374151",
+              color: "var(--ce-text-secondary)",
               marginBottom: "4px",
               fontStyle: "italic",
             }}
@@ -119,7 +119,7 @@ const ScenarioInterpretationPanel: React.FC<Props> = ({
           <div
             style={{
               fontSize: "12px",
-              color: "#374151",
+              color: "var(--ce-text-secondary)",
               marginBottom: "8px",
               fontStyle: "italic",
             }}
@@ -128,21 +128,21 @@ const ScenarioInterpretationPanel: React.FC<Props> = ({
           </div>
         </>
       )}
-      <div style={{ fontSize: "12px", marginBottom: "4px", fontWeight: 600, color: "#e5e7eb" }}>
+      <div style={{ fontSize: "12px", marginBottom: "4px", fontWeight: 600, color: "var(--ce-text-primary)" }}>
         {t.detectedDrivers}
       </div>
       {!hasAny ? (
-        <div style={{ fontSize: "12px", color: "#6B7280" }}>
+        <div style={{ fontSize: "12px", color: "var(--ce-text-muted)" }}>
           {t.noDriversDetected}
         </div>
       ) : (
         <>
           <div style={{ marginBottom: "8px" }}>
-            <div style={{ fontSize: "11px", color: "#9CA3AF", marginBottom: "4px" }}>
+            <div style={{ fontSize: "11px", color: "var(--ce-text-secondary)", marginBottom: "4px" }}>
               Scenario A
             </div>
             {parsedScenarioEffectsA.length === 0 ? (
-              <div style={{ fontSize: "12px", color: "#6B7280" }}>
+              <div style={{ fontSize: "12px", color: "var(--ce-text-muted)" }}>
                 {t.noDriversDetected}
               </div>
             ) : (
@@ -150,11 +150,11 @@ const ScenarioInterpretationPanel: React.FC<Props> = ({
             )}
           </div>
           <div>
-            <div style={{ fontSize: "11px", color: "#9CA3AF", marginBottom: "4px" }}>
+            <div style={{ fontSize: "11px", color: "var(--ce-text-secondary)", marginBottom: "4px" }}>
               Scenario B
             </div>
             {parsedScenarioEffectsB.length === 0 ? (
-              <div style={{ fontSize: "12px", color: "#6B7280" }}>
+              <div style={{ fontSize: "12px", color: "var(--ce-text-muted)" }}>
                 {t.noDriversDetected}
               </div>
             ) : (

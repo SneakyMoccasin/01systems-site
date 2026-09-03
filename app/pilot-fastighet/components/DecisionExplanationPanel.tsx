@@ -45,8 +45,8 @@ const DecisionExplanationPanel: React.FC<Props> = ({
   return (
     <div
       style={{
-        background: "#0f172a",
-        border: "1px solid #1f2937",
+        background: "var(--ce-surface-subtle)",
+        border: "1px solid var(--ce-border)",
         borderRadius: "6px",
         padding: "12px",
         marginTop: "16px",
@@ -56,7 +56,7 @@ const DecisionExplanationPanel: React.FC<Props> = ({
         style={{
           fontSize: "13px",
           fontWeight: 600,
-          color: "#e5e7eb",
+          color: "var(--ce-text-primary)",
           marginBottom: "10px",
         }}
       >
@@ -69,39 +69,39 @@ const DecisionExplanationPanel: React.FC<Props> = ({
           fontSize: "12px",
         }}
       >
-        <div style={{ display: "flex", gap: "8px" }}>
-          <span style={{ color: "#9CA3AF", minWidth: "160px" }}>
+        <div style={{ display: "flex", gap: "8px", minWidth: 0 }}>
+          <span style={{ color: "var(--ce-text-secondary)", minWidth: "160px" }}>
             {t.driverChange}:
           </span>
-          <span style={{ color: "#E5E7EB" }}>
+          <span style={{ color: "var(--ce-text-primary)", overflowWrap: "anywhere" }}>
             {primaryDriver
               ? `${driverLabels[primaryDriver] ?? riskLabels[primaryDriver] ?? primaryDriver} ↓`
               : "—"}
           </span>
         </div>
-        <div style={{ display: "flex", gap: "8px" }}>
-          <span style={{ color: "#9CA3AF", minWidth: "160px" }}>
+        <div style={{ display: "flex", gap: "8px", minWidth: 0 }}>
+          <span style={{ color: "var(--ce-text-secondary)", minWidth: "160px" }}>
             {t.cascadePropagation}:
           </span>
-          <span style={{ color: "#E5E7EB" }}>{cascadePropagation}</span>
+          <span style={{ color: "var(--ce-text-primary)", overflowWrap: "anywhere" }}>{cascadePropagation}</span>
         </div>
-        <div style={{ display: "flex", gap: "8px" }}>
-          <span style={{ color: "#9CA3AF", minWidth: "160px" }}>
+        <div style={{ display: "flex", gap: "8px", minWidth: 0 }}>
+          <span style={{ color: "var(--ce-text-secondary)", minWidth: "160px" }}>
             {t.pressureResponse}:
           </span>
-          <span style={{ color: "#E5E7EB" }}>{systemPressure ?? "—"}</span>
+          <span style={{ color: "var(--ce-text-primary)", overflowWrap: "anywhere" }}>{systemPressure ?? "—"}</span>
         </div>
-        <div style={{ display: "flex", gap: "8px" }}>
-          <span style={{ color: "#9CA3AF", minWidth: "160px" }}>
+        <div style={{ display: "flex", gap: "8px", minWidth: 0 }}>
+          <span style={{ color: "var(--ce-text-secondary)", minWidth: "160px" }}>
             {t.marginTrend}:
           </span>
-          <span style={{ color: "#E5E7EB" }}>{marginTrendLabel}</span>
+          <span style={{ color: "var(--ce-text-primary)", overflowWrap: "anywhere" }}>{marginTrendLabel}</span>
         </div>
-        <div style={{ display: "flex", gap: "8px" }}>
-          <span style={{ color: "#9CA3AF", minWidth: "160px" }}>
+        <div style={{ display: "flex", gap: "8px", minWidth: 0 }}>
+          <span style={{ color: "var(--ce-text-secondary)", minWidth: "160px" }}>
             {t.estimatedBreach}:
           </span>
-          <span style={{ color: "#E5E7EB" }}>{breachLabel}</span>
+          <span style={{ color: "var(--ce-text-primary)", overflowWrap: "anywhere" }}>{breachLabel}</span>
         </div>
       </div>
     </div>

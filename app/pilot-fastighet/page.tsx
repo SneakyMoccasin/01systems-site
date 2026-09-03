@@ -92,6 +92,7 @@ import ActionPanel, {
 import WorkspaceConfigurationShell from "./components/WorkspaceConfigurationShell";
 import ModelSetupSection from "./components/ModelSetupSection";
 import AppearanceControl from "./components/AppearanceControl";
+import ExpertModeSurface from "./components/ExpertModeSurface";
 import ScenarioSelectionControls from "./components/ScenarioSelectionControls";
 import MarginGraph, {
   MarginGraphLegendRow,
@@ -4649,99 +4650,38 @@ export default function PilotFastighetPage() {
       </div>
 
       {uiMode === "expert" && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            right: 0,
-            width: "38%",
-            height: "100%",
-            background: "rgba(11, 15, 20, 0.92)",
-            zIndex: 1000,
-            padding: "24px",
-            color: "#E5E7EB",
-            borderLeft: "1px solid #1F2937",
-            overflowY: "auto",
-          }}
+        <ExpertModeSurface
+          appearance={uiTheme}
+          title={pt.expertMode}
+          subtitle={pt.structuralInspectionLayer}
+          closeLabel={pt.expertCloseAriaLabel}
+          onClose={() => setUiMode("executive")}
         >
           <div
-            style={{
-              display: "flex",
-              alignItems: "flex-start",
-              justifyContent: "space-between",
-              gap: "16px",
-              marginBottom: "28px",
-              paddingBottom: "20px",
-              borderBottom: "1px solid #1F2937",
-            }}
-          >
-            <div>
-              <h2 style={{ margin: 0, fontSize: "18px", fontWeight: 600, color: "#E5E7EB" }}>
-                {pt.expertMode}
-              </h2>
-              <p style={{ margin: "6px 0 0", fontSize: "12px", color: "#9CA3AF" }}>
-                {pt.structuralInspectionLayer}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setUiMode("executive");
-              }}
-              aria-label={pt.expertCloseAriaLabel}
               style={{
-                flexShrink: 0,
-                width: "32px",
-                height: "32px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: 0,
-                background: "#1F2937",
-                border: "1px solid #374151",
-                borderRadius: "6px",
-                color: "#9CA3AF",
-                fontSize: "16px",
-                cursor: "pointer",
-                lineHeight: 1,
+                marginBottom: "18px",
+                paddingBottom: "10px",
+                borderBottom: "1px solid var(--ce-border)",
               }}
             >
-              ×
-            </button>
-          </div>
-
-          <div
-            style={{
-              marginBottom: "18px",
-              paddingBottom: "10px",
-              borderBottom: "1px solid #1f2937",
-            }}
-          >
-            <div
-              style={{
-                fontSize: "13px",
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-                color: "#9CA3AF",
-                marginBottom: "6px",
-              }}
-            >
-              {uiLanguage === "sv"
-                ? "Strukturell diagnostik"
-                : "Structural diagnostics"}
-            </div>
-
-            <div
-              style={{
-                fontSize: "15px",
-                color: "#E5E7EB",
-                fontWeight: 500,
-              }}
-            >
-              {uiLanguage === "sv"
-                ? "Modellens tillståndsinspektion och begränsningspropagering"
-                : "Model state inspection and constraint propagation structure"}
-            </div>
+              <div
+                style={{
+                  fontSize: "13px",
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  color: "var(--ce-text-secondary)",
+                  marginBottom: "6px",
+                }}
+              >
+                {uiLanguage === "sv"
+                  ? "Strukturell diagnostik"
+                  : "Structural diagnostics"}
+              </div>
+              <div style={{ fontSize: "15px", color: "var(--ce-text-primary)", fontWeight: 500, lineHeight: 1.45, overflowWrap: "anywhere" }}>
+                {uiLanguage === "sv"
+                  ? "Modellens tillståndsinspektion och begränsningspropagering"
+                  : "Model state inspection and constraint propagation structure"}
+              </div>
           </div>
 
           <SystemDriversPanel
@@ -4785,8 +4725,8 @@ export default function PilotFastighetPage() {
             style={{
               marginBottom: "28px",
               padding: "16px 20px",
-              background: "#111827",
-              border: "1px solid #1f2937",
+              background: "var(--ce-surface-subtle)",
+              border: "1px solid var(--ce-border)",
               borderRadius: "8px",
             }}
           >
@@ -4795,7 +4735,7 @@ export default function PilotFastighetPage() {
               style={{
                 fontSize: "13px",
                 fontWeight: 500,
-                color: "#9CA3AF",
+                color: "var(--ce-text-secondary)",
                 marginBottom: "12px",
               }}
             >
@@ -4814,11 +4754,11 @@ export default function PilotFastighetPage() {
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "baseline",
-                  color: "#6B7280",
+                  color: "var(--ce-text-muted)",
                 }}
               >
                 <span>minimumMargin</span>
-                <span style={{ color: "#9CA3AF", fontVariantNumeric: "tabular-nums" }}>
+                <span style={{ color: "var(--ce-text-primary)", fontVariantNumeric: "tabular-nums", overflowWrap: "anywhere" }}>
                   {expertMinimumMargin != null ? expertMinimumMargin.toFixed(4) : "—"}
                 </span>
               </div>
@@ -4827,11 +4767,11 @@ export default function PilotFastighetPage() {
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "baseline",
-                  color: "#6B7280",
+                  color: "var(--ce-text-muted)",
                 }}
               >
                 <span>collapseThreshold</span>
-                <span style={{ color: "#9CA3AF", fontVariantNumeric: "tabular-nums" }}>
+                <span style={{ color: "var(--ce-text-primary)", fontVariantNumeric: "tabular-nums", overflowWrap: "anywhere" }}>
                   {EXEC_COLLAPSE_THRESHOLD}
                 </span>
               </div>
@@ -4840,11 +4780,11 @@ export default function PilotFastighetPage() {
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "baseline",
-                  color: "#6B7280",
+                  color: "var(--ce-text-muted)",
                 }}
               >
                 <span>sustainThreshold</span>
-                <span style={{ color: "#9CA3AF", fontVariantNumeric: "tabular-nums" }}>
+                <span style={{ color: "var(--ce-text-primary)", fontVariantNumeric: "tabular-nums", overflowWrap: "anywhere" }}>
                   {EXEC_SUSTAIN_THRESHOLD}
                 </span>
               </div>
@@ -4853,11 +4793,11 @@ export default function PilotFastighetPage() {
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "baseline",
-                  color: "#6B7280",
+                  color: "var(--ce-text-muted)",
                 }}
               >
                 <span>{pt.tippingStep}</span>
-                <span style={{ color: "#9CA3AF", fontVariantNumeric: "tabular-nums" }}>
+                <span style={{ color: "var(--ce-text-primary)", fontVariantNumeric: "tabular-nums", overflowWrap: "anywhere" }}>
                   {expertTippingStep != null ? `M${expertTippingStep}` : "—"}
                 </span>
               </div>
@@ -4866,11 +4806,11 @@ export default function PilotFastighetPage() {
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "baseline",
-                  color: "#6B7280",
+                  color: "var(--ce-text-muted)",
                 }}
               >
                 <span>{pt.simulationMonths}</span>
-                <span style={{ color: "#9CA3AF", fontVariantNumeric: "tabular-nums" }}>
+                <span style={{ color: "var(--ce-text-primary)", fontVariantNumeric: "tabular-nums", overflowWrap: "anywhere" }}>
                   {expertSteps}
                 </span>
               </div>
@@ -4878,14 +4818,14 @@ export default function PilotFastighetPage() {
           </section>
           </div>
 
-          <div style={{ height: "1px", background: "#1F2937", marginBottom: "28px" }} />
+          <div style={{ height: "1px", background: "var(--ce-border)", marginBottom: "28px" }} />
 
           <div
             style={{
               marginBottom: "28px",
               padding: "16px 20px",
-              background: "#111827",
-              border: "1px solid #1f2937",
+              background: "var(--ce-surface-subtle)",
+              border: "1px solid var(--ce-border)",
               borderRadius: "8px",
             }}
           >
@@ -4894,7 +4834,7 @@ export default function PilotFastighetPage() {
               style={{
                 fontSize: "13px",
                 fontWeight: 500,
-                color: "#9CA3AF",
+                color: "var(--ce-text-secondary)",
                 marginBottom: "12px",
               }}
             >
@@ -4913,11 +4853,11 @@ export default function PilotFastighetPage() {
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "baseline",
-                  color: "#6B7280",
+                  color: "var(--ce-text-muted)",
                 }}
               >
                 <span>Sustain breach</span>
-                <span style={{ color: "#9CA3AF", fontVariantNumeric: "tabular-nums" }}>
+                <span style={{ color: "var(--ce-text-primary)", fontVariantNumeric: "tabular-nums", overflowWrap: "anywhere", textAlign: "right" }}>
                   {sustainBreachStep != null
                     ? `Sustain threshold crossed at M${sustainBreachStep}`
                     : "Sustain threshold not crossed"}
@@ -4926,7 +4866,7 @@ export default function PilotFastighetPage() {
               <div
                 style={{
                   fontSize: "11px",
-                  color: "rgba(156,163,175,0.8)",
+                  color: "var(--ce-text-muted)",
                   marginTop: "2px",
                 }}
               >
@@ -4937,11 +4877,11 @@ export default function PilotFastighetPage() {
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "baseline",
-                  color: "#6B7280",
+                  color: "var(--ce-text-muted)",
                 }}
               >
                 <span>Collapse breach</span>
-                <span style={{ color: "#9CA3AF", fontVariantNumeric: "tabular-nums" }}>
+                <span style={{ color: "var(--ce-text-primary)", fontVariantNumeric: "tabular-nums", overflowWrap: "anywhere", textAlign: "right" }}>
                   {collapseBreachStep != null
                     ? `Collapse threshold crossed at M${collapseBreachStep}`
                     : "Collapse threshold not crossed"}
@@ -4953,11 +4893,11 @@ export default function PilotFastighetPage() {
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "baseline",
-                    color: "#6B7280",
+                    color: "var(--ce-text-muted)",
                   }}
                 >
                   <span>Steady state detected</span>
-                  <span style={{ color: "#9CA3AF", fontVariantNumeric: "tabular-nums" }}>
+                  <span style={{ color: "var(--ce-text-primary)", fontVariantNumeric: "tabular-nums", overflowWrap: "anywhere", textAlign: "right" }}>
                     System stabilized at M{steadyStateStep}. No structural change detected for {REQUIRED_STABLE_TICKS} consecutive ticks (after minimum {MIN_STEPS_BEFORE_STEADY} months).
                   </span>
                 </div>
@@ -4965,7 +4905,7 @@ export default function PilotFastighetPage() {
             </div>
           </section>
           </div>
-        </div>
+        </ExpertModeSurface>
       )}
       </div>
     </div>

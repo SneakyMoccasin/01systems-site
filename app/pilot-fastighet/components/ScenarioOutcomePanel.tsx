@@ -32,13 +32,13 @@ const ScenarioOutcomePanel: React.FC<Props> = ({
   return (
     <div
       style={{
-        background: "#111827",
+        background: "var(--ce-surface-subtle)",
         padding: "10px",
         borderRadius: "6px",
         fontSize: "12px",
-        color: "#E5E7EB",
+        color: "var(--ce-text-primary)",
         marginTop: "16px",
-        border: "1px solid #1f2937",
+        border: "1px solid var(--ce-border)",
       }}
     >
       <div
@@ -46,7 +46,7 @@ const ScenarioOutcomePanel: React.FC<Props> = ({
           fontSize: "13px",
           fontWeight: 600,
           marginBottom: "8px",
-          color: "#E5E7EB",
+          color: "var(--ce-text-primary)",
         }}
       >
         {t.scenarioOutcomeTitle}
@@ -56,18 +56,18 @@ const ScenarioOutcomePanel: React.FC<Props> = ({
         <div
           style={{
             fontSize: "11px",
-            color: "#9CA3AF",
+            color: "var(--ce-text-secondary)",
             marginBottom: "4px",
           }}
         >
           Scenario A
         </div>
-        <div style={{ color: "#E5E7EB" }}>
+        <div style={{ color: "var(--ce-text-primary)" }}>
           {breachA != null
             ? t.structuralBreakExpectedAround(breachA)
             : t.noStructuralBreakWithinHorizon}
         </div>
-        <div style={{ color: "#E5E7EB" }}>
+        <div style={{ color: "var(--ce-text-primary)" }}>
           {t.finalMargin}: {finalMarginA.toFixed(2)}
         </div>
       </div>
@@ -76,18 +76,18 @@ const ScenarioOutcomePanel: React.FC<Props> = ({
         <div
           style={{
             fontSize: "11px",
-            color: "#9CA3AF",
+            color: "var(--ce-text-secondary)",
             marginBottom: "4px",
           }}
         >
           Scenario B
         </div>
-        <div style={{ color: "#E5E7EB" }}>
+        <div style={{ color: "var(--ce-text-primary)" }}>
           {breachB != null
             ? t.structuralBreakExpectedAround(breachB)
             : t.noStructuralBreakWithinHorizon}
         </div>
-        <div style={{ color: "#E5E7EB" }}>
+        <div style={{ color: "var(--ce-text-primary)" }}>
           {t.finalMargin}: {finalMarginB.toFixed(2)}
         </div>
       </div>
@@ -95,8 +95,8 @@ const ScenarioOutcomePanel: React.FC<Props> = ({
       {showSummary && (
         <div
           style={{
-            background: "#0f172a",
-            border: "1px solid #334155",
+            background: "var(--ce-surface-primary)",
+            border: "1px solid var(--ce-divider-strong)",
             padding: "10px",
             borderRadius: "6px",
             marginTop: "8px",
@@ -105,7 +105,7 @@ const ScenarioOutcomePanel: React.FC<Props> = ({
           <div
             style={{
               fontSize: "11px",
-              color: "#9CA3AF",
+              color: "var(--ce-text-secondary)",
               marginBottom: "6px",
               fontWeight: 600,
             }}
@@ -113,13 +113,13 @@ const ScenarioOutcomePanel: React.FC<Props> = ({
             {t.resultLabel}
           </div>
           {breachDifference != null && breachDifference > 0 && (
-            <div style={{ color: "#E5E7EB", marginBottom: "4px" }}>
+            <div style={{ color: "var(--ce-text-primary)", marginBottom: "4px" }}>
               {typeof t.scenarioBDelaysCollapse === "function"
                 ? t.scenarioBDelaysCollapse(breachDifference)
                 : String(t.scenarioBDelaysCollapse)}
             </div>
           )}
-          <div style={{ color: "#E5E7EB" }}>
+          <div style={{ color: "var(--ce-text-primary)" }}>
             {t.marginImprovementLabel}:{" "}
             {marginImprovement >= 0
               ? `+${marginImprovement.toFixed(2)}`
