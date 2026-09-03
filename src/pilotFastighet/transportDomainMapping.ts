@@ -1,3 +1,5 @@
+import { resolveExecutableDomainProfile } from "./executableDomainProfile";
+
 export type TransportSystemDriverId =
   | "accessibility"
   | "modalAttractiveness"
@@ -63,6 +65,15 @@ export type TransportDriverDefinition = {
   /** Ordered steps for inspector/graph (engine keys and/or transport driver ids). */
   propagationChain: (EngineRiskKey | TransportSystemDriverId)[];
 };
+
+export type TransportPropagationMetadata = Readonly<{
+  edgeId: string;
+  sourceRisk: EngineRiskKey;
+  targetRisk: EngineRiskKey;
+  triggerLevel: "LOW" | "HIGH";
+  targetLevel: "HIGH";
+  description: Readonly<{ sv: string; en: string }>;
+}>;
 
 export type TransportPolicyLeverMapping = {
   lever: TransportPolicyLeverId;
@@ -246,6 +257,65 @@ export function buildTransportPolicyPropagationExplanation(
     .join(", ")} and ultimately drives ${labels[labels.length - 1]}`;
 }
 
+const TRANSPORT_PROPAGATION_COPY: Readonly<
+  Record<string, Omit<TransportPropagationMetadata, "edgeId" | "sourceRisk" | "targetRisk">>
+> = {
+  "accessibility->demandRisk": {
+    triggerLevel: "LOW",
+    targetLevel: "HIGH",
+    description: {
+      sv: "Låg tillgänglighet ökar negativ efterfrågerisk.",
+      en: "Low accessibility increases adverse demand risk.",
+    },
+  },
+  "budget_pressure->capitalCommitmentRigidityRisk": {
+    triggerLevel: "HIGH",
+    targetLevel: "HIGH",
+    description: {
+      sv: "Högt budgettryck ökar kapitalbindningen.",
+      en: "High budget pressure increases capital-commitment rigidity.",
+    },
+  },
+  "operationalEfficiencyRisk->maintenanceIntensityRisk": {
+    triggerLevel: "HIGH",
+    targetLevel: "HIGH",
+    description: {
+      sv: "Hög drifteffektivitetsrisk ökar underhållsintensiteten.",
+      en: "High operational-efficiency risk increases maintenance intensity.",
+    },
+  },
+};
+
+const transportProfile = resolveExecutableDomainProfile("legacy-municipal-v1", "municipal");
+
+export const TRANSPORT_PROPAGATION_METADATA: readonly TransportPropagationMetadata[] =
+  Object.freeze(
+    Object.entries(transportProfile.propagationRules).flatMap(([sourceRisk, effects]) =>
+      effects.map(({ target: targetRisk }) => {
+        const edgeId = `${sourceRisk}->${targetRisk}`;
+        const copy = TRANSPORT_PROPAGATION_COPY[edgeId];
+        if (!copy) {
+          throw new Error(`Missing deterministic Transport propagation copy: ${edgeId}`);
+        }
+        return Object.freeze({
+          edgeId,
+          sourceRisk: sourceRisk as EngineRiskKey,
+          targetRisk: targetRisk as EngineRiskKey,
+          ...copy,
+        });
+      })
+    )
+  );
+
+export function getTransportPropagationChainForRiskKey(
+  sourceRisk: string
+): EngineRiskKey[] {
+  const edge = TRANSPORT_PROPAGATION_METADATA.find(
+    (candidate) => candidate.sourceRisk === sourceRisk
+  );
+  return edge ? [edge.sourceRisk, edge.targetRisk] : [];
+}
+
 export const TRANSPORT_SYSTEM_DRIVERS: Record<
   TransportSystemDriverId,
   TransportDriverDefinition
@@ -256,14 +326,7 @@ export const TRANSPORT_SYSTEM_DRIVERS: Record<
     readableLabel_sv: "Tillgängligheten i transportsystemet",
     readableLabel_en: "Accessibility",
     engineRiskKey: "accessibility",
-    propagationChain: [
-      "accessibility",
-      "demand",
-      "budgetPressure",
-      "implementationPacing",
-      "capacityPressure",
-      "networkEfficiency",
-    ],
+    propagationChain: getTransportPropagationChainForRiskKey("accessibility"),
   },
   modalAttractiveness: {
     id: "modalAttractiveness",
@@ -271,7 +334,7 @@ export const TRANSPORT_SYSTEM_DRIVERS: Record<
     readableLabel_sv: "Attraktiviteten i transportsystemet",
     readableLabel_en: "Modal attractiveness",
     engineRiskKey: "modal_attractiveness",
-    propagationChain: ["modal_attractiveness", "accessibility", "demandRisk"],
+    propagationChain: getTransportPropagationChainForRiskKey("modal_attractiveness"),
   },
   demand: {
     id: "demand",
@@ -279,58 +342,32 @@ export const TRANSPORT_SYSTEM_DRIVERS: Record<
     readableLabel_sv: "Efterfrågetryck i transportsystemet",
     readableLabel_en: "Transport demand pressure",
     engineRiskKey: "demandRisk",
-    propagationChain: [
-      "demand",
-      "budgetPressure",
-      "implementationPacing",
-      "capacityPressure",
-      "networkEfficiency",
-    ],
+    propagationChain: getTransportPropagationChainForRiskKey("demandRisk"),
     upstreamDependencies: ["accessibility"],
   },
   networkEfficiency: {
     id: "networkEfficiency",
     label: "Network efficiency",
     engineRiskKey: "transit_signal_priority",
-    propagationChain: [
-      "transit_signal_priority",
-      "operational_capacity",
-      "tenantStabilityRisk",
-      "demandRisk",
-    ],
+    propagationChain: getTransportPropagationChainForRiskKey("transit_signal_priority"),
   },
   capacityPressure: {
     id: "capacityPressure",
     label: "Capacity pressure",
     engineRiskKey: "congestion_pressure",
-    propagationChain: [
-      "capacityPressure",
-      "modalAttractiveness",
-      "accessibility",
-      "demand"
-    ],
+    propagationChain: getTransportPropagationChainForRiskKey("congestion_pressure"),
   },
   implementationPacing: {
     id: "implementationPacing",
     label: "Implementation pacing",
     engineRiskKey: "operational_capacity",
-    propagationChain: [
-      "implementationPacing",
-      "networkEfficiency",
-      "accessibility",
-      "demand"
-    ],
+    propagationChain: getTransportPropagationChainForRiskKey("operational_capacity"),
   },
   budgetPressure: {
     id: "budgetPressure",
     label: "Budget pressure",
     engineRiskKey: "budget_pressure",
-    propagationChain: [
-      "budgetPressure",
-      "implementationPacing",
-      "capacityPressure",
-      "demand"
-    ],
+    propagationChain: getTransportPropagationChainForRiskKey("budget_pressure"),
   },
 };
 

@@ -70,6 +70,8 @@ const WhyPanel: React.FC<Props> = ({
     language: uiLanguage,
     selectedActions,
     primaryDriverKey: primaryDriver,
+    cascadeEventsA,
+    cascadeEventsB,
   });
   const cascadeChainText =
     caseType === "transport"

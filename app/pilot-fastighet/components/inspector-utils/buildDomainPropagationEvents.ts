@@ -1,4 +1,5 @@
 import {
+  TRANSPORT_PROPAGATION_METADATA,
   TRANSPORT_SYSTEM_DRIVERS,
   type TransportSystemDriverId,
 } from "@/src/pilotFastighet/transportDomainMapping";
@@ -10,7 +11,17 @@ export function getPrimaryPropagationSignature(events?: CascadeEvent[]) {
 
   return events
     .slice(0, 2)
-    .map((e) => (e as any).readableLabel ?? (e as any).id ?? `${e.sourceRisk} → ${e.targetRisk}`)
+    .map((event) => {
+      const enriched = event as CascadeEvent & {
+        readableLabel?: string;
+        id?: string;
+      };
+      return (
+        enriched.readableLabel ??
+        enriched.id ??
+        `${event.sourceRisk} → ${event.targetRisk}`
+      );
+    })
     .join(" → ");
 }
 
@@ -29,25 +40,36 @@ export function buildDomainPropagationEvents(
   primaryPropagationSignatureB: string | null;
 } {
   const labelOpts = executiveDemo ? { executiveDemo: true as const } : undefined;
-  const primaryPropagationSignatureA = getPrimaryPropagationSignature(cascadeEventsA);
-  const primaryPropagationSignatureB = getPrimaryPropagationSignature(cascadeEventsB);
+  const hasResultEvidence =
+    cascadeEventsA !== undefined || cascadeEventsB !== undefined;
+  const approvedEdgeIds = new Set(
+    TRANSPORT_PROPAGATION_METADATA.map(({ edgeId }) => edgeId)
+  );
+  const approvedEventsA = (cascadeEventsA ?? []).filter((event) =>
+    approvedEdgeIds.has(`${event.sourceRisk}->${event.targetRisk}`)
+  );
+  const approvedEventsB = (cascadeEventsB ?? []).filter((event) =>
+    approvedEdgeIds.has(`${event.sourceRisk}->${event.targetRisk}`)
+  );
+  const primaryPropagationSignatureA = getPrimaryPropagationSignature(approvedEventsA);
+  const primaryPropagationSignatureB = getPrimaryPropagationSignature(approvedEventsB);
+  const sourceEvents =
+    approvedEventsB.length > 0
+      ? approvedEventsB
+      : approvedEventsA.length > 0
+      ? approvedEventsA
+      : [];
+  if (hasResultEvidence) {
+    return {
+      events: sourceEvents.slice(0, 3).map((event, index) => ({
+        month: index,
+        label: mapRiskLabelToPolicyLabel(event.targetRisk, language, labelOpts),
+      })),
+      primaryPropagationSignatureA,
+      primaryPropagationSignatureB,
+    };
+  }
   if (!primaryDriver) {
-    const sourceEvents =
-      cascadeEventsB && cascadeEventsB.length > 0
-        ? cascadeEventsB
-        : cascadeEventsA && cascadeEventsA.length > 0
-        ? cascadeEventsA
-        : [];
-    if (sourceEvents.length > 0) {
-      return {
-        events: sourceEvents.slice(0, 3).map((event, index) => ({
-          month: index,
-          label: mapRiskLabelToPolicyLabel(event.targetRisk, language, labelOpts),
-        })),
-        primaryPropagationSignatureA,
-        primaryPropagationSignatureB,
-      };
-    }
     return {
       events: [],
       primaryPropagationSignatureA,

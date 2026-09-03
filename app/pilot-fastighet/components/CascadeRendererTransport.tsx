@@ -20,6 +20,8 @@ const CascadeRendererTransport: React.FC<Props> = ({
     language,
     selectedActions,
     primaryDriverKey: primaryDriver,
+    cascadeEventsA: [],
+    cascadeEventsB: [],
   });
 
   if (!context?.propagationChainLabel) {

@@ -1,7 +1,9 @@
 import {
   getTransportPolicyExplanationLabel,
   getTransportActionPresentation,
+  getTransportPropagationChainForRiskKey,
   TRANSPORT_ENGINE_RISK_LABELS,
+  TRANSPORT_PROPAGATION_METADATA,
   TRANSPORT_POLICY_LEVER_MAPPINGS,
   TRANSPORT_SYSTEM_DRIVERS,
   type TransportPolicyLeverId,
@@ -233,7 +235,27 @@ export function resolveTransportInspectorContext(
         ]) ||
       null;
 
-    const propagationChainSteps = (driverDef?.propagationChain ?? [])
+    const approvedEdgeIds = new Set(
+      TRANSPORT_PROPAGATION_METADATA.map(({ edgeId }) => edgeId)
+    );
+    const scenarioEvents =
+      cascadeEventsB && cascadeEventsB.length > 0
+        ? cascadeEventsB
+        : cascadeEventsA ?? [];
+    const actualPropagationEvent = scenarioEvents.find((event) =>
+      approvedEdgeIds.has(`${event.sourceRisk}->${event.targetRisk}`)
+    );
+    const hasResultEvidence =
+      cascadeEventsA !== undefined || cascadeEventsB !== undefined;
+    const propagationChain = actualPropagationEvent
+      ? [actualPropagationEvent.sourceRisk, actualPropagationEvent.targetRisk]
+      : hasResultEvidence
+      ? []
+      : driverDef?.propagationChain ??
+        getTransportPropagationChainForRiskKey(
+          selectedTransportDriver ?? firstPresentedDriver ?? ""
+        );
+    const propagationChainSteps = propagationChain
       .map((step) => mapRiskLabelToPolicyLabel(step, language))
       .filter(Boolean);
     const propagationChainLabel =
@@ -268,7 +290,7 @@ export function resolveTransportInspectorContext(
 
     profileValue(
       "resolveTransportInspectorContext.propagationChain.length",
-      driverDef?.propagationChain.length ?? 0,
+      propagationChain.length,
       "steps"
     );
 
