@@ -36,37 +36,36 @@ export default function ScenarioPresetsPanel({
       ? "Påverkar analytiskt fokus i förklaringen, inte simuleringens numeriska utfall."
       : "Affects analytical focus in the explanation, not the simulation's numerical result.";
   return (
-    <div className="mb-6">
-      <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-2">
-        {t.transportScenarioPresetPanelTitle}
-      </h3>
-      <p className="mb-2 text-xs text-gray-400">
-        {helperText}
-      </p>
-
-      <div className="flex flex-col gap-2">
-        {PRESET_KEYS.map((preset) => {
-          const selected = scenarioTarget === preset.key;
-
-          return (
-            <button
-              key={preset.key}
-              type="button"
-              onClick={() => setScenarioTarget(preset.key)}
-              className="w-full text-left rounded border px-3 py-2 text-sm transition-colors"
-              style={{
-                background: selected ? "#2563EB" : "transparent",
-                border: selected
-                  ? "1px solid #2563EB"
-                  : "1px solid rgba(255,255,255,0.15)",
-                color: selected ? "#FFFFFF" : "#D1D5DB",
-              }}
-            >
-              {t.transportScenarioPresetLabels[preset.key]}
-            </button>
-          );
-        })}
-      </div>
-    </div>
+    <label
+      data-testid="compact-explanation-focus"
+      title={helperText}
+      className="mb-2 flex flex-wrap items-center gap-2 text-xs"
+      style={{ color: "var(--ce-text-secondary, #667085)" }}
+    >
+      <span style={{ fontWeight: 650 }}>{`${t.transportScenarioPresetPanelTitle}:`}</span>
+      <select
+        aria-label={t.transportScenarioPresetPanelTitle}
+        value={scenarioTarget ?? ""}
+        onChange={(event) => setScenarioTarget(event.target.value)}
+        style={{
+          minWidth: 210,
+          maxWidth: "100%",
+          padding: "5px 8px",
+          borderRadius: 6,
+          border: "1px solid var(--ce-border, #d0d5dd)",
+          background: "var(--ce-control-bg, #ffffff)",
+          color: "var(--ce-text-primary, #101828)",
+        }}
+      >
+        <option value="" disabled>
+          {language === "sv" ? "Välj förklaringsfokus" : "Select explanation focus"}
+        </option>
+        {PRESET_KEYS.map((preset) => (
+          <option key={preset.key} value={preset.key}>
+            {t.transportScenarioPresetLabels[preset.key]}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }

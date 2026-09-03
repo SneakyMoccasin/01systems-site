@@ -91,6 +91,8 @@ import ModelSetupSection from "./components/ModelSetupSection";
 import AppearanceControl from "./components/AppearanceControl";
 import ExpertModeSurface from "./components/ExpertModeSurface";
 import ScenarioSelectionControls from "./components/ScenarioSelectionControls";
+import DomainSelector from "./components/DomainSelector";
+import CompactScheduleSummary from "./components/CompactScheduleSummary";
 import MarginGraph, {
   MarginGraphLegendRow,
   type DomainEvent,
@@ -1822,6 +1824,34 @@ export default function PilotFastighetPage() {
 
   const execRealEstateLayout = executiveDemoMode && caseType === "real-estate";
 
+  const changeDomain = (newDomain: DomainKey) => {
+    setDomain(newDomain);
+    setActiveDomain(newDomain);
+    const freshDomainState = createFreshDomainScenarioState(newDomain);
+    resetRunState();
+    setHasSimulationCompleted(false);
+    setIsRunning(false);
+    setSelectedPilotCaseId(freshDomainState.selectedPilotCaseId);
+    setBaseRiskStateA(freshDomainState.baseRiskStateA);
+    setBaseRiskStateB(freshDomainState.baseRiskStateB);
+    setRiskStateA(freshDomainState.riskStateA);
+    setRiskStateB(freshDomainState.riskStateB);
+    setDriverScoresA(freshDomainState.driverScoresA);
+    setDriverScoresB(freshDomainState.driverScoresB);
+    setSelectedActionsA(freshDomainState.selectedActionsA);
+    setSelectedActionsB(freshDomainState.selectedActionsB);
+    setScenarioSchedules(clearAllScenarioSchedules());
+    setScenarioPromptA(freshDomainState.scenarioPromptA);
+    setScenarioPromptB(freshDomainState.scenarioPromptB);
+    setScenarioALabel(freshDomainState.scenarioALabel);
+    setScenarioBLabel(freshDomainState.scenarioBLabel);
+    setAppliedScenarioAId(freshDomainState.appliedScenarioAId);
+    setAppliedScenarioBId(freshDomainState.appliedScenarioBId);
+    setTransportScenarioTarget(null);
+    setManualScenarioTarget("A");
+    setIsDirty(false);
+  };
+
   const interventionConfiguration = (
     <>
       <ActionPanel
@@ -2411,6 +2441,20 @@ export default function PilotFastighetPage() {
                 </option>
               </select>
             </>
+          )}
+          {!executiveDemoMode && (
+            <DomainSelector
+              language={uiLanguage}
+              value={domain}
+              labels={pt.pilotDomainTitle}
+              disabled={isRunning}
+              onChange={changeDomain}
+              colors={{
+                background: semanticTheme.controlBackground,
+                text: semanticTheme.primaryText,
+                border: semanticTheme.border,
+              }}
+            />
           )}
           <label
             style={{
@@ -3493,6 +3537,20 @@ export default function PilotFastighetPage() {
                   language={uiLanguage}
                 />
               )}
+              {!executiveDemoMode && effectiveExecutionMode === "actions-over-time" && (
+                <CompactScheduleSummary
+                  language={uiLanguage}
+                  schedules={scenarioSchedules}
+                  revealedProvenance={revealedScheduledProvenance}
+                  actionLabel={getActionPanelLabel}
+                  colors={{
+                    text: semanticTheme.primaryText,
+                    secondaryText: semanticTheme.secondaryText,
+                    border: semanticTheme.border,
+                    surface: semanticTheme.subtleSurface,
+                  }}
+                />
+              )}
               {executiveDemoMode && effectiveExecutionMode === "configured-start" && (
               <AIInspectorPanel
                 language={uiLanguage}
@@ -3998,48 +4056,6 @@ export default function PilotFastighetPage() {
             }}
           />
         </div>
-        )}
-        {!executiveDemoMode && (
-        <select
-          value={domain}
-          onChange={(e) => {
-            const newDomain = e.target.value as DomainKey;
-            setDomain(newDomain);
-            setActiveDomain(newDomain);
-            const freshDomainState = createFreshDomainScenarioState(newDomain);
-            resetRunState();
-            setHasSimulationCompleted(false);
-            setIsRunning(false);
-            setSelectedPilotCaseId(freshDomainState.selectedPilotCaseId);
-            setBaseRiskStateA(freshDomainState.baseRiskStateA);
-            setBaseRiskStateB(freshDomainState.baseRiskStateB);
-            setRiskStateA(freshDomainState.riskStateA);
-            setRiskStateB(freshDomainState.riskStateB);
-            setDriverScoresA(freshDomainState.driverScoresA);
-            setDriverScoresB(freshDomainState.driverScoresB);
-            setSelectedActionsA(freshDomainState.selectedActionsA);
-            setSelectedActionsB(freshDomainState.selectedActionsB);
-            setScenarioSchedules(clearAllScenarioSchedules());
-            setScenarioPromptA(freshDomainState.scenarioPromptA);
-            setScenarioPromptB(freshDomainState.scenarioPromptB);
-            setScenarioALabel(freshDomainState.scenarioALabel);
-            setScenarioBLabel(freshDomainState.scenarioBLabel);
-            setAppliedScenarioAId(freshDomainState.appliedScenarioAId);
-            setAppliedScenarioBId(freshDomainState.appliedScenarioBId);
-            setTransportScenarioTarget(null);
-            setManualScenarioTarget("A");
-            setIsDirty(false);
-          }}
-          style={{
-            marginBottom: "10px",
-            padding: "6px",
-            borderRadius: "4px",
-          }}
-        >
-          <option value="realEstate">{pt.pilotDomainTitle.realEstate}</option>
-          <option value="municipal">{pt.pilotDomainTitle.municipal}</option>
-          <option value="consulting">{pt.pilotDomainTitle.consulting}</option>
-        </select>
         )}
         {false && (
           <PromptDock
