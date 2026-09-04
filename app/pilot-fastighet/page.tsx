@@ -98,6 +98,11 @@ import AppearanceControl from "./components/AppearanceControl";
 import ExpertModeSurface from "./components/ExpertModeSurface";
 import ScenarioSelectionControls from "./components/ScenarioSelectionControls";
 import DomainSelector from "./components/DomainSelector";
+import {
+  getDomainPresentation,
+  getDomainPresentationLabels,
+  type DomainAnalysisGoal,
+} from "@/src/pilotFastighet/domainPresentation";
 import CompactScheduleSummary from "./components/CompactScheduleSummary";
 import MarginGraph, {
   MarginGraphLegendRow,
@@ -276,36 +281,6 @@ const EXEC_COLLAPSE_THRESHOLD = 0.6;
 const MIN_STEPS_BEFORE_STEADY = 5;
 const REQUIRED_STABLE_TICKS = 3;
 const ANALYSIS_HORIZON = 16;
-const TOP_LEVEL_GOAL_LABELS = {
-  transport: {
-    accessibility: { sv: "Öka tillgänglighet", en: "Increase accessibility" },
-    congestion: { sv: "Minska trängsel", en: "Reduce congestion" },
-    margin_stability: {
-      sv: "Behåll marginalstabilitet",
-      en: "Maintain margin stability",
-    },
-    avoid_tipping: { sv: "Undvik tipping-risk", en: "Avoid tipping risk" },
-  },
-  "real-estate": {
-    accessibility: {
-      sv: "Stärk uthyrningsattraktivitet",
-      en: "Strengthen leasing attractiveness",
-    },
-    congestion: {
-      sv: "Minska operativ belastning",
-      en: "Reduce operational strain",
-    },
-    margin_stability: {
-      sv: "Bevara portföljflexibilitet",
-      en: "Preserve portfolio flexibility",
-    },
-    avoid_tipping: {
-      sv: "Undvik refinansieringsrisk",
-      en: "Avoid refinancing risk",
-    },
-  },
-} as const;
-
 function loadHistory(key: string) {
   if (typeof window === "undefined") return [];
   return loadSavedRunHistory(localStorage, key);
@@ -1307,21 +1282,18 @@ export default function PilotFastighetPage() {
     setSelectedPilotCaseId("");
     setSimulationSource("manual");
   };
-  const resolveTopLevelGoalLabel = (
-    goal:
-      | "accessibility"
-      | "congestion"
-      | "margin_stability"
-      | "avoid_tipping",
-    currentCaseType?: "transport" | "real-estate" | null
-  ) => {
-    const labels =
-      currentCaseType === "real-estate"
-        ? TOP_LEVEL_GOAL_LABELS["real-estate"]
-        : TOP_LEVEL_GOAL_LABELS.transport;
-
-    return uiLanguage === "sv" ? labels[goal].sv : labels[goal].en;
-  };
+  const domainPresentationGoal: DomainAnalysisGoal =
+    domain === "municipal"
+      ? transportScenarioTarget === "avoid_tipping"
+        ? "avoid_tipping"
+        : transportScenarioTarget === "stabilize_margin"
+          ? "margin_stability"
+          : transportScenarioTarget === "reduce_capacity_pressure"
+            ? "congestion"
+            : "accessibility"
+      : selectedGoal;
+  const domainPresentation = getDomainPresentation(domain, uiLanguage, domainPresentationGoal);
+  const domainPresentationLabels = getDomainPresentationLabels(uiLanguage);
   const transportContextA = useMemo(() => {
     if (caseType !== "transport") return null;
 
@@ -2452,7 +2424,7 @@ export default function PilotFastighetPage() {
             <DomainSelector
               language={uiLanguage}
               value={domain}
-              labels={pt.pilotDomainTitle}
+              labels={domainPresentationLabels}
               disabled={isRunning}
               onChange={changeDomain}
               colors={{
@@ -2488,22 +2460,22 @@ export default function PilotFastighetPage() {
             <option value="accessibility">
               {executiveDemoMode
                 ? getExecutiveDemoGoalOptionLabel("accessibility", uiLanguage)
-                : resolveTopLevelGoalLabel("accessibility", caseType)}
+                : domainPresentation.goals.accessibility}
             </option>
             <option value="congestion">
               {executiveDemoMode
                 ? getExecutiveDemoGoalOptionLabel("congestion", uiLanguage)
-                : resolveTopLevelGoalLabel("congestion", caseType)}
+                : domainPresentation.goals.congestion}
             </option>
             <option value="margin_stability">
               {executiveDemoMode
                 ? getExecutiveDemoGoalOptionLabel("margin_stability", uiLanguage)
-                : resolveTopLevelGoalLabel("margin_stability", caseType)}
+                : domainPresentation.goals.margin_stability}
             </option>
             <option value="avoid_tipping">
               {executiveDemoMode
                 ? getExecutiveDemoGoalOptionLabel("avoid_tipping", uiLanguage)
-                : resolveTopLevelGoalLabel("avoid_tipping", caseType)}
+                : domainPresentation.goals.avoid_tipping}
             </option>
           </select>
           <ScenarioSelectionControls
@@ -3294,7 +3266,7 @@ export default function PilotFastighetPage() {
             context={
               executiveDemoMode
                 ? getExecutiveDemoGraphFraming(uiLanguage).title
-                : pt.transportGraphSectionTitle
+                : domainPresentation.graphSectionTitle
             }
           />
           {executiveDemoMode ? (
@@ -3320,38 +3292,20 @@ export default function PilotFastighetPage() {
           ) : (
             <>
               <div className="text-xs" style={{ color: semanticTheme.secondaryText }}>
-                {caseType === "real-estate"
-                  ? `${pt.transportGraphFocusPrefix} ${pt.transportGraphFocusRealEstate}`
-                  : `${pt.transportGraphFocusPrefix} ${
-                      transportScenarioTarget === "avoid_tipping"
-                        ? pt.transportGraphFocusTransport.avoid_tipping
-                        : transportScenarioTarget === "stabilize_margin"
-                        ? pt.transportGraphFocusTransport.stabilize_margin
-                        : transportScenarioTarget === "reduce_capacity_pressure"
-                        ? pt.transportGraphFocusTransport.reduce_capacity_pressure
-                        : transportScenarioTarget === "increase_modal_attractiveness"
-                        ? pt.transportGraphFocusTransport.increase_modal_attractiveness
-                        : pt.transportGraphFocusTransport.default
-                    }`}
+                {`${pt.transportGraphFocusPrefix} ${domainPresentation.graphFocus}`}
               </div>
 
               <div className="max-w-xl text-xs leading-relaxed" style={{ color: semanticTheme.secondaryText }}>
-                {caseType === "real-estate"
-                  ? pt.transportGraphDescriptionRealEstate
-                  : pt.transportGraphDescriptionTransport}
+                {domainPresentation.graphDescription}
               </div>
               <button
                 onClick={() => setShowDriverActivations((prev) => !prev)}
                 className="text-xs"
                 style={{ alignSelf: "flex-start", color: semanticTheme.secondaryText }}
               >
-                {caseType === "real-estate"
-                  ? showDriverActivations
-                    ? pt.hideEarlyInfluencePoints
-                    : pt.showEarlyInfluencePoints
-                  : showDriverActivations
-                    ? pt.hideDriverActivations
-                    : pt.showDriverActivations}
+                {showDriverActivations
+                  ? domainPresentation.eventToggle.hide
+                  : domainPresentation.eventToggle.show}
               </button>
             </>
           )}
