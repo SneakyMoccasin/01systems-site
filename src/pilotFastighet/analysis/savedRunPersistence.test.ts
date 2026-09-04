@@ -119,3 +119,19 @@ test("blocked-comparison explanations are bilingual and the page gates numeric o
   assert.match(page, /completedExecutionIdentityRef\.current/);
   assert.doesNotMatch(page, /executionIdentity:\s*\{\s*domainId:\s*domain/);
 });
+
+test("every incompatibility classification has a specific Swedish and English explanation", () => {
+  const base = identities.realEstate;
+  const pairs = [
+    [snapshot(base), snapshot(identities.transport), /olika domäner/, /different domains/],
+    [snapshot(base), snapshot({ ...base, profileId: "legacy-consulting-v1" }), /olika körprofiler/, /different executable profiles/],
+    [snapshot(base), snapshot({ ...base, modelVersion: "next" }), /olika modellversioner/, /different model versions/],
+    [snapshot(base), snapshot({ ...base, calibrationVersion: "next" }), /olika kalibreringsversioner/, /different calibration versions/],
+    [snapshot(base), snapshot(undefined), /äldre resultat/, /legacy result/],
+  ] as const;
+  for (const [left, right, sv, en] of pairs) {
+    const compatibility = evaluateSavedRunCompatibility(left as never, right as never);
+    assert.match(getSavedRunCompatibilityMessage(compatibility, "sv") ?? "", sv);
+    assert.match(getSavedRunCompatibilityMessage(compatibility, "en") ?? "", en);
+  }
+});

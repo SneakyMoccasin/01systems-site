@@ -1,5 +1,6 @@
 import React from "react";
 import { pulseLanguage } from "@/src/i18n/pulseLanguage";
+import { formatRiskLevel } from "@/src/pilotFastighet/presentationLocalization";
 
 type Language = "sv" | "en";
 
@@ -89,7 +90,7 @@ const DecisionExplanationPanel: React.FC<Props> = ({
           <span style={{ color: "var(--ce-text-secondary)", minWidth: "160px" }}>
             {t.pressureResponse}:
           </span>
-          <span style={{ color: "var(--ce-text-primary)", overflowWrap: "anywhere" }}>{systemPressure ?? "—"}</span>
+          <span style={{ color: "var(--ce-text-primary)", overflowWrap: "anywhere" }}>{formatRiskLevel(systemPressure, language, "system-pressure")}</span>
         </div>
         <div style={{ display: "flex", gap: "8px", minWidth: 0 }}>
           <span style={{ color: "var(--ce-text-secondary)", minWidth: "160px" }}>

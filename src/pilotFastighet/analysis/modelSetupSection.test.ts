@@ -87,6 +87,11 @@ test("manual configuration is default and all applicable template information is
     options.slice(1).map((option) => option.getAttribute("value")),
     templates.map((template) => template.id)
   );
+  const loadButtons = Array.from(window.document.querySelectorAll("button")).filter(
+    (button) => button.textContent?.trim() === "Load template"
+  );
+  assert.equal(loadButtons.length, 1);
+  assert.equal(loadButtons.filter((button) => !button.hasAttribute("disabled")).length, 0);
 
   const select = window.document.querySelector("select");
   assert.ok(select);
@@ -98,6 +103,11 @@ test("manual configuration is default and all applicable template information is
       window.document.querySelector('[data-testid="model-template-description"]')?.textContent,
       template.description
     );
+    const currentLoadButtons = Array.from(window.document.querySelectorAll("button")).filter(
+      (button) => button.textContent?.trim() === "Load template"
+    );
+    assert.equal(currentLoadButtons.length, 1);
+    assert.equal(currentLoadButtons.filter((button) => !button.hasAttribute("disabled")).length, 1);
   }
   await act(async () => root.unmount());
 });

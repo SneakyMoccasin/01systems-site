@@ -88,6 +88,7 @@ export const pulseLanguage = {
       refinancingRisk: "Refinancing risk",
       leverageLevelRisk: "Leverage level",
       operationalEfficiencyRisk: "Operational efficiency",
+      budgetPressure: "Budget pressure",
     } as Record<string, string>,
     riskLabels: {
       interestRateExposureRisk: "Interest rate exposure",
@@ -96,6 +97,7 @@ export const pulseLanguage = {
       capitalCommitmentRigidityRisk: "Capital commitment rigidity",
       maintenanceIntensityRisk: "Maintenance pressure",
       operationalEfficiencyRisk: "Operational efficiency",
+      budgetPressure: "Budget pressure",
       pricingPowerRisk: "Pricing power",
       marketVolatilityRisk: "Market volatility",
       regulatoryPressureRisk: "Regulatory pressure",
@@ -247,7 +249,7 @@ Improvements are implemented gradually with higher delivery friction.
     estimatedBreachExpectedAround: (n: number) => `Expected around M${n}`,
     finalMargin: "Final margin",
     resultLabel: "Result",
-    marginImprovementLabel: "Margin improvement",
+    marginImprovementLabel: "Margin difference",
     scenarioBDelaysCollapse: (n: number) =>
       `Scenario B delays collapse by ${n} quarter${n !== 1 ? "s" : ""}.`,
     previewImpact: "Analyze scenario",
@@ -296,8 +298,8 @@ Improvements are implemented gradually with higher delivery friction.
       "Structural inspection layer — engine diagnostics",
     structuralMetrics: "Structural Metrics",
     constraintView: "Constraint View",
-    simulationMonths: "Simulation months",
-    tippingStep: "Tipping step",
+    simulationMonths: "Simulation periods",
+    tippingStep: "Tipping period",
     pilotDomainTitle: {
       realEstate: "Real Estate Portfolio",
       municipal: "Transport System",
@@ -391,6 +393,7 @@ Improvements are implemented gradually with higher delivery friction.
       leverageLevelRisk: "Belåningsnivå",
       liquidityPressure: "Likviditetspress",
       operationalEfficiencyRisk: "Drifteffektivitet",
+      budgetPressure: "Budgettryck",
     } as Record<string, string>,
     riskLabels: {
       interestRateExposureRisk: "Ränteexponering",
@@ -400,6 +403,7 @@ Improvements are implemented gradually with higher delivery friction.
       capitalCommitmentRigidityRisk: "Kapitalbindning",
       maintenanceIntensityRisk: "Underhållstryck",
       operationalEfficiencyRisk: "Drifteffektivitet",
+      budgetPressure: "Budgettryck",
       pricingPowerRisk: "Prissättningskraft",
       marketVolatilityRisk: "Marknadsvolatilitet",
       regulatoryPressureRisk: "Regulatoriskt tryck",
@@ -553,7 +557,7 @@ Förbättringar införs gradvis med högre leveransfriktion.
     estimatedBreachExpectedAround: (n: number) => `Väntas kring M${n}`,
     finalMargin: "Slutmarginal",
     resultLabel: "Resultat",
-    marginImprovementLabel: "Marginalförbättring",
+    marginImprovementLabel: "Marginalskillnad",
     scenarioBDelaysCollapse: (n: number) =>
       `Scenario B fördröjer kollaps med ${n} kvartal.`,
     previewImpact: "Analysera scenario",
@@ -602,8 +606,8 @@ Förbättringar införs gradvis med högre leveransfriktion.
       "Strukturellt inspektionslager — motordiagnostik",
     structuralMetrics: "Strukturella mått",
     constraintView: "Begränsningsvy",
-    simulationMonths: "Simuleringsmånader",
-    tippingStep: "Tipping-steg",
+    simulationMonths: "Simuleringsperioder",
+    tippingStep: "Tippingperiod",
     pilotDomainTitle: {
       realEstate: "Fastighetsportfölj",
       municipal: "Transportsystem",

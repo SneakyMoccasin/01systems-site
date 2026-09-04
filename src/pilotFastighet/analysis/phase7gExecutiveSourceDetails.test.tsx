@@ -168,11 +168,12 @@ test("differing All and Active collections both remain visible", async () => {
   await act(async () => root.unmount());
 });
 
-test("normal CE retains the legacy detail renderer unchanged", async () => {
+test("normal Swedish CE localizes detail labels and boolean presentation", async () => {
   const { window, root } = await render("sv", "normal");
   await expandAll(window);
   const text = window.document.body.textContent ?? "";
-  assert.match(text, /Selected State/);
-  assert.match(text, /Detected[\s\S]*Yes/);
+  assert.match(text, /Valt tillstånd/);
+  assert.match(text, /Identifierad[\s\S]*Ja/);
+  assert.doesNotMatch(text, /Selected State|Detected[\s\S]*Yes/);
   await act(async () => root.unmount());
 });

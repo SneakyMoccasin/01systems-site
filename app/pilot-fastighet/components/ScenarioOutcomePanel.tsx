@@ -24,10 +24,10 @@ const ScenarioOutcomePanel: React.FC<Props> = ({
 }) => {
   const uiLanguage = language;
   const t = pulseLanguage[uiLanguage];
-  const marginImprovement = finalMarginB - finalMarginA;
+  const marginDifference = finalMarginB - finalMarginA;
   const showSummary =
     (breachDifference != null && breachDifference !== 0) ||
-    marginImprovement !== 0;
+    marginDifference !== 0;
 
   return (
     <div
@@ -121,9 +121,9 @@ const ScenarioOutcomePanel: React.FC<Props> = ({
           )}
           <div style={{ color: "var(--ce-text-primary)" }}>
             {t.marginImprovementLabel}:{" "}
-            {marginImprovement >= 0
-              ? `+${marginImprovement.toFixed(2)}`
-              : marginImprovement.toFixed(2)}
+            {marginDifference >= 0
+              ? `+${marginDifference.toFixed(2)}`
+              : marginDifference.toFixed(2)}
           </div>
         </div>
       )}

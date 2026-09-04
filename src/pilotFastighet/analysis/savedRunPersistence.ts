@@ -138,9 +138,25 @@ export function getSavedRunCompatibilityMessage(
       ? "Minst ett äldre resultat saknar fullständig versionsinformation och kan inte jämföras direkt."
       : "At least one legacy result lacks complete version information and cannot be compared directly.";
   }
-  return language === "sv"
-    ? "Resultaten skapades med olika domän-, modell- eller kalibreringsversioner och kan därför inte jämföras direkt."
-    : "The results were created with different domain, model, or calibration versions and cannot be compared directly.";
+  const messages = {
+    "different-domain": {
+      sv: "Resultaten tillhör olika domäner och kan därför inte jämföras direkt.",
+      en: "The results belong to different domains and cannot be compared directly.",
+    },
+    "different-profile": {
+      sv: "Resultaten använder olika körprofiler och kan därför inte jämföras direkt.",
+      en: "The results use different executable profiles and cannot be compared directly.",
+    },
+    "different-model-version": {
+      sv: "Resultaten använder olika modellversioner och kan därför inte jämföras direkt.",
+      en: "The results use different model versions and cannot be compared directly.",
+    },
+    "different-calibration-version": {
+      sv: "Resultaten använder olika kalibreringsversioner och kan därför inte jämföras direkt.",
+      en: "The results use different calibration versions and cannot be compared directly.",
+    },
+  } as const;
+  return messages[compatibility.classification][language];
 }
 
 export const getSavedRunMismatchMessage = getSavedRunCompatibilityMessage;

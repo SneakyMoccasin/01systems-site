@@ -13,6 +13,11 @@ import {
   formatDisplayedPeriod,
   trajectoryIndexToDisplayedPeriod,
 } from "@/src/pilotFastighet/analysis/periodPresentation";
+import {
+  formatBooleanValue,
+  formatConstraintState,
+  formatRiskLevel,
+} from "@/src/pilotFastighet/presentationLocalization";
 
 const SUMMARY_PRIORITY = [
   "analysisFocus",
@@ -131,23 +136,41 @@ function hasContent(value: unknown): boolean {
   return true;
 }
 
-function readableKey(key: string): string {
-  return key
-    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
-    .replace(/^[a-z]/, (letter) => letter.toUpperCase());
+function formatNormalPrimitive(
+  value: string | number | boolean,
+  path: string,
+  language: FindingsLanguage,
+  raw = false
+): string {
+  if (typeof value === "boolean") return raw ? String(value) : formatBooleanValue(value, language);
+  if (typeof value === "number" || raw) return String(value);
+  if (["LOW", "MODERATE", "HIGH", "SEVERE"].includes(value)) {
+    return formatRiskLevel(value, language, path.startsWith("systemPressure") ? "system-pressure" : "driver");
+  }
+  if (value === "ACTIVE" || value === "INACTIVE") return formatConstraintState(value, language);
+  if (value === "STABLE") return language === "sv" ? "Stabilt" : "Stable";
+  if (value === "DECLINING") return language === "sv" ? "Minskande" : "Declining";
+  if (value === "IMPROVING") return language === "sv" ? "Förbättras" : "Improving";
+  return value;
 }
 
-function renderCompleteValue(value: unknown, path: string): React.ReactNode {
+function renderCompleteValue(
+  value: unknown,
+  path: string,
+  language: FindingsLanguage,
+  raw = false
+): React.ReactNode {
   if (value == null || value === "") return <span style={{ color: "#64748b" }}>—</span>;
-  if (typeof value === "string" || typeof value === "number") return String(value);
-  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return formatNormalPrimitive(value, path, language, raw);
+  }
   if (Array.isArray(value)) {
     const applicable = value.filter(hasContent);
     if (applicable.length === 0) return <span style={{ color: "#64748b" }}>—</span>;
     return (
       <div style={{ display: "grid", gap: 4 }}>
         {applicable.map((entry, index) => (
-          <div key={`${path}-${index}`}>{renderCompleteValue(entry, `${path}-${index}`)}</div>
+          <div key={`${path}-${index}`}>{renderCompleteValue(entry, `${path}-${index}`, language, raw)}</div>
         ))}
       </div>
     );
@@ -159,14 +182,14 @@ function renderCompleteValue(value: unknown, path: string): React.ReactNode {
       <dl style={{ display: "grid", gridTemplateColumns: "minmax(120px, auto) minmax(0, 1fr)", gap: "5px 14px", margin: 0 }}>
         {entries.map(([key, entry]) => (
           <React.Fragment key={`${path}-${key}`}>
-            <dt style={{ color: "var(--ce-text-secondary, #94a3b8)" }}>{readableKey(key)}</dt>
-            <dd style={{ margin: 0, minWidth: 0, overflowWrap: "anywhere", wordBreak: "break-word" }}>{renderCompleteValue(entry, `${path}-${key}`)}</dd>
+            <dt style={{ color: "var(--ce-text-secondary, #94a3b8)" }}>{executiveDetailLabel(key, language)}</dt>
+            <dd style={{ margin: 0, minWidth: 0, overflowWrap: "anywhere", wordBreak: "break-word" }}>{renderCompleteValue(entry, `${path}-${key}`, language, raw)}</dd>
           </React.Fragment>
         ))}
       </dl>
     );
   }
-  return String(value);
+  return null;
 }
 
 type FindingsLanguage = "sv" | "en";
@@ -283,6 +306,106 @@ function firstReadableArrayValue(value: readonly unknown[]): string | null {
   return null;
 }
 
+function constraintLabel(value: unknown, language: FindingsLanguage): string | null {
+  if (!value || typeof value !== "object") return null;
+  const record = value as Record<string, unknown>;
+  const key = typeof record.constraintKey === "string"
+    ? record.constraintKey
+    : typeof record.constraintType === "string" ? record.constraintType : null;
+  if (!key) return null;
+  const labels: Record<string, { sv: string; en: string }> = {
+    capital: { sv: "Kapitalbegränsning", en: "Capital constraint" },
+    capacity: { sv: "Kapacitetsbegränsning", en: "Capacity constraint" },
+    covenant: { sv: "Kovenantbegränsning", en: "Covenant constraint" },
+    custom: { sv: "Anpassad begränsning", en: "Custom constraint" },
+  };
+  return labels[key]?.[language] ?? null;
+}
+
+function scenarioDirectionLabel(value: unknown, language: FindingsLanguage): string | null {
+  if (value === "baseline") return language === "sv" ? "Nulägesstrategin" : "Baseline";
+  if (value === "target") return language === "sv" ? "Målstrategin" : "Goal strategy";
+  return null;
+}
+
+function structuralGoalMessage(
+  value: Record<string, unknown>,
+  language: FindingsLanguage
+): string | null {
+  const constraint = constraintLabel(value, language);
+  const scenario = scenarioDirectionLabel(value.winningScenario, language);
+  const delay = value.delayMonths;
+  if (!constraint || !scenario || typeof delay !== "number") return null;
+  return language === "sv"
+    ? `${constraint} fördröjs ${delay} modellperiod${delay === 1 ? "" : "er"} i ${scenario.toLowerCase()}`
+    : `${constraint} is delayed by ${delay} model period${delay === 1 ? "" : "s"} in ${scenario.toLowerCase()}`;
+}
+
+function structuredFindingSummary(
+  field: StructuralFindingsPresentationField,
+  language: FindingsLanguage
+): string | number | null {
+  const value = field.value;
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return formatNormalPrimitive(value, field.id, language);
+  }
+  const summarizeEntry = (entry: unknown): string | null => {
+    if (typeof entry === "string" || typeof entry === "number" || typeof entry === "boolean") {
+      return formatNormalPrimitive(entry, field.id, language);
+    }
+    if (!entry || typeof entry !== "object") return null;
+    const record = entry as Record<string, unknown>;
+    const goalMessage = structuralGoalMessage(record, language);
+    if (goalMessage) return goalMessage;
+    for (const key of ["text", "summary", "conditionedStatus", "pathwayComparison", "transportLabel", "displayLabel", "influence", "executiveLabel", "label", "body", "title"]) {
+      if (typeof record[key] === "string" && record[key]) return record[key];
+    }
+    return constraintLabel(entry, language);
+  };
+  if (Array.isArray(value)) {
+    const summaries = value.map(summarizeEntry).filter((entry): entry is string => Boolean(entry));
+    return summaries.length > 0 ? summaries.slice(0, 2).join(" · ") : null;
+  }
+  if (!value || typeof value !== "object") return null;
+  const record = value as Record<string, unknown>;
+  if (field.id === "dominantConstraint") {
+    const message = record.message;
+    const constraint = constraintLabel(message, language);
+    const direction = message && typeof message === "object"
+      ? scenarioDirectionLabel((message as Record<string, unknown>).scenarioDirection, language)
+      : null;
+    return constraint && direction ? `${constraint} · ${direction}` : constraint ??
+      (typeof record.label === "string" && record.label ? record.label : null);
+  }
+  const preferred: Partial<Record<StructuralFindingsFieldId, readonly string[]>> = {
+    scenarioIdentities: ["header", "scenarioA", "baseline"],
+    policyDriver: ["transportLabel", "value"],
+    systemDriver: ["transportLabel", "value"],
+    primaryDriver: ["displayLabel", "influence", "fallback", "scenarioB", "scenarioA"],
+    systemPressure: ["executiveLabel", "value"],
+    structuralStatus: ["selectedState", "value"],
+    propagationChain: ["pathwayComparison", "transportLabel", "nodes"],
+    structuralGoalStatements: ["summary", "conditionedStatus", "messages"],
+    margins: ["difference", "scenarioB", "scenarioA"],
+    strategyDifference: ["text"],
+    tippingWindow: ["text", "heading", "period"],
+    cascadeStatus: ["text", "heading"],
+    domainEvents: ["active", "all"],
+  };
+  for (const key of preferred[field.id] ?? []) {
+    const candidate = record[key];
+    const summary = Array.isArray(candidate)
+      ? candidate.map(summarizeEntry).filter((entry): entry is string => Boolean(entry)).slice(0, 2).join(" · ")
+      : summarizeEntry(candidate);
+    if (summary) return key === "value" ? formatNormalPrimitive(summary, field.id, language) : summary;
+  }
+  for (const candidate of Object.values(record)) {
+    const summary = summarizeEntry(candidate);
+    if (summary) return summary;
+  }
+  return null;
+}
+
 function formatForwardDecisionFlexibility(
   value: unknown,
   language: "sv" | "en"
@@ -300,6 +423,7 @@ function conciseValue(
   if (executive && field.id === "forwardDecisionFlexibility") {
     return formatForwardDecisionFlexibility(value, language);
   }
+  if (!executive) return structuredFindingSummary(field, language);
   if (typeof value === "string" || typeof value === "number") return String(value);
   if (Array.isArray(value)) {
     const readable = firstReadableArrayValue(value.filter(hasContent));
@@ -353,7 +477,7 @@ function conciseValue(
   }
   return executive
     ? field.id === "expertDiagnostics" ? LABELS[field.id][language] : null
-    : LABELS[field.id].en;
+    : null;
 }
 
 function renderExecutiveSections(value: unknown, language: "sv" | "en") {
@@ -415,7 +539,7 @@ function EvidenceSourceDetail({
                   <div style={{ marginTop: 5, minWidth: 0, overflowWrap: "anywhere", wordBreak: "break-word", whiteSpace: "pre-wrap" }}>
                     {executive
                       ? renderExecutiveSourceReference(reference.reference, `${field.id}-provenance-${index}`, language)
-                      : renderCompleteValue(reference.reference, `${field.id}-provenance-${index}`)}
+                      : renderCompleteValue(reference.reference, `${field.id}-provenance-${index}`, language, true)}
                   </div>
                 </details>
               )}
@@ -464,7 +588,7 @@ function FindingEvidenceRow({
             ? renderExecutiveSections(field.value, language)
             : executive
               ? renderExecutiveCompleteValue(field.value, field.id, language)
-              : renderCompleteValue(field.value, field.id)}
+              : renderCompleteValue(field.value, field.id, language)}
           <EvidenceSourceDetail field={field} language={language} executive={executive} />
         </div>
       )}
@@ -484,7 +608,7 @@ export default function StructuralFindingsSection({
   const executive = model.mode === "executive-demo";
   const applicable = model.orderedFields.filter(
     (field) => field.visible && hasContent(field.value) &&
-      (!executive || conciseValue(field, language, true) != null)
+      conciseValue(field, language, executive) != null
   );
 
   if (!model.analysisReady) {
@@ -494,7 +618,7 @@ export default function StructuralFindingsSection({
         <h2 id="structural-findings-title" style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "var(--ce-text-primary, #e5e7eb)" }}>
           {language === "sv" ? "Strukturella fynd" : "Structural Findings"}
         </h2>
-        <div style={{ marginTop: 10, color: "var(--ce-text-secondary, #94a3b8)", fontSize: 12 }}>{empty ? renderCompleteValue(empty.value, empty.id) : "—"}</div>
+        <div style={{ marginTop: 10, color: "var(--ce-text-secondary, #94a3b8)", fontSize: 12 }}>{empty ? renderCompleteValue(empty.value, empty.id, language) : "—"}</div>
       </section>
     );
   }
@@ -502,7 +626,7 @@ export default function StructuralFindingsSection({
   const summary = SUMMARY_PRIORITY.map((id) => model.fields[id])
     .filter((field): field is StructuralFindingsPresentationField => Boolean(
       field?.visible && hasContent(field.value) &&
-      (!executive || conciseValue(field, language, true) != null)
+      conciseValue(field, language, executive) != null
     ))
     .slice(0, 6);
   const evidence = applicable.filter(
@@ -524,7 +648,7 @@ export default function StructuralFindingsSection({
   };
 
   return (
-    <section aria-labelledby="structural-findings-title" data-mode={model.mode} style={{ background: "var(--ce-surface-subtle, #0F172A)", border: "1px solid var(--ce-border, #1F2937)", borderRadius: 6, padding: "12px 14px", color: "var(--ce-text-primary, #e5e7eb)" }}>
+    <section aria-labelledby="structural-findings-title" data-mode={model.mode} style={{ background: "var(--ce-surface-subtle, #0F172A)", border: "1px solid var(--ce-border, #1F2937)", borderRadius: 6, padding: "12px 14px", color: "var(--ce-text-primary, #e5e7eb)", containerType: "inline-size", containerName: "structural-findings" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 16 }}>
         <h2 id="structural-findings-title" style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>
           {language === "sv" ? "Strukturella fynd" : "Structural Findings"}
@@ -542,6 +666,8 @@ export default function StructuralFindingsSection({
         .findings-summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
         @media (max-width: 1100px) { .findings-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 760px) { .findings-summary-grid { grid-template-columns: minmax(0, 1fr); } }
+        @container structural-findings (max-width: 680px) { [data-mode="executive-demo"] .findings-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @container structural-findings (max-width: 440px) { [data-mode="executive-demo"] .findings-summary-grid { grid-template-columns: minmax(0, 1fr); } }
       `}</style>
       <div className="findings-summary-grid" data-testid="findings-summary" style={{ display: "grid", gap: "14px 28px", marginTop: 14, paddingBottom: evidence.length > 0 ? 12 : 0 }}>
         {summary.map((field) => (

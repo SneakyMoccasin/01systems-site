@@ -10,8 +10,14 @@ import type { RiskLevel, ParameterSpec } from "@/src/pilotFastighet/impactContra
 import { getImpactContract } from "@/src/pilotFastighet/getImpactContract";
 import {
   findTippingIndex,
-  buildExecutiveConclusion,
 } from "@/src/pilotFastighet/compareHelpers";
+import {
+  buildSavedRunConclusionPresentation,
+  formatConfigurationGroup,
+  formatConstraintState,
+  formatRiskLevel,
+  SAVED_RUN_COPY,
+} from "@/src/pilotFastighet/presentationLocalization";
 import { PILOT_CASES } from "@/src/pilotFastighet/pilotCases";
 import { calculateExecutiveSummary } from "@/src/pilotFastighet/analysis/calculateExecutiveSummary";
 import {
@@ -970,16 +976,17 @@ export default function PilotFastighetPage() {
   const lifecycleB =
     snapB?.engineState?.registry?.RefinancingConstraint?.lifecycle ?? undefined;
 
-  const executiveConclusion =
+  const frozenRunConclusion =
     deltaMargin !== undefined
-      ? buildExecutiveConclusion({
+      ? buildSavedRunConclusionPresentation({
           deltaMargin,
           lifecycleA,
           lifecycleB,
           tippingStepA,
           tippingStepB,
-        })
+        }, uiLanguage)
       : null;
+  const savedRunCopy = SAVED_RUN_COPY[uiLanguage];
 
   function getDisplayLabel(snap: SavedRunSnapshot): string {
     return snapshotLabels[snap.snapshotId] ?? snap.label ?? snap.snapshotId;
@@ -1964,7 +1971,7 @@ export default function PilotFastighetPage() {
       {Object.entries(groupedParameters).map(([groupName, params]) => (
         <section key={groupName} className="border-b pb-5 last:border-0" style={{ borderColor: semanticTheme.border }}>
           <div className="mb-3 text-xs font-semibold uppercase tracking-wide" style={{ color: semanticTheme.mutedText }}>
-            {groupName}
+            {formatConfigurationGroup(groupName, uiLanguage)}
           </div>
           <div className="space-y-3">
             {params.map((param) => {
@@ -1996,10 +2003,9 @@ export default function PilotFastighetPage() {
                     className="shrink-0 rounded-md border px-2 py-1.5 text-xs disabled:opacity-50"
                     style={{ borderColor: semanticTheme.border, background: semanticTheme.controlBackground, color: semanticTheme.primaryText }}
                   >
-                    <option value="LOW">LOW</option>
-                    <option value="MODERATE">MODERATE</option>
-                    <option value="HIGH">HIGH</option>
-                    <option value="SEVERE">SEVERE</option>
+                    {(["LOW", "MODERATE", "HIGH", "SEVERE"] as const).map((level) => (
+                      <option key={level} value={level}>{formatRiskLevel(level, uiLanguage, "driver")}</option>
+                    ))}
                   </select>
                 </label>
               );
@@ -3851,13 +3857,10 @@ export default function PilotFastighetPage() {
                           : `Goal strategy: ${finalB >= 0 ? "Robust" : "Collapse zone"} (margin ${finalB.toFixed(2)})`}
                       </div>
                       <div style={{ marginTop: "6px" }}>
-                        {uiLanguage === "sv"
-                          ? `Kapitalbegränsning: ${
-                              tippingMarginIndexB != null ? "AKTIV" : "INAKTIV"
-                            }`
-                          : `Capital constraint: ${
-                              tippingMarginIndexB != null ? "ACTIVE" : "INACTIVE"
-                            }`}
+                        {`${uiLanguage === "sv" ? "Kapitalbegränsning" : "Capital constraint"}: ${formatConstraintState(
+                          tippingMarginIndexB != null ? "ACTIVE" : "INACTIVE",
+                          uiLanguage
+                        )}`}
                       </div>
                       <div style={{ marginTop: "6px" }}>
                         {uiLanguage === "sv"
@@ -4080,11 +4083,13 @@ export default function PilotFastighetPage() {
         }}
       >
         <span>{pt.systemPressure}: </span>
-        <span style={{ fontWeight: 600 }}>{systemPressure}</span>
+        <span style={{ fontWeight: 600 }}>{formatRiskLevel(systemPressure, uiLanguage, "system-pressure")}</span>
         <br />
         <span>{pt.estimatedStructuralBreach} </span>
         <span style={{ fontWeight: 600 }}>
-          {estimatedTimeToBreach != null ? `~${estimatedTimeToBreach} steps` : "—"}
+          {estimatedTimeToBreach != null
+            ? `~${estimatedTimeToBreach} ${uiLanguage === "sv" ? "modellperioder" : "model periods"}`
+            : "—"}
         </span>
       </div>
       )}
@@ -4115,6 +4120,7 @@ export default function PilotFastighetPage() {
           </div>
           {!executiveDemoMode && (
           <SnapshotCompare
+            language={uiLanguage}
             baselineA={baselineA}
             finalA={finalA}
             baselineB={baselineB}
@@ -4143,10 +4149,10 @@ export default function PilotFastighetPage() {
           }}
         >
           <div style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px", color: semanticTheme.primaryText }}>
-            {`Frozen Snapshots — ${scenarioALabelText}`}
+            {`${savedRunCopy.frozenRuns} — ${scenarioALabelText}`}
           </div>
           {historyA.length === 0 ? (
-            <div style={{ fontSize: "13px", color: semanticTheme.mutedText }}>No snapshots yet.</div>
+            <div style={{ fontSize: "13px", color: semanticTheme.mutedText }}>{savedRunCopy.noRuns}</div>
           ) : (
             <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
               {historyA.map((s) => (
@@ -4204,7 +4210,7 @@ export default function PilotFastighetPage() {
                           <>
                             <span
                               style={{ fontSize: "12px", color: semanticTheme.primaryText, cursor: "pointer" }}
-                              title="Double-click to rename"
+                              title={savedRunCopy.rename}
                               onDoubleClick={() => {
                                 setEditingLabelId(s.snapshotId);
                                 setEditingLabelValue(getDisplayLabel(s));
@@ -4226,8 +4232,8 @@ export default function PilotFastighetPage() {
                                 cursor: "pointer",
                                 fontSize: "12px",
                               }}
-                              title="Rename"
-                              aria-label="Rename snapshot"
+                              title={savedRunCopy.rename}
+                              aria-label={savedRunCopy.renameRun}
                             >
                               ✎
                             </button>
@@ -4259,7 +4265,7 @@ export default function PilotFastighetPage() {
                         fontSize: "12px",
                       }}
                     >
-                      Select as A
+                      {savedRunCopy.selectA}
                     </button>
                     <button
                       type="button"
@@ -4274,7 +4280,7 @@ export default function PilotFastighetPage() {
                         fontSize: "12px",
                       }}
                     >
-                      Delete
+                      {savedRunCopy.remove}
                     </button>
                   </div>
                 </li>
@@ -4292,10 +4298,10 @@ export default function PilotFastighetPage() {
           }}
         >
           <div style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px", color: semanticTheme.primaryText }}>
-            {`Frozen Snapshots — ${scenarioBLabelText}`}
+            {`${savedRunCopy.frozenRuns} — ${scenarioBLabelText}`}
           </div>
           {historyB.length === 0 ? (
-            <div style={{ fontSize: "13px", color: semanticTheme.mutedText }}>No snapshots yet.</div>
+            <div style={{ fontSize: "13px", color: semanticTheme.mutedText }}>{savedRunCopy.noRuns}</div>
           ) : (
             <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
               {historyB.map((s) => (
@@ -4353,7 +4359,7 @@ export default function PilotFastighetPage() {
                           <>
                             <span
                               style={{ fontSize: "12px", color: semanticTheme.primaryText, cursor: "pointer" }}
-                              title="Double-click to rename"
+                              title={savedRunCopy.rename}
                               onDoubleClick={() => {
                                 setEditingLabelId(s.snapshotId);
                                 setEditingLabelValue(getDisplayLabel(s));
@@ -4375,8 +4381,8 @@ export default function PilotFastighetPage() {
                                 cursor: "pointer",
                                 fontSize: "12px",
                               }}
-                              title="Rename"
-                              aria-label="Rename snapshot"
+                              title={savedRunCopy.rename}
+                              aria-label={savedRunCopy.renameRun}
                             >
                               ✎
                             </button>
@@ -4408,7 +4414,7 @@ export default function PilotFastighetPage() {
                         fontSize: "12px",
                       }}
                     >
-                      Select as B
+                      {savedRunCopy.selectB}
                     </button>
                     <button
                       type="button"
@@ -4423,7 +4429,7 @@ export default function PilotFastighetPage() {
                         fontSize: "12px",
                       }}
                     >
-                      Delete
+                      {savedRunCopy.remove}
                     </button>
                   </div>
                 </li>
@@ -4444,7 +4450,7 @@ export default function PilotFastighetPage() {
           }}
         >
           <div style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px", color: semanticTheme.primaryText }}>
-            {`Compare Frozen Snapshots (${scenarioBLabelText} − ${scenarioALabelText})`}
+            {`${savedRunCopy.compare} (${scenarioBLabelText} − ${scenarioALabelText})`}
           </div>
           <button
             type="button"
@@ -4460,7 +4466,7 @@ export default function PilotFastighetPage() {
               cursor: "pointer",
             }}
           >
-            {showTechnicalDetails ? "Hide technical details" : "Show technical details"}
+            {showTechnicalDetails ? savedRunCopy.hideTechnical : savedRunCopy.showTechnical}
           </button>
           <div style={{ fontSize: "13px", lineHeight: "1.8" }}>
             <strong>{`${scenarioALabelText}:`}</strong> {snapA.engineState.margin.toFixed(3)}
@@ -4487,20 +4493,20 @@ export default function PilotFastighetPage() {
               </div>
             ) : (
               <>
-                <strong>Margin impact:</strong>{" "}
+                <strong>{savedRunCopy.marginDifference}:</strong>{" "}
                 {(snapB.engineState.margin - snapA.engineState.margin).toFixed(3)}
                 <br />
-                <strong>Tipping (ACTIVE):</strong>{" "}
-                {tippingStepA != null ? `${scenarioALabelText}: M${tippingStepA}` : `${scenarioALabelText}: never`} |{" "}
-                {tippingStepB != null ? `${scenarioBLabelText}: M${tippingStepB}` : `${scenarioBLabelText}: never`}
+                <strong>{savedRunCopy.tipping} ({formatConstraintState("ACTIVE", uiLanguage)}):</strong>{" "}
+                {tippingStepA != null ? `${scenarioALabelText}: M${tippingStepA}` : `${scenarioALabelText}: ${savedRunCopy.never}`} |{" "}
+                {tippingStepB != null ? `${scenarioBLabelText}: M${tippingStepB}` : `${scenarioBLabelText}: ${savedRunCopy.never}`}
                 <br />
-                {executiveConclusion != null && (
+                {frozenRunConclusion != null && (
                   <>
-                    <strong>Conclusion:</strong> {executiveConclusion.title}
+                    <strong>{savedRunCopy.conclusion}:</strong> {frozenRunConclusion.title}
                     <br />
-                    {executiveConclusion.tags.length > 0 && (
+                    {frozenRunConclusion.tags.length > 0 && (
                       <>
-                        <strong>Tags:</strong> {executiveConclusion.tags.join(", ")}
+                        <strong>{savedRunCopy.tags}:</strong> {frozenRunConclusion.tags.join(", ")}
                         <br />
                       </>
                     )}
@@ -4508,13 +4514,13 @@ export default function PilotFastighetPage() {
                 )}
                 {showTechnicalDetails && (
                   <>
-                    <strong>{`Refinancing lifecycle (${scenarioALabelText}):`}</strong> {snapA.engineState.registry.RefinancingConstraint.lifecycle}
+                    <strong>{`${savedRunCopy.lifecycle} (${scenarioALabelText}):`}</strong> {snapA.engineState.registry.RefinancingConstraint.lifecycle}
                     <br />
-                    <strong>{`Refinancing lifecycle (${scenarioBLabelText}):`}</strong> {snapB.engineState.registry.RefinancingConstraint.lifecycle}
+                    <strong>{`${savedRunCopy.lifecycle} (${scenarioBLabelText}):`}</strong> {snapB.engineState.registry.RefinancingConstraint.lifecycle}
                     <br />
-                    <strong>{`Step (${scenarioALabelText}):`}</strong> {snapA.engineState.step}
+                    <strong>{`${savedRunCopy.step} (${scenarioALabelText}):`}</strong> {snapA.engineState.step}
                     <br />
-                    <strong>{`Step (${scenarioBLabelText}):`}</strong> {snapB.engineState.step}
+                    <strong>{`${savedRunCopy.step} (${scenarioBLabelText}):`}</strong> {snapB.engineState.step}
                   </>
                 )}
               </>
@@ -4639,7 +4645,7 @@ export default function PilotFastighetPage() {
                   color: "var(--ce-text-muted)",
                 }}
               >
-                <span>minimumMargin</span>
+                <span>{uiLanguage === "sv" ? "Lägsta marginal" : "Minimum margin"}</span>
                 <span style={{ color: "var(--ce-text-primary)", fontVariantNumeric: "tabular-nums", overflowWrap: "anywhere" }}>
                   {expertMinimumMargin != null ? expertMinimumMargin.toFixed(4) : "—"}
                 </span>
@@ -4652,7 +4658,7 @@ export default function PilotFastighetPage() {
                   color: "var(--ce-text-muted)",
                 }}
               >
-                <span>collapseThreshold</span>
+                <span>{uiLanguage === "sv" ? "Kollapströskel" : "Collapse threshold"}</span>
                 <span style={{ color: "var(--ce-text-primary)", fontVariantNumeric: "tabular-nums", overflowWrap: "anywhere" }}>
                   {EXEC_COLLAPSE_THRESHOLD}
                 </span>
@@ -4665,7 +4671,7 @@ export default function PilotFastighetPage() {
                   color: "var(--ce-text-muted)",
                 }}
               >
-                <span>sustainThreshold</span>
+                <span>{uiLanguage === "sv" ? "Stabilitetströskel" : "Sustain threshold"}</span>
                 <span style={{ color: "var(--ce-text-primary)", fontVariantNumeric: "tabular-nums", overflowWrap: "anywhere" }}>
                   {EXEC_SUSTAIN_THRESHOLD}
                 </span>
@@ -4738,11 +4744,11 @@ export default function PilotFastighetPage() {
                   color: "var(--ce-text-muted)",
                 }}
               >
-                <span>Sustain breach</span>
+                <span>{uiLanguage === "sv" ? "Passerad stabilitetströskel" : "Sustain breach"}</span>
                 <span style={{ color: "var(--ce-text-primary)", fontVariantNumeric: "tabular-nums", overflowWrap: "anywhere", textAlign: "right" }}>
                   {sustainBreachStep != null
-                    ? `Sustain threshold crossed at M${sustainBreachStep}`
-                    : "Sustain threshold not crossed"}
+                    ? uiLanguage === "sv" ? `Stabilitetströskeln passerades vid M${sustainBreachStep}` : `Sustain threshold crossed at M${sustainBreachStep}`
+                    : uiLanguage === "sv" ? "Stabilitetströskeln passerades inte" : "Sustain threshold not crossed"}
                 </span>
               </div>
               <div
@@ -4752,7 +4758,9 @@ export default function PilotFastighetPage() {
                   marginTop: "2px",
                 }}
               >
-                Minimum structural capital buffer required for long-term stability.
+                {uiLanguage === "sv"
+                  ? "Minsta strukturella kapitalbuffert som krävs för långsiktig stabilitet."
+                  : "Minimum structural capital buffer required for long-term stability."}
               </div>
               <div
                 style={{
@@ -4762,11 +4770,11 @@ export default function PilotFastighetPage() {
                   color: "var(--ce-text-muted)",
                 }}
               >
-                <span>Collapse breach</span>
+                <span>{uiLanguage === "sv" ? "Passerad kollapströskel" : "Collapse breach"}</span>
                 <span style={{ color: "var(--ce-text-primary)", fontVariantNumeric: "tabular-nums", overflowWrap: "anywhere", textAlign: "right" }}>
                   {collapseBreachStep != null
-                    ? `Collapse threshold crossed at M${collapseBreachStep}`
-                    : "Collapse threshold not crossed"}
+                    ? uiLanguage === "sv" ? `Kollapströskeln passerades vid M${collapseBreachStep}` : `Collapse threshold crossed at M${collapseBreachStep}`
+                    : uiLanguage === "sv" ? "Kollapströskeln passerades inte" : "Collapse threshold not crossed"}
                 </span>
               </div>
               {steadyStateStep !== null && (
@@ -4778,9 +4786,11 @@ export default function PilotFastighetPage() {
                     color: "var(--ce-text-muted)",
                   }}
                 >
-                  <span>Steady state detected</span>
+                  <span>{uiLanguage === "sv" ? "Stabilt tillstånd identifierat" : "Steady state detected"}</span>
                   <span style={{ color: "var(--ce-text-primary)", fontVariantNumeric: "tabular-nums", overflowWrap: "anywhere", textAlign: "right" }}>
-                    System stabilized at M{steadyStateStep}. No structural change detected for {REQUIRED_STABLE_TICKS} consecutive ticks (after minimum {MIN_STEPS_BEFORE_STEADY} months).
+                    {uiLanguage === "sv"
+                      ? `Systemet stabiliserades vid M${steadyStateStep}. Ingen strukturell förändring identifierades under ${REQUIRED_STABLE_TICKS} på varandra följande modellperioder (efter minst ${MIN_STEPS_BEFORE_STEADY} modellperioder).`
+                      : `The system stabilized at M${steadyStateStep}. No structural change was detected for ${REQUIRED_STABLE_TICKS} consecutive model periods (after at least ${MIN_STEPS_BEFORE_STEADY} model periods).`}
                   </span>
                 </div>
               )}

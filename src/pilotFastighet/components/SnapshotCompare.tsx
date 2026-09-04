@@ -1,6 +1,7 @@
 import React from "react";
 
 type Props = {
+  language: "sv" | "en";
   baselineA: number;
   finalA: number;
   baselineB: number;
@@ -30,6 +31,7 @@ function getStatusColor(status: string): string {
 }
 
 export const SnapshotCompare: React.FC<Props> = ({
+  language,
   baselineA,
   finalA,
   baselineB,
@@ -41,6 +43,27 @@ export const SnapshotCompare: React.FC<Props> = ({
   tippingLabel,
   noTippingText,
 }) => {
+  const copy = language === "sv"
+    ? {
+        heading: "Jämförelse av frysta körningar",
+        current: "Nuläge",
+        target: "Målstrategi",
+        start: "Start",
+        end: "Slut",
+        status: "Status",
+        marginDifference: "Marginalskillnad",
+        tippingRisk: "Risk för tippingpunkt",
+      }
+    : {
+        heading: "Frozen run comparison",
+        current: "Baseline",
+        target: "Goal strategy",
+        start: "Start",
+        end: "End",
+        status: "Status",
+        marginDifference: "Margin difference",
+        tippingRisk: "Tipping risk",
+      };
   return (
     <div
       style={{
@@ -64,7 +87,7 @@ export const SnapshotCompare: React.FC<Props> = ({
           color: "var(--ce-text-primary, #E5E7EB)",
         }}
       >
-        Snapshot Compare
+        {copy.heading}
       </h3>
 
       <div
@@ -92,22 +115,22 @@ export const SnapshotCompare: React.FC<Props> = ({
               marginBottom: "12px",
             }}
           >
-            Current Strategy
+            {copy.current}
           </div>
           <div style={{ fontSize: "12px", color: "var(--ce-text-secondary, #9CA3AF)", marginBottom: "4px" }}>
-            Start
+            {copy.start}
           </div>
           <div style={{ fontSize: "15px", fontWeight: 500, color: "var(--ce-text-primary, #F3F4F6)", marginBottom: "12px" }}>
             {baselineA.toFixed(2)}
           </div>
           <div style={{ fontSize: "12px", color: "var(--ce-text-secondary, #9CA3AF)", marginBottom: "4px" }}>
-            End
+            {copy.end}
           </div>
           <div style={{ fontSize: "15px", fontWeight: 500, color: "var(--ce-text-primary, #F3F4F6)", marginBottom: "12px" }}>
             {finalA.toFixed(2)}
           </div>
           <div style={{ fontSize: "12px", color: "var(--ce-text-secondary, #9CA3AF)", marginBottom: "4px" }}>
-            Status
+            {copy.status}
           </div>
           <div style={{ fontSize: "13px", color: "var(--ce-text-secondary, #9CA3AF)" }}>{structuralStatusA}</div>
         </div>
@@ -129,22 +152,22 @@ export const SnapshotCompare: React.FC<Props> = ({
               marginBottom: "12px",
             }}
           >
-            Alternative Strategy
+            {copy.target}
           </div>
           <div style={{ fontSize: "12px", color: "var(--ce-text-secondary, #9CA3AF)", marginBottom: "4px" }}>
-            Start
+            {copy.start}
           </div>
           <div style={{ fontSize: "15px", fontWeight: 500, color: "var(--ce-text-primary, #F3F4F6)", marginBottom: "12px" }}>
             {baselineB.toFixed(2)}
           </div>
           <div style={{ fontSize: "12px", color: "var(--ce-text-secondary, #9CA3AF)", marginBottom: "4px" }}>
-            End
+            {copy.end}
           </div>
           <div style={{ fontSize: "15px", fontWeight: 500, color: "var(--ce-text-primary, #F3F4F6)", marginBottom: "12px" }}>
             {finalB.toFixed(2)}
           </div>
           <div style={{ fontSize: "12px", color: "var(--ce-text-secondary, #9CA3AF)", marginBottom: "4px" }}>
-            Status
+            {copy.status}
           </div>
           <div style={{ fontSize: "13px", fontWeight: 500, color: getStatusColor(structuralStatusB) }}>
             {structuralStatusB}
@@ -172,7 +195,7 @@ export const SnapshotCompare: React.FC<Props> = ({
           }}
         >
           <div style={{ fontSize: "12px", color: "var(--ce-text-secondary, #9CA3AF)", marginBottom: "4px" }}>
-            Δ Margin
+            {copy.marginDifference}
           </div>
           <div
             style={{
@@ -190,7 +213,7 @@ export const SnapshotCompare: React.FC<Props> = ({
             {tippingLabel}
           </div>
           <div style={{ fontSize: "14px", color: "var(--ce-text-primary, #E5E7EB)" }}>
-            {tippingStep ? "Tipping risk" : noTippingText}
+            {tippingStep ? copy.tippingRisk : noTippingText}
           </div>
         </div>
       </div>
