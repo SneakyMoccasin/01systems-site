@@ -15,6 +15,12 @@ import {
   profileValue,
 } from "@/src/lib/runtimeProfile";
 import { buildScheduledInterpretationContext } from "@/src/pilotFastighet/analysis/scheduledInterpretationContext";
+import {
+  AiInterpretationRequestError,
+  aiInterpretationErrorResponse,
+  requestAiInterpretationModel,
+  resolveAiInterpretationTimeoutMs,
+} from "@/src/pilotFastighet/analysis/aiInterpretationRequest";
 
 type InterpretationLanguage = "sv" | "en";
 
@@ -685,21 +691,14 @@ ${qaLangInstruction}${executiveDemoMode ? getExecutiveDemoInterpretationAddon(ui
         "bytes"
       );
 
-      const response = await profileMeasureAsync(
+      const data = await profileMeasureAsync(
         "ai-interpretation.route.qa.fetch.ms",
         () =>
-          fetch("http://localhost:11434/api/generate", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: ollamaRequestBody,
+          requestAiInterpretationModel(ollamaRequestBody, {
+            timeoutMs: resolveAiInterpretationTimeoutMs(
+              process.env.AI_INTERPRETATION_TIMEOUT_MS
+            ),
           })
-      );
-
-      const data = await profileMeasureAsync(
-        "ai-interpretation.route.qa.response.json.ms",
-        () => response.json()
       );
       const qaTextRaw = (data.response ?? "No response.").trim();
       return NextResponse.json({
@@ -783,21 +782,14 @@ ${qaLangInstruction}${executiveDemoMode ? getExecutiveDemoInterpretationAddon(ui
       "bytes"
     );
 
-    const response = await profileMeasureAsync(
+    const data = await profileMeasureAsync(
       "ai-interpretation.route.summary.fetch.ms",
       () =>
-        fetch("http://localhost:11434/api/generate", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: ollamaRequestBody,
+        requestAiInterpretationModel(ollamaRequestBody, {
+          timeoutMs: resolveAiInterpretationTimeoutMs(
+            process.env.AI_INTERPRETATION_TIMEOUT_MS
+          ),
         })
-    );
-
-    const data = await profileMeasureAsync(
-      "ai-interpretation.route.summary.response.json.ms",
-      () => response.json()
     );
 
     let text = (data.response ?? "").trim();
@@ -834,8 +826,14 @@ ${qaLangInstruction}${executiveDemoMode ? getExecutiveDemoInterpretationAddon(ui
       text,
     });
   } catch (error) {
-    return NextResponse.json({
-      text: "AI interpretation unavailable.",
-    });
+    if (error instanceof AiInterpretationRequestError) {
+      return NextResponse.json(aiInterpretationErrorResponse(error.code), {
+        status: error.code === "AI_INTERPRETATION_TIMEOUT" ? 504 : 502,
+      });
+    }
+    return NextResponse.json(
+      aiInterpretationErrorResponse("AI_INTERPRETATION_UNAVAILABLE"),
+      { status: 500 }
+    );
   }
 }

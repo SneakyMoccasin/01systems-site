@@ -188,6 +188,7 @@ const AIInterpretationPanel: React.FC<Props> = ({
 
   const [aiText, setAiText] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [unavailable, setUnavailable] = useState(false);
   const fetchGenerationRef = useRef(0);
   const uiLanguage = language;
   const t = pulseLanguage[uiLanguage];
@@ -198,6 +199,7 @@ const AIInterpretationPanel: React.FC<Props> = ({
     const ac = new AbortController();
     const generation = ++fetchGenerationRef.current;
     setLoading(true);
+    setUnavailable(false);
 
     const translatedEvents = events.map((e) => ({
       quarter: e.quarter,
@@ -273,12 +275,19 @@ const AIInterpretationPanel: React.FC<Props> = ({
         }
         if (fetchGenerationRef.current !== generation) return;
         const text = data?.text;
-        setAiText(typeof text === "string" ? text : null);
+        if (!res.ok || typeof text !== "string" || text.trim() === "") {
+          setAiText(null);
+          setUnavailable(true);
+          return;
+        }
+        setAiText(text);
+        setUnavailable(false);
       } catch (err: unknown) {
         logPulseCaughtRejection("AIInterpretationPanel.fetch", err);
         if (err instanceof DOMException && err.name === "AbortError") return;
         if (fetchGenerationRef.current !== generation) return;
         setAiText(null);
+        setUnavailable(true);
       } finally {
         if (fetchGenerationRef.current === generation) {
           setLoading(false);
@@ -317,7 +326,10 @@ const AIInterpretationPanel: React.FC<Props> = ({
 
   useEffect(() => {
     if (!simulationCompleted) {
+      fetchGenerationRef.current += 1;
       setAiText(null);
+      setLoading(false);
+      setUnavailable(false);
     }
   }, [simulationCompleted]);
 
@@ -495,6 +507,10 @@ const AIInterpretationPanel: React.FC<Props> = ({
     uiLanguage === "sv"
       ? "Ingen syntes tillgänglig ännu."
       : "No synthesis available yet.";
+  const unavailableText =
+    uiLanguage === "sv"
+      ? "AI-tolkningen är inte tillgänglig just nu. De deterministiska analysresultaten påverkas inte."
+      : "AI interpretation is currently unavailable. The deterministic analysis results are unaffected.";
   const stripHeadline =
     uiLanguage === "sv" ? "AI-tolkning" : "AI interpretation";
   const stripSub =
@@ -589,7 +605,9 @@ const AIInterpretationPanel: React.FC<Props> = ({
         )}
 
         {!loading && simulationCompleted && !aiText && (
-          <div style={{ fontSize: "12px", color: "var(--ce-text-secondary)" }}>{stripEmptyHint}</div>
+          <div role={unavailable ? "status" : undefined} style={{ fontSize: "12px", color: "var(--ce-text-secondary)" }}>
+            {unavailable ? unavailableText : stripEmptyHint}
+          </div>
         )}
 
         {!loading && aiText && stripCards.length > 0 && (
@@ -705,6 +723,12 @@ const AIInterpretationPanel: React.FC<Props> = ({
       {loading && (
         <div style={{ fontSize: "12px", color: "var(--ce-text-secondary, #9CA3AF)" }}>
           {t.aiAnalysing}
+        </div>
+      )}
+
+      {!loading && unavailable && (
+        <div role="status" style={{ fontSize: "12px", color: "var(--ce-text-secondary, #9CA3AF)" }}>
+          {unavailableText}
         </div>
       )}
 
