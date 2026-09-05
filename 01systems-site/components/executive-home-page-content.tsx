@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
+import { CASCADE_ENGINE_MEDIA } from "@/components/cascade-engine-media";
 import { useLanguage } from "@/components/language-context";
 import {
   PRIMARY_CTA_COPY,
@@ -51,6 +52,7 @@ export function ExecutiveHomePageContent() {
   }, []);
 
   const isSwedish = lang === "sv";
+  const media = CASCADE_ENGINE_MEDIA[lang];
   const primaryCta = PRIMARY_CTA_COPY[lang];
 
   return (
@@ -111,16 +113,18 @@ export function ExecutiveHomePageContent() {
         </div>
         <div className="full-bleed-media">
           <video
+            key={lang}
             ref={videoRef}
             autoPlay
             muted
             loop
             playsInline
             preload="metadata"
+            poster={media.interfacePreview.src}
             className="rounded-media"
             aria-label={isSwedish ? "Autospelande demonstration av Cascade Engine" : "Autoplaying Cascade Engine demonstration"}
           >
-            <source src="/videos/Demo01.mp4" type="video/mp4" />
+            <source src={media.demoVideo} type="video/mp4" />
           </video>
         </div>
       </section>
@@ -145,10 +149,10 @@ export function ExecutiveHomePageContent() {
         </h3>
         <div className="full-bleed-media" style={{ marginTop: "16px" }}>
           <Image
-            src="/images/cascade-engine-interface-2026-07-16.png"
+            src={media.interfacePreview.src}
             alt={isSwedish ? "Gränssnittsvy från Cascade Engine" : "Cascade Engine interface view"}
-            width={1829}
-            height={980}
+            width={media.interfacePreview.width}
+            height={media.interfacePreview.height}
             className="rounded-media"
             style={{ width: "100%", height: "auto" }}
           />

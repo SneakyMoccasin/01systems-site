@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { CASCADE_ENGINE_MEDIA } from "@/components/cascade-engine-media";
 import { useLanguage } from "@/components/language-context";
 import {
   PRIMARY_CTA_COPY,
@@ -80,6 +81,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) { 
 export function CascadeEnginePageContent() {
   const { lang } = useLanguage();
   const copy = text[lang];
+  const media = CASCADE_ENGINE_MEDIA[lang];
   const primaryCta = PRIMARY_CTA_COPY[lang];
   return <main className="page-shell cascade-product-page">
     <section className="cascade-product-hero"><p className="eyebrow">01 Systems · Cascade Engine</p><h1 className="page-title">Cascade Engine</h1><p className="body-xl cascade-product-lead">{copy.lead}</p><ul className="cascade-product-verbs">{copy.verbs.map(v => <li key={v}>{v}</li>)}</ul></section>
@@ -88,8 +90,8 @@ export function CascadeEnginePageContent() {
     <Section title={copy.configure}><ol className="cascade-process-list">{copy.process.map(([title,body]) => <li key={title}><strong>{title}</strong><span>{body}</span></li>)}</ol><p className="body-large cascade-product-boundary">{copy.processLimit}</p></Section>
     <Section title={copy.workspace}><Bullets items={copy.workspaceItems}/></Section>
     <Section title={copy.calculates}><p className="body-large cascade-product-intro">{copy.calculatesIntro}</p><Bullets items={copy.outputs}/><p className="body-large cascade-product-conclusion">{copy.outputsLimit}</p></Section>
-    <Section title={copy.margin}><Bullets items={copy.marginItems}/><figure className="cascade-product-figure"><Image src="/images/cascade-engine-structural-margin.png" alt={copy.margin} width={1500} height={1044} sizes="(max-width: 900px) 100vw, 900px"/><figcaption className="cascade-product-caption">{copy.marginCaption}</figcaption></figure></Section>
-    <Section title={copy.findings}><div className="cascade-findings-figure"><figure className="cascade-product-figure"><Image src="/images/cascade-engine-structural-findings.png" alt={copy.findings} width={398} height={848} sizes="(max-width: 640px) 100vw, 398px"/></figure><div className="cascade-findings-description"><Bullets items={copy.findingsItems}/><p className="body-large cascade-product-conclusion">{copy.findingsLimit}</p></div></div></Section>
+    <Section title={copy.margin}><Bullets items={copy.marginItems}/><figure className="cascade-product-figure"><Image src={media.structuralMargin.src} alt={copy.margin} width={media.structuralMargin.width} height={media.structuralMargin.height} sizes="(max-width: 900px) 100vw, 900px"/><figcaption className="cascade-product-caption">{copy.marginCaption}</figcaption></figure></Section>
+    <Section title={copy.findings}><div className="cascade-findings-figure"><figure className="cascade-product-figure"><Image src={media.executiveProofNarrative.src} alt={copy.findings} width={media.executiveProofNarrative.width} height={media.executiveProofNarrative.height} sizes="(max-width: 640px) 100vw, 398px"/></figure><div className="cascade-findings-description"><Bullets items={copy.findingsItems}/><p className="body-large cascade-product-conclusion">{copy.findingsLimit}</p></div></div></Section>
     <Section title={copy.consequences}><Bullets items={copy.consequenceItems}/><figure className="cascade-product-figure cascade-product-consequences-figure"><Image src="/images/cascade-engine-propagation-results.png" alt={copy.consequencesAlt} width={396} height={677} sizes="(max-width: 440px) calc(100vw - 48px), 396px"/></figure></Section>
     <Section title={copy.boundaries}><p className="body-large cascade-product-intro">{copy.boundaryIntro}</p><Bullets items={copy.boundaryItems}/><p className="body-large cascade-product-conclusion">{copy.quality}</p></Section>
     <Section title={copy.human}><div className="cascade-responsibility-groups"><div><h3>{copy.organisation}</h3><Bullets items={copy.orgItems}/></div><div><h3>Cascade Engine</h3><Bullets items={copy.engineItems}/></div></div><p className="body-large cascade-product-conclusion">{copy.judgement}</p></Section>
