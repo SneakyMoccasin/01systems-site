@@ -15,6 +15,7 @@ type LocalizedMediaLightboxProps = {
   helpText: string;
   closeLabel: string;
   dialogLabel: string;
+  thumbnailClassName?: string;
 };
 
 export function LocalizedMediaLightbox({
@@ -23,6 +24,7 @@ export function LocalizedMediaLightbox({
   helpText,
   closeLabel,
   dialogLabel,
+  thumbnailClassName,
 }: LocalizedMediaLightboxProps) {
   const [isOpen, setIsOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -63,6 +65,7 @@ export function LocalizedMediaLightbox({
           width={image.width}
           height={image.height}
           sizes="(max-width: 900px) 100vw, 900px"
+          className={thumbnailClassName}
         />
         <span className="cascade-media-help">{helpText}</span>
       </button>

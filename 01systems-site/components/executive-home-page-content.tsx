@@ -1,10 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { CASCADE_ENGINE_MEDIA } from "@/components/cascade-engine-media";
 import { useLanguage } from "@/components/language-context";
+import { LocalizedMediaLightbox } from "@/components/localized-media-lightbox";
 import {
   PRIMARY_CTA_COPY,
   PRIMARY_CTA_DESTINATION,
@@ -148,13 +148,13 @@ export function ExecutiveHomePageContent() {
           {isSwedish ? "Cascade Engines gränssnitt" : "Cascade Engine interface"}
         </h3>
         <div className="full-bleed-media" style={{ marginTop: "16px" }}>
-          <Image
-            src={media.interfacePreview.src}
+          <LocalizedMediaLightbox
+            image={media.interfacePreview}
             alt={isSwedish ? "Gränssnittsvy från Cascade Engine" : "Cascade Engine interface view"}
-            width={media.interfacePreview.width}
-            height={media.interfacePreview.height}
-            className="rounded-media"
-            style={{ width: "100%", height: "auto" }}
+            helpText={isSwedish ? "Klicka för att förstora" : "Click to enlarge"}
+            closeLabel={isSwedish ? "Stäng förstorad bild" : "Close enlarged image"}
+            dialogLabel={isSwedish ? "Förstorad bild av Cascade Engines gränssnitt" : "Enlarged Cascade Engine interface image"}
+            thumbnailClassName="rounded-media"
           />
         </div>
       </section>

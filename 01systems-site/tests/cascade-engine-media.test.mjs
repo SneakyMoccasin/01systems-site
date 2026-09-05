@@ -42,8 +42,17 @@ test("the homepage preserves its playback and layout contract", () => {
 });
 
 test("the interface preview follows the selected locale", () => {
-  assert.match(homeSource, /src=\{media\.interfacePreview\.src\}/);
+  assert.match(homeSource, /image=\{media\.interfacePreview\}/);
   assert.match(homeSource, /alt=\{isSwedish/);
+  assert.match(homeSource, /helpText=\{isSwedish \? "Klicka för att förstora" : "Click to enlarge"\}/);
+  assert.match(homeSource, /LocalizedMediaLightbox/);
+  assert.match(homeSource, /thumbnailClassName="rounded-media"/);
+});
+
+test("the homepage video remains separate and unchanged", () => {
+  assert.equal((homeSource.match(/<video/g) ?? []).length, 1);
+  assert.doesNotMatch(homeSource, /<LocalizedMediaLightbox[^>]*demoVideo/s);
+  assert.match(homeSource, /<video[\s\S]*?key=\{lang\}[\s\S]*?autoPlay[\s\S]*?muted[\s\S]*?loop[\s\S]*?playsInline[\s\S]*?preload="metadata"[\s\S]*?poster=\{media\.interfacePreview\.src\}[\s\S]*?<source src=\{media\.demoVideo\}/);
 });
 
 test("Structural Margin and proof narrative follow locale in the correct sections", () => {
