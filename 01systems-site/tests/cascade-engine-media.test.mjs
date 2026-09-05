@@ -5,6 +5,7 @@ import { test } from "node:test";
 const mediaSource = readFileSync("components/cascade-engine-media.ts", "utf8");
 const homeSource = readFileSync("components/executive-home-page-content.tsx", "utf8");
 const productSource = readFileSync("components/cascade-engine-page-content.tsx", "utf8");
+const lightboxSource = readFileSync("components/localized-media-lightbox.tsx", "utf8");
 
 const expectedAssets = [
   "/videos/cascade-engine-demo-sv.mp4",
@@ -45,11 +46,27 @@ test("the interface preview follows the selected locale", () => {
   assert.match(homeSource, /alt=\{isSwedish/);
 });
 
-test("Structural Margin and proof narrative follow the selected locale", () => {
-  assert.match(productSource, /src=\{media\.structuralMargin\.src\}/);
-  assert.match(productSource, /src=\{media\.executiveProofNarrative\.src\}/);
+test("Structural Margin and proof narrative follow locale in the correct sections", () => {
+  assert.match(productSource, /title=\{copy\.margin\}>.*image=\{media\.structuralMargin\}/s);
+  assert.match(productSource, /title=\{copy\.findings\}><Bullets.*title=\{copy\.consequences\}>.*image=\{media\.executiveProofNarrative\}/s);
+  assert.doesNotMatch(productSource, /title=\{copy\.findings\}>.*image=\{media\.executiveProofNarrative\}.*title=\{copy\.consequences\}>/s);
+  assert.doesNotMatch(productSource, /cascade-engine-propagation-results\.png/);
+});
+
+test("enlarge help and accessible controls are localized", () => {
+  assert.match(productSource, /enlarge: "Click to enlarge"/);
+  assert.match(productSource, /enlarge: "Klicka för att förstora"/);
   assert.match(productSource, /alt=\{copy\.margin\}/);
-  assert.match(productSource, /alt=\{copy\.findings\}/);
+  assert.match(productSource, /alt=\{copy\.consequencesAlt\}/);
+});
+
+test("the lightbox opens, closes and supports Escape and backdrop dismissal", () => {
+  assert.match(lightboxSource, /onClick=\{\(\) => setIsOpen\(true\)\}/);
+  assert.match(lightboxSource, /event\.key === "Escape"/);
+  assert.match(lightboxSource, /event\.target === event\.currentTarget/);
+  assert.match(lightboxSource, /aria-modal="true"/);
+  assert.match(lightboxSource, /document\.body\.style\.overflow = "hidden"/);
+  assert.match(lightboxSource, /document\.body\.style\.overflow = previousOverflow/);
 });
 
 test("no interactive Cascade Engine route is introduced", () => {

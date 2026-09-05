@@ -1,10 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { CASCADE_ENGINE_MEDIA } from "@/components/cascade-engine-media";
 import { useLanguage } from "@/components/language-context";
+import { LocalizedMediaLightbox } from "@/components/localized-media-lightbox";
 import {
   PRIMARY_CTA_COPY,
   PRIMARY_CTA_DESTINATION,
@@ -36,6 +36,9 @@ const text = {
     margin: "Structural Margin",
     marginItems: ["shows development throughout the modelled analysis period,", "compares margin histories for configured alternatives,", "shows represented constraint windows and model steps."],
     marginCaption: "A displayed window or model step is not an exact prediction of when a real-world constraint will activate.",
+    enlarge: "Click to enlarge",
+    closeImage: "Close enlarged image",
+    imageDialog: "Enlarged Cascade Engine image",
     findings: "Structural Findings",
     findingsItems: ["organises results already calculated,", "shows represented drivers and constraints,", "shows traceable propagation paths,", "does not use a language model."],
     findingsLimit: "Structural Findings does not perform a second analysis or discover real-world causes.",
@@ -67,6 +70,7 @@ const text = {
     workspace: "Den analytiska arbetsytan", workspaceItems: ["konfigurera modellens representerade element,", "välja och jämföra konfigurerade alternativ,", "granska beräknade resultat,", "granska färdiga deterministiska fynd."], workspaceCaption: "Arbetsytan samlar konfiguration, jämförelse, beräknade resultat och deterministisk presentation. All synlig information är modellrelativ.",
     calculates: "Vad motorn beräknar", calculatesIntro: "Cascade Engine kör de representerade sambanden i den konfigurerade modellen.", outputs: ["strukturell marginal genom analysperioden,", "förändringar i representerade begränsningstillstånd,", "skillnader mellan konfigurerade alternativ,", "utveckling av representerade drivkrafter över tid,", "spårbara analytiska fynd från den konfigurerade modellen."], outputsLimit: "Resultaten beskriver den konfigurerade representationen. De fastställer inte verkliga orsakssamband.",
     margin: "Strukturell marginal", marginItems: ["visar utvecklingen under den modellerade analysperioden,", "jämför marginalhistorik för konfigurerade alternativ,", "visar representerade begränsningsfönster och modellsteg."], marginCaption: "Ett visat fönster eller modellsteg är inte en exakt förutsägelse av när en verklig begränsning kommer att aktiveras.",
+    enlarge: "Klicka för att förstora", closeImage: "Stäng förstorad bild", imageDialog: "Förstorad Cascade Engine-bild",
     findings: "Strukturella fynd", findingsItems: ["organiserar redan beräknade resultat,", "visar representerade drivkrafter och begränsningar,", "visar spårbara spridningsvägar,", "använder ingen språkmodell."], findingsLimit: "Structural Findings genomför inte en ny analys och upptäcker inte verkliga orsaker.",
     consequences: "Strukturella konsekvenser", consequenceItems: ["när representerade effekter börjar spridas genom den konfigurerade modellen,", "hur strukturell marginal förändras under den representerade analysperioden,", "hur framtida beslutsflexibilitet utvecklas,", "hur konfigurerade alternativ skiljer sig över tid."], consequencesAlt: "Cascade Engine-vy som visar när representerade effekter börjar framträda, efterfrågerespons, marginaler, framtida beslutsflexibilitet, målutveckling och beslutseffekt.",
     boundaries: "Produktens gränser", boundaryIntro: "Cascade Engine:", boundaryItems: ["förutsäger inte framtida händelser,", "avgör inte vilka antaganden som är korrekta,", "upptäcker inte orsakssamband automatiskt,", "optimerar inte beslut,", "rekommenderar inte ett föredraget alternativ,", "ersätter inte domänkunskap eller ledningens omdöme."], quality: "Analysens kvalitet beror på den representerade modellen och dess granskade antaganden.",
@@ -90,9 +94,9 @@ export function CascadeEnginePageContent() {
     <Section title={copy.configure}><ol className="cascade-process-list">{copy.process.map(([title,body]) => <li key={title}><strong>{title}</strong><span>{body}</span></li>)}</ol><p className="body-large cascade-product-boundary">{copy.processLimit}</p></Section>
     <Section title={copy.workspace}><Bullets items={copy.workspaceItems}/></Section>
     <Section title={copy.calculates}><p className="body-large cascade-product-intro">{copy.calculatesIntro}</p><Bullets items={copy.outputs}/><p className="body-large cascade-product-conclusion">{copy.outputsLimit}</p></Section>
-    <Section title={copy.margin}><Bullets items={copy.marginItems}/><figure className="cascade-product-figure"><Image src={media.structuralMargin.src} alt={copy.margin} width={media.structuralMargin.width} height={media.structuralMargin.height} sizes="(max-width: 900px) 100vw, 900px"/><figcaption className="cascade-product-caption">{copy.marginCaption}</figcaption></figure></Section>
-    <Section title={copy.findings}><div className="cascade-findings-figure"><figure className="cascade-product-figure"><Image src={media.executiveProofNarrative.src} alt={copy.findings} width={media.executiveProofNarrative.width} height={media.executiveProofNarrative.height} sizes="(max-width: 640px) 100vw, 398px"/></figure><div className="cascade-findings-description"><Bullets items={copy.findingsItems}/><p className="body-large cascade-product-conclusion">{copy.findingsLimit}</p></div></div></Section>
-    <Section title={copy.consequences}><Bullets items={copy.consequenceItems}/><figure className="cascade-product-figure cascade-product-consequences-figure"><Image src="/images/cascade-engine-propagation-results.png" alt={copy.consequencesAlt} width={396} height={677} sizes="(max-width: 440px) calc(100vw - 48px), 396px"/></figure></Section>
+    <Section title={copy.margin}><Bullets items={copy.marginItems}/><figure className="cascade-product-figure"><LocalizedMediaLightbox image={media.structuralMargin} alt={copy.margin} helpText={copy.enlarge} closeLabel={copy.closeImage} dialogLabel={copy.imageDialog}/><figcaption className="cascade-product-caption">{copy.marginCaption}</figcaption></figure></Section>
+    <Section title={copy.findings}><Bullets items={copy.findingsItems}/><p className="body-large cascade-product-conclusion">{copy.findingsLimit}</p></Section>
+    <Section title={copy.consequences}><Bullets items={copy.consequenceItems}/><figure className="cascade-product-figure"><LocalizedMediaLightbox image={media.executiveProofNarrative} alt={copy.consequencesAlt} helpText={copy.enlarge} closeLabel={copy.closeImage} dialogLabel={copy.imageDialog}/></figure></Section>
     <Section title={copy.boundaries}><p className="body-large cascade-product-intro">{copy.boundaryIntro}</p><Bullets items={copy.boundaryItems}/><p className="body-large cascade-product-conclusion">{copy.quality}</p></Section>
     <Section title={copy.human}><div className="cascade-responsibility-groups"><div><h3>{copy.organisation}</h3><Bullets items={copy.orgItems}/></div><div><h3>Cascade Engine</h3><Bullets items={copy.engineItems}/></div></div><p className="body-large cascade-product-conclusion">{copy.judgement}</p></Section>
     <Section title={copy.relationship}><dl className="cascade-relationship-list"><div><dt>Decision Space Analytics</dt><dd>{copy.dsa}</dd></div><div><dt>Cascade Engine</dt><dd>{copy.ce}</dd></div></dl></Section>

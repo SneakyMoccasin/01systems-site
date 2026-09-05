@@ -1845,6 +1845,71 @@ video {
   background: #0d1117;
 }
 
+.cascade-media-trigger {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-body);
+  cursor: zoom-in;
+  text-align: left;
+}
+
+.cascade-media-trigger:focus-visible {
+  outline: 2px solid var(--text-primary);
+  outline-offset: 6px;
+  border-radius: 12px;
+}
+
+.cascade-media-help {
+  display: block;
+  margin-top: 10px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.cascade-lightbox-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  overflow: auto;
+  background: rgba(8, 12, 18, 0.88);
+}
+
+.cascade-lightbox-content {
+  display: grid;
+  justify-items: end;
+  gap: 12px;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.cascade-lightbox-close {
+  min-height: 44px;
+  padding: 9px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 8px;
+  background: #ffffff;
+  color: #111827;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cascade-product-figure .cascade-lightbox-image {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: min(1400px, calc(100vw - 48px));
+  max-height: calc(100vh - 104px);
+  object-fit: contain;
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
 .cascade-product-caption {
   display: grid;
   gap: 10px;
@@ -1870,10 +1935,6 @@ video {
   width: min(1120px, calc(100% + 220px));
   margin-left: 50%;
   transform: translateX(-50%);
-}
-
-.cascade-product-consequences-figure {
-  width: min(100%, 396px);
 }
 
 .cascade-analysis-details {
