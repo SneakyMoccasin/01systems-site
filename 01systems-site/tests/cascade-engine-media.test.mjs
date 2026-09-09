@@ -42,11 +42,10 @@ test("the homepage preserves its playback and layout contract", () => {
 });
 
 test("the interface preview follows the selected locale", () => {
-  assert.match(homeSource, /image=\{media\.interfacePreview\}/);
+  assert.match(homeSource, /src=\{media\.interfacePreview\.src\}/);
   assert.match(homeSource, /alt=\{isSwedish/);
-  assert.match(homeSource, /helpText=\{isSwedish \? "Klicka för att förstora" : "Click to enlarge"\}/);
-  assert.match(homeSource, /LocalizedMediaLightbox/);
-  assert.match(homeSource, /thumbnailClassName="rounded-media"/);
+  assert.doesNotMatch(homeSource, /LocalizedMediaLightbox/);
+  assert.doesNotMatch(homeSource, /Klicka för att förstora|Click to enlarge/);
 });
 
 test("the homepage video remains separate and unchanged", () => {
@@ -70,12 +69,27 @@ test("enlarge help and accessible controls are localized", () => {
 });
 
 test("the lightbox opens, closes and supports Escape and backdrop dismissal", () => {
-  assert.match(lightboxSource, /onClick=\{\(\) => setIsOpen\(true\)\}/);
+  assert.match(lightboxSource, /onClick=\{openLightbox\}/);
   assert.match(lightboxSource, /event\.key === "Escape"/);
   assert.match(lightboxSource, /event\.target === event\.currentTarget/);
   assert.match(lightboxSource, /aria-modal="true"/);
   assert.match(lightboxSource, /document\.body\.style\.overflow = "hidden"/);
   assert.match(lightboxSource, /document\.body\.style\.overflow = previousOverflow/);
+});
+
+test("the CE lightbox provides bounded zoom, reset and panning", () => {
+  assert.equal((productSource.match(/<LocalizedMediaLightbox/g) ?? []).length, 2);
+  assert.equal((productSource.match(/<LocalizedMediaLightbox key=\{media\./g) ?? []).length, 2);
+  assert.match(lightboxSource, /const MIN_ZOOM = 1/);
+  assert.match(lightboxSource, /const MAX_ZOOM = 3/);
+  assert.match(lightboxSource, /Math\.min\(MAX_ZOOM, Math\.max\(MIN_ZOOM, nextZoom\)\)/);
+  assert.match(lightboxSource, /aria-label="Zoom out"/);
+  assert.match(lightboxSource, /aria-label="Reset zoom to 100%"/);
+  assert.match(lightboxSource, /aria-label="Zoom in"/);
+  assert.match(lightboxSource, /setZoom\(MIN_ZOOM\)/);
+  assert.match(lightboxSource, /viewport\.scrollLeft = 0/);
+  assert.match(lightboxSource, /viewport\.scrollTop = 0/);
+  assert.match(lightboxSource, /onPointerMove=/);
 });
 
 test("no interactive Cascade Engine route is introduced", () => {
