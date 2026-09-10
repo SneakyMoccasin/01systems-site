@@ -3,6 +3,7 @@ import type {
   ScheduleScenarioId,
 } from "../reactScheduledAnalysisBoundary";
 import type { DisplayedPeriod, InitiativeId } from "./contract";
+import type { StructuralExecutionEvidence } from "./executionEvidence";
 import type {
   ResolvedStructuralInitiative,
   ResolvedStructuralScenarioPlan,
@@ -46,60 +47,95 @@ function canonicalProvenanceScenario(scenario: ScheduleScenarioId) {
   return scenario === "A" ? "scenarioA" : "scenarioB";
 }
 
-function assertCanonicalProvenance(
+function structuralEvidence(
   scenarioPlan: ResolvedStructuralScenarioPlan,
-  provenance: ScenarioExecutionProvenance
-): void {
+  provenance: ScenarioExecutionProvenance | readonly StructuralExecutionEvidence[]
+): readonly StructuralExecutionEvidence[] {
+  if (Array.isArray(provenance)) return provenance;
   const expectedScenario = canonicalProvenanceScenario(scenarioPlan.scenario);
+  return (provenance as ScenarioExecutionProvenance)[scenarioPlan.scenario].map(
+    (execution) => {
+      if (execution.scenario !== expectedScenario) {
+        throw new Error(
+          `Structural dependency invariant failed: scenario ${scenarioPlan.scenario} ` +
+            `contains provenance for ${execution.scenario}.`
+        );
+      }
+      if (
+        !Number.isInteger(execution.actualExecutionStep) ||
+        execution.actualExecutionStep < 1
+      ) {
+        throw new Error(
+          `Structural dependency invariant failed: action ${execution.actionId} ` +
+            `has an invalid actual execution period.`
+        );
+      }
+      return {
+        scenario: scenarioPlan.scenario,
+        actionKey: execution.actionId,
+        scheduledExecutionPeriod: execution.scheduledStep as DisplayedPeriod,
+        actualExecutionPeriod: execution.actualExecutionStep as DisplayedPeriod,
+      };
+    }
+  );
+}
+
+function assertCanonicalEvidence(
+  scenarioPlan: ResolvedStructuralScenarioPlan,
+  evidence: readonly StructuralExecutionEvidence[]
+): void {
   const seenActions = new Set<string>();
-  for (const execution of provenance[scenarioPlan.scenario]) {
-    if (execution.scenario !== expectedScenario) {
+  for (const execution of evidence) {
+    if (execution.scenario !== scenarioPlan.scenario) {
       throw new Error(
         `Structural dependency invariant failed: scenario ${scenarioPlan.scenario} ` +
-          `contains provenance for ${execution.scenario}.`
+          `contains evidence for scenario ${execution.scenario}.`
       );
     }
-    if (seenActions.has(execution.actionId)) {
+    if (seenActions.has(execution.actionKey)) {
       throw new Error(
         `Structural dependency invariant failed: scenario ${scenarioPlan.scenario} ` +
-          `contains duplicate provenance for action ${execution.actionId}.`
+          `contains duplicate provenance for action ${execution.actionKey}.`
       );
     }
     if (
-      !Number.isInteger(execution.actualExecutionStep) ||
-      execution.actualExecutionStep < 1
+      !Number.isInteger(execution.scheduledExecutionPeriod) ||
+      execution.scheduledExecutionPeriod < 1 ||
+      !Number.isInteger(execution.actualExecutionPeriod) ||
+      execution.actualExecutionPeriod < 1
     ) {
       throw new Error(
-        `Structural dependency invariant failed: action ${execution.actionId} ` +
-          `has an invalid actual execution period.`
+        `Structural dependency invariant failed: action ${execution.actionKey} ` +
+          `has invalid structural execution evidence.`
       );
     }
-    seenActions.add(execution.actionId);
+    seenActions.add(execution.actionKey);
   }
 }
 
 function priorExecutionPeriod(
   prerequisite: ResolvedStructuralInitiative,
   period: DisplayedPeriod,
-  provenance: ScenarioExecutionProvenance
+  evidence: readonly StructuralExecutionEvidence[]
 ): DisplayedPeriod | null {
-  const execution = provenance[prerequisite.scenario].find(
-    (candidate) => candidate.actionId === prerequisite.actionKey
+  const execution = evidence.find(
+    (candidate) => candidate.actionKey === prerequisite.actionKey
   );
-  return execution && execution.actualExecutionStep < period
-    ? (execution.actualExecutionStep as DisplayedPeriod)
+  return execution && execution.actualExecutionPeriod < period
+    ? execution.actualExecutionPeriod
     : null;
 }
 
 export function assessDependencyStartsForPeriod(input: Readonly<{
   scenarioPlan: ResolvedStructuralScenarioPlan;
   period: DisplayedPeriod;
-  provenance: ScenarioExecutionProvenance;
+  provenance: ScenarioExecutionProvenance | readonly StructuralExecutionEvidence[];
 }>): readonly DependencyStartAssessment[] {
   if (!Number.isInteger(input.period) || input.period < 1) {
     throw new Error("Structural dependency invariant failed: period must be positive.");
   }
-  assertCanonicalProvenance(input.scenarioPlan, input.provenance);
+  const evidence = structuralEvidence(input.scenarioPlan, input.provenance);
+  assertCanonicalEvidence(input.scenarioPlan, evidence);
 
   const initiativeById = new Map(
     input.scenarioPlan.initiatives.map((initiative) => [
@@ -131,7 +167,7 @@ export function assessDependencyStartsForPeriod(input: Readonly<{
         const actualPeriod = priorExecutionPeriod(
           prerequisite,
           input.period,
-          input.provenance
+          evidence
         );
         if (actualPeriod === null) {
           blockingReasons.push({

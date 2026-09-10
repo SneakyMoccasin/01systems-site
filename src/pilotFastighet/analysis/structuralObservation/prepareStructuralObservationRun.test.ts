@@ -129,12 +129,12 @@ test("indexes before and after engine context without fabricating M1 initial con
 
 test("phase-safe evidence hides current and future records and keeps prior records", () => {
   const result = prepare();
-  const actions = (index: number) => result.frames.A[index].visibleExecutionEvidence.map(({ actionId }) => actionId);
+  const actions = (index: number) => result.frames.A[index].visibleExecutionEvidence.map(({ actionKey }) => actionKey);
   assert.deepEqual(actions(0), []);
   assert.deepEqual(actions(1), ["increase_service_frequency"]);
   assert.deepEqual(actions(4), ["increase_service_frequency"]);
   assert.deepEqual(actions(5), ["increase_service_frequency", "reduce_travel_time"]);
-  assert.deepEqual(result.frames.B[5].visibleExecutionEvidence.map(({ actionId }) => actionId), ["expand_cycling_infrastructure"]);
+  assert.deepEqual(result.frames.B[5].visibleExecutionEvidence.map(({ actionKey }) => actionKey), ["expand_cycling_infrastructure"]);
 });
 
 test("scenario mapping is explicit and rejects unknown identities", () => {

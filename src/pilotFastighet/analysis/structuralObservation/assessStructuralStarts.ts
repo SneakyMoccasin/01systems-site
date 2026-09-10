@@ -13,6 +13,7 @@ import type {
   SharedResourceId,
   ValidatedStructuralObservationContractV1,
 } from "./contract";
+import type { StructuralExecutionEvidence } from "./executionEvidence";
 import {
   observeResourcePressureForPeriod,
   type ResourcePressureObservation,
@@ -122,7 +123,7 @@ export function assessStructuralStartsForPeriod(input: Readonly<{
   contract: ValidatedStructuralObservationContractV1;
   scenarioPlan: ResolvedStructuralScenarioPlan;
   period: DisplayedPeriod;
-  provenance: ScenarioExecutionProvenance;
+  provenance: ScenarioExecutionProvenance | readonly StructuralExecutionEvidence[];
 }>): readonly StructuralStartAssessment[] {
   const dependencyAssessments = assessDependencyStartsForPeriod({
     scenarioPlan: input.scenarioPlan,
@@ -180,4 +181,3 @@ export function assessStructuralStartsForPeriod(input: Readonly<{
   );
   return deepFreeze(assessments);
 }
-

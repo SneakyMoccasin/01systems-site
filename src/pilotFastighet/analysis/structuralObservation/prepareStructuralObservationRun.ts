@@ -20,6 +20,7 @@ import type {
   StructuralObservationContractV1,
   ValidatedStructuralObservationContractV1,
 } from "./contract";
+import type { StructuralExecutionEvidence } from "./executionEvidence";
 import {
   resolveStructuralScenarioPlans,
   type ResolvedStructuralScenarioPlan,
@@ -33,12 +34,6 @@ import {
 export type StructuralObservationPhase =
   | "before-execution"
   | "after-transition";
-
-export type PreparedExecutionEvidence = Readonly<{
-  actionId: ScheduledActionExecution["actionId"];
-  scheduledPeriod: DisplayedPeriod;
-  actualPeriod: DisplayedPeriod;
-}>;
 
 export type PreparedActiveConstraintContext = Readonly<{
   type: ConstraintType;
@@ -59,7 +54,7 @@ export type PreparedStructuralObservationFrame = Readonly<{
   period: DisplayedPeriod;
   phase: StructuralObservationPhase;
   scenarioPlan: ResolvedStructuralScenarioPlan;
-  visibleExecutionEvidence: readonly PreparedExecutionEvidence[];
+  visibleExecutionEvidence: readonly StructuralExecutionEvidence[];
   engineContext: PreparedEngineContext | null;
 }>;
 
@@ -249,7 +244,7 @@ function projectEvidence(
   provenance: readonly ScheduledActionExecution[],
   period: DisplayedPeriod,
   phase: StructuralObservationPhase
-): PreparedExecutionEvidence[] {
+): StructuralExecutionEvidence[] {
   const visible = provenance
     .filter((execution) =>
       phase === "before-execution"
@@ -257,19 +252,20 @@ function projectEvidence(
         : execution.actualExecutionStep <= period
     )
     .map((execution) => ({
-      actionId: execution.actionId,
-      scheduledPeriod: executionStepToDisplayedPeriod(
+      scenario: toScheduleScenarioId(execution.scenario),
+      actionKey: execution.actionId,
+      scheduledExecutionPeriod: executionStepToDisplayedPeriod(
         execution.scheduledStep
       ) as DisplayedPeriod,
-      actualPeriod: executionStepToDisplayedPeriod(
+      actualExecutionPeriod: executionStepToDisplayedPeriod(
         execution.actualExecutionStep
       ) as DisplayedPeriod,
     }));
   visible.sort(
     (left, right) =>
-      left.actualPeriod - right.actualPeriod ||
-      left.scheduledPeriod - right.scheduledPeriod ||
-      compareText(left.actionId, right.actionId)
+      left.actualExecutionPeriod - right.actualExecutionPeriod ||
+      left.scheduledExecutionPeriod - right.scheduledExecutionPeriod ||
+      compareText(left.actionKey, right.actionKey)
   );
   return visible;
 }
