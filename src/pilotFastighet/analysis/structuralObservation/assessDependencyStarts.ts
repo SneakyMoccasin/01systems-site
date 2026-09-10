@@ -20,7 +20,7 @@ export type DependencyBlockingReason =
       priorActualExecutionPeriod: DisplayedPeriod | null;
     }>;
 
-export type StructuralStartAssessment = Readonly<{
+export type DependencyStartAssessment = Readonly<{
   initiativeId: InitiativeId;
   scenario: ScheduleScenarioId;
   evaluatedAtPeriod: DisplayedPeriod;
@@ -95,7 +95,7 @@ export function assessDependencyStartsForPeriod(input: Readonly<{
   scenarioPlan: ResolvedStructuralScenarioPlan;
   period: DisplayedPeriod;
   provenance: ScenarioExecutionProvenance;
-}>): readonly StructuralStartAssessment[] {
+}>): readonly DependencyStartAssessment[] {
   if (!Number.isInteger(input.period) || input.period < 1) {
     throw new Error("Structural dependency invariant failed: period must be positive.");
   }
@@ -111,7 +111,7 @@ export function assessDependencyStartsForPeriod(input: Readonly<{
     .filter(
       (initiative) => initiative.plannedExecutionPeriod === input.period
     )
-    .map((initiative): StructuralStartAssessment => {
+    .map((initiative): DependencyStartAssessment => {
       const blockingReasons: DependencyBlockingReason[] = [];
       for (const dependency of initiative.definition.prerequisites) {
         const prerequisite = initiativeById.get(dependency.initiativeId);
