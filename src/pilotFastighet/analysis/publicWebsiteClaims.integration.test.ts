@@ -42,7 +42,7 @@ test("active homepage states the bounded configured-model sequencing capability"
   assert.match(HOME_PAGE, /Inom en konfigurerad modell kan Cascade Engine jämföra samma startförhållanden och åtgärder i olika ordning eller vid olika tidpunkter/);
   assert.match(HOME_PAGE, /visa var de modellerade vägarna skiljer sig och om de senare konvergerar/);
   assert.match(ACTIVE_HOME_ROUTE, /ExecutiveHomePageContent/);
-  assert.match(HOME_PAGE, /<source src="\/videos\/Demo01\.mp4" type="video\/mp4"/);
+  assert.match(HOME_PAGE, /<source src=\{media\.demoVideo\} type="video\/mp4"/);
   assert.match(HOME_PAGE, /Autoplaying Cascade Engine demonstration/);
   assert.match(HOME_PAGE, /Autospelande demonstration av Cascade Engine/);
   assert.doesNotMatch(HOME_PAGE, /video[^\n]*(same starting conditions|samma startförhållanden)/i);
