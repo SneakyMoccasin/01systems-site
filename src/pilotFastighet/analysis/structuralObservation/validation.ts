@@ -15,7 +15,7 @@ import type {
   ScenarioInitiativeBinding,
   SharedResourceDefinition,
   SharedResourceId,
-  StructuralObservationContractV1,
+  ValidatedStructuralObservationContractV1,
 } from "./contract";
 
 export type StructuralObservationValidationCode =
@@ -63,7 +63,7 @@ export interface StructuralObservationValidationIssue {
 }
 
 export type StructuralObservationValidationResult =
-  | Readonly<{ valid: true; value: StructuralObservationContractV1; issues: readonly [] }>
+  | Readonly<{ valid: true; value: ValidatedStructuralObservationContractV1; issues: readonly [] }>
   | Readonly<{ valid: false; issues: readonly StructuralObservationValidationIssue[] }>;
 
 type UnknownRecord = Record<string, unknown>;
@@ -290,5 +290,15 @@ export function validateAndNormalizeStructuralObservationContract(input: Readonl
 
   issues.sort(issueSort);
   if (issues.length > 0) return deepFreeze({ valid: false as const, issues });
-  return deepFreeze({ valid: true as const, value: { version: "structural-observation-v1", initiatives: initiatives.sort((a, b) => compareText(a.id, b.id)), resources: resources.sort((a, b) => compareText(a.id, b.id)), scenarioBindings: bindings.sort((a, b) => compareText(a.scenario, b.scenario) || compareText(a.initiativeId, b.initiativeId)) }, issues: [] as const });
+  const normalized = {
+    version: "structural-observation-v1" as const,
+    initiatives: initiatives.sort((a, b) => compareText(a.id, b.id)),
+    resources: resources.sort((a, b) => compareText(a.id, b.id)),
+    scenarioBindings: bindings.sort(
+      (a, b) =>
+        compareText(a.scenario, b.scenario) ||
+        compareText(a.initiativeId, b.initiativeId)
+    ),
+  } as unknown as ValidatedStructuralObservationContractV1;
+  return deepFreeze({ valid: true as const, value: normalized, issues: [] as const });
 }

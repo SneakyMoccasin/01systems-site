@@ -53,3 +53,10 @@ export interface StructuralObservationContractV1 {
   readonly scenarioBindings: readonly ScenarioInitiativeBinding[];
 }
 
+declare const validatedStructuralObservationContract: unique symbol;
+
+/** Produced only by successful contract validation and normalization. */
+export type ValidatedStructuralObservationContractV1 =
+  StructuralObservationContractV1 & {
+    readonly [validatedStructuralObservationContract]: true;
+  };
