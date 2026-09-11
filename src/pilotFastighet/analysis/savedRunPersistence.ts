@@ -1,5 +1,11 @@
 import type { EngineState } from "../RealEstateEngine";
 import type { ExecutableIdentity } from "../executableDomainProfile";
+import {
+  evaluateStructuralObservationCompatibility,
+  projectStructuralObservationIdentity,
+  type StructuralObservationCompatibility,
+  type StructuralObservationIdentity,
+} from "./structuralObservation/structuralObservationIdentity";
 
 export type SavedRunSnapshot = Readonly<{
   snapshotId: string;
@@ -12,6 +18,7 @@ export type SavedRunSnapshot = Readonly<{
     modelVersion: string;
   }>;
   executionIdentity?: ExecutableIdentity;
+  structuralObservationIdentity?: StructuralObservationIdentity;
 }>;
 
 export type SavedRunCompatibility =
@@ -34,7 +41,11 @@ export function createSavedRunSnapshot(input: Readonly<{
   caseId: string | null;
   scenario: "A" | "B";
   executionIdentity: ExecutableIdentity;
+  structuralObservationIdentity?: StructuralObservationIdentity;
 }>): SavedRunSnapshot {
+  const structuralObservationIdentity = projectStructuralObservationIdentity(
+    input.structuralObservationIdentity
+  );
   return {
     snapshotId: input.snapshotId,
     label: input.label,
@@ -46,6 +57,9 @@ export function createSavedRunSnapshot(input: Readonly<{
       modelVersion: input.executionIdentity.modelVersion,
     },
     executionIdentity: Object.freeze({ ...input.executionIdentity }),
+    ...(structuralObservationIdentity
+      ? { structuralObservationIdentity }
+      : {}),
   };
 }
 
@@ -65,14 +79,28 @@ export function isCompleteExecutableIdentity(
   );
 }
 
-function isReadableSnapshot(value: unknown): value is SavedRunSnapshot {
-  if (!isRecord(value) || !isRecord(value.metadata)) return false;
-  return (
+function projectReadableSnapshot(value: unknown): SavedRunSnapshot | null {
+  if (!isRecord(value) || !isRecord(value.metadata)) return null;
+  const readable =
     typeof value.snapshotId === "string" &&
     typeof value.createdAt === "number" &&
     isRecord(value.engineState) &&
-    (value.metadata.scenario === "A" || value.metadata.scenario === "B")
+    (value.metadata.scenario === "A" || value.metadata.scenario === "B");
+  if (!readable) return null;
+  if (!("structuralObservationIdentity" in value)) {
+    return value as SavedRunSnapshot;
+  }
+  const structuralObservationIdentity = projectStructuralObservationIdentity(
+    value.structuralObservationIdentity
   );
+  const { structuralObservationIdentity: _discarded, ...snapshot } = value;
+  void _discarded;
+  return {
+    ...snapshot,
+    ...(structuralObservationIdentity
+      ? { structuralObservationIdentity }
+      : {}),
+  } as SavedRunSnapshot;
 }
 
 export function readSavedRunHistory(raw: string | null): SavedRunSnapshot[] {
@@ -80,7 +108,9 @@ export function readSavedRunHistory(raw: string | null): SavedRunSnapshot[] {
   try {
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(isReadableSnapshot);
+    return parsed
+      .map(projectReadableSnapshot)
+      .filter((snapshot): snapshot is SavedRunSnapshot => snapshot !== null);
   } catch {
     return [];
   }
@@ -115,6 +145,16 @@ export function evaluateSavedRunCompatibility(
     return { classification: "different-calibration-version", comparable: false };
   }
   return { classification: "compatible", comparable: true };
+}
+
+export function evaluateSavedRunStructuralObservationCompatibility(
+  left: SavedRunSnapshot,
+  right: SavedRunSnapshot
+): StructuralObservationCompatibility {
+  return evaluateStructuralObservationCompatibility(
+    left.structuralObservationIdentity,
+    right.structuralObservationIdentity
+  );
 }
 
 export const evaluateSavedRunPair = evaluateSavedRunCompatibility;

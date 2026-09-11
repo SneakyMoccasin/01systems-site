@@ -7,10 +7,12 @@ import {
   calculateCompatibleSavedMarginDelta,
   createSavedRunSnapshot,
   evaluateSavedRunCompatibility,
+  evaluateSavedRunStructuralObservationCompatibility,
   getSavedRunCompatibilityMessage,
   loadSavedRunHistory,
   readSavedRunHistory,
 } from "./savedRunPersistence";
+import type { StructuralObservationIdentity } from "./structuralObservation/structuralObservationIdentity";
 
 const identities = {
   realEstate: {
@@ -32,6 +34,17 @@ const identities = {
     calibrationVersion: "legacy-global-v1",
   },
 } as const satisfies Record<string, ExecutableIdentity>;
+
+const structuralIdentity = Object.freeze({
+  version: "structural-observation-v1",
+  resultSchemaVersion: "decision-space-snapshot-v1",
+  canonicalizationVersion: "structural-semantic-json-v1",
+  fingerprintAlgorithm: "sha256",
+  structuralDefinitionFingerprint: "1".repeat(64),
+  scenarioPlanFingerprintA: "2".repeat(64),
+  scenarioPlanFingerprintB: "3".repeat(64),
+  horizon: 36,
+}) satisfies StructuralObservationIdentity;
 
 function engineState(margin: number): EngineState {
   return { margin } as EngineState;
@@ -134,4 +147,147 @@ test("every incompatibility classification has a specific Swedish and English ex
     assert.match(getSavedRunCompatibilityMessage(compatibility, "sv") ?? "", sv);
     assert.match(getSavedRunCompatibilityMessage(compatibility, "en") ?? "", en);
   }
+});
+
+test("legacy snapshots and creation without observation identity remain unchanged", () => {
+  const legacy = snapshot(identities.transport);
+  assert.deepEqual(readSavedRunHistory(JSON.stringify([legacy])), [legacy]);
+  const created = createSavedRunSnapshot({
+    snapshotId: "legacy-compatible",
+    createdAt: 123,
+    engineState: engineState(0.5),
+    caseId: null,
+    scenario: "A",
+    executionIdentity: identities.transport,
+  });
+  assert.equal(created.snapshotId, "legacy-compatible");
+  assert.equal("structuralObservationIdentity" in created, false);
+  assert.deepEqual(created.executionIdentity, identities.transport);
+});
+
+test("valid observation identity is safely projected and survives JSON round-trip", () => {
+  const callerIdentity = {
+    ...structuralIdentity,
+    ignoredFutureField: { mustNotLeak: true },
+  };
+  const before = structuredClone(callerIdentity);
+  const created = createSavedRunSnapshot({
+    snapshotId: "observed",
+    createdAt: 456,
+    engineState: engineState(0.75),
+    caseId: "case",
+    scenario: "B",
+    executionIdentity: identities.transport,
+    structuralObservationIdentity: callerIdentity,
+  });
+  assert.deepEqual(created.structuralObservationIdentity, structuralIdentity);
+  assert.notEqual(created.structuralObservationIdentity, callerIdentity);
+  assert.equal(Object.isFrozen(created.structuralObservationIdentity), true);
+  assert.equal(
+    "ignoredFutureField" in (created.structuralObservationIdentity ?? {}),
+    false
+  );
+  assert.deepEqual(callerIdentity, before);
+  assert.equal(Object.isFrozen(callerIdentity), false);
+  assert.equal(Object.isFrozen(callerIdentity.ignoredFutureField), false);
+  const restored = readSavedRunHistory(JSON.stringify([created]));
+  assert.deepEqual(restored[0].structuralObservationIdentity, structuralIdentity);
+  assert.notEqual(
+    restored[0].structuralObservationIdentity,
+    created.structuralObservationIdentity
+  );
+});
+
+test("malformed and unsupported observation identity are omitted without losing the saved run", () => {
+  for (const invalidIdentity of [
+    { ...structuralIdentity, horizon: 0 },
+    { ...structuralIdentity, version: "structural-observation-v2" },
+    { ...structuralIdentity, scenarioPlanFingerprintA: "invalid" },
+  ]) {
+    const persisted = {
+      ...snapshot(identities.transport),
+      structuralObservationIdentity: invalidIdentity,
+      unknownSavedRunField: "tolerated",
+    };
+    const [restored] = readSavedRunHistory(JSON.stringify([persisted]));
+    assert.equal(restored.snapshotId, persisted.snapshotId);
+    assert.equal("structuralObservationIdentity" in restored, false);
+    assert.equal(
+      (restored as unknown as Record<string, unknown>).unknownSavedRunField,
+      "tolerated"
+    );
+  }
+  const created = createSavedRunSnapshot({
+    snapshotId: "invalid-observation",
+    createdAt: 1,
+    engineState: engineState(1),
+    caseId: null,
+    scenario: "A",
+    executionIdentity: identities.transport,
+    structuralObservationIdentity: {
+      ...structuralIdentity,
+      horizon: 0,
+    } as StructuralObservationIdentity,
+  });
+  assert.equal("structuralObservationIdentity" in created, false);
+});
+
+test("observation compatibility is separate from unchanged engine compatibility", () => {
+  const observed = (identity: StructuralObservationIdentity | undefined) => ({
+    ...snapshot(identities.transport),
+    ...(identity ? { structuralObservationIdentity: identity } : {}),
+  });
+  const changedDefinition = {
+    ...structuralIdentity,
+    structuralDefinitionFingerprint: "4".repeat(64),
+  };
+  assert.equal(
+    evaluateSavedRunStructuralObservationCompatibility(
+      observed(undefined),
+      observed(undefined)
+    ).classification,
+    "both-unobserved"
+  );
+  assert.equal(
+    evaluateSavedRunStructuralObservationCompatibility(
+      observed(structuralIdentity),
+      observed(undefined)
+    ).classification,
+    "only-one-observed"
+  );
+  assert.equal(
+    evaluateSavedRunStructuralObservationCompatibility(
+      observed(structuralIdentity),
+      observed(structuralIdentity)
+    ).classification,
+    "compatible"
+  );
+  assert.equal(
+    evaluateSavedRunStructuralObservationCompatibility(
+      observed(structuralIdentity),
+      observed(changedDefinition)
+    ).classification,
+    "different-structural-definition"
+  );
+  assert.deepEqual(
+    evaluateSavedRunCompatibility(
+      observed(structuralIdentity),
+      observed(changedDefinition)
+    ),
+    evaluateSavedRunCompatibility(observed(undefined), observed(undefined))
+  );
+});
+
+test("observation identity persistence never stores snapshots or diagnostics", () => {
+  const created = createSavedRunSnapshot({
+    snapshotId: "identity-only",
+    createdAt: 789,
+    engineState: engineState(1),
+    caseId: null,
+    scenario: "A",
+    executionIdentity: identities.transport,
+    structuralObservationIdentity: structuralIdentity,
+  });
+  const serialized = JSON.stringify(created);
+  assert.doesNotMatch(serialized, /DecisionSpaceSnapshot|snapshots|diagnostics/);
 });
