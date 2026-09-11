@@ -1,6 +1,8 @@
 import type { ScheduleScenarioId } from "../reactScheduledAnalysisBoundary";
 import type { DisplayedPeriod, InitiativeId } from "./contract";
 
+export type { ScheduleScenarioId };
+
 export type InitiativeScheduleVersion = "initiative-schedule-v1";
 export type InitiativeComparisonPolicy = "same-initiative-set";
 
