@@ -211,4 +211,3 @@ test("defensive invariants reject schedules that differ from the validated bound
     /must match exactly one canonical schedule entry/
   );
 });
-
