@@ -21,6 +21,11 @@ import type {
   ResolvedStructuralInitiative,
   ResolvedStructuralScenarioPlan,
 } from "./resolveScenarioPlans";
+import {
+  deriveAfterTransitionDiagnostics,
+  deriveBeforeExecutionDiagnostics,
+  type StructuralObservationDiagnostic,
+} from "./structuralObservationDiagnostics";
 
 export type DecisionSpaceSnapshotPhase = StructuralObservationPhase;
 export type InitiativePlanningStatus =
@@ -57,6 +62,7 @@ export type DecisionSpaceSnapshot = Readonly<{
   initiatives: readonly InitiativeSnapshot[];
   resourcePressure: readonly ResourcePressureObservation[];
   engineContext: PreparedEngineContext | null;
+  diagnostics: readonly StructuralObservationDiagnostic[];
 }>;
 
 export type StructuralObservationResult = Readonly<{
@@ -212,12 +218,12 @@ function unresolvedPrerequisites(
   ].sort(compareText);
 }
 
-function createSnapshot(input: Readonly<{
+function createSnapshotCore(input: Readonly<{
   frame: PreparedStructuralObservationFrame;
   plan: ResolvedStructuralScenarioPlan;
   assessmentHistory: ReadonlyMap<InitiativeId, StructuralStartAssessment>;
   resourcePressure: readonly ResourcePressureObservation[];
-}>): DecisionSpaceSnapshot {
+}>): Omit<DecisionSpaceSnapshot, "diagnostics"> {
   const evidenceByAction = assertVisibleEvidence(input.frame, input.plan);
   const initiatives = input.plan.initiatives.map((initiative): InitiativeSnapshot => {
     const planning = planningStatus(initiative, input.frame.period);
@@ -324,12 +330,29 @@ function buildScenario(
       }
       history.set(assessment.initiativeId, assessment);
     }
-    snapshots.push(
-      createSnapshot({ frame: before, plan, assessmentHistory: history, resourcePressure })
-    );
-    snapshots.push(
-      createSnapshot({ frame: after, plan, assessmentHistory: history, resourcePressure })
-    );
+    const beforeCore = createSnapshotCore({
+      frame: before,
+      plan,
+      assessmentHistory: history,
+      resourcePressure,
+    });
+    snapshots.push({
+      ...beforeCore,
+      diagnostics: deriveBeforeExecutionDiagnostics(beforeCore),
+    });
+    const afterCore = createSnapshotCore({
+      frame: after,
+      plan,
+      assessmentHistory: history,
+      resourcePressure,
+    });
+    snapshots.push({
+      ...afterCore,
+      diagnostics: deriveAfterTransitionDiagnostics(
+        afterCore,
+        after.visibleExecutionEvidence
+      ),
+    });
   }
   return snapshots;
 }

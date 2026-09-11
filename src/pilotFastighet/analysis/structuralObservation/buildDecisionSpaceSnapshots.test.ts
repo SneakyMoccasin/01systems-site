@@ -161,6 +161,19 @@ test("phase-safe execution creates and preserves executed-despite-structural-blo
   assert.equal(initiative(result, "B", 3, "b-current").executionStatus, "executed");
 });
 
+test("stores diagnostics only in the snapshot phase where they become observable", () => {
+  const result = buildDecisionSpaceSnapshots(prepared());
+  assert.deepEqual(result.scenarios.A[2].diagnostics.map(({ code }) => code), [
+    "would-be-blocked",
+    "resource-overallocated",
+  ]);
+  assert.deepEqual(result.scenarios.A[3].diagnostics.map(({ code }) => code), [
+    "executed-despite-structural-block",
+  ]);
+  assert.deepEqual(result.scenarios.A[4].diagnostics, []);
+  assert.deepEqual(result.scenarios.A[5].diagnostics, []);
+});
+
 test("future evidence never leaks and A/B assessment histories remain isolated", () => {
   const result = buildDecisionSpaceSnapshots(prepared());
   assert.equal(initiative(result, "A", 0, "a-current").visibleActualExecutionPeriod, null);
@@ -246,7 +259,7 @@ test("rejects unknown, duplicate, or assessment-less visible execution evidence"
   assert.throws(() => buildDecisionSpaceSnapshots({ ...source, frames: { ...source.frames, A: frames } } as PreparedStructuralObservationRun), /multiple visible executions/);
 });
 
-test("builder source contains no diagnostics, persistence, UI, engine, or runtime execution", () => {
+test("builder source contains no persistence, UI, engine, or runtime execution", () => {
   const source = readFileSync(new URL("./buildDecisionSpaceSnapshots.ts", import.meta.url), "utf8");
-  assert.doesNotMatch(source, /diagnostics|fingerprint|saved.?run|runCascadeAnalysis\(|runReactAnalysisBoundary\(|new RealEstateEngine|\.stepForward\(/i);
+  assert.doesNotMatch(source, /fingerprint|saved.?run|runCascadeAnalysis\(|runReactAnalysisBoundary\(|new RealEstateEngine|\.stepForward\(/i);
 });
