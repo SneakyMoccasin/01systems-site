@@ -120,13 +120,13 @@ function assertFrames(
 function assertVisibleEvidence(
   frame: PreparedStructuralObservationFrame,
   plan: ResolvedStructuralScenarioPlan
-): Map<ActionKey, StructuralExecutionEvidence> {
+): Map<InitiativeId, StructuralExecutionEvidence> {
   const boundByAction = new Map(
     plan.initiatives
       .filter((initiative) => initiative.bindingStatus === "bound")
       .map((initiative) => [initiative.actionKey, initiative])
   );
-  const evidenceByAction = new Map<ActionKey, StructuralExecutionEvidence>();
+  const evidenceByInitiative = new Map<InitiativeId, StructuralExecutionEvidence>();
   for (const evidence of frame.visibleExecutionEvidence) {
     const initiative = boundByAction.get(evidence.actionKey);
     if (evidence.scenario !== frame.scenario || !initiative) {
@@ -134,7 +134,7 @@ function assertVisibleEvidence(
         `Decision Space invariant failed: scenario ${frame.scenario} contains execution evidence for an unknown or unbound action.`
       );
     }
-    if (evidenceByAction.has(evidence.actionKey)) {
+    if (evidenceByInitiative.has(initiative.initiativeId)) {
       throw new Error(
         `Decision Space invariant failed: scenario ${frame.scenario} contains multiple visible executions for ${evidence.actionKey}.`
       );
@@ -144,9 +144,9 @@ function assertVisibleEvidence(
         `Decision Space invariant failed: execution evidence for ${evidence.actionKey} disagrees with the resolved plan.`
       );
     }
-    evidenceByAction.set(evidence.actionKey, evidence);
+    evidenceByInitiative.set(initiative.initiativeId, evidence);
   }
-  return evidenceByAction;
+  return evidenceByInitiative;
 }
 
 function planningStatus(
@@ -224,7 +224,7 @@ function createSnapshotCore(input: Readonly<{
   assessmentHistory: ReadonlyMap<InitiativeId, StructuralStartAssessment>;
   resourcePressure: readonly ResourcePressureObservation[];
 }>): Omit<DecisionSpaceSnapshot, "diagnostics"> {
-  const evidenceByAction = assertVisibleEvidence(input.frame, input.plan);
+  const evidenceByInitiative = assertVisibleEvidence(input.frame, input.plan);
   const initiatives = input.plan.initiatives.map((initiative): InitiativeSnapshot => {
     const planning = planningStatus(initiative, input.frame.period);
     const isCurrent = planning === "scheduled-current";
@@ -239,7 +239,7 @@ function createSnapshotCore(input: Readonly<{
         `Decision Space invariant failed: bound initiative ${initiative.initiativeId} is missing its historical start assessment.`
       );
     }
-    const evidence = evidenceByAction.get(initiative.actionKey) ?? null;
+    const evidence = evidenceByInitiative.get(initiative.initiativeId) ?? null;
     if (evidence && assessment === null) {
       throw new Error(
         `Decision Space invariant failed: execution evidence for ${initiative.initiativeId} has no start assessment.`

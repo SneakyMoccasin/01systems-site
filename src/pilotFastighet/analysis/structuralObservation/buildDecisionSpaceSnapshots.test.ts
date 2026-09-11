@@ -12,6 +12,10 @@ import type {
 import type { ScheduledActionExecution, ScheduledAnalyticalResults } from "../runCascadeAnalysis";
 import { buildDecisionSpaceSnapshots } from "./buildDecisionSpaceSnapshots";
 import { prepareStructuralObservationRun, type PreparedStructuralObservationRun } from "./prepareStructuralObservationRun";
+import {
+  projectStructuralDefinitionFingerprintPayload,
+  projectStructuralScenarioPlanFingerprintPayload,
+} from "./structuralObservationFingerprints";
 
 const profile = resolveExecutableDomainProfile("legacy-municipal-v1", "municipal");
 const horizon = 3;
@@ -108,6 +112,58 @@ function prepared(provenance?: ScenarioExecutionProvenance) {
   return prepareStructuralObservationRun({ contract, profile, schedules, horizon, analysisResult: boundary(provenance) });
 }
 
+function sharedActionPrepared(reordered = false) {
+  const sharedContract = {
+    version: "structural-observation-v1",
+    initiatives: [
+      {
+        id: "bound-in-a",
+        actionKey: "reduce_travel_time",
+        prerequisites: [{ initiativeId: "prerequisite", type: "finish-to-start" }],
+        resourceClaims: [],
+      },
+      {
+        id: "bound-in-b",
+        actionKey: "reduce_travel_time",
+        prerequisites: [{ initiativeId: "prerequisite", type: "finish-to-start" }],
+        resourceClaims: [],
+      },
+      {
+        id: "prerequisite",
+        actionKey: "transit_signal_priority",
+        prerequisites: [],
+        resourceClaims: [],
+      },
+    ],
+    resources: [],
+    scenarioBindings: [
+      { scenario: "A", initiativeId: "bound-in-a" },
+      { scenario: "B", initiativeId: "bound-in-b" },
+    ],
+  } as const;
+  const scenarioSchedules: ScenarioSchedules = {
+    A: [{ actionId: "reduce_travel_time", executionStep: 1 }],
+    B: [{ actionId: "reduce_travel_time", executionStep: 1 }],
+  };
+  const sourceContract = reordered
+    ? {
+        ...sharedContract,
+        initiatives: [...sharedContract.initiatives].reverse(),
+        scenarioBindings: [...sharedContract.scenarioBindings].reverse(),
+      }
+    : sharedContract;
+  return prepareStructuralObservationRun({
+    contract: sourceContract,
+    profile,
+    schedules: scenarioSchedules,
+    horizon,
+    analysisResult: boundary({
+      A: [execution("scenarioA", "reduce_travel_time", 1)],
+      B: [execution("scenarioB", "reduce_travel_time", 1)],
+    }),
+  });
+}
+
 function initiative(result: ReturnType<typeof buildDecisionSpaceSnapshots>, scenario: "A" | "B", frame: number, id: string) {
   return result.scenarios[scenario][frame].initiatives.find(({ initiativeId }) => initiativeId === id)!;
 }
@@ -159,6 +215,52 @@ test("phase-safe execution creates and preserves executed-despite-structural-blo
   assert.equal(after.executionStatus, "executed-despite-structural-block");
   assert.equal(later.executionStatus, "executed-despite-structural-block");
   assert.equal(initiative(result, "B", 3, "b-current").executionStatus, "executed");
+});
+
+test("execution evidence resolves through each scenario's bound initiative instance", () => {
+  const source = sharedActionPrepared();
+  const result = buildDecisionSpaceSnapshots(source);
+
+  for (const [scenario, boundId, unboundId] of [
+    ["A", "bound-in-a", "bound-in-b"],
+    ["B", "bound-in-b", "bound-in-a"],
+  ] as const) {
+    const boundBefore = initiative(result, scenario, 0, boundId);
+    const boundAfter = initiative(result, scenario, 1, boundId);
+    const unboundBefore = initiative(result, scenario, 0, unboundId);
+    const unboundAfter = initiative(result, scenario, 1, unboundId);
+
+    assert.equal(boundBefore.visibleActualExecutionPeriod, null);
+    assert.equal(boundBefore.executionStatus, "not-executed");
+    assert.equal(boundAfter.visibleActualExecutionPeriod, 1);
+    assert.equal(boundAfter.executionStatus, "executed-despite-structural-block");
+    assert.equal(boundAfter.startAssessment?.outcome, "would-be-blocked");
+
+    for (const unbound of [unboundBefore, unboundAfter]) {
+      assert.equal(unbound.plannedExecutionPeriod, null);
+      assert.equal(unbound.visibleActualExecutionPeriod, null);
+      assert.equal(unbound.planningStatus, "not-planned");
+      assert.equal(unbound.structuralStatus, "not-evaluated");
+      assert.equal(unbound.executionStatus, "not-executed");
+      assert.equal(unbound.startAssessment, null);
+    }
+  }
+
+  assert.deepEqual(buildDecisionSpaceSnapshots(sharedActionPrepared(true)), result);
+
+  const definitionPayload = projectStructuralDefinitionFingerprintPayload(source);
+  assert.deepEqual(
+    definitionPayload.initiatives.map(({ initiativeId }) => initiativeId),
+    ["bound-in-a", "bound-in-b", "prerequisite"]
+  );
+  assert.deepEqual(
+    projectStructuralScenarioPlanFingerprintPayload(source, "A").bindings,
+    [{ initiativeId: "bound-in-a", plannedExecutionPeriod: 1 }]
+  );
+  assert.deepEqual(
+    projectStructuralScenarioPlanFingerprintPayload(source, "B").bindings,
+    [{ initiativeId: "bound-in-b", plannedExecutionPeriod: 1 }]
+  );
 });
 
 test("stores diagnostics only in the snapshot phase where they become observable", () => {
