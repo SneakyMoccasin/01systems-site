@@ -32,6 +32,11 @@ import type {
   StructuralInitiativeExecutionEvidenceV1,
 } from "./prepareInitiativeStructuralObservationRun";
 import { compareObservationText, freezeObservationValue } from "./observationPlanCore";
+import {
+  deriveInitiativeAfterTransitionDiagnostics,
+  deriveInitiativeBeforeExecutionDiagnostics,
+  type InitiativeStructuralObservationDiagnostic,
+} from "./initiativeStructuralObservationDiagnostics";
 
 export type InitiativeSnapshotV2 = Readonly<{
   initiativeId: InitiativeId;
@@ -53,6 +58,7 @@ export type DecisionSpaceSnapshotV2 = Readonly<{
   initiatives: readonly InitiativeSnapshotV2[];
   resourcePressure: readonly ResourcePressureObservation[];
   engineContext: PreparedEngineContext | null;
+  diagnostics: readonly InitiativeStructuralObservationDiagnostic[];
 }>;
 
 export type StructuralObservationResultV2 = Readonly<{
@@ -186,7 +192,7 @@ function createSnapshot(
   plan: ResolvedInitiativeObservationScenarioPlanV2,
   history: ReadonlyMap<InitiativeId, StructuralStartAssessment>,
   resourcePressure: readonly ResourcePressureObservation[]
-): DecisionSpaceSnapshotV2 {
+): Omit<DecisionSpaceSnapshotV2, "diagnostics"> {
   const evidenceById = visibleEvidenceByInitiative(frame, plan);
   const initiatives = plan.initiatives.map((initiative): InitiativeSnapshotV2 => {
     const planning = planningStatus(initiative, frame.period);
@@ -268,8 +274,19 @@ function buildScenario(
       if (history.has(assessment.initiativeId)) invariant(`historical assessment would be overwritten for ${assessment.initiativeId}`);
       history.set(assessment.initiativeId, assessment);
     }
-    snapshots.push(createSnapshot(before, plan, history, resourcePressure));
-    snapshots.push(createSnapshot(after, plan, history, resourcePressure));
+    const beforeCore = createSnapshot(before, plan, history, resourcePressure);
+    snapshots.push({
+      ...beforeCore,
+      diagnostics: deriveInitiativeBeforeExecutionDiagnostics(beforeCore),
+    });
+    const afterCore = createSnapshot(after, plan, history, resourcePressure);
+    snapshots.push({
+      ...afterCore,
+      diagnostics: deriveInitiativeAfterTransitionDiagnostics(
+        afterCore,
+        after.visibleExecutionEvidence
+      ),
+    });
   }
   return snapshots;
 }

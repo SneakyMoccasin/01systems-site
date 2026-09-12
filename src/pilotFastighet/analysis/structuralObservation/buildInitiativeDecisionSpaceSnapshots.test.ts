@@ -108,7 +108,7 @@ test("builds canonical horizon-times-two V2 timelines containing every definitio
     assert.deepEqual(result.scenarios[scenario][0].initiatives.map(({ initiativeId }) => initiativeId), [
       "dependent", "eligible", "foundation", "same-effect", "unbound",
     ]);
-    assert.equal("diagnostics" in result.scenarios[scenario][0], false);
+    assert.equal(Array.isArray(result.scenarios[scenario][0].diagnostics), true);
     assert.equal("decisionSpaceScore" in result.scenarios[scenario][0], false);
   }
 });
