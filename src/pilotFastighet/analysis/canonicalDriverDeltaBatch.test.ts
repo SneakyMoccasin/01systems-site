@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { DriverDeltas } from "../RealEstateEngine";
+import { resolveExecutableDomainProfile } from "../executableDomainProfile";
 import {
   combineCanonicalDriverDeltaBatch,
   type CanonicalDriverDeltaContribution,
@@ -16,7 +17,9 @@ function legacyCombine(
     }
   }
   return Object.fromEntries(
-    [...combined.entries()].sort(([left], [right]) => left.localeCompare(right))
+    [...combined.entries()].sort(([left], [right]) =>
+      left < right ? -1 : left > right ? 1 : 0
+    )
   ) as DriverDeltas;
 }
 
@@ -36,6 +39,30 @@ test("matches the previous legacy Map aggregation for canonically ordered unique
     contribution("b", "b", { demandRisk: -0.75, modal_attractiveness: 1 }),
   ];
   assert.deepEqual(combineCanonicalDriverDeltaBatch(input), legacyCombine(input));
+});
+
+test("matches legacy aggregation across every canonical profile effect", () => {
+  for (const profileId of [
+    "legacy-real-estate-v1",
+    "legacy-municipal-v1",
+    "legacy-consulting-v1",
+  ] as const) {
+    const profile = resolveExecutableDomainProfile(profileId);
+    const input = Object.entries(profile.actionEffects)
+      .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
+      .map(([effectIdentity, effect]) =>
+        contribution(
+          effectIdentity,
+          effectIdentity,
+          Object.fromEntries(
+            Object.entries(effect).sort(([left], [right]) =>
+              left < right ? -1 : left > right ? 1 : 0
+            )
+          ) as DriverDeltas
+        )
+      );
+    assert.deepEqual(combineCanonicalDriverDeltaBatch(input), legacyCombine(input));
+  }
 });
 
 test("combines one or many effects, overlapping drivers, and opposing deltas", () => {
