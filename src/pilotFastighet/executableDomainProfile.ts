@@ -58,6 +58,18 @@ export type ExecutableDomainProfile = Readonly<{
   clampPolicy: Readonly<{ minimum: number; maximum: number }>;
 }>;
 
+/** Projects only the stable executable identity fields from a resolved profile. */
+export function getExecutableIdentity(
+  profile: ExecutableDomainProfile
+): ExecutableIdentity {
+  return Object.freeze({
+    domainId: profile.domainId,
+    profileId: profile.profileId,
+    modelVersion: profile.modelVersion,
+    calibrationVersion: profile.calibrationVersion,
+  });
+}
+
 function deepFreeze<T>(value: T): T {
   if (value && typeof value === "object" && !Object.isFrozen(value)) {
     Object.freeze(value);

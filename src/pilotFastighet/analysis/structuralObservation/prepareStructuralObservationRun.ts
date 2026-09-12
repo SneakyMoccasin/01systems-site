@@ -3,6 +3,7 @@ import type {
   ExecutableDomainProfile,
   ExecutableIdentity,
 } from "../../executableDomainProfile";
+import { getExecutableIdentity } from "../../executableDomainProfile";
 import type { EngineState } from "../../RealEstateEngine";
 import {
   constraintSourceStepToDisplayedPeriod,
@@ -114,20 +115,11 @@ export function toScheduleScenarioId(
   );
 }
 
-function profileIdentity(profile: ExecutableDomainProfile): ExecutableIdentity {
-  return {
-    domainId: profile.domainId,
-    profileId: profile.profileId,
-    modelVersion: profile.modelVersion,
-    calibrationVersion: profile.calibrationVersion,
-  };
-}
-
 function assertMatchingProfile(
   profile: ExecutableDomainProfile,
   resultIdentity: ExecutableIdentity
 ): void {
-  const expected = profileIdentity(profile);
+  const expected = getExecutableIdentity(profile);
   for (const key of [
     "domainId",
     "profileId",
@@ -411,7 +403,7 @@ export function prepareStructuralObservationRun(input: Readonly<{
   return deepFreeze({
     preparationVersion: "structural-observation-preparation-v1",
     contract: validation.value,
-    profileIdentity: profileIdentity(input.profile),
+    profileIdentity: getExecutableIdentity(input.profile),
     horizon: input.horizon,
     scenarioPlans,
     frames,
