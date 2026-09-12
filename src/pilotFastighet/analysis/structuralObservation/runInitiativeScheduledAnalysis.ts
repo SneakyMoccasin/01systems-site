@@ -1,29 +1,25 @@
-import { domainDrivers, type DomainKey } from "../../../i18n/pulseLanguage";
+import { domainDrivers } from "../../../i18n/pulseLanguage";
 import {
   getExecutableIdentity,
   resolveExecutableDomainProfile,
-  type ExecutableDomainProfile,
-  type ExecutableIdentity,
-  type ExecutableProfileId,
 } from "../../executableDomainProfile";
 import {
   compareScenarioTrajectories,
   createScenarioAnalysisResult,
-  type CascadeAnalysisComparison,
-  type ScenarioAnalysisResult,
 } from "../cascadeAnalysisProjection";
 import { runPreconfiguredScenario } from "../runPreconfiguredScenario";
-import type { ValidatedStructuralObservationContractV2 } from "./contractV2";
-import type { ValidatedScenarioInitiativeSchedulesV1 } from "./initiativeScheduleContract";
-import {
-  resolveInitiativeSchedules,
-  type ResolvedScenarioInitiativeSchedulesV1,
-} from "./resolveInitiativeSchedules";
-import {
-  runInitiativeScenario,
-  type InitiativeScenarioExecutionV1,
-  type InitiativeScenarioInitialStateV1,
-} from "./runInitiativeScenario";
+import { resolveInitiativeSchedules } from "./resolveInitiativeSchedules";
+import { runInitiativeScenario } from "./runInitiativeScenario";
+import type {
+  InitiativeScheduledAnalysisInputV1,
+  InitiativeScheduledAnalysisResultV1,
+  PreparedInitiativeScheduledAnalysisV1,
+} from "./initiativeScheduledAnalysisContract";
+export type {
+  InitiativeScheduledAnalysisInputV1,
+  InitiativeScheduledAnalysisResultV1,
+  PreparedInitiativeScheduledAnalysisV1,
+} from "./initiativeScheduledAnalysisContract";
 import {
   validateAndNormalizeStructuralObservationContractV2,
   type StructuralObservationV2ValidationIssue,
@@ -32,28 +28,6 @@ import {
   validateAndNormalizeScenarioInitiativeSchedulesV1,
   type InitiativeScheduleValidationIssue,
 } from "./validateInitiativeSchedules";
-
-export type InitiativeScheduledAnalysisInputV1 = Readonly<{
-  version: "initiative-scheduled-analysis-input-v1";
-  executionMode: "initiative-schedule-v1";
-  domainId: DomainKey;
-  profileId: ExecutableProfileId;
-  horizon: number;
-  contract: unknown;
-  schedules: unknown;
-  initialState: InitiativeScenarioInitialStateV1;
-}>;
-
-export type InitiativeScheduledAnalysisResultV1 = Readonly<{
-  version: "initiative-scheduled-analysis-v1";
-  executionMode: "initiative-schedule-v1";
-  executionIdentity: ExecutableIdentity;
-  horizon: number;
-  baseline: ScenarioAnalysisResult;
-  scenarioA: InitiativeScenarioExecutionV1;
-  scenarioB: InitiativeScenarioExecutionV1;
-  comparison: CascadeAnalysisComparison;
-}>;
 
 export type InitiativeScheduledAnalysisInputIssue = Readonly<{
   code:
@@ -88,22 +62,6 @@ export class InitiativeScheduledAnalysisValidationError extends Error {
     this.issues = deepFreeze(issues.map((issue) => ({ ...issue })));
   }
 }
-
-const preparedInitiativeScheduledAnalysisV1 = Symbol(
-  "prepared-initiative-scheduled-analysis-v1"
-);
-
-/** @internal Prepared once so execution and later observation use one context. */
-export type PreparedInitiativeScheduledAnalysisV1 = Readonly<{
-  profile: ExecutableDomainProfile;
-  executionIdentity: ExecutableIdentity;
-  horizon: number;
-  initialState: InitiativeScenarioInitialStateV1;
-  contract: ValidatedStructuralObservationContractV2;
-  schedules: ValidatedScenarioInitiativeSchedulesV1;
-  resolvedSchedules: ResolvedScenarioInitiativeSchedulesV1;
-  readonly [preparedInitiativeScheduledAnalysisV1]: true;
-}>;
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -219,6 +177,7 @@ export function prepareInitiativeScheduledAnalysis(
   const initialState = deepFreeze(structuredClone(rawInput.initialState));
 
   return Object.freeze({
+    preparationVersion: "initiative-scheduled-analysis-preparation-v1",
     profile,
     executionIdentity: getExecutableIdentity(profile),
     horizon: rawInput.horizon,
@@ -226,8 +185,7 @@ export function prepareInitiativeScheduledAnalysis(
     contract: contractResult.value,
     schedules: scheduleResult.value,
     resolvedSchedules,
-    [preparedInitiativeScheduledAnalysisV1]: true as const,
-  });
+  }) as PreparedInitiativeScheduledAnalysisV1;
 }
 
 /** @internal Executes only an already prepared, nominally branded context. */
