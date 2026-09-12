@@ -7,12 +7,14 @@ import {
   calculateCompatibleSavedMarginDelta,
   createSavedRunSnapshot,
   evaluateSavedRunCompatibility,
+  evaluateSavedRunInitiativeStructuralObservationCompatibility,
   evaluateSavedRunStructuralObservationCompatibility,
   getSavedRunCompatibilityMessage,
   loadSavedRunHistory,
   readSavedRunHistory,
 } from "./savedRunPersistence";
 import type { StructuralObservationIdentity } from "./structuralObservation/structuralObservationIdentity";
+import type { InitiativeStructuralObservationIdentity } from "./structuralObservation/initiativeStructuralObservationIdentity";
 
 const identities = {
   realEstate: {
@@ -45,6 +47,21 @@ const structuralIdentity = Object.freeze({
   scenarioPlanFingerprintB: "3".repeat(64),
   horizon: 36,
 }) satisfies StructuralObservationIdentity;
+
+const initiativeStructuralIdentity = Object.freeze({
+  version: "initiative-structural-observation-identity-v1",
+  structuralObservationSchemaVersion: "structural-observation-v2",
+  resultSchemaVersion: "structural-observation-v2",
+  fingerprintsVersion: "initiative-structural-observation-fingerprints-v1",
+  fingerprintAlgorithm: "sha256",
+  canonicalizationVersion: "structural-semantic-json-v1",
+  definitionPayloadVersion: "initiative-structural-definition-fingerprint-v2",
+  scenarioPlanPayloadVersion: "initiative-scenario-plan-fingerprint-v2",
+  horizon: 36,
+  structuralDefinitionFingerprint: "4".repeat(64),
+  scenarioPlanFingerprintA: "5".repeat(64),
+  scenarioPlanFingerprintB: "6".repeat(64),
+}) satisfies InitiativeStructuralObservationIdentity;
 
 function engineState(margin: number): EngineState {
   return { margin } as EngineState;
@@ -290,4 +307,160 @@ test("observation identity persistence never stores snapshots or diagnostics", (
   });
   const serialized = JSON.stringify(created);
   assert.doesNotMatch(serialized, /DecisionSpaceSnapshot|snapshots|diagnostics/);
+});
+
+test("legacy saved runs remain exact and absent V2 identity is never fabricated", () => {
+  const legacy = snapshot(identities.realEstate);
+  assert.deepEqual(readSavedRunHistory(JSON.stringify([legacy])), [legacy]);
+  const created = createSavedRunSnapshot({
+    snapshotId: "without-v2",
+    createdAt: 1,
+    engineState: engineState(1),
+    caseId: null,
+    scenario: "A",
+    executionIdentity: identities.realEstate,
+  });
+  assert.equal("initiativeStructuralObservationIdentity" in created, false);
+});
+
+test("valid V2 identity is saved as a detached frozen whitelist and round-trips", () => {
+  const callerIdentity = {
+    ...initiativeStructuralIdentity,
+    ignoredFutureField: { mustNotLeak: true },
+  };
+  const before = structuredClone(callerIdentity);
+  const created = createSavedRunSnapshot({
+    snapshotId: "with-v2",
+    createdAt: 2,
+    engineState: engineState(0.5),
+    caseId: "case",
+    scenario: "B",
+    executionIdentity: identities.realEstate,
+    initiativeStructuralObservationIdentity: callerIdentity,
+  });
+  assert.deepEqual(created.initiativeStructuralObservationIdentity, initiativeStructuralIdentity);
+  assert.notStrictEqual(created.initiativeStructuralObservationIdentity, callerIdentity);
+  assert.equal(Object.isFrozen(created.initiativeStructuralObservationIdentity), true);
+  assert.equal("ignoredFutureField" in (created.initiativeStructuralObservationIdentity ?? {}), false);
+  assert.deepEqual(callerIdentity, before);
+  assert.equal(Object.isFrozen(callerIdentity), false);
+  assert.equal(Object.isFrozen(callerIdentity.ignoredFutureField), false);
+  const [restored] = readSavedRunHistory(JSON.stringify([created]));
+  assert.deepEqual(restored.initiativeStructuralObservationIdentity, initiativeStructuralIdentity);
+  assert.notStrictEqual(restored.initiativeStructuralObservationIdentity, created.initiativeStructuralObservationIdentity);
+});
+
+test("malformed and unsupported V2 identity are omitted without losing saved runs", () => {
+  for (const invalidIdentity of [
+    { ...initiativeStructuralIdentity, horizon: 0 },
+    { ...initiativeStructuralIdentity, version: "future" },
+    { ...initiativeStructuralIdentity, fingerprintAlgorithm: "future" },
+    { ...initiativeStructuralIdentity, scenarioPlanFingerprintA: "invalid" },
+  ]) {
+    const persisted = {
+      ...snapshot(identities.realEstate),
+      initiativeStructuralObservationIdentity: invalidIdentity,
+      unknownSavedRunField: "kept",
+    };
+    const [restored] = readSavedRunHistory(JSON.stringify([persisted]));
+    assert.equal(restored.snapshotId, persisted.snapshotId);
+    assert.equal("initiativeStructuralObservationIdentity" in restored, false);
+    assert.equal((restored as unknown as Record<string, unknown>).unknownSavedRunField, "kept");
+  }
+  const created = createSavedRunSnapshot({
+    snapshotId: "invalid-v2",
+    createdAt: 3,
+    engineState: engineState(1),
+    caseId: null,
+    scenario: "A",
+    executionIdentity: identities.realEstate,
+    initiativeStructuralObservationIdentity: {
+      ...initiativeStructuralIdentity,
+      horizon: 0,
+    } as InitiativeStructuralObservationIdentity,
+  });
+  assert.equal("initiativeStructuralObservationIdentity" in created, false);
+});
+
+test("V1 and V2 identities coexist but are projected and evaluated separately", () => {
+  const created = createSavedRunSnapshot({
+    snapshotId: "both",
+    createdAt: 4,
+    engineState: engineState(0.75),
+    caseId: null,
+    scenario: "A",
+    executionIdentity: identities.realEstate,
+    structuralObservationIdentity: structuralIdentity,
+    initiativeStructuralObservationIdentity: initiativeStructuralIdentity,
+  });
+  assert.deepEqual(created.structuralObservationIdentity, structuralIdentity);
+  assert.deepEqual(created.initiativeStructuralObservationIdentity, initiativeStructuralIdentity);
+  assert.equal(
+    evaluateSavedRunStructuralObservationCompatibility(created, created).classification,
+    "compatible"
+  );
+  assert.deepEqual(
+    evaluateSavedRunInitiativeStructuralObservationCompatibility(created, initiativeStructuralIdentity),
+    { classification: "compatible", comparable: true }
+  );
+  const onlyV1 = { ...created, initiativeStructuralObservationIdentity: undefined };
+  assert.equal(
+    evaluateSavedRunInitiativeStructuralObservationCompatibility(onlyV1, initiativeStructuralIdentity).classification,
+    "missing-identity"
+  );
+  assert.equal(
+    evaluateSavedRunStructuralObservationCompatibility(onlyV1, created).classification,
+    "compatible"
+  );
+});
+
+test("V2 compatibility delegates every semantic mismatch without affecting engine compatibility", () => {
+  const saved = createSavedRunSnapshot({
+    snapshotId: "compatibility",
+    createdAt: 5,
+    engineState: engineState(1),
+    caseId: null,
+    scenario: "A",
+    executionIdentity: identities.realEstate,
+    initiativeStructuralObservationIdentity: initiativeStructuralIdentity,
+  });
+  const cases = [
+    [{ horizon: 35 }, "horizon-mismatch"],
+    [{ structuralDefinitionFingerprint: "7".repeat(64) }, "structural-definition-mismatch"],
+    [{ scenarioPlanFingerprintA: "7".repeat(64) }, "scenario-plan-a-mismatch"],
+    [{ scenarioPlanFingerprintB: "7".repeat(64) }, "scenario-plan-b-mismatch"],
+  ] as const;
+  for (const [change, classification] of cases) {
+    const current = { ...initiativeStructuralIdentity, ...change } as InitiativeStructuralObservationIdentity;
+    assert.equal(
+      evaluateSavedRunInitiativeStructuralObservationCompatibility(saved, current).classification,
+      classification
+    );
+    assert.equal(evaluateSavedRunCompatibility(saved, saved).classification, "compatible");
+  }
+});
+
+test("V2 persistence stores identity only and remains deterministic", () => {
+  const create = () => createSavedRunSnapshot({
+    snapshotId: "identity-only-v2",
+    createdAt: 6,
+    engineState: engineState(1),
+    caseId: null,
+    scenario: "B" as const,
+    executionIdentity: identities.realEstate,
+    initiativeStructuralObservationIdentity: initiativeStructuralIdentity,
+  });
+  assert.deepEqual(create(), create());
+  const persisted = JSON.parse(JSON.stringify(create())) as Record<string, unknown>;
+  for (const field of [
+    "snapshots",
+    "diagnostics",
+    "frames",
+    "trajectory",
+    "executionProvenance",
+    "preparedAnalysis",
+    "fingerprints",
+  ]) {
+    assert.equal(field in persisted, false);
+  }
 });
