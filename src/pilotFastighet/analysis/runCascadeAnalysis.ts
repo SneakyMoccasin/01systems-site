@@ -4,8 +4,6 @@ import {
   type EngineState,
   type RiskState,
 } from "../RealEstateEngine";
-import type { CascadeEvent } from "../riskPropagation";
-import type { ConstraintRegistry } from "../constraintState";
 import type { DriverScoreState } from "../driverScoreState";
 import type { ActionKey } from "../actionEffects";
 import type { ParameterKey } from "../impactContract";
@@ -17,6 +15,18 @@ import {
   type ExecutableProfileId,
 } from "../executableDomainProfile";
 import { combineCanonicalDriverDeltaBatch } from "./canonicalDriverDeltaBatch";
+import {
+  compareScenarioTrajectories,
+  createScenarioAnalysisResult,
+  type CascadeAnalysisComparison,
+  type ScenarioAnalysisResult,
+} from "./cascadeAnalysisProjection";
+import { runPreconfiguredScenario } from "./runPreconfiguredScenario";
+
+export type {
+  CascadeAnalysisComparison,
+  ScenarioAnalysisResult,
+} from "./cascadeAnalysisProjection";
 
 export type PreconfiguredScenarioInput = {
   initialRiskState: RiskState;
@@ -52,26 +62,6 @@ export type ScheduledCascadeAnalysisInput = CommonCascadeAnalysisInput & {
 export type CascadeAnalysisInput =
   | PreconfiguredCascadeAnalysisInput
   | ScheduledCascadeAnalysisInput;
-
-export type ScenarioAnalysisResult = {
-  /** Post-transition states only. The initial step-0 state is not included. */
-  trajectory: readonly EngineState[];
-  /** Derived view of the canonical trajectory. */
-  readonly marginHistory: readonly number[];
-  /** Derived view of the canonical trajectory. */
-  readonly constraintHistory: readonly ConstraintRegistry[];
-  /** Cumulative cascade history on the terminal state. */
-  readonly cascadeHistory: readonly CascadeEvent[];
-  /** The final recorded trajectory state. */
-  readonly terminalState: EngineState;
-};
-
-export type CascadeAnalysisComparison = {
-  /** Scenario B margin minus Scenario A margin at each recorded step. */
-  marginDifferenceByStep: readonly number[];
-  firstDivergenceIndex: number | null;
-  terminalMarginDifference: number;
-};
 
 export type AnalyticalResults = {
   scenarioA: ScenarioAnalysisResult;
@@ -221,42 +211,6 @@ function validateExecutionInput(
   return null;
 }
 
-function runPreconfiguredScenario(
-  input: PreconfiguredScenarioInput,
-  horizon: number,
-  profile: ExecutableDomainProfile
-): ScenarioAnalysisResult {
-  const engine = new RealEstateEngine(
-    structuredClone(input.initialRiskState),
-    input.initialDriverScores
-      ? structuredClone(input.initialDriverScores)
-      : undefined,
-    profile
-  );
-  const trajectory: EngineState[] = [];
-
-  for (let index = 0; index < horizon; index += 1) {
-    engine.stepForward();
-    trajectory.push(structuredClone(engine.getState()));
-  }
-
-  return {
-    trajectory,
-    get marginHistory() {
-      return trajectory.map((state) => state.margin);
-    },
-    get constraintHistory() {
-      return trajectory.map((state) => state.registry);
-    },
-    get cascadeHistory() {
-      return trajectory[trajectory.length - 1].cascadeEvents;
-    },
-    get terminalState() {
-      return trajectory[trajectory.length - 1];
-    },
-  };
-}
-
 function runScheduledScenario(
   input: PreconfiguredScenarioInput,
   horizon: number,
@@ -315,45 +269,8 @@ function runScheduledScenario(
   }
 
   return {
-    result: createScenarioResult(trajectory),
+    result: createScenarioAnalysisResult(trajectory),
     provenance,
-  };
-}
-
-function createScenarioResult(trajectory: EngineState[]): ScenarioAnalysisResult {
-  return {
-    trajectory,
-    get marginHistory() {
-      return trajectory.map((state) => state.margin);
-    },
-    get constraintHistory() {
-      return trajectory.map((state) => state.registry);
-    },
-    get cascadeHistory() {
-      return trajectory[trajectory.length - 1].cascadeEvents;
-    },
-    get terminalState() {
-      return trajectory[trajectory.length - 1];
-    },
-  };
-}
-
-function compareScenarios(
-  scenarioA: ScenarioAnalysisResult,
-  scenarioB: ScenarioAnalysisResult
-): CascadeAnalysisComparison {
-  const marginDifferenceByStep = scenarioB.marginHistory.map(
-    (marginB, index) => marginB - scenarioA.marginHistory[index]
-  );
-  const divergenceIndex = marginDifferenceByStep.findIndex(
-    (difference) => difference !== 0
-  );
-
-  return {
-    marginDifferenceByStep,
-    firstDivergenceIndex: divergenceIndex === -1 ? null : divergenceIndex,
-    terminalMarginDifference:
-      scenarioB.terminalState.margin - scenarioA.terminalState.margin,
   };
 }
 
@@ -403,7 +320,7 @@ export function runCascadeAnalysis(
       scenarioA: scenarioA.result,
       scenarioB: scenarioB.result,
       baseline,
-      comparison: compareScenarios(scenarioA.result, scenarioB.result),
+      comparison: compareScenarioTrajectories(scenarioA.result, scenarioB.result),
       executionProvenance: [...scenarioA.provenance, ...scenarioB.provenance],
     };
   }
@@ -420,6 +337,6 @@ export function runCascadeAnalysis(
     scenarioA,
     scenarioB,
     baseline,
-    comparison: compareScenarios(scenarioA, scenarioB),
+    comparison: compareScenarioTrajectories(scenarioA, scenarioB),
   };
 }
