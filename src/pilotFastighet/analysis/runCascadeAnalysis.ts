@@ -16,6 +16,7 @@ import {
   type ExecutableDomainProfile,
   type ExecutableProfileId,
 } from "../executableDomainProfile";
+import { combineCanonicalDriverDeltaBatch } from "./canonicalDriverDeltaBatch";
 
 export type PreconfiguredScenarioInput = {
   initialRiskState: RiskState;
@@ -288,11 +289,7 @@ function runScheduledScenario(
     const actions = actionsByStep.get(executionStep) ?? [];
 
     if (actions.length > 0) {
-      const combinedDeltas = new Map<string, number>();
       for (const action of actions) {
-        for (const [driver, delta] of Object.entries(action.driverDeltas)) {
-          combinedDeltas.set(driver, (combinedDeltas.get(driver) ?? 0) + delta);
-        }
         provenance.push({
           scenario,
           actionId: action.actionId,
@@ -303,11 +300,13 @@ function runScheduledScenario(
       }
 
       engine.applyDriverDeltas(
-        Object.fromEntries(
-          [...combinedDeltas.entries()].sort(([left], [right]) =>
-            compareCanonicalStrings(left, right)
-          )
-        ) as DriverDeltas
+        combineCanonicalDriverDeltaBatch(
+          actions.map((action) => ({
+            effectIdentity: action.actionId,
+            instanceIdentity: action.actionId,
+            driverDeltas: action.driverDeltas,
+          }))
+        )
       );
     }
 
