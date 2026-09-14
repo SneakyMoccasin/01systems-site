@@ -174,6 +174,36 @@ test("validates recursive constraint predicates, transitions, effects, and activ
   const threshold = fresh(); threshold.semanticPayload.constraints[0].activation.predicates[1].predicates[0].threshold = -2; expectIssue(threshold, "predicate-threshold-out-of-range");
 });
 
+test("rejects canonical duplicate predicate children and reports both child paths", () => {
+  const exact = fresh();
+  exact.semanticPayload.constraints[0].activation.predicates.push(
+    structuredClone(exact.semanticPayload.constraints[0].activation.predicates[0]),
+  );
+  const exactIssues = expectIssue(
+    exact,
+    "duplicate-predicate-child",
+    "/semanticPayload/constraints/0/activation/predicates/2",
+  );
+  assert.ok(exactIssues.some((issue) => issue.code === "duplicate-predicate-child"
+    && issue.path === "/semanticPayload/constraints/0/activation/predicates/0"));
+
+  const levelOrder = fresh();
+  levelOrder.semanticPayload.constraints[0].activation.predicates = [
+    { kind: "driver-at-level", driverId: "input-alpha", levelIds: ["low", "high"] },
+    { kind: "driver-at-level", driverId: "input-alpha", levelIds: ["high", "low"] },
+  ];
+  expectIssue(levelOrder, "duplicate-predicate-child", "/semanticPayload/constraints/0/activation/predicates/1");
+
+  const nestedOrder = fresh();
+  const a = { kind: "driver-at-level", driverId: "input-alpha", levelIds: ["high"] };
+  const b = { kind: "measure-below", measureId: "balance", threshold: 0.25 };
+  nestedOrder.semanticPayload.constraints[0].activation.predicates = [
+    { kind: "all", predicates: [a, b] },
+    { kind: "all", predicates: [b, a] },
+  ];
+  expectIssue(nestedOrder, "duplicate-predicate-child", "/semanticPayload/constraints/0/activation/predicates/1");
+});
+
 test("lifecycle activation-path rule is narrow for inactive and adds no policy for active or recovering", () => {
   const inactive = fresh(); inactive.semanticPayload.constraints[0].allowedTransitions = [];
   expectIssue(inactive, "missing-activation-transition", "/semanticPayload/constraints/0/allowedTransitions");
@@ -243,6 +273,7 @@ test("every publicly reachable semantic issue code has exact-path negative cover
     { code: "unknown-curve-level", path: "/semanticPayload/curves/0/amplitudeByLevel/medium", mutate: (x) => { x.semanticPayload.curves[0].amplitudeByLevel.medium = 1; } },
     { code: "unknown-measure-reference", path: "/semanticPayload/constraints/0/activation/predicates/1/predicates/0/measureId", mutate: (x) => { x.semanticPayload.constraints[0].activation.predicates[1].predicates[0].measureId = "missing"; } },
     { code: "predicate-threshold-out-of-range", path: "/semanticPayload/constraints/0/activation/predicates/1/predicates/0/threshold", mutate: (x) => { x.semanticPayload.constraints[0].activation.predicates[1].predicates[0].threshold = -2; } },
+    { code: "duplicate-predicate-child", path: "/semanticPayload/constraints/0/activation/predicates/2", mutate: (x) => x.semanticPayload.constraints[0].activation.predicates.push(structuredClone(x.semanticPayload.constraints[0].activation.predicates[0])) },
     { code: "duplicate-lifecycle-transition", path: "/semanticPayload/constraints/0/allowedTransitions/1", mutate: (x) => x.semanticPayload.constraints[0].allowedTransitions.push(structuredClone(x.semanticPayload.constraints[0].allowedTransitions[0])) },
     { code: "lifecycle-self-transition", path: "/semanticPayload/constraints/0/allowedTransitions/0/to", mutate: (x) => { x.semanticPayload.constraints[0].allowedTransitions[0].to = "inactive"; } },
     { code: "missing-activation-transition", path: "/semanticPayload/constraints/0/allowedTransitions", mutate: (x) => { x.semanticPayload.constraints[0].allowedTransitions = []; } },
@@ -260,6 +291,8 @@ test("every publicly reachable semantic issue code has exact-path negative cover
     { code: "invalid-escalation-transition", path: "/semanticPayload/measures/0/escalationRules/0/transitions/0", mutate: (x) => { const transition=x.semanticPayload.measures[0].escalationRules[0].transitions[0]; transition.fromLevelId="high"; transition.toLevelId="low"; } },
     { code: "measure-dependency-cycle", path: "/semanticPayload/measures/1/terms/0/source/measureId", mutate: (x) => { const reserve=addSecondMeasure(x); x.semanticPayload.measures[0].terms[0].source={kind:"measure",measureId:"reserve"}; reserve.terms[0].source={kind:"measure",measureId:"balance"}; } },
   ];
+  assert.equal(DOMAIN_MODEL_CONTRACT_V1_SEMANTIC_ISSUE_CODES.length, 45);
+  assert.equal(new Set(DOMAIN_MODEL_CONTRACT_V1_SEMANTIC_ISSUE_CODES).size, 45);
   assert.deepEqual([...new Set(cases.map(({ code }) => code))].sort(codeUnitCompare), [...DOMAIN_MODEL_CONTRACT_V1_SEMANTIC_ISSUE_CODES].sort(codeUnitCompare));
   for (const { code, path, mutate } of cases) { const input=fresh(); mutate(input); expectIssue(input, code, path); }
 });

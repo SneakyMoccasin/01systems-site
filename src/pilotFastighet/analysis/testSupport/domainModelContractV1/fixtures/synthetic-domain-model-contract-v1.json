@@ -6,7 +6,7 @@
     "profileId": "balanced-demo",
     "modelVersion": "1.0.0",
     "calibrationVersion": "synthetic-1",
-    "semanticPayloadHash": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    "semanticPayloadHash": "sha256:1fbecc460b0e0203386224e0b824aa4c766a42c5e7cd261c2e2827dffb8443f6"
   },
   "semanticPayload": {
     "scales": [{

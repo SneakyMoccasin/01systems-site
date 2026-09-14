@@ -8,6 +8,7 @@ import type {
   StructurallyValidatedDomainModelContractV1,
 } from "./contractV1";
 import { jsonPointer, sortContractIssues, type ContractIssue } from "./contractV1Issues";
+import { canonicalPredicateKeyV1 } from "./canonicalPredicateV1";
 
 export type SemanticValidationResult =
   | Readonly<{ ok: true; value: SemanticallyValidatedDomainModelContractV1 }>
@@ -15,7 +16,7 @@ export type SemanticValidationResult =
 
 export const DOMAIN_MODEL_CONTRACT_V1_SEMANTIC_ISSUE_CODES = Object.freeze([
   "curve-shared-across-drivers", "duplicate-action-effect", "duplicate-active-effect", "duplicate-driver-impact",
-  "duplicate-driver-reference", "duplicate-escalation-rule", "duplicate-id", "duplicate-level-reference",
+  "duplicate-driver-reference", "duplicate-escalation-rule", "duplicate-id", "duplicate-level-reference", "duplicate-predicate-child",
   "duplicate-level-transition", "duplicate-lifecycle-transition", "duplicate-propagation-edge", "duplicate-rank",
   "duplicate-term-id", "escalation-threshold-out-of-range", "initial-level-score-mismatch", "initial-score-out-of-range",
   "invalid-band-endpoint", "invalid-escalation-transition", "invalid-materialization-band", "invalid-measure-range",
@@ -226,7 +227,10 @@ function validatePredicate(root: Predicate, path: string, indexes: Indexes, issu
       const scale = driver ? indexes.scales.get(driver.value.scaleId) : undefined; const levels = new Set(scale?.value.levels.map((x) => x.levelId));
       duplicateValues(predicate.levelIds, String, `${current.path}/levelIds`, "", "duplicate-level-reference", issues);
       predicate.levelIds.forEach((levelId, index) => { if (driver && !levels.has(levelId)) issues.push(issue("unknown-level-reference", `${current.path}/levelIds/${index}`, "Predicate level must exist in the referenced driver's scale.")); });
-    } else for (let index = predicate.predicates.length - 1; index >= 0; index -= 1) stack.push({ value: predicate.predicates[index], path: `${current.path}/predicates/${index}` });
+    } else {
+      duplicateValues(predicate.predicates, canonicalPredicateKeyV1, `${current.path}/predicates`, "", "duplicate-predicate-child", issues);
+      for (let index = predicate.predicates.length - 1; index >= 0; index -= 1) stack.push({ value: predicate.predicates[index], path: `${current.path}/predicates/${index}` });
+    }
   }
 }
 
