@@ -17,7 +17,7 @@ function manifest(): Record<string, unknown> {
     profile: { domainId: "realEstate", profileId: "legacy-real-estate-v1", modelVersion: "model-v1", calibrationVersion: "calibration-v1", semanticPayloadHash: HASH },
     executionSurface: "initiative-scheduled-analysis",
     input: { fixtureId: "fixture-1", canonicalHash: HASH },
-    result: { trajectoryHash: HASH, structuralDefinitionFingerprint: HASH, expectedExactMetrics: { margin: 1.25, periods: [1, 2], nested: { exact: true } } },
+    result: { trajectoryHash: HASH, baselineHash: HASH, structuralDefinitionFingerprint: HASH, expectedExactMetrics: { margin: 1.25, periods: [1, 2], nested: { exact: true } } },
     createdDate: "2026-09-14",
     reviewedDate: "2026-09-14",
   };
@@ -40,6 +40,12 @@ test("rejects absent optional result hashes combined with empty exact metrics", 
 test("accepts metrics as the sole relevant result content", () => {
   const value = manifest();
   value.result = { expectedExactMetrics: { exactMargin: 1 } };
+  assert.doesNotThrow(() => validateDomainModelBaselineManifestV1(value));
+});
+
+test("accepts baselineHash as the sole relevant result hash", () => {
+  const value = manifest();
+  value.result = { baselineHash: HASH, expectedExactMetrics: {} };
   assert.doesNotThrow(() => validateDomainModelBaselineManifestV1(value));
 });
 
@@ -93,6 +99,7 @@ test("rejects incorrect versions, protocols, hashes, commits, and dates", () => 
     [(value) => { (value.baselineSource as Record<string, unknown>).m0bStartCommit = "not-a-commit"; }, /\$\.baselineSource\.m0bStartCommit/],
     [(value) => { (value.input as Record<string, unknown>).canonicalHash = "a".repeat(63); }, /\$\.input\.canonicalHash/],
     [(value) => { (value.result as Record<string, unknown>).trajectoryHash = "A".repeat(64); }, /\$\.result\.trajectoryHash/],
+    [(value) => { (value.result as Record<string, unknown>).baselineHash = "a".repeat(63); }, /\$\.result\.baselineHash/],
     [(value) => { value.createdDate = "2026-13-01"; }, /\$\.createdDate: must be a valid calendar date/],
     [(value) => { value.reviewedDate = "2026-02-30"; }, /\$\.reviewedDate: must be a valid calendar date/],
   ];

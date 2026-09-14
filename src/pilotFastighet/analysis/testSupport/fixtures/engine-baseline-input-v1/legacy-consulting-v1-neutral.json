@@ -1,0 +1,54 @@
+{
+  "version": "engine-baseline-input-v1",
+  "fixtureId": "legacy-consulting-v1-neutral-v1",
+  "kind": "neutral",
+  "domainId": "consulting",
+  "profileId": "legacy-consulting-v1",
+  "horizon": 6,
+  "initialState": {
+    "riskState": {
+      "demandRisk": "MODERATE",
+      "pricingPowerRisk": "MODERATE",
+      "tenantStabilityRisk": "MODERATE",
+      "maintenanceIntensityRisk": "MODERATE",
+      "operationalEfficiencyRisk": "MODERATE",
+      "energyExposureRisk": "MODERATE",
+      "interestRateExposureRisk": "MODERATE",
+      "leverageLevelRisk": "MODERATE",
+      "refinancingRisk": "MODERATE",
+      "marketVolatilityRisk": "MODERATE",
+      "regulatoryPressureRisk": "MODERATE",
+      "capitalCommitmentRigidityRisk": "MODERATE",
+      "accessibility": "MODERATE",
+      "modal_attractiveness": "MODERATE",
+      "congestion_pressure": "MODERATE",
+      "operational_capacity": "MODERATE",
+      "transit_signal_priority": "MODERATE",
+      "budget_pressure": "MODERATE"
+    },
+    "driverScores": {
+      "demandRisk": 1,
+      "pricingPowerRisk": 1,
+      "tenantStabilityRisk": 1,
+      "maintenanceIntensityRisk": 1,
+      "operationalEfficiencyRisk": 1,
+      "energyExposureRisk": 1,
+      "interestRateExposureRisk": 1,
+      "leverageLevelRisk": 1,
+      "refinancingRisk": 1,
+      "marketVolatilityRisk": 1,
+      "regulatoryPressureRisk": 1,
+      "capitalCommitmentRigidityRisk": 1,
+      "accessibility": 1,
+      "modal_attractiveness": 1,
+      "congestion_pressure": 1,
+      "operational_capacity": 1,
+      "transit_signal_priority": 1,
+      "budget_pressure": 1
+    }
+  },
+  "schedules": {
+    "A": [],
+    "B": []
+  }
+}

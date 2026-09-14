@@ -1,0 +1,80 @@
+{
+  "version": "engine-baseline-input-v1",
+  "fixtureId": "legacy-municipal-v1-stressed-scheduled-v1",
+  "kind": "stressed-scheduled",
+  "domainId": "municipal",
+  "profileId": "legacy-municipal-v1",
+  "horizon": 8,
+  "initialState": {
+    "riskState": {
+      "demandRisk": "MODERATE",
+      "pricingPowerRisk": "MODERATE",
+      "tenantStabilityRisk": "MODERATE",
+      "maintenanceIntensityRisk": "MODERATE",
+      "operationalEfficiencyRisk": "HIGH",
+      "energyExposureRisk": "MODERATE",
+      "interestRateExposureRisk": "MODERATE",
+      "leverageLevelRisk": "MODERATE",
+      "refinancingRisk": "MODERATE",
+      "marketVolatilityRisk": "MODERATE",
+      "regulatoryPressureRisk": "MODERATE",
+      "capitalCommitmentRigidityRisk": "MODERATE",
+      "accessibility": "LOW",
+      "modal_attractiveness": "MODERATE",
+      "congestion_pressure": "MODERATE",
+      "operational_capacity": "MODERATE",
+      "transit_signal_priority": "MODERATE",
+      "budget_pressure": "HIGH"
+    },
+    "driverScores": {
+      "demandRisk": 1,
+      "pricingPowerRisk": 1,
+      "tenantStabilityRisk": 1,
+      "maintenanceIntensityRisk": 1,
+      "operationalEfficiencyRisk": 2,
+      "energyExposureRisk": 1,
+      "interestRateExposureRisk": 1,
+      "leverageLevelRisk": 1,
+      "refinancingRisk": 1,
+      "marketVolatilityRisk": 1,
+      "regulatoryPressureRisk": 1,
+      "capitalCommitmentRigidityRisk": 1,
+      "accessibility": 0,
+      "modal_attractiveness": 1,
+      "congestion_pressure": 1,
+      "operational_capacity": 1,
+      "transit_signal_priority": 1,
+      "budget_pressure": 2
+    }
+  },
+  "schedules": {
+    "A": [
+      {
+        "actionId": "increase_service_frequency",
+        "executionStep": 2
+      },
+      {
+        "actionId": "electrify_bus_fleet",
+        "executionStep": 4
+      },
+      {
+        "actionId": "expand_cycling_infrastructure",
+        "executionStep": 4
+      }
+    ],
+    "B": [
+      {
+        "actionId": "expand_cycling_infrastructure",
+        "executionStep": 1
+      },
+      {
+        "actionId": "increase_service_frequency",
+        "executionStep": 3
+      },
+      {
+        "actionId": "electrify_bus_fleet",
+        "executionStep": 3
+      }
+    ]
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "version": "engine-output-golden-v1",
+  "fixtureId": "legacy-municipal-v1-stressed-scheduled-v1",
+  "inputHash": "a21a378321066997232088b26b991baf5681dbe1fe26f3827023d44d383a5555",
+  "outputHash": "bf19b2034fe805df2cb6043d78c5310d372f92d59f60b9101d20fb73166e8b5a",
+  "trajectoryHash": "52e506dab144819f9ad44358023b3a33a84e7d9188b00dccafcb0fe5e80f3c5a",
+  "terminalStateHash": "af90e2c028cc7dfa9eb12673f521665d61395e2773d0c262d796b9c639289c1b",
+  "marginHistoryHash": "b12555652b0e8a147ae1cf2616124f3c7525b5165639f1583292889b2f1b29e8",
+  "constraintHistoryHash": "9f9f2e1d9ee9002b7024481d3b5d42d043eb11c25aa4e06ff7683bb30c048571",
+  "cascadeEventHash": "2bad7bb6ab0a0de15594e3e0a793cceffb2cf39dd96195761044227a237a86b3",
+  "provenanceHash": "c84ce718c4e8ba21c5f1241176000421b1425a23f2a602690bdfffdeb3738770",
+  "baselineHash": "de408adb3bc6a614c8bac4f082497825c9bea4faea0eace26421b14fe34a7858",
+  "comparisonHash": "d8d8b9bad3f197ef445c95149157344e391266f47fdbb4c7a0b9eea6eebe6c64",
+  "exactMetrics": {
+    "horizon": 8,
+    "terminalMarginA": -3,
+    "terminalMarginB": -3,
+    "baselineTerminalMargin": -3,
+    "firstDivergencePeriod": 1,
+    "cascadeEventCountA": 3,
+    "cascadeEventCountB": 3,
+    "provenanceCount": 6,
+    "firstRefinancingPeriodA": null,
+    "firstRefinancingPeriodB": null
+  },
+  "manifest": {
+    "schemaVersion": "domain-model-baseline-manifest-v1",
+    "baselineSource": {
+      "baselineCodeCommit": "90c3adc694b7fb426a1981235ccc21db99b1f407",
+      "baselineCodeTreeHash": "3741b545e1ac5b533327648eb1de324a838673be",
+      "m0bStartCommit": "5a63194f8594ac96205074d4e1851c6a9ea58db5"
+    },
+    "canonicalization": {
+      "algorithm": "canonical-json-v1",
+      "hashAlgorithm": "sha256-lowercase-hex"
+    },
+    "engine": {
+      "modelVersion": "pilot-fastighet-v0.4",
+      "algorithmVersion": "unversioned-legacy-real-estate-engine"
+    },
+    "profile": {
+      "domainId": "municipal",
+      "profileId": "legacy-municipal-v1",
+      "modelVersion": "pilot-fastighet-v0.4",
+      "calibrationVersion": "transport-causal-subset-v2",
+      "semanticPayloadHash": "81ae1fa9f8a21a46c4cd04e4540c98db5750bd1305ecc6e215162d8da634193b"
+    },
+    "executionSurface": "runCascadeAnalysis/scheduled",
+    "input": {
+      "fixtureId": "legacy-municipal-v1-stressed-scheduled-v1",
+      "canonicalHash": "a21a378321066997232088b26b991baf5681dbe1fe26f3827023d44d383a5555"
+    },
+    "result": {
+      "trajectoryHash": "52e506dab144819f9ad44358023b3a33a84e7d9188b00dccafcb0fe5e80f3c5a",
+      "terminalStateHash": "af90e2c028cc7dfa9eb12673f521665d61395e2773d0c262d796b9c639289c1b",
+      "marginHistoryHash": "b12555652b0e8a147ae1cf2616124f3c7525b5165639f1583292889b2f1b29e8",
+      "constraintHistoryHash": "9f9f2e1d9ee9002b7024481d3b5d42d043eb11c25aa4e06ff7683bb30c048571",
+      "cascadeEventHash": "2bad7bb6ab0a0de15594e3e0a793cceffb2cf39dd96195761044227a237a86b3",
+      "provenanceHash": "c84ce718c4e8ba21c5f1241176000421b1425a23f2a602690bdfffdeb3738770",
+      "baselineHash": "de408adb3bc6a614c8bac4f082497825c9bea4faea0eace26421b14fe34a7858",
+      "comparisonHash": "d8d8b9bad3f197ef445c95149157344e391266f47fdbb4c7a0b9eea6eebe6c64",
+      "expectedExactMetrics": {
+        "horizon": 8,
+        "terminalMarginA": -3,
+        "terminalMarginB": -3,
+        "baselineTerminalMargin": -3,
+        "firstDivergencePeriod": 1,
+        "cascadeEventCountA": 3,
+        "cascadeEventCountB": 3,
+        "provenanceCount": 6,
+        "firstRefinancingPeriodA": null,
+        "firstRefinancingPeriodB": null
+      }
+    },
+    "createdDate": "2026-09-14",
+    "reviewedDate": "2026-09-14"
+  },
+  "manifestHash": "140cb58da9ff649b00f5ec53f9c60ac1f53123ebe9440fce93de52684d99a562"
+}

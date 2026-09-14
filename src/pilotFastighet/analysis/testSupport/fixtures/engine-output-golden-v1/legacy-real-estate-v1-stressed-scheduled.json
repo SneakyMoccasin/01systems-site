@@ -1,0 +1,79 @@
+{
+  "version": "engine-output-golden-v1",
+  "fixtureId": "legacy-real-estate-v1-stressed-scheduled-v1",
+  "inputHash": "ac0530609eb342481ce07c1c12651faa9445142ebdda05bdd52e7944b10d052f",
+  "outputHash": "2801ec1f6d436edb5c84b260bc7cb8babf94335ab0f9ec496dd238702fb28665",
+  "trajectoryHash": "f81ce8748c4572b769432af988a1df83375c75ec564f00e18f62531685a555cf",
+  "terminalStateHash": "e93e2f9231edc945ffd9a08a42614bcd96473c1167439b3400c6679093fb6312",
+  "marginHistoryHash": "06cf82c5170bbb96e0b7d2200f12588f21204940fe101cc4d9e16dc2834d439c",
+  "constraintHistoryHash": "2d3faf270cc9af9b86471c73c330a1f7629910caab6db1626e48ed0f389d38f6",
+  "cascadeEventHash": "bb7f556e57f9c87d4f495e56a44f8c66a7bed14d6da49d59e841ce7d5d2233b4",
+  "provenanceHash": "6465dff25f8a9cd76a0b9164123d25a7a448e112c4c3174f145d582c17c97e1b",
+  "baselineHash": "0123f8c36f2fd4d7f95da80a32cab2253f179f60f764ec32ba85f274b54ffa72",
+  "comparisonHash": "6625d29732b6c864707726dd2174af1de2ff709a63c3393c47c257fc517dc973",
+  "exactMetrics": {
+    "horizon": 8,
+    "terminalMarginA": -3,
+    "terminalMarginB": -3,
+    "baselineTerminalMargin": 1,
+    "firstDivergencePeriod": 1,
+    "cascadeEventCountA": 7,
+    "cascadeEventCountB": 9,
+    "provenanceCount": 6,
+    "firstRefinancingPeriodA": 5,
+    "firstRefinancingPeriodB": 2
+  },
+  "manifest": {
+    "schemaVersion": "domain-model-baseline-manifest-v1",
+    "baselineSource": {
+      "baselineCodeCommit": "90c3adc694b7fb426a1981235ccc21db99b1f407",
+      "baselineCodeTreeHash": "3741b545e1ac5b533327648eb1de324a838673be",
+      "m0bStartCommit": "5a63194f8594ac96205074d4e1851c6a9ea58db5"
+    },
+    "canonicalization": {
+      "algorithm": "canonical-json-v1",
+      "hashAlgorithm": "sha256-lowercase-hex"
+    },
+    "engine": {
+      "modelVersion": "pilot-fastighet-v0.4",
+      "algorithmVersion": "unversioned-legacy-real-estate-engine"
+    },
+    "profile": {
+      "domainId": "realEstate",
+      "profileId": "legacy-real-estate-v1",
+      "modelVersion": "pilot-fastighet-v0.4",
+      "calibrationVersion": "legacy-global-v1",
+      "semanticPayloadHash": "898817bed271a470aecd941612a2bd49a95bec8acf480e5f645ffa0b9b5b33bc"
+    },
+    "executionSurface": "runCascadeAnalysis/scheduled",
+    "input": {
+      "fixtureId": "legacy-real-estate-v1-stressed-scheduled-v1",
+      "canonicalHash": "ac0530609eb342481ce07c1c12651faa9445142ebdda05bdd52e7944b10d052f"
+    },
+    "result": {
+      "trajectoryHash": "f81ce8748c4572b769432af988a1df83375c75ec564f00e18f62531685a555cf",
+      "terminalStateHash": "e93e2f9231edc945ffd9a08a42614bcd96473c1167439b3400c6679093fb6312",
+      "marginHistoryHash": "06cf82c5170bbb96e0b7d2200f12588f21204940fe101cc4d9e16dc2834d439c",
+      "constraintHistoryHash": "2d3faf270cc9af9b86471c73c330a1f7629910caab6db1626e48ed0f389d38f6",
+      "cascadeEventHash": "bb7f556e57f9c87d4f495e56a44f8c66a7bed14d6da49d59e841ce7d5d2233b4",
+      "provenanceHash": "6465dff25f8a9cd76a0b9164123d25a7a448e112c4c3174f145d582c17c97e1b",
+      "baselineHash": "0123f8c36f2fd4d7f95da80a32cab2253f179f60f764ec32ba85f274b54ffa72",
+      "comparisonHash": "6625d29732b6c864707726dd2174af1de2ff709a63c3393c47c257fc517dc973",
+      "expectedExactMetrics": {
+        "horizon": 8,
+        "terminalMarginA": -3,
+        "terminalMarginB": -3,
+        "baselineTerminalMargin": 1,
+        "firstDivergencePeriod": 1,
+        "cascadeEventCountA": 7,
+        "cascadeEventCountB": 9,
+        "provenanceCount": 6,
+        "firstRefinancingPeriodA": 5,
+        "firstRefinancingPeriodB": 2
+      }
+    },
+    "createdDate": "2026-09-14",
+    "reviewedDate": "2026-09-14"
+  },
+  "manifestHash": "03fa6856478d429ca6fd9291c2ab6ac3b1e52daa1ed8e31816fee59c7804f46a"
+}
