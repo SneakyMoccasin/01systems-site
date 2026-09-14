@@ -1,0 +1,64 @@
+{
+  "version": "structural-observation-output-golden-v1",
+  "fixtureId": "legacy-real-estate-v1-small-structural-observation-v2",
+  "inputHash": "48033d96fbeab0408f537097216aa5f1cd18a0f65cf6a03a7a68a654d1b1b7d6",
+  "engineResultHash": "1f37d5833efe0f73e0197ca4e14892ec263e68cb53e282602186dfd1dbf55bf2",
+  "structuralObservationHash": "5cc8587785e31efd5737792f58a5cf3977ec298de46397117b1cf025362b8a9c",
+  "provenanceHash": "6aa6eb951b3ff0e50da3259fa2ada5cb8ce0e2deabbc464f77460cc25a1bd732",
+  "persistenceHash": "5973d8702d0f16e9f51236c55143426eb9b868a3f2b06ca0d1ac567302faef18",
+  "structuralDefinitionFingerprint": "96169ee270dc3447294dc9c6f98301c8df437ef8c4c8d51d12a8f0a960bc9515",
+  "scenarioPlanFingerprintA": "06b855e52701e4f8d3985bbb9d0d9cbb78158587dfc563919abf7afbe089f00c",
+  "scenarioPlanFingerprintB": "077ad7cccc0762a6716f84be7a2d24551ee2d8a04c5f84cd34d32dab80fa5a2d",
+  "exactMetrics": {
+    "horizon": 4,
+    "initiativeCount": 3,
+    "snapshotCountA": 8,
+    "snapshotCountB": 8,
+    "provenanceCountA": 3,
+    "provenanceCountB": 3,
+    "diagnosticCodesA": ["executed-despite-structural-block", "prerequisite-executed-same-period", "resource-overallocated", "would-be-blocked"],
+    "diagnosticCodesB": ["executed-despite-structural-block", "resource-overallocated", "would-be-blocked"]
+  },
+  "manifest": {
+    "schemaVersion": "domain-model-baseline-manifest-v1",
+    "baselineSource": {
+      "baselineCodeCommit": "90c3adc694b7fb426a1981235ccc21db99b1f407",
+      "baselineCodeTreeHash": "3741b545e1ac5b533327648eb1de324a838673be",
+      "m0bStartCommit": "5a63194f8594ac96205074d4e1851c6a9ea58db5"
+    },
+    "canonicalization": { "algorithm": "canonical-json-v1", "hashAlgorithm": "sha256-lowercase-hex" },
+    "engine": { "modelVersion": "pilot-fastighet-v0.4", "algorithmVersion": "unversioned-legacy-real-estate-engine" },
+    "profile": {
+      "domainId": "realEstate",
+      "profileId": "legacy-real-estate-v1",
+      "modelVersion": "pilot-fastighet-v0.4",
+      "calibrationVersion": "legacy-global-v1",
+      "semanticPayloadHash": "898817bed271a470aecd941612a2bd49a95bec8acf480e5f645ffa0b9b5b33bc"
+    },
+    "executionSurface": "observeCompletedInitiativeStructuralAnalysis",
+    "input": {
+      "fixtureId": "legacy-real-estate-v1-small-structural-observation-v2",
+      "canonicalHash": "48033d96fbeab0408f537097216aa5f1cd18a0f65cf6a03a7a68a654d1b1b7d6"
+    },
+    "result": {
+      "structuralDefinitionFingerprint": "96169ee270dc3447294dc9c6f98301c8df437ef8c4c8d51d12a8f0a960bc9515",
+      "scenarioPlanFingerprintA": "06b855e52701e4f8d3985bbb9d0d9cbb78158587dfc563919abf7afbe089f00c",
+      "scenarioPlanFingerprintB": "077ad7cccc0762a6716f84be7a2d24551ee2d8a04c5f84cd34d32dab80fa5a2d",
+      "provenanceHash": "6aa6eb951b3ff0e50da3259fa2ada5cb8ce0e2deabbc464f77460cc25a1bd732",
+      "structuralObservationHash": "5cc8587785e31efd5737792f58a5cf3977ec298de46397117b1cf025362b8a9c",
+      "engineResultHash": "1f37d5833efe0f73e0197ca4e14892ec263e68cb53e282602186dfd1dbf55bf2",
+      "persistenceHash": "5973d8702d0f16e9f51236c55143426eb9b868a3f2b06ca0d1ac567302faef18",
+      "expectedExactMetrics": {
+        "horizon": 4,
+        "initiativeCount": 3,
+        "snapshotCountA": 8,
+        "snapshotCountB": 8,
+        "provenanceCountA": 3,
+        "provenanceCountB": 3
+      }
+    },
+    "createdDate": "2026-09-14",
+    "reviewedDate": "2026-09-14"
+  },
+  "manifestHash": "de89a0fd0012e7bf2d9888f057ec7ef6389a4ecbc91b3776604cb4a158543e14"
+}

@@ -42,6 +42,9 @@ export type DomainModelBaselineManifestV1 = Readonly<{
     structuralDefinitionFingerprint?: string;
     scenarioPlanFingerprintA?: string;
     scenarioPlanFingerprintB?: string;
+    structuralObservationHash?: string;
+    engineResultHash?: string;
+    persistenceHash?: string;
     expectedExactMetrics: Readonly<Record<string, BaselineJsonValue>>;
   }>;
   createdDate: string;
@@ -52,7 +55,7 @@ const HASH_PATTERN = /^[0-9a-f]{64}$/;
 const GIT_OBJECT_PATTERN = /^[0-9a-f]{40}$/;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const TOP_LEVEL_FIELDS = ["schemaVersion", "baselineSource", "canonicalization", "engine", "profile", "executionSurface", "input", "result", "createdDate", "reviewedDate"] as const;
-const RESULT_HASH_FIELDS = ["trajectoryHash", "terminalStateHash", "marginHistoryHash", "constraintHistoryHash", "cascadeEventHash", "provenanceHash", "baselineHash", "comparisonHash", "structuralDefinitionFingerprint", "scenarioPlanFingerprintA", "scenarioPlanFingerprintB"] as const;
+const RESULT_HASH_FIELDS = ["trajectoryHash", "terminalStateHash", "marginHistoryHash", "constraintHistoryHash", "cascadeEventHash", "provenanceHash", "baselineHash", "comparisonHash", "structuralDefinitionFingerprint", "scenarioPlanFingerprintA", "scenarioPlanFingerprintB", "structuralObservationHash", "engineResultHash", "persistenceHash"] as const;
 
 function fail(path: string, reason: string): never {
   throw new TypeError(`Domain Model Baseline Manifest V1 validation failed at ${path}: ${reason}.`);

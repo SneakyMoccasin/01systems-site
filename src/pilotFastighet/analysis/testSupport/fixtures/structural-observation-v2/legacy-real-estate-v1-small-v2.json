@@ -1,0 +1,62 @@
+{
+  "version": "structural-observation-golden-input-v1",
+  "fixtureId": "legacy-real-estate-v1-small-structural-observation-v2",
+  "domainId": "realEstate",
+  "profileId": "legacy-real-estate-v1",
+  "horizon": 4,
+  "contract": {
+    "version": "structural-observation-v2",
+    "initiatives": [
+      {
+        "id": "foundation",
+        "effectDefinitionId": "early_refinancing",
+        "prerequisites": [],
+        "resourceClaims": [{ "resourceId": "team", "amount": 0.6, "durationPeriods": 2 }]
+      },
+      {
+        "id": "parallel",
+        "effectDefinitionId": "early_refinancing",
+        "prerequisites": [],
+        "resourceClaims": [{ "resourceId": "team", "amount": 0.6, "durationPeriods": 2 }]
+      },
+      {
+        "id": "dependent",
+        "effectDefinitionId": "secure_long_term_leases",
+        "prerequisites": [{ "initiativeId": "foundation", "type": "finish-to-start" }],
+        "resourceClaims": []
+      }
+    ],
+    "resources": [{ "id": "team", "capacity": { "type": "constant", "amount": 1 } }]
+  },
+  "schedules": {
+    "version": "initiative-schedule-v1",
+    "comparisonPolicy": "same-initiative-set",
+    "A": [
+      { "initiativeId": "foundation", "executionStep": 1 },
+      { "initiativeId": "parallel", "executionStep": 1 },
+      { "initiativeId": "dependent", "executionStep": 1 }
+    ],
+    "B": [
+      { "initiativeId": "foundation", "executionStep": 1 },
+      { "initiativeId": "parallel", "executionStep": 2 },
+      { "initiativeId": "dependent", "executionStep": 3 }
+    ]
+  },
+  "initialState": {
+    "initialRiskState": {
+      "demandRisk": "MODERATE", "pricingPowerRisk": "MODERATE", "tenantStabilityRisk": "MODERATE",
+      "maintenanceIntensityRisk": "MODERATE", "operationalEfficiencyRisk": "MODERATE", "energyExposureRisk": "MODERATE",
+      "interestRateExposureRisk": "MODERATE", "leverageLevelRisk": "MODERATE", "refinancingRisk": "MODERATE",
+      "marketVolatilityRisk": "MODERATE", "regulatoryPressureRisk": "MODERATE", "capitalCommitmentRigidityRisk": "MODERATE",
+      "accessibility": "MODERATE", "modal_attractiveness": "MODERATE", "congestion_pressure": "MODERATE",
+      "operational_capacity": "MODERATE", "transit_signal_priority": "MODERATE", "budget_pressure": "MODERATE"
+    },
+    "initialDriverScores": {
+      "demandRisk": 1, "pricingPowerRisk": 1, "tenantStabilityRisk": 1, "maintenanceIntensityRisk": 1,
+      "operationalEfficiencyRisk": 1, "energyExposureRisk": 1, "interestRateExposureRisk": 1, "leverageLevelRisk": 1,
+      "refinancingRisk": 1, "marketVolatilityRisk": 1, "regulatoryPressureRisk": 1, "capitalCommitmentRigidityRisk": 1,
+      "accessibility": 1, "modal_attractiveness": 1, "congestion_pressure": 1, "operational_capacity": 1,
+      "transit_signal_priority": 1, "budget_pressure": 1
+    }
+  }
+}

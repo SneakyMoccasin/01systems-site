@@ -17,7 +17,7 @@ function manifest(): Record<string, unknown> {
     profile: { domainId: "realEstate", profileId: "legacy-real-estate-v1", modelVersion: "model-v1", calibrationVersion: "calibration-v1", semanticPayloadHash: HASH },
     executionSurface: "initiative-scheduled-analysis",
     input: { fixtureId: "fixture-1", canonicalHash: HASH },
-    result: { trajectoryHash: HASH, baselineHash: HASH, structuralDefinitionFingerprint: HASH, expectedExactMetrics: { margin: 1.25, periods: [1, 2], nested: { exact: true } } },
+    result: { trajectoryHash: HASH, baselineHash: HASH, structuralDefinitionFingerprint: HASH, structuralObservationHash: HASH, engineResultHash: HASH, persistenceHash: HASH, expectedExactMetrics: { margin: 1.25, periods: [1, 2], nested: { exact: true } } },
     createdDate: "2026-09-14",
     reviewedDate: "2026-09-14",
   };
@@ -100,6 +100,9 @@ test("rejects incorrect versions, protocols, hashes, commits, and dates", () => 
     [(value) => { (value.input as Record<string, unknown>).canonicalHash = "a".repeat(63); }, /\$\.input\.canonicalHash/],
     [(value) => { (value.result as Record<string, unknown>).trajectoryHash = "A".repeat(64); }, /\$\.result\.trajectoryHash/],
     [(value) => { (value.result as Record<string, unknown>).baselineHash = "a".repeat(63); }, /\$\.result\.baselineHash/],
+    [(value) => { (value.result as Record<string, unknown>).structuralObservationHash = "A".repeat(64); }, /\$\.result\.structuralObservationHash/],
+    [(value) => { (value.result as Record<string, unknown>).engineResultHash = "a".repeat(63); }, /\$\.result\.engineResultHash/],
+    [(value) => { (value.result as Record<string, unknown>).persistenceHash = "A".repeat(64); }, /\$\.result\.persistenceHash/],
     [(value) => { value.createdDate = "2026-13-01"; }, /\$\.createdDate: must be a valid calendar date/],
     [(value) => { value.reviewedDate = "2026-02-30"; }, /\$\.reviewedDate: must be a valid calendar date/],
   ];
