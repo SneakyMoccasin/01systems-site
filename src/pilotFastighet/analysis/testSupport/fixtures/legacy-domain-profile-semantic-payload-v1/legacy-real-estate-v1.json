@@ -1,0 +1,738 @@
+{
+  "schemaVersion": "legacy-domain-profile-semantic-payload-v1",
+  "identity": {
+    "domainId": "realEstate",
+    "profileId": "legacy-real-estate-v1",
+    "modelVersion": "pilot-fastighet-v0.4",
+    "calibrationVersion": "legacy-global-v1"
+  },
+  "applicableDrivers": [
+    "demandRisk",
+    "pricingPowerRisk",
+    "tenantStabilityRisk",
+    "maintenanceIntensityRisk",
+    "operationalEfficiencyRisk",
+    "energyExposureRisk",
+    "interestRateExposureRisk",
+    "leverageLevelRisk",
+    "refinancingRisk",
+    "marketVolatilityRisk",
+    "regulatoryPressureRisk",
+    "capitalCommitmentRigidityRisk",
+    "accessibility",
+    "modal_attractiveness",
+    "congestion_pressure",
+    "operational_capacity",
+    "transit_signal_priority",
+    "budget_pressure"
+  ],
+  "defaultState": {
+    "demandRisk": "MODERATE",
+    "pricingPowerRisk": "MODERATE",
+    "tenantStabilityRisk": "MODERATE",
+    "maintenanceIntensityRisk": "MODERATE",
+    "operationalEfficiencyRisk": "MODERATE",
+    "energyExposureRisk": "MODERATE",
+    "interestRateExposureRisk": "MODERATE",
+    "leverageLevelRisk": "MODERATE",
+    "refinancingRisk": "MODERATE",
+    "marketVolatilityRisk": "MODERATE",
+    "regulatoryPressureRisk": "MODERATE",
+    "capitalCommitmentRigidityRisk": "MODERATE",
+    "accessibility": "MODERATE",
+    "modal_attractiveness": "MODERATE",
+    "congestion_pressure": "MODERATE",
+    "operational_capacity": "MODERATE",
+    "transit_signal_priority": "MODERATE",
+    "budget_pressure": "MODERATE"
+  },
+  "actions": [
+    {
+      "actionId": "congestion_pricing",
+      "driverDeltas": {
+        "modal_shift_pressure": 2,
+        "political_feasibility": -1
+      }
+    },
+    {
+      "actionId": "delay_maintenance",
+      "driverDeltas": {
+        "maintenanceIntensityRisk": 1,
+        "tenantStabilityRisk": 0.5
+      }
+    },
+    {
+      "actionId": "early_refinancing",
+      "driverDeltas": {
+        "refinancingRisk": -1,
+        "interestRateExposureRisk": -0.5
+      }
+    },
+    {
+      "actionId": "electrify_bus_fleet",
+      "driverDeltas": {
+        "energyExposureRisk": -1,
+        "operationalEfficiencyRisk": -0.5,
+        "capitalCommitmentRigidityRisk": 0.5
+      }
+    },
+    {
+      "actionId": "energy_retrofit_program",
+      "driverDeltas": {
+        "energyExposureRisk": -1,
+        "operationalEfficiencyRisk": 1
+      }
+    },
+    {
+      "actionId": "expand_cycling_infrastructure",
+      "driverDeltas": {
+        "modal_attractiveness": 2,
+        "congestion_pressure": -1,
+        "budget_pressure": 1
+      }
+    },
+    {
+      "actionId": "increase_liquidity_buffer",
+      "driverDeltas": {
+        "liquidityPressure": -1,
+        "refinancingRisk": -1
+      }
+    },
+    {
+      "actionId": "increase_service_frequency",
+      "driverDeltas": {
+        "accessibility": 1,
+        "operational_capacity": -0.5,
+        "budget_pressure": 0.5
+      }
+    },
+    {
+      "actionId": "phase_project_starts",
+      "driverDeltas": {
+        "capitalCommitmentRigidityRisk": -1,
+        "refinancingRisk": -0.5
+      }
+    },
+    {
+      "actionId": "reduce_leverage",
+      "driverDeltas": {
+        "refinancingRisk": -1,
+        "interestRateExposureRisk": -1
+      }
+    },
+    {
+      "actionId": "reduce_parking_supply",
+      "driverDeltas": {
+        "demandRisk": 1
+      }
+    },
+    {
+      "actionId": "reduce_travel_time",
+      "driverDeltas": {
+        "modal_attractiveness": 1
+      }
+    },
+    {
+      "actionId": "secure_long_term_leases",
+      "driverDeltas": {
+        "tenantStabilityRisk": -1,
+        "demandRisk": -1
+      }
+    },
+    {
+      "actionId": "stagger_project_starts",
+      "driverDeltas": {
+        "capitalCommitmentRigidityRisk": -1,
+        "implementationPacingRisk": -1
+      }
+    },
+    {
+      "actionId": "transit_signal_priority",
+      "driverDeltas": {
+        "transit_signal_priority": 1
+      }
+    }
+  ],
+  "supportedActionIds": [
+    "delay_maintenance",
+    "early_refinancing",
+    "energy_retrofit_program",
+    "increase_liquidity_buffer",
+    "phase_project_starts",
+    "reduce_leverage",
+    "secure_long_term_leases",
+    "stagger_project_starts"
+  ],
+  "propagationRelationships": [
+    {
+      "source": "interestRateExposureRisk",
+      "targets": [
+        {
+          "target": "refinancingRisk",
+          "level": "HIGH"
+        },
+        {
+          "target": "leverageLevelRisk",
+          "level": "HIGH"
+        }
+      ]
+    },
+    {
+      "source": "leverageLevelRisk",
+      "targets": [
+        {
+          "target": "liquidityPressure",
+          "level": "HIGH"
+        },
+        {
+          "target": "capitalCommitmentRigidityRisk",
+          "level": "HIGH"
+        }
+      ]
+    },
+    {
+      "source": "refinancingRisk",
+      "targets": [
+        {
+          "target": "leverageLevelRisk",
+          "level": "HIGH"
+        },
+        {
+          "target": "liquidityPressure",
+          "level": "HIGH"
+        },
+        {
+          "target": "capitalCommitmentRigidityRisk",
+          "level": "HIGH"
+        }
+      ]
+    },
+    {
+      "source": "liquidityPressure",
+      "targets": [
+        {
+          "target": "capitalCommitmentRigidityRisk",
+          "level": "HIGH"
+        }
+      ]
+    },
+    {
+      "source": "capitalCommitmentRigidityRisk",
+      "targets": [
+        {
+          "target": "operationalEfficiencyRisk",
+          "level": "HIGH"
+        },
+        {
+          "target": "maintenanceIntensityRisk",
+          "level": "HIGH"
+        }
+      ]
+    },
+    {
+      "source": "operationalEfficiencyRisk",
+      "targets": [
+        {
+          "target": "maintenanceIntensityRisk",
+          "level": "HIGH"
+        },
+        {
+          "target": "tenantStabilityRisk",
+          "level": "HIGH"
+        }
+      ]
+    },
+    {
+      "source": "maintenanceIntensityRisk",
+      "targets": [
+        {
+          "target": "tenantStabilityRisk",
+          "level": "HIGH"
+        }
+      ]
+    },
+    {
+      "source": "tenantStabilityRisk",
+      "targets": [
+        {
+          "target": "demandRisk",
+          "level": "HIGH"
+        }
+      ]
+    },
+    {
+      "source": "congestion_pressure",
+      "targets": [
+        {
+          "target": "modal_attractiveness",
+          "level": "HIGH"
+        }
+      ]
+    },
+    {
+      "source": "modal_attractiveness",
+      "targets": [
+        {
+          "target": "accessibility",
+          "level": "HIGH"
+        }
+      ]
+    },
+    {
+      "source": "accessibility",
+      "targets": [
+        {
+          "target": "demandRisk",
+          "level": "HIGH"
+        }
+      ]
+    },
+    {
+      "source": "operational_capacity",
+      "targets": [
+        {
+          "target": "tenantStabilityRisk",
+          "level": "HIGH"
+        }
+      ]
+    },
+    {
+      "source": "budget_pressure",
+      "targets": [
+        {
+          "target": "capitalCommitmentRigidityRisk",
+          "level": "HIGH"
+        }
+      ]
+    },
+    {
+      "source": "transit_signal_priority",
+      "targets": [
+        {
+          "target": "operational_capacity",
+          "level": "HIGH"
+        }
+      ]
+    }
+  ],
+  "constraints": {
+    "refinancingEnabled": true,
+    "refinancingMarginThreshold": 0.8,
+    "activeEffects": {
+      "RefinancingConstraint": {
+        "cost": 1.15,
+        "recovery": 0.8
+      },
+      "LiquidityConstraint": {
+        "cost": 1.1,
+        "load": 1.05
+      },
+      "CovenantConstraint": {
+        "recovery": 0.6
+      }
+    }
+  },
+  "marginEscalationRules": [
+    {
+      "marginBelow": -1,
+      "driver": "interestRateExposureRisk",
+      "lowTarget": "MODERATE",
+      "moderateTarget": "HIGH"
+    }
+  ],
+  "impactContract": [
+    {
+      "key": "demandRisk",
+      "impacts": [
+        {
+          "dimension": "load",
+          "direction": "increase",
+          "curve": "LINEAR"
+        }
+      ]
+    },
+    {
+      "key": "pricingPowerRisk",
+      "impacts": [
+        {
+          "dimension": "load",
+          "direction": "increase",
+          "curve": "LINEAR"
+        }
+      ]
+    },
+    {
+      "key": "tenantStabilityRisk",
+      "impacts": [
+        {
+          "dimension": "load",
+          "direction": "increase",
+          "curve": "LINEAR"
+        },
+        {
+          "dimension": "recovery",
+          "direction": "decrease",
+          "curve": "LINEAR"
+        }
+      ]
+    },
+    {
+      "key": "maintenanceIntensityRisk",
+      "impacts": [
+        {
+          "dimension": "recovery",
+          "direction": "decrease",
+          "curve": "LINEAR"
+        }
+      ]
+    },
+    {
+      "key": "operationalEfficiencyRisk",
+      "impacts": [
+        {
+          "dimension": "cost",
+          "direction": "increase",
+          "curve": "LINEAR"
+        },
+        {
+          "dimension": "recovery",
+          "direction": "decrease",
+          "curve": "LINEAR"
+        }
+      ]
+    },
+    {
+      "key": "energyExposureRisk",
+      "impacts": [
+        {
+          "dimension": "cost",
+          "direction": "increase",
+          "curve": "LINEAR"
+        }
+      ]
+    },
+    {
+      "key": "interestRateExposureRisk",
+      "impacts": [
+        {
+          "dimension": "cost",
+          "direction": "increase",
+          "curve": "EXPONENTIAL"
+        }
+      ]
+    },
+    {
+      "key": "leverageLevelRisk",
+      "impacts": [
+        {
+          "dimension": "cost",
+          "direction": "increase",
+          "curve": "EXPONENTIAL"
+        },
+        {
+          "dimension": "sensitivity",
+          "direction": "increase",
+          "curve": "EXPONENTIAL"
+        }
+      ]
+    },
+    {
+      "key": "refinancingRisk",
+      "impacts": [
+        {
+          "dimension": "cost",
+          "direction": "increase",
+          "curve": "LOGISTIC"
+        }
+      ]
+    },
+    {
+      "key": "marketVolatilityRisk",
+      "impacts": [
+        {
+          "dimension": "load",
+          "direction": "increase",
+          "curve": "LINEAR"
+        }
+      ]
+    },
+    {
+      "key": "regulatoryPressureRisk",
+      "impacts": [
+        {
+          "dimension": "cost",
+          "direction": "increase",
+          "curve": "LINEAR"
+        }
+      ]
+    },
+    {
+      "key": "capitalCommitmentRigidityRisk",
+      "impacts": [
+        {
+          "dimension": "recovery",
+          "direction": "decrease",
+          "curve": "LINEAR"
+        }
+      ]
+    },
+    {
+      "key": "accessibility",
+      "impacts": [
+        {
+          "dimension": "load",
+          "direction": "decrease",
+          "curve": "LINEAR"
+        },
+        {
+          "dimension": "recovery",
+          "direction": "increase",
+          "curve": "LINEAR"
+        }
+      ]
+    },
+    {
+      "key": "modal_attractiveness",
+      "impacts": [
+        {
+          "dimension": "load",
+          "direction": "decrease",
+          "curve": "LINEAR"
+        },
+        {
+          "dimension": "recovery",
+          "direction": "increase",
+          "curve": "LINEAR"
+        }
+      ]
+    },
+    {
+      "key": "congestion_pressure",
+      "impacts": [
+        {
+          "dimension": "load",
+          "direction": "increase",
+          "curve": "LINEAR"
+        },
+        {
+          "dimension": "cost",
+          "direction": "increase",
+          "curve": "LINEAR"
+        }
+      ]
+    },
+    {
+      "key": "operational_capacity",
+      "impacts": [
+        {
+          "dimension": "load",
+          "direction": "decrease",
+          "curve": "LINEAR"
+        },
+        {
+          "dimension": "recovery",
+          "direction": "increase",
+          "curve": "LINEAR"
+        }
+      ]
+    },
+    {
+      "key": "transit_signal_priority",
+      "impacts": [
+        {
+          "dimension": "load",
+          "direction": "decrease",
+          "curve": "LINEAR"
+        },
+        {
+          "dimension": "recovery",
+          "direction": "increase",
+          "curve": "LINEAR"
+        }
+      ]
+    },
+    {
+      "key": "budget_pressure",
+      "impacts": [
+        {
+          "dimension": "cost",
+          "direction": "increase",
+          "curve": "LINEAR"
+        },
+        {
+          "dimension": "recovery",
+          "direction": "decrease",
+          "curve": "LINEAR"
+        }
+      ]
+    }
+  ],
+  "curveConfiguration": {
+    "demandRisk": {
+      "curve": "LINEAR",
+      "amplitude": {
+        "base": 1,
+        "low": 0.9,
+        "high": 1.15,
+        "severe": 1.3
+      }
+    },
+    "pricingPowerRisk": {
+      "curve": "LINEAR",
+      "amplitude": {
+        "base": 1,
+        "low": 0.9,
+        "high": 1.15,
+        "severe": 1.3
+      }
+    },
+    "tenantStabilityRisk": {
+      "curve": "LINEAR",
+      "amplitude": {
+        "base": 1,
+        "low": 0.9,
+        "high": 1.2,
+        "severe": 1.35
+      }
+    },
+    "maintenanceIntensityRisk": {
+      "curve": "LINEAR",
+      "amplitude": {
+        "base": 1,
+        "low": 0.95,
+        "high": 1.15,
+        "severe": 1.3
+      }
+    },
+    "operationalEfficiencyRisk": {
+      "curve": "LINEAR",
+      "amplitude": {
+        "base": 1,
+        "low": 0.9,
+        "high": 1.2,
+        "severe": 1.4
+      }
+    },
+    "energyExposureRisk": {
+      "curve": "LINEAR",
+      "amplitude": {
+        "base": 1,
+        "low": 0.95,
+        "high": 1.2,
+        "severe": 1.35
+      }
+    },
+    "interestRateExposureRisk": {
+      "curve": "EXPONENTIAL",
+      "amplitude": {
+        "base": 1,
+        "low": 0.9,
+        "high": 1.4,
+        "severe": 1.9
+      }
+    },
+    "leverageLevelRisk": {
+      "curve": "EXPONENTIAL",
+      "amplitude": {
+        "base": 1,
+        "low": 0.9,
+        "high": 1.6,
+        "severe": 2.3
+      }
+    },
+    "refinancingRisk": {
+      "curve": "LOGISTIC",
+      "amplitude": {
+        "base": 1,
+        "low": 0.97,
+        "high": 1.18,
+        "severe": 1.35
+      }
+    },
+    "marketVolatilityRisk": {
+      "curve": "LINEAR",
+      "amplitude": {
+        "base": 1,
+        "low": 0.95,
+        "high": 1.2,
+        "severe": 1.4
+      }
+    },
+    "regulatoryPressureRisk": {
+      "curve": "LINEAR",
+      "amplitude": {
+        "base": 1,
+        "low": 0.95,
+        "high": 1.25,
+        "severe": 1.5
+      }
+    },
+    "capitalCommitmentRigidityRisk": {
+      "curve": "LINEAR",
+      "amplitude": {
+        "base": 1,
+        "low": 0.95,
+        "high": 1.15,
+        "severe": 1.3
+      }
+    },
+    "accessibility": {
+      "curve": "LINEAR",
+      "amplitude": {
+        "base": 1,
+        "low": 0.98,
+        "high": 1.04,
+        "severe": 1.08
+      }
+    },
+    "modal_attractiveness": {
+      "curve": "LINEAR",
+      "amplitude": {
+        "base": 1,
+        "low": 0.97,
+        "high": 1.05,
+        "severe": 1.1
+      }
+    },
+    "congestion_pressure": {
+      "curve": "LINEAR",
+      "amplitude": {
+        "base": 1,
+        "low": 0.98,
+        "high": 1.05,
+        "severe": 1.1
+      }
+    },
+    "operational_capacity": {
+      "curve": "LINEAR",
+      "amplitude": {
+        "base": 1,
+        "low": 0.98,
+        "high": 1.04,
+        "severe": 1.08
+      }
+    },
+    "transit_signal_priority": {
+      "curve": "LINEAR",
+      "amplitude": {
+        "base": 1,
+        "low": 0.98,
+        "high": 1.03,
+        "severe": 1.06
+      }
+    },
+    "budget_pressure": {
+      "curve": "LINEAR",
+      "amplitude": {
+        "base": 1,
+        "low": 0.99,
+        "high": 1.06,
+        "severe": 1.12
+      }
+    }
+  },
+  "clampPolicy": {
+    "minimum": -3,
+    "maximum": 3
+  }
+}
