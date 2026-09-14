@@ -1,0 +1,76 @@
+{
+  "schemaVersion": "domain-model-contract-v1",
+  "engineProtocolVersion": "pulse-domain-engine-protocol-v1",
+  "identity": {
+    "domainId": "synthetic-systems-lab",
+    "profileId": "balanced-demo",
+    "modelVersion": "1.0.0",
+    "calibrationVersion": "synthetic-1",
+    "semanticPayloadHash": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "semanticPayload": {
+    "scales": [{
+      "scaleId": "state",
+      "levels": [
+        { "levelId": "low", "rank": 0, "anchor": 0, "materialization": { "minimumInclusive": 0, "maximumExclusive": 0.5 } },
+        { "levelId": "high", "rank": 1, "anchor": 1, "materialization": { "minimumInclusive": 0.5, "maximumInclusive": 1 } }
+      ]
+    }],
+    "drivers": [
+      {
+        "driverId": "input-alpha", "scaleId": "state", "initial": { "levelId": "low", "score": 0 },
+        "numericRange": { "minimum": 0, "maximum": 1 }, "adverseLevelIds": ["high"],
+        "impacts": [{ "dimensionId": "output", "direction": "increase", "curveId": "linear-response" }]
+      },
+      {
+        "driverId": "input-beta", "scaleId": "state", "initial": { "levelId": "high", "score": 1 },
+        "numericRange": { "minimum": 0, "maximum": 1 }, "adverseLevelIds": ["low"],
+        "impacts": [
+          { "dimensionId": "stability", "direction": "decrease", "curveId": "exponential-response" },
+          { "dimensionId": "output", "direction": "increase", "curveId": "logistic-response" }
+        ]
+      }
+    ],
+    "actions": [
+      { "actionId": "adjust-alpha", "effects": [{ "driverId": "input-alpha", "delta": 0.1 }] },
+      { "actionId": "adjust-beta", "effects": [{ "driverId": "input-beta", "delta": -0.1 }] }
+    ],
+    "propagation": {
+      "edges": [{ "edgeId": "alpha-to-beta", "sourceDriverId": "input-alpha", "targetDriverId": "input-beta", "triggerLevelIds": ["high"], "propagatedLevelId": "high" }],
+      "cyclePolicy": "reject", "selfEdgePolicy": "reject", "duplicateEdgePolicy": "reject"
+    },
+    "dimensions": [
+      { "dimensionId": "output", "neutralValue": 1 },
+      { "dimensionId": "stability", "neutralValue": 1 }
+    ],
+    "curves": [
+      { "curveId": "linear-response", "type": "linear", "amplitudeByLevel": { "low": 1, "high": 1.2 } },
+      { "curveId": "exponential-response", "type": "exponential", "exponent": 1.5, "amplitudeByLevel": { "low": 1, "high": 1.3 } },
+      { "curveId": "logistic-response", "type": "logistic", "k": 0.8, "x0": 0.5, "amplitudeByLevel": { "low": 1, "high": 1.1 } }
+    ],
+    "constraints": [{
+      "constraintId": "stability-guard", "initialLifecycle": "inactive",
+      "activation": { "kind": "all", "predicates": [
+        { "kind": "driver-at-level", "driverId": "input-alpha", "levelIds": ["high"] },
+        { "kind": "any", "predicates": [{ "kind": "measure-below", "measureId": "balance", "threshold": 0.25 }] }
+      ]},
+      "sustain": { "kind": "until-explicit-transition" }, "deactivation": { "kind": "none" },
+      "allowedTransitions": [{ "from": "inactive", "to": "active" }],
+      "activeEffects": [{ "dimensionId": "stability", "operation": "multiply", "value": 0.9 }]
+    }],
+    "measures": [{
+      "measureId": "balance", "kind": "weighted-signal-aggregate-v1", "updateOperator": "subtract-terms-add-recovery-v1", "initialValue": 1,
+      "terms": [
+        { "termId": "output-pressure", "source": { "kind": "dimension", "dimensionId": "output", "stage": "after-constraints" }, "transform": "deviation-from-neutral", "weight": 1 },
+        { "termId": "driver-pressure", "source": { "kind": "aggregate-driver-pressure", "driverIds": ["input-alpha", "input-beta"] }, "transform": "positive-deviation-from-neutral", "weight": 0.5 }
+      ],
+      "recovery": { "targetValue": 1, "pull": 0.1 }, "range": { "minimum": -1, "maximum": 1 },
+      "escalationRules": [{ "whenBelow": 0, "driverId": "input-alpha", "transitions": [{ "fromLevelId": "low", "toLevelId": "high" }] }]
+    }]
+  },
+  "metadata": {
+    "name": "Synthetic systems lab",
+    "description": "Domain-neutral structural parser fixture.",
+    "labels": { "input-alpha": "Input alpha", "balance": "Balance" }
+  }
+}
