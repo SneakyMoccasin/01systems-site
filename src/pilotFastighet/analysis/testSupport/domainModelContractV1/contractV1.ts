@@ -77,3 +77,8 @@ declare const structurallyValidatedBrand: unique symbol;
 export type StructurallyValidatedDomainModelContractV1 = DomainModelContractV1 & Readonly<{
   [structurallyValidatedBrand]: "structurally-validated-domain-model-contract-v1";
 }>;
+
+declare const semanticallyValidatedBrand: unique symbol;
+export type SemanticallyValidatedDomainModelContractV1 = StructurallyValidatedDomainModelContractV1 & Readonly<{
+  [semanticallyValidatedBrand]: "semantically-validated-domain-model-contract-v1";
+}>;
