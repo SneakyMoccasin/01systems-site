@@ -30,6 +30,12 @@ function fresh(): any {
         compatibilityOnlyEdges: [{ sourcePosition: 1, edgePosition: 0, occurrencePosition: 2, sourceLegacySourceDriverId: "leverageLevelRisk", sourceLegacyTargetDriverId: "liquidityPressure", adapterLocalSourceDriverId: "leverage-level-risk", adapterLocalTargetDriverId: "liquidity-pressure", compatibilityEdgeId: "legacy-compat-edge-v1.leverage-level-risk.to.liquidity-pressure", sourcePropagatedLevelId: "HIGH", projectedPropagatedLevelId: "high", implicitSourceNodeId: "liquidityPressure", adapterLocalImplicitNodeId: "liquidity-pressure", missingReadDefaultLevelId: "low", materializeOnRaise: true, hasScore: false, hasImpacts: false }],
       },
       excludedSourceValues: [{ kind: "provably-unreachable-public-execution-v1", sourcePath: "constraints.Custom", sourceValueHash: sha, reasonCode: "inert-global-registry-member" }],
+      legacyRegistryProjection: {
+        version: "legacy-registry-projection-compatibility-v1",
+        registryOrder: "legacy-constraint-registry-constructor-order-v1",
+        materialization: { scenarios: ["scenarioA", "scenarioB", "baseline"], surfaces: ["trajectory.registry", "constraintHistory", "terminalState.registry"], cadence: "initial-and-every-completed-step-v1" },
+        entries: [{ kind: "legacy-inert-registry-entry-v1", sourceProfileId: "legacy-real-estate-v1", sourceRegistryKey: "Custom", compatibilityEntryId: "legacy-registry-entry-v1.custom", legacyType: "Custom", initialState: { lifecycle: "INACTIVE", activatedAtStep: "absent", lastUpdatedStep: 0 }, transitionPolicy: "no-public-transition-v1", executionPolicy: "immutable-inert-output-placeholder-v1", sourceEvidence: { constructorPath: "src/pilotFastighet/constraintState.ts#createInitialConstraintRegistry", excludedSourcePath: "constraints.Custom", initialRegistryStateHash: sha } }],
+      },
       curveFallbackDeclaration: { policyId: "legacy-neutral-multiplier-v1", appliesTo: ["missing-curve-configuration", "unsupported-curve-discriminant"], neutralMultiplier: 1, evidenceStatus: "deferred-to-m1e" },
     },
   };
@@ -78,6 +84,8 @@ const levels: readonly [string, (input: any) => any, string][] = [
   ["sustain", (x) => x.compatibility.sustainThresholdOverride, "kind"], ["propagation", (x) => x.compatibility.propagation, "edgeEvaluationOrder"],
   ["order entry", (x) => x.compatibility.propagation.sourceEvaluationOrder[0], "sourcePosition"], ["compatibility edge", (x) => x.compatibility.propagation.compatibilityOnlyEdges[0], "compatibilityEdgeId"],
   ["excluded source", (x) => x.compatibility.excludedSourceValues[0], "kind"], ["fallback", (x) => x.compatibility.curveFallbackDeclaration, "policyId"],
+  ["registry projection", (x) => x.compatibility.legacyRegistryProjection, "version"], ["registry materialization", (x) => x.compatibility.legacyRegistryProjection.materialization, "cadence"],
+  ["registry entry", (x) => x.compatibility.legacyRegistryProjection.entries[0], "kind"], ["registry initial state", (x) => x.compatibility.legacyRegistryProjection.entries[0].initialState, "lifecycle"], ["registry source evidence", (x) => x.compatibility.legacyRegistryProjection.entries[0].sourceEvidence, "constructorPath"],
 ];
 
 test("rejects unknown fields and diagnostics at every envelope object level", () => {
@@ -103,6 +111,7 @@ test("validates every envelope hash field", () => {
     [(x) => x.source, "semanticPayloadHash", "/source/semanticPayloadHash"], [(x) => x.projection.identity, "semanticPayloadHash", "/projection/identity/semanticPayloadHash"],
     [(x) => x.projection, "semanticPayloadHash", "/projection/semanticPayloadHash"], [(x) => x.compatibility, "declarationsHash", "/compatibility/declarationsHash"],
     [(x) => x.compatibility.excludedSourceValues[0], "sourceValueHash", "/compatibility/excludedSourceValues/0/sourceValueHash"],
+    [(x) => x.compatibility.legacyRegistryProjection.entries[0].sourceEvidence, "initialRegistryStateHash", "/compatibility/legacyRegistryProjection/entries/0/sourceEvidence/initialRegistryStateHash"],
   ];
   for (const [locate, key, path] of fields) { const input = fresh(); locate(input)[key] = "bad"; expectIssue(input, "invalid-hash", path); }
 });
@@ -126,6 +135,46 @@ test("locks all envelope literal and discriminant families", () => {
     [(x) => { x.compatibility.curveFallbackDeclaration.evidenceStatus = "verified"; }, "invalid-literal", "/compatibility/curveFallbackDeclaration/evidenceStatus"],
   ];
   for (const [mutate, code, path] of cases) { const input = fresh(); mutate(input); expectIssue(input, code, path); }
+});
+
+test("validates the complete closed legacy registry projection structure", () => {
+  for (const profile of ["legacy-real-estate-v1", "legacy-municipal-v1", "legacy-consulting-v1"] as const) {
+    const text = readFileSync(new URL(`./fixtures/legacy-profile-projection-v1/${profile}.json`, import.meta.url), "utf8");
+    const memory = parseLegacyProfileProjectionEnvelopeV1Structure(JSON.parse(text));
+    const json = parseLegacyProfileProjectionEnvelopeV1StructureJson(text);
+    assert.equal(memory.ok, true); assert.deepEqual(memory, json);
+    if (memory.ok) assert.equal(memory.value.compatibility.legacyRegistryProjection.entries.length, profile === "legacy-municipal-v1" ? 4 : 3);
+  }
+  const cases: readonly [((x: any) => void), string, string][] = [
+    [x => { x.compatibility.legacyRegistryProjection.version = "v2"; }, "invalid-literal", "/compatibility/legacyRegistryProjection/version"],
+    [x => { x.compatibility.legacyRegistryProjection.registryOrder = "sorted"; }, "invalid-literal", "/compatibility/legacyRegistryProjection/registryOrder"],
+    [x => { x.compatibility.legacyRegistryProjection.materialization.cadence = "once"; }, "invalid-literal", "/compatibility/legacyRegistryProjection/materialization/cadence"],
+    [x => { x.compatibility.legacyRegistryProjection.materialization.scenarios.reverse(); }, "invalid-literal", "/compatibility/legacyRegistryProjection/materialization/scenarios/0"],
+    [x => { x.compatibility.legacyRegistryProjection.materialization.surfaces.reverse(); }, "invalid-literal", "/compatibility/legacyRegistryProjection/materialization/surfaces/0"],
+    [x => { x.compatibility.legacyRegistryProjection.entries = Array(5).fill(x.compatibility.legacyRegistryProjection.entries[0]); }, "collection-limit-exceeded", "/compatibility/legacyRegistryProjection/entries"],
+    [x => { x.compatibility.legacyRegistryProjection.entries[0].kind = "other"; }, "invalid-literal", "/compatibility/legacyRegistryProjection/entries/0/kind"],
+    [x => { x.compatibility.legacyRegistryProjection.entries[0].sourceProfileId = "other"; }, "invalid-discriminant", "/compatibility/legacyRegistryProjection/entries/0/sourceProfileId"],
+    [x => { x.compatibility.legacyRegistryProjection.entries[0].sourceRegistryKey = "other"; }, "invalid-discriminant", "/compatibility/legacyRegistryProjection/entries/0/sourceRegistryKey"],
+    [x => { x.compatibility.legacyRegistryProjection.entries[0].compatibilityEntryId = "other"; }, "invalid-discriminant", "/compatibility/legacyRegistryProjection/entries/0/compatibilityEntryId"],
+    [x => { x.compatibility.legacyRegistryProjection.entries[0].legacyType = "other"; }, "invalid-discriminant", "/compatibility/legacyRegistryProjection/entries/0/legacyType"],
+    [x => { x.compatibility.legacyRegistryProjection.entries[0].initialState.lifecycle = "ACTIVE"; }, "invalid-literal", "/compatibility/legacyRegistryProjection/entries/0/initialState/lifecycle"],
+    [x => { x.compatibility.legacyRegistryProjection.entries[0].initialState.activatedAtStep = null; }, "invalid-literal", "/compatibility/legacyRegistryProjection/entries/0/initialState/activatedAtStep"],
+    [x => { x.compatibility.legacyRegistryProjection.entries[0].initialState.lastUpdatedStep = 0.5; }, "invalid-literal", "/compatibility/legacyRegistryProjection/entries/0/initialState/lastUpdatedStep"],
+    [x => { x.compatibility.legacyRegistryProjection.entries[0].transitionPolicy = "other"; }, "invalid-literal", "/compatibility/legacyRegistryProjection/entries/0/transitionPolicy"],
+    [x => { x.compatibility.legacyRegistryProjection.entries[0].executionPolicy = "other"; }, "invalid-literal", "/compatibility/legacyRegistryProjection/entries/0/executionPolicy"],
+    [x => { x.compatibility.legacyRegistryProjection.entries[0].sourceEvidence.constructorPath = "other"; }, "invalid-literal", "/compatibility/legacyRegistryProjection/entries/0/sourceEvidence/constructorPath"],
+    [x => { x.compatibility.legacyRegistryProjection.entries[0].sourceEvidence.excludedSourcePath = "other"; }, "invalid-discriminant", "/compatibility/legacyRegistryProjection/entries/0/sourceEvidence/excludedSourcePath"],
+    [x => { x.compatibility.legacyRegistryProjection.entries[0].sourceEvidence.initialRegistryStateHash = "bad"; }, "invalid-hash", "/compatibility/legacyRegistryProjection/entries/0/sourceEvidence/initialRegistryStateHash"],
+  ];
+  for (const [mutate, code, path] of cases) { const input = fresh(); mutate(input); expectIssue(input, code, path); }
+});
+
+test("registry nested accessors and hostile arrays fail before getter execution", () => {
+  for (const locate of [(x:any)=>x.compatibility.legacyRegistryProjection,(x:any)=>x.compatibility.legacyRegistryProjection.materialization,(x:any)=>x.compatibility.legacyRegistryProjection.entries[0],(x:any)=>x.compatibility.legacyRegistryProjection.entries[0].initialState,(x:any)=>x.compatibility.legacyRegistryProjection.entries[0].sourceEvidence]) {
+    let calls=0;const input=fresh();Object.defineProperty(locate(input),"trap",{enumerable:true,get:()=>{calls+=1;return true;}});expectIssue(input,"accessor-field");assert.equal(calls,0);
+  }
+  const sparse=fresh();sparse.compatibility.legacyRegistryProjection.entries.length=2;delete sparse.compatibility.legacyRegistryProjection.entries[1];expectIssue(sparse,"sparse-array");
+  const extra=fresh();extra.compatibility.legacyRegistryProjection.entries.extra=true;expectIssue(extra,"extra-array-property");
 });
 
 test("prefixes native issues but accepts semantic-invalid and hash-mismatched contracts", () => {
@@ -152,6 +201,7 @@ test("rejects hostile in-memory values", () => {
 test("raw JSON rejects syntax and decoded duplicates without string false positives", () => {
   const malformed = parseLegacyProfileProjectionEnvelopeV1StructureJson("{"); assert.equal(malformed.ok, false); if (!malformed.ok) { assert.equal(malformed.issues[0].code, "invalid-json-syntax"); assert.ok(listedCodes.has(malformed.issues[0].code)); }
   for (const text of [`{${JSON.stringify(fresh()).slice(1, -1)},"schemaVersion":"x"}`, JSON.stringify(fresh()).replace('"source":{', '"source":{"identity":{},"\\u0069dentity":{},')]) { const result = parseLegacyProfileProjectionEnvelopeV1StructureJson(text); assert.equal(result.ok, false); if (!result.ok) { assert.ok(result.issues.some((x) => x.code === "duplicate-object-key")); for (const entry of result.issues) assert.ok(listedCodes.has(entry.code)); } }
+  const registryDuplicate=JSON.stringify(fresh()).replace('"registryOrder":', '"version":"legacy-registry-projection-compatibility-v1","registryOrder":');const duplicate=parseLegacyProfileProjectionEnvelopeV1StructureJson(registryDuplicate);assert.equal(duplicate.ok,false);if(!duplicate.ok)assert.ok(duplicate.issues.some(x=>x.code==="duplicate-object-key"&&x.path==="/compatibility/legacyRegistryProjection/version"));
   const stringOnly = JSON.stringify(fresh()).replace('"domainId":"realEstate"', '"domainId":"{\\\"a\\\":1,\\\"a\\\":2}"'); assert.equal(parseLegacyProfileProjectionEnvelopeV1StructureJson(stringOnly).ok, true);
 });
 

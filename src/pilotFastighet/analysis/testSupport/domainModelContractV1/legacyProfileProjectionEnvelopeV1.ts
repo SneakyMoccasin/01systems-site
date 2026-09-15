@@ -94,6 +94,53 @@ export type LegacyCurveFallbackDeclarationV1 = Readonly<{
   evidenceStatus: "deferred-to-m1e";
 }>;
 
+export type LegacyRegistryKeyV1 =
+  | "RefinancingConstraint"
+  | "LiquidityConstraint"
+  | "CovenantConstraint"
+  | "Custom";
+
+export type LegacyRegistryCompatibilityEntryIdV1 =
+  | "legacy-registry-entry-v1.refinancing-constraint"
+  | "legacy-registry-entry-v1.liquidity-constraint"
+  | "legacy-registry-entry-v1.covenant-constraint"
+  | "legacy-registry-entry-v1.custom";
+
+export type LegacyRegistryEntryCompatibilityV1 = Readonly<{
+  kind: "legacy-inert-registry-entry-v1";
+  sourceProfileId: "legacy-real-estate-v1" | "legacy-municipal-v1" | "legacy-consulting-v1";
+  sourceRegistryKey: LegacyRegistryKeyV1;
+  compatibilityEntryId: LegacyRegistryCompatibilityEntryIdV1;
+  legacyType: LegacyRegistryKeyV1;
+  initialState: Readonly<{
+    lifecycle: "INACTIVE";
+    activatedAtStep: "absent";
+    lastUpdatedStep: 0;
+  }>;
+  transitionPolicy: "no-public-transition-v1";
+  executionPolicy: "immutable-inert-output-placeholder-v1";
+  sourceEvidence: Readonly<{
+    constructorPath: "src/pilotFastighet/constraintState.ts#createInitialConstraintRegistry";
+    excludedSourcePath:
+      | "constraints.RefinancingConstraint"
+      | "constraints.LiquidityConstraint"
+      | "constraints.CovenantConstraint"
+      | "constraints.Custom";
+    initialRegistryStateHash: PrefixedSha256;
+  }>;
+}>;
+
+export type LegacyRegistryProjectionCompatibilityV1 = Readonly<{
+  version: "legacy-registry-projection-compatibility-v1";
+  registryOrder: "legacy-constraint-registry-constructor-order-v1";
+  materialization: Readonly<{
+    scenarios: readonly ["scenarioA", "scenarioB", "baseline"];
+    surfaces: readonly ["trajectory.registry", "constraintHistory", "terminalState.registry"];
+    cadence: "initial-and-every-completed-step-v1";
+  }>;
+  entries: readonly LegacyRegistryEntryCompatibilityV1[];
+}>;
+
 export type RawLegacyProfileProjectionEnvelopeV1 = Readonly<{
   schemaVersion: "legacy-profile-projection-v1";
   adapterVersion: "legacy-domain-profile-adapter-v1";
@@ -119,6 +166,7 @@ export type RawLegacyProfileProjectionEnvelopeV1 = Readonly<{
     sustainThresholdOverride: LegacySustainThresholdOverrideV1 | null;
     propagation: LegacyPropagationCompatibilityV1;
     excludedSourceValues: readonly ExcludedSourceValueV1[];
+    legacyRegistryProjection: LegacyRegistryProjectionCompatibilityV1;
     curveFallbackDeclaration: LegacyCurveFallbackDeclarationV1;
   }>;
 }>;
@@ -141,6 +189,7 @@ export type DerivedLegacyProjectionDiagnosticV1 = Readonly<{
     | "legacy-propagation-evaluation-order-declared"
     | "legacy-propagation-only-edge"
     | "legacy-source-value-excluded"
+    | "legacy-registry-output-materialization-declared"
     | "legacy-curve-fallback-deferred-to-m1e";
   path: string;
   message: string;

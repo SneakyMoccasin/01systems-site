@@ -916,7 +916,7 @@
     }
   },
   "compatibility": {
-    "declarationsHash": "sha256:41e5d32fdc302fc39a432358692169464fe0b2b85537d9549ae4999832680de8",
+    "declarationsHash": "sha256:b5b8b11bbea58ae2df38baad536aa54bd8825794e31720f0e0b76c196ac052a3",
     "declarationsVersion": "legacy-compatibility-declarations-v1",
     "ignoredUnknownDriverDeltas": [],
     "compatibilityOnlyActions": [
@@ -1076,6 +1076,101 @@
         "reasonCode": "inert-global-registry-member"
       }
     ],
+    "legacyRegistryProjection": {
+      "version": "legacy-registry-projection-compatibility-v1",
+      "registryOrder": "legacy-constraint-registry-constructor-order-v1",
+      "materialization": {
+        "scenarios": [
+          "scenarioA",
+          "scenarioB",
+          "baseline"
+        ],
+        "surfaces": [
+          "trajectory.registry",
+          "constraintHistory",
+          "terminalState.registry"
+        ],
+        "cadence": "initial-and-every-completed-step-v1"
+      },
+      "entries": [
+        {
+          "kind": "legacy-inert-registry-entry-v1",
+          "sourceProfileId": "legacy-municipal-v1",
+          "sourceRegistryKey": "RefinancingConstraint",
+          "compatibilityEntryId": "legacy-registry-entry-v1.refinancing-constraint",
+          "legacyType": "RefinancingConstraint",
+          "initialState": {
+            "lifecycle": "INACTIVE",
+            "activatedAtStep": "absent",
+            "lastUpdatedStep": 0
+          },
+          "transitionPolicy": "no-public-transition-v1",
+          "executionPolicy": "immutable-inert-output-placeholder-v1",
+          "sourceEvidence": {
+            "constructorPath": "src/pilotFastighet/constraintState.ts#createInitialConstraintRegistry",
+            "excludedSourcePath": "constraints.RefinancingConstraint",
+            "initialRegistryStateHash": "sha256:16d7376bf1bf72af49b2a884cc91392ed0ecfc9b754dc57bced8f9cf99c7175f"
+          }
+        },
+        {
+          "kind": "legacy-inert-registry-entry-v1",
+          "sourceProfileId": "legacy-municipal-v1",
+          "sourceRegistryKey": "LiquidityConstraint",
+          "compatibilityEntryId": "legacy-registry-entry-v1.liquidity-constraint",
+          "legacyType": "LiquidityConstraint",
+          "initialState": {
+            "lifecycle": "INACTIVE",
+            "activatedAtStep": "absent",
+            "lastUpdatedStep": 0
+          },
+          "transitionPolicy": "no-public-transition-v1",
+          "executionPolicy": "immutable-inert-output-placeholder-v1",
+          "sourceEvidence": {
+            "constructorPath": "src/pilotFastighet/constraintState.ts#createInitialConstraintRegistry",
+            "excludedSourcePath": "constraints.LiquidityConstraint",
+            "initialRegistryStateHash": "sha256:6e94c8e2e84c176132b733e9ebf4fa5634ed508688666a9e4d6f302e522ff38c"
+          }
+        },
+        {
+          "kind": "legacy-inert-registry-entry-v1",
+          "sourceProfileId": "legacy-municipal-v1",
+          "sourceRegistryKey": "CovenantConstraint",
+          "compatibilityEntryId": "legacy-registry-entry-v1.covenant-constraint",
+          "legacyType": "CovenantConstraint",
+          "initialState": {
+            "lifecycle": "INACTIVE",
+            "activatedAtStep": "absent",
+            "lastUpdatedStep": 0
+          },
+          "transitionPolicy": "no-public-transition-v1",
+          "executionPolicy": "immutable-inert-output-placeholder-v1",
+          "sourceEvidence": {
+            "constructorPath": "src/pilotFastighet/constraintState.ts#createInitialConstraintRegistry",
+            "excludedSourcePath": "constraints.CovenantConstraint",
+            "initialRegistryStateHash": "sha256:e0ccb545014dfb140c1f2e829c0a40ac73201886888b1d0673983b083825ad26"
+          }
+        },
+        {
+          "kind": "legacy-inert-registry-entry-v1",
+          "sourceProfileId": "legacy-municipal-v1",
+          "sourceRegistryKey": "Custom",
+          "compatibilityEntryId": "legacy-registry-entry-v1.custom",
+          "legacyType": "Custom",
+          "initialState": {
+            "lifecycle": "INACTIVE",
+            "activatedAtStep": "absent",
+            "lastUpdatedStep": 0
+          },
+          "transitionPolicy": "no-public-transition-v1",
+          "executionPolicy": "immutable-inert-output-placeholder-v1",
+          "sourceEvidence": {
+            "constructorPath": "src/pilotFastighet/constraintState.ts#createInitialConstraintRegistry",
+            "excludedSourcePath": "constraints.Custom",
+            "initialRegistryStateHash": "sha256:df6dcffe8835027599e597a8d3ad19b8a1eaa7fbe98cb07de12ff82327ade9e2"
+          }
+        }
+      ]
+    },
     "curveFallbackDeclaration": {
       "policyId": "legacy-neutral-multiplier-v1",
       "appliesTo": [

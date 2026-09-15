@@ -35,6 +35,7 @@ export function deriveLegacyProfileProjectionDiagnosticsV1(input:HashVerifiedLeg
   out.push(d("legacy-propagation-evaluation-order-declared","/compatibility/propagation/sourceEvaluationOrder",`legacy-propagation-evaluation-order-declared:${c.propagation.edgeEvaluationOrder}`));
   c.propagation.compatibilityOnlyEdges.forEach((x,i)=>out.push(d("legacy-propagation-only-edge",`/compatibility/propagation/compatibilityOnlyEdges/${i}`,`legacy-propagation-only-edge:${x.compatibilityEdgeId}`)));
   c.excludedSourceValues.forEach((x,i)=>out.push(d("legacy-source-value-excluded",`/compatibility/excludedSourceValues/${i}`,`legacy-source-value-excluded:${x.reasonCode}:${x.sourcePath}`)));
+  c.legacyRegistryProjection.entries.forEach((x,i)=>out.push(d("legacy-registry-output-materialization-declared",`/compatibility/legacyRegistryProjection/entries/${i}`,`legacy-registry-output-materialization-declared:${x.sourceProfileId}:${x.sourceRegistryKey}`)));
   out.push(d("legacy-curve-fallback-deferred-to-m1e","/compatibility/curveFallbackDeclaration",`legacy-curve-fallback-deferred-to-m1e:${c.curveFallbackDeclaration.policyId}`));
   return freeze(out.sort((a,b)=>compare(a.code,b.code)||compare(a.path,b.path)||compare(a.message,b.message)));
 }
