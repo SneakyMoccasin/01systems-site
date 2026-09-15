@@ -1,0 +1,1089 @@
+{
+  "schemaVersion": "legacy-profile-projection-v1",
+  "adapterVersion": "legacy-domain-profile-adapter-v1",
+  "engineProtocolVersion": "pulse-domain-engine-protocol-v1",
+  "source": {
+    "identity": {
+      "domainId": "municipal",
+      "profileId": "legacy-municipal-v1",
+      "modelVersion": "pilot-fastighet-v0.4",
+      "calibrationVersion": "transport-causal-subset-v2"
+    },
+    "semanticPayloadVersion": "legacy-domain-profile-semantic-payload-v1",
+    "semanticPayloadHash": "sha256:81ae1fa9f8a21a46c4cd04e4540c98db5750bd1305ecc6e215162d8da634193b"
+  },
+  "projection": {
+    "identity": {
+      "domainId": "municipal",
+      "profileId": "legacy-municipal-v1-domain-model-contract-v1",
+      "modelVersion": "pilot-fastighet-v0.4-domain-model-contract-v1",
+      "calibrationVersion": "transport-causal-subset-v2-domain-model-contract-v1",
+      "semanticPayloadHash": "sha256:35f75ed34bc639755ce03090fabdbad9a2be57aa121b897132eabd981eebad99"
+    },
+    "semanticPayloadHashPolicy": "domain-model-contract-v1-semantic-payload-v1",
+    "semanticPayloadHash": "sha256:35f75ed34bc639755ce03090fabdbad9a2be57aa121b897132eabd981eebad99",
+    "contract": {
+      "schemaVersion": "domain-model-contract-v1",
+      "engineProtocolVersion": "pulse-domain-engine-protocol-v1",
+      "identity": {
+        "domainId": "municipal",
+        "profileId": "legacy-municipal-v1-domain-model-contract-v1",
+        "modelVersion": "pilot-fastighet-v0.4-domain-model-contract-v1",
+        "calibrationVersion": "transport-causal-subset-v2-domain-model-contract-v1",
+        "semanticPayloadHash": "sha256:35f75ed34bc639755ce03090fabdbad9a2be57aa121b897132eabd981eebad99"
+      },
+      "semanticPayload": {
+        "scales": [
+          {
+            "scaleId": "legacy-risk-scale-v1",
+            "levels": [
+              {
+                "levelId": "low",
+                "rank": 0,
+                "anchor": 0,
+                "materialization": {
+                  "minimumInclusive": 0,
+                  "maximumExclusive": 0.5000000000000001
+                }
+              },
+              {
+                "levelId": "moderate",
+                "rank": 1,
+                "anchor": 1,
+                "materialization": {
+                  "minimumInclusive": 0.5000000000000001,
+                  "maximumExclusive": 1.5
+                }
+              },
+              {
+                "levelId": "high",
+                "rank": 2,
+                "anchor": 2,
+                "materialization": {
+                  "minimumInclusive": 1.5,
+                  "maximumExclusive": 2.5
+                }
+              },
+              {
+                "levelId": "severe",
+                "rank": 3,
+                "anchor": 3,
+                "materialization": {
+                  "minimumInclusive": 2.5,
+                  "maximumInclusive": 3
+                }
+              }
+            ]
+          }
+        ],
+        "drivers": [
+          {
+            "driverId": "demand-risk",
+            "scaleId": "legacy-risk-scale-v1",
+            "initial": {
+              "levelId": "moderate",
+              "score": 1
+            },
+            "numericRange": {
+              "minimum": 0,
+              "maximum": 3
+            },
+            "adverseLevelIds": [
+              "high",
+              "severe"
+            ],
+            "impacts": [
+              {
+                "dimensionId": "load",
+                "direction": "increase",
+                "curveId": "legacy-curve-v1.demand-risk"
+              }
+            ]
+          },
+          {
+            "driverId": "pricing-power-risk",
+            "scaleId": "legacy-risk-scale-v1",
+            "initial": {
+              "levelId": "moderate",
+              "score": 1
+            },
+            "numericRange": {
+              "minimum": 0,
+              "maximum": 3
+            },
+            "adverseLevelIds": [
+              "high",
+              "severe"
+            ],
+            "impacts": [
+              {
+                "dimensionId": "load",
+                "direction": "increase",
+                "curveId": "legacy-curve-v1.pricing-power-risk"
+              }
+            ]
+          },
+          {
+            "driverId": "tenant-stability-risk",
+            "scaleId": "legacy-risk-scale-v1",
+            "initial": {
+              "levelId": "moderate",
+              "score": 1
+            },
+            "numericRange": {
+              "minimum": 0,
+              "maximum": 3
+            },
+            "adverseLevelIds": [
+              "high",
+              "severe"
+            ],
+            "impacts": [
+              {
+                "dimensionId": "load",
+                "direction": "increase",
+                "curveId": "legacy-curve-v1.tenant-stability-risk"
+              },
+              {
+                "dimensionId": "recovery",
+                "direction": "decrease",
+                "curveId": "legacy-curve-v1.tenant-stability-risk"
+              }
+            ]
+          },
+          {
+            "driverId": "maintenance-intensity-risk",
+            "scaleId": "legacy-risk-scale-v1",
+            "initial": {
+              "levelId": "moderate",
+              "score": 1
+            },
+            "numericRange": {
+              "minimum": 0,
+              "maximum": 3
+            },
+            "adverseLevelIds": [
+              "high",
+              "severe"
+            ],
+            "impacts": [
+              {
+                "dimensionId": "recovery",
+                "direction": "decrease",
+                "curveId": "legacy-curve-v1.maintenance-intensity-risk"
+              }
+            ]
+          },
+          {
+            "driverId": "operational-efficiency-risk",
+            "scaleId": "legacy-risk-scale-v1",
+            "initial": {
+              "levelId": "moderate",
+              "score": 1
+            },
+            "numericRange": {
+              "minimum": 0,
+              "maximum": 3
+            },
+            "adverseLevelIds": [
+              "high",
+              "severe"
+            ],
+            "impacts": [
+              {
+                "dimensionId": "cost",
+                "direction": "increase",
+                "curveId": "legacy-curve-v1.operational-efficiency-risk"
+              },
+              {
+                "dimensionId": "recovery",
+                "direction": "decrease",
+                "curveId": "legacy-curve-v1.operational-efficiency-risk"
+              }
+            ]
+          },
+          {
+            "driverId": "energy-exposure-risk",
+            "scaleId": "legacy-risk-scale-v1",
+            "initial": {
+              "levelId": "moderate",
+              "score": 1
+            },
+            "numericRange": {
+              "minimum": 0,
+              "maximum": 3
+            },
+            "adverseLevelIds": [
+              "high",
+              "severe"
+            ],
+            "impacts": [
+              {
+                "dimensionId": "cost",
+                "direction": "increase",
+                "curveId": "legacy-curve-v1.energy-exposure-risk"
+              }
+            ]
+          },
+          {
+            "driverId": "interest-rate-exposure-risk",
+            "scaleId": "legacy-risk-scale-v1",
+            "initial": {
+              "levelId": "moderate",
+              "score": 1
+            },
+            "numericRange": {
+              "minimum": 0,
+              "maximum": 3
+            },
+            "adverseLevelIds": [
+              "high",
+              "severe"
+            ],
+            "impacts": [
+              {
+                "dimensionId": "cost",
+                "direction": "increase",
+                "curveId": "legacy-curve-v1.interest-rate-exposure-risk"
+              }
+            ]
+          },
+          {
+            "driverId": "leverage-level-risk",
+            "scaleId": "legacy-risk-scale-v1",
+            "initial": {
+              "levelId": "moderate",
+              "score": 1
+            },
+            "numericRange": {
+              "minimum": 0,
+              "maximum": 3
+            },
+            "adverseLevelIds": [
+              "high",
+              "severe"
+            ],
+            "impacts": [
+              {
+                "dimensionId": "cost",
+                "direction": "increase",
+                "curveId": "legacy-curve-v1.leverage-level-risk"
+              },
+              {
+                "dimensionId": "sensitivity",
+                "direction": "increase",
+                "curveId": "legacy-curve-v1.leverage-level-risk"
+              }
+            ]
+          },
+          {
+            "driverId": "refinancing-risk",
+            "scaleId": "legacy-risk-scale-v1",
+            "initial": {
+              "levelId": "moderate",
+              "score": 1
+            },
+            "numericRange": {
+              "minimum": 0,
+              "maximum": 3
+            },
+            "adverseLevelIds": [
+              "high",
+              "severe"
+            ],
+            "impacts": [
+              {
+                "dimensionId": "cost",
+                "direction": "increase",
+                "curveId": "legacy-curve-v1.refinancing-risk"
+              }
+            ]
+          },
+          {
+            "driverId": "market-volatility-risk",
+            "scaleId": "legacy-risk-scale-v1",
+            "initial": {
+              "levelId": "moderate",
+              "score": 1
+            },
+            "numericRange": {
+              "minimum": 0,
+              "maximum": 3
+            },
+            "adverseLevelIds": [
+              "high",
+              "severe"
+            ],
+            "impacts": [
+              {
+                "dimensionId": "load",
+                "direction": "increase",
+                "curveId": "legacy-curve-v1.market-volatility-risk"
+              }
+            ]
+          },
+          {
+            "driverId": "regulatory-pressure-risk",
+            "scaleId": "legacy-risk-scale-v1",
+            "initial": {
+              "levelId": "moderate",
+              "score": 1
+            },
+            "numericRange": {
+              "minimum": 0,
+              "maximum": 3
+            },
+            "adverseLevelIds": [
+              "high",
+              "severe"
+            ],
+            "impacts": [
+              {
+                "dimensionId": "cost",
+                "direction": "increase",
+                "curveId": "legacy-curve-v1.regulatory-pressure-risk"
+              }
+            ]
+          },
+          {
+            "driverId": "capital-commitment-rigidity-risk",
+            "scaleId": "legacy-risk-scale-v1",
+            "initial": {
+              "levelId": "moderate",
+              "score": 1
+            },
+            "numericRange": {
+              "minimum": 0,
+              "maximum": 3
+            },
+            "adverseLevelIds": [
+              "high",
+              "severe"
+            ],
+            "impacts": [
+              {
+                "dimensionId": "recovery",
+                "direction": "decrease",
+                "curveId": "legacy-curve-v1.capital-commitment-rigidity-risk"
+              }
+            ]
+          },
+          {
+            "driverId": "accessibility",
+            "scaleId": "legacy-risk-scale-v1",
+            "initial": {
+              "levelId": "moderate",
+              "score": 1
+            },
+            "numericRange": {
+              "minimum": 0,
+              "maximum": 3
+            },
+            "adverseLevelIds": [
+              "low"
+            ],
+            "impacts": [
+              {
+                "dimensionId": "load",
+                "direction": "decrease",
+                "curveId": "legacy-curve-v1.accessibility"
+              },
+              {
+                "dimensionId": "recovery",
+                "direction": "increase",
+                "curveId": "legacy-curve-v1.accessibility"
+              }
+            ]
+          },
+          {
+            "driverId": "modal_attractiveness",
+            "scaleId": "legacy-risk-scale-v1",
+            "initial": {
+              "levelId": "moderate",
+              "score": 1
+            },
+            "numericRange": {
+              "minimum": 0,
+              "maximum": 3
+            },
+            "adverseLevelIds": [
+              "low"
+            ],
+            "impacts": [
+              {
+                "dimensionId": "load",
+                "direction": "decrease",
+                "curveId": "legacy-curve-v1.modal_attractiveness"
+              },
+              {
+                "dimensionId": "recovery",
+                "direction": "increase",
+                "curveId": "legacy-curve-v1.modal_attractiveness"
+              }
+            ]
+          },
+          {
+            "driverId": "congestion_pressure",
+            "scaleId": "legacy-risk-scale-v1",
+            "initial": {
+              "levelId": "moderate",
+              "score": 1
+            },
+            "numericRange": {
+              "minimum": 0,
+              "maximum": 3
+            },
+            "adverseLevelIds": [
+              "high",
+              "severe"
+            ],
+            "impacts": [
+              {
+                "dimensionId": "load",
+                "direction": "increase",
+                "curveId": "legacy-curve-v1.congestion_pressure"
+              },
+              {
+                "dimensionId": "cost",
+                "direction": "increase",
+                "curveId": "legacy-curve-v1.congestion_pressure"
+              }
+            ]
+          },
+          {
+            "driverId": "operational_capacity",
+            "scaleId": "legacy-risk-scale-v1",
+            "initial": {
+              "levelId": "moderate",
+              "score": 1
+            },
+            "numericRange": {
+              "minimum": 0,
+              "maximum": 3
+            },
+            "adverseLevelIds": [
+              "low"
+            ],
+            "impacts": [
+              {
+                "dimensionId": "load",
+                "direction": "decrease",
+                "curveId": "legacy-curve-v1.operational_capacity"
+              },
+              {
+                "dimensionId": "recovery",
+                "direction": "increase",
+                "curveId": "legacy-curve-v1.operational_capacity"
+              }
+            ]
+          },
+          {
+            "driverId": "transit_signal_priority",
+            "scaleId": "legacy-risk-scale-v1",
+            "initial": {
+              "levelId": "moderate",
+              "score": 1
+            },
+            "numericRange": {
+              "minimum": 0,
+              "maximum": 3
+            },
+            "adverseLevelIds": [
+              "low"
+            ],
+            "impacts": [
+              {
+                "dimensionId": "load",
+                "direction": "decrease",
+                "curveId": "legacy-curve-v1.transit_signal_priority"
+              },
+              {
+                "dimensionId": "recovery",
+                "direction": "increase",
+                "curveId": "legacy-curve-v1.transit_signal_priority"
+              }
+            ]
+          },
+          {
+            "driverId": "budget_pressure",
+            "scaleId": "legacy-risk-scale-v1",
+            "initial": {
+              "levelId": "moderate",
+              "score": 1
+            },
+            "numericRange": {
+              "minimum": 0,
+              "maximum": 3
+            },
+            "adverseLevelIds": [
+              "high",
+              "severe"
+            ],
+            "impacts": [
+              {
+                "dimensionId": "cost",
+                "direction": "increase",
+                "curveId": "legacy-curve-v1.budget_pressure"
+              },
+              {
+                "dimensionId": "recovery",
+                "direction": "decrease",
+                "curveId": "legacy-curve-v1.budget_pressure"
+              }
+            ]
+          }
+        ],
+        "actions": [
+          {
+            "actionId": "electrify_bus_fleet",
+            "effects": [
+              {
+                "driverId": "energy-exposure-risk",
+                "delta": -1
+              },
+              {
+                "driverId": "operational-efficiency-risk",
+                "delta": -0.5
+              },
+              {
+                "driverId": "capital-commitment-rigidity-risk",
+                "delta": 0.5
+              }
+            ]
+          },
+          {
+            "actionId": "expand_cycling_infrastructure",
+            "effects": [
+              {
+                "driverId": "modal_attractiveness",
+                "delta": 2
+              },
+              {
+                "driverId": "congestion_pressure",
+                "delta": -1
+              },
+              {
+                "driverId": "budget_pressure",
+                "delta": 1
+              }
+            ]
+          },
+          {
+            "actionId": "increase_service_frequency",
+            "effects": [
+              {
+                "driverId": "accessibility",
+                "delta": 1
+              },
+              {
+                "driverId": "operational_capacity",
+                "delta": -0.5
+              },
+              {
+                "driverId": "budget_pressure",
+                "delta": 0.5
+              }
+            ]
+          },
+          {
+            "actionId": "reduce_parking_supply",
+            "effects": [
+              {
+                "driverId": "demand-risk",
+                "delta": 1
+              }
+            ]
+          },
+          {
+            "actionId": "reduce_travel_time",
+            "effects": [
+              {
+                "driverId": "modal_attractiveness",
+                "delta": 1
+              }
+            ]
+          },
+          {
+            "actionId": "transit_signal_priority",
+            "effects": [
+              {
+                "driverId": "transit_signal_priority",
+                "delta": 1
+              }
+            ]
+          }
+        ],
+        "propagation": {
+          "edges": [
+            {
+              "edgeId": "legacy-edge-v1.operational-efficiency-risk.to.maintenance-intensity-risk",
+              "sourceDriverId": "operational-efficiency-risk",
+              "targetDriverId": "maintenance-intensity-risk",
+              "triggerLevelIds": [
+                "high",
+                "severe"
+              ],
+              "propagatedLevelId": "high"
+            },
+            {
+              "edgeId": "legacy-edge-v1.accessibility.to.demand-risk",
+              "sourceDriverId": "accessibility",
+              "targetDriverId": "demand-risk",
+              "triggerLevelIds": [
+                "low"
+              ],
+              "propagatedLevelId": "high"
+            },
+            {
+              "edgeId": "legacy-edge-v1.budget_pressure.to.capital-commitment-rigidity-risk",
+              "sourceDriverId": "budget_pressure",
+              "targetDriverId": "capital-commitment-rigidity-risk",
+              "triggerLevelIds": [
+                "high",
+                "severe"
+              ],
+              "propagatedLevelId": "high"
+            }
+          ],
+          "cyclePolicy": "reject",
+          "selfEdgePolicy": "reject",
+          "duplicateEdgePolicy": "reject"
+        },
+        "dimensions": [
+          {
+            "dimensionId": "load",
+            "neutralValue": 1
+          },
+          {
+            "dimensionId": "cost",
+            "neutralValue": 1
+          },
+          {
+            "dimensionId": "recovery",
+            "neutralValue": 1
+          },
+          {
+            "dimensionId": "sensitivity",
+            "neutralValue": 1
+          }
+        ],
+        "curves": [
+          {
+            "curveId": "legacy-curve-v1.demand-risk",
+            "amplitudeByLevel": {
+              "low": 0.9,
+              "moderate": 1,
+              "high": 1.15,
+              "severe": 1.3
+            },
+            "type": "linear"
+          },
+          {
+            "curveId": "legacy-curve-v1.pricing-power-risk",
+            "amplitudeByLevel": {
+              "low": 0.9,
+              "moderate": 1,
+              "high": 1.15,
+              "severe": 1.3
+            },
+            "type": "linear"
+          },
+          {
+            "curveId": "legacy-curve-v1.tenant-stability-risk",
+            "amplitudeByLevel": {
+              "low": 0.9,
+              "moderate": 1,
+              "high": 1.2,
+              "severe": 1.35
+            },
+            "type": "linear"
+          },
+          {
+            "curveId": "legacy-curve-v1.maintenance-intensity-risk",
+            "amplitudeByLevel": {
+              "low": 0.95,
+              "moderate": 1,
+              "high": 1.15,
+              "severe": 1.3
+            },
+            "type": "linear"
+          },
+          {
+            "curveId": "legacy-curve-v1.operational-efficiency-risk",
+            "amplitudeByLevel": {
+              "low": 0.9,
+              "moderate": 1,
+              "high": 1.2,
+              "severe": 1.4
+            },
+            "type": "linear"
+          },
+          {
+            "curveId": "legacy-curve-v1.energy-exposure-risk",
+            "amplitudeByLevel": {
+              "low": 0.95,
+              "moderate": 1,
+              "high": 1.2,
+              "severe": 1.35
+            },
+            "type": "linear"
+          },
+          {
+            "curveId": "legacy-curve-v1.interest-rate-exposure-risk",
+            "amplitudeByLevel": {
+              "low": 0.9,
+              "moderate": 1,
+              "high": 1.4,
+              "severe": 1.9
+            },
+            "type": "exponential",
+            "exponent": 1.2
+          },
+          {
+            "curveId": "legacy-curve-v1.leverage-level-risk",
+            "amplitudeByLevel": {
+              "low": 0.9,
+              "moderate": 1,
+              "high": 1.6,
+              "severe": 2.3
+            },
+            "type": "exponential",
+            "exponent": 1.2
+          },
+          {
+            "curveId": "legacy-curve-v1.refinancing-risk",
+            "amplitudeByLevel": {
+              "low": 0.97,
+              "moderate": 1,
+              "high": 1.18,
+              "severe": 1.35
+            },
+            "type": "logistic",
+            "k": 0.8,
+            "x0": 3
+          },
+          {
+            "curveId": "legacy-curve-v1.market-volatility-risk",
+            "amplitudeByLevel": {
+              "low": 0.95,
+              "moderate": 1,
+              "high": 1.2,
+              "severe": 1.4
+            },
+            "type": "linear"
+          },
+          {
+            "curveId": "legacy-curve-v1.regulatory-pressure-risk",
+            "amplitudeByLevel": {
+              "low": 0.95,
+              "moderate": 1,
+              "high": 1.25,
+              "severe": 1.5
+            },
+            "type": "linear"
+          },
+          {
+            "curveId": "legacy-curve-v1.capital-commitment-rigidity-risk",
+            "amplitudeByLevel": {
+              "low": 0.95,
+              "moderate": 1,
+              "high": 1.15,
+              "severe": 1.3
+            },
+            "type": "linear"
+          },
+          {
+            "curveId": "legacy-curve-v1.accessibility",
+            "amplitudeByLevel": {
+              "low": 0.98,
+              "moderate": 1,
+              "high": 1.04,
+              "severe": 1.08
+            },
+            "type": "linear"
+          },
+          {
+            "curveId": "legacy-curve-v1.modal_attractiveness",
+            "amplitudeByLevel": {
+              "low": 0.97,
+              "moderate": 1,
+              "high": 1.05,
+              "severe": 1.1
+            },
+            "type": "linear"
+          },
+          {
+            "curveId": "legacy-curve-v1.congestion_pressure",
+            "amplitudeByLevel": {
+              "low": 0.98,
+              "moderate": 1,
+              "high": 1.05,
+              "severe": 1.1
+            },
+            "type": "linear"
+          },
+          {
+            "curveId": "legacy-curve-v1.operational_capacity",
+            "amplitudeByLevel": {
+              "low": 0.98,
+              "moderate": 1,
+              "high": 1.04,
+              "severe": 1.08
+            },
+            "type": "linear"
+          },
+          {
+            "curveId": "legacy-curve-v1.transit_signal_priority",
+            "amplitudeByLevel": {
+              "low": 0.98,
+              "moderate": 1,
+              "high": 1.03,
+              "severe": 1.06
+            },
+            "type": "linear"
+          },
+          {
+            "curveId": "legacy-curve-v1.budget_pressure",
+            "amplitudeByLevel": {
+              "low": 0.99,
+              "moderate": 1,
+              "high": 1.06,
+              "severe": 1.12
+            },
+            "type": "linear"
+          }
+        ],
+        "constraints": [],
+        "measures": [
+          {
+            "measureId": "structural-margin",
+            "kind": "weighted-signal-aggregate-v1",
+            "updateOperator": "subtract-terms-add-recovery-v1",
+            "initialValue": 1,
+            "terms": [
+              {
+                "termId": "adjusted-cost",
+                "source": {
+                  "kind": "dimension",
+                  "dimensionId": "cost",
+                  "stage": "after-constraints"
+                },
+                "transform": "deviation-from-neutral",
+                "weight": 1.2
+              },
+              {
+                "termId": "adjusted-recovery",
+                "source": {
+                  "kind": "dimension",
+                  "dimensionId": "recovery",
+                  "stage": "after-constraints"
+                },
+                "transform": "inverse-from-neutral",
+                "weight": 1.1
+              },
+              {
+                "termId": "positive-adjusted-load",
+                "source": {
+                  "kind": "dimension",
+                  "dimensionId": "load",
+                  "stage": "after-constraints"
+                },
+                "transform": "positive-deviation-from-neutral",
+                "weight": 0.45
+              },
+              {
+                "termId": "base-pressure",
+                "source": {
+                  "kind": "protocol-signal",
+                  "signalId": "base-dimension-pressure-sum-v1"
+                },
+                "transform": "identity",
+                "weight": 0.8
+              }
+            ],
+            "recovery": {
+              "targetValue": 1,
+              "pull": 0.12
+            },
+            "range": {
+              "minimum": -3,
+              "maximum": 3
+            },
+            "escalationRules": []
+          }
+        ]
+      }
+    }
+  },
+  "compatibility": {
+    "declarationsHash": "sha256:41e5d32fdc302fc39a432358692169464fe0b2b85537d9549ae4999832680de8",
+    "declarationsVersion": "legacy-compatibility-declarations-v1",
+    "ignoredUnknownDriverDeltas": [],
+    "compatibilityOnlyActions": [
+      {
+        "kind": "legacy-compatibility-only-action-v1",
+        "sourceProfileId": "legacy-municipal-v1",
+        "sourceActionId": "congestion_pricing",
+        "projectedNativeAction": "omitted-because-no-modeled-effects",
+        "admission": "legacy-adapter-only",
+        "ignoredEffects": [
+          {
+            "driverId": "modal_shift_pressure",
+            "delta": 2
+          },
+          {
+            "driverId": "political_feasibility",
+            "delta": -1
+          }
+        ]
+      }
+    ],
+    "driverIdMappings": [
+      {
+        "sourceDriverId": "demandRisk",
+        "projectedDriverId": "demand-risk"
+      },
+      {
+        "sourceDriverId": "pricingPowerRisk",
+        "projectedDriverId": "pricing-power-risk"
+      },
+      {
+        "sourceDriverId": "tenantStabilityRisk",
+        "projectedDriverId": "tenant-stability-risk"
+      },
+      {
+        "sourceDriverId": "maintenanceIntensityRisk",
+        "projectedDriverId": "maintenance-intensity-risk"
+      },
+      {
+        "sourceDriverId": "operationalEfficiencyRisk",
+        "projectedDriverId": "operational-efficiency-risk"
+      },
+      {
+        "sourceDriverId": "energyExposureRisk",
+        "projectedDriverId": "energy-exposure-risk"
+      },
+      {
+        "sourceDriverId": "interestRateExposureRisk",
+        "projectedDriverId": "interest-rate-exposure-risk"
+      },
+      {
+        "sourceDriverId": "leverageLevelRisk",
+        "projectedDriverId": "leverage-level-risk"
+      },
+      {
+        "sourceDriverId": "refinancingRisk",
+        "projectedDriverId": "refinancing-risk"
+      },
+      {
+        "sourceDriverId": "marketVolatilityRisk",
+        "projectedDriverId": "market-volatility-risk"
+      },
+      {
+        "sourceDriverId": "regulatoryPressureRisk",
+        "projectedDriverId": "regulatory-pressure-risk"
+      },
+      {
+        "sourceDriverId": "capitalCommitmentRigidityRisk",
+        "projectedDriverId": "capital-commitment-rigidity-risk"
+      },
+      {
+        "sourceDriverId": "accessibility",
+        "projectedDriverId": "accessibility"
+      },
+      {
+        "sourceDriverId": "modal_attractiveness",
+        "projectedDriverId": "modal_attractiveness"
+      },
+      {
+        "sourceDriverId": "congestion_pressure",
+        "projectedDriverId": "congestion_pressure"
+      },
+      {
+        "sourceDriverId": "operational_capacity",
+        "projectedDriverId": "operational_capacity"
+      },
+      {
+        "sourceDriverId": "transit_signal_priority",
+        "projectedDriverId": "transit_signal_priority"
+      },
+      {
+        "sourceDriverId": "budget_pressure",
+        "projectedDriverId": "budget_pressure"
+      }
+    ],
+    "excludedUnsupportedActionIds": [
+      "delay_maintenance",
+      "early_refinancing",
+      "energy_retrofit_program",
+      "increase_liquidity_buffer",
+      "phase_project_starts",
+      "reduce_leverage",
+      "secure_long_term_leases",
+      "stagger_project_starts"
+    ],
+    "sustainThresholdOverride": null,
+    "propagation": {
+      "edgeEvaluationOrder": "legacy-source-and-target-insertion-order-v1",
+      "sourceEvaluationOrder": [
+        {
+          "sourcePosition": 0,
+          "edgePosition": 0,
+          "sourceLegacyDriverId": "operationalEfficiencyRisk",
+          "targetLegacyDriverId": "maintenanceIntensityRisk",
+          "projectedOrCompatibilityEdgeId": "legacy-edge-v1.operational-efficiency-risk.to.maintenance-intensity-risk"
+        },
+        {
+          "sourcePosition": 1,
+          "edgePosition": 0,
+          "sourceLegacyDriverId": "accessibility",
+          "targetLegacyDriverId": "demandRisk",
+          "projectedOrCompatibilityEdgeId": "legacy-edge-v1.accessibility.to.demand-risk"
+        },
+        {
+          "sourcePosition": 2,
+          "edgePosition": 0,
+          "sourceLegacyDriverId": "budget_pressure",
+          "targetLegacyDriverId": "capitalCommitmentRigidityRisk",
+          "projectedOrCompatibilityEdgeId": "legacy-edge-v1.budget_pressure.to.capital-commitment-rigidity-risk"
+        }
+      ],
+      "compatibilityOnlyEdges": []
+    },
+    "excludedSourceValues": [
+      {
+        "kind": "provably-unreachable-public-execution-v1",
+        "sourcePath": "constraints.RefinancingConstraint",
+        "sourceValueHash": "sha256:875126baf72ca3012509241c9aa5956eb7b28634d419de8ee462bcd1760851b1",
+        "reasonCode": "profile-constraint-disabled"
+      },
+      {
+        "kind": "provably-unreachable-public-execution-v1",
+        "sourcePath": "constraints.LiquidityConstraint",
+        "sourceValueHash": "sha256:b4ee3ecb27eef4f18792f73cffa47ab9cc55113b2dcb67b136c12b283d40a600",
+        "reasonCode": "no-public-activation-transition"
+      },
+      {
+        "kind": "provably-unreachable-public-execution-v1",
+        "sourcePath": "constraints.CovenantConstraint",
+        "sourceValueHash": "sha256:38393ab946cb354edacbefeee830f3aa27a04028abbf521de462245efc0ffc43",
+        "reasonCode": "no-public-activation-transition"
+      },
+      {
+        "kind": "provably-unreachable-public-execution-v1",
+        "sourcePath": "constraints.Custom",
+        "sourceValueHash": "sha256:df6dcffe8835027599e597a8d3ad19b8a1eaa7fbe98cb07de12ff82327ade9e2",
+        "reasonCode": "inert-global-registry-member"
+      }
+    ],
+    "curveFallbackDeclaration": {
+      "policyId": "legacy-neutral-multiplier-v1",
+      "appliesTo": [
+        "missing-curve-configuration",
+        "unsupported-curve-discriminant"
+      ],
+      "neutralMultiplier": 1,
+      "evidenceStatus": "deferred-to-m1e"
+    }
+  }
+}
