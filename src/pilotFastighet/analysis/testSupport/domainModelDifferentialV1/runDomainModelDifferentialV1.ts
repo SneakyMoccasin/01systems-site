@@ -264,8 +264,14 @@ export function runDomainModelDifferentialV1(input: Readonly<{
   const counterfactuals = counterfactualResults
     .map((result) => observation(input.envelope, input.fixture, "compatibility-counterfactual", result))
     .filter((candidate) => collectDiscrepancies(pureNative.comparisonSurface, candidate.comparisonSurface, "compatibility-rule").length > 0);
-  const comparatorA = compareLegacyToCompatibilityEffective(legacyReference, compatibilityEffectiveCandidate);
   const comparatorB = comparePureNativeToCompatibilityEffective({ envelope: input.envelope, sourceCase, pureNative, compatibilityEffective: compatibilityEffectiveCandidate, counterfactuals });
+  const comparatorA = compareLegacyToCompatibilityEffective({
+    envelope: input.envelope,
+    legacy: legacyReference,
+    pureNative,
+    effective: compatibilityEffectiveCandidate,
+    comparatorB,
+  });
   const content = {
     version: "domain-model-differential-report-v1" as const,
     legacyReference,

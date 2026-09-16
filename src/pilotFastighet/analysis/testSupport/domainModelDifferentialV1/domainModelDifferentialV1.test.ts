@@ -3,6 +3,10 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { canonicalizeBaselineValueV1 } from "../baselineCanonicalizationV1";
 import { parseEngineBaselineInputFixtureV1, runEngineBaselineFixtureV1 } from "../engineOutputProjectionV1";
+import { hashDomainModelContractSemanticIdentityV1 } from "../domainModelContractV1/domainModelContractSemanticIdentityV1";
+import { parseDomainModelContractV1 } from "../domainModelContractV1/parseDomainModelContractV1";
+import { parseDomainModelContractV1Structure } from "../domainModelContractV1/parseDomainModelContractV1Structure";
+import { validateDomainModelContractV1Semantics } from "../domainModelContractV1/validateDomainModelContractV1Semantics";
 import { verifyLegacyProfileProjectionEnvelopeV1Hashes } from "../domainModelContractV1/hashLegacyProfileProjectionEnvelopeV1";
 import type { HashVerifiedLegacyProfileProjectionEnvelopeV1 } from "../domainModelContractV1/legacyProfileProjectionEnvelopeV1";
 import { parseLegacyProfileProjectionEnvelopeV1Structure, parseLegacyProfileProjectionEnvelopeV1StructureJson } from "../domainModelContractV1/parseLegacyProfileProjectionEnvelopeV1Structure";
@@ -19,11 +23,16 @@ import {
   compareCompatibilityNormalizedLegacyEngineCoreV1,
   compareLegacyToCompatibilityEffective,
   detachedFrozen,
+  hashDifferentialReportContent,
+  verifyAdapterReportDiscrepanciesV1,
+  verifyCompatibilityDiscrepanciesV1,
+  verifyNativeExecutionDiscrepanciesV1,
   type ActionAdmissionAttributionResultV1,
   type CompatibilityDeclarationCounterfactualV1,
   type DifferentialObservationV1,
   type FullCompatibilityComparatorV1,
 } from "./differentialExecutionV1";
+import * as differentialExecutionV1 from "./differentialExecutionV1";
 import {
   executeAdmittedCompatibilityActionV1,
   executeCompatibilityPropagationWitnessV1,
@@ -351,16 +360,17 @@ test("events carry exact legacy IDs, level, iteration, step, delay, and determin
 });
 
 test("Comparator A reports exact RFC 6901 path and both concrete values", () => {
-  const report = runDomainModelDifferentialV1({ envelope: verifiedEnvelope(), fixture: fixture() });
-  const surface = mutableSurface(report.compatibilityEffectiveCandidate);
+  const envelope = verifiedEnvelope();
+  const report = runDomainModelDifferentialV1({ envelope, fixture: fixture() });
+  const surface = mutableSurface(report.legacyReference);
   scenarioFrom(surface, "scenarioA").trajectory[0].registry.LiquidityConstraint.lifecycle = "ACTIVE";
-  const candidate = detachedFrozen({ ...report.compatibilityEffectiveCandidate, comparisonSurface: surface });
-  const result = compareLegacyToCompatibilityEffective(report.legacyReference, candidate);
+  const legacy = detachedFrozen({ ...report.legacyReference, comparisonSurface: surface });
+  const result = compareLegacyToCompatibilityEffective({ envelope, legacy, pureNative: report.pureNative, effective: report.compatibilityEffectiveCandidate, comparatorB: report.comparatorB });
   assert.equal(result.ok, false);
   assert.deepEqual(result.discrepancies[0], {
     path: "/comparisonSurface/scenarioA/trajectory/0/registry/LiquidityConstraint/lifecycle",
-    left: "INACTIVE",
-    right: "ACTIVE",
+    left: "ACTIVE",
+    right: "INACTIVE",
     classification: "unresolved-design-decision",
   });
 });
@@ -783,6 +793,8 @@ for (const [profileId, actionId, disposition, outputChanged, unsupported] of act
   test(`${profileId} ${actionId} keeps actual rejection separate and proves bounded engine-core agreement`, () => {
     const envelope = verifiedProfileEnvelope(profileId);
     const report = runActionAdmissionDifferentialV1({ envelope, fixture: neutralFixture(profileId), sourceActionId: actionId, scheduledStep: 1 });
+    const repeated = runActionAdmissionDifferentialV1({ envelope, fixture: neutralFixture(profileId), sourceActionId: actionId, scheduledStep: 1 });
+    assert.deepEqual(repeated, report);
     assert.equal(report.comparatorA.status, "not-applicable-no-successful-legacy-output");
     assert.equal(report.comparatorA.ok, null);
     assert.equal(report.engineCoreComparator.reference, "compatibility-normalized-legacy-engine-core-reconstruction-v1");
@@ -863,4 +875,168 @@ test("sustainThreshold execution stays deferred without a hash-bound caller valu
     hashBoundValue: "absent",
     execution: "deferred",
   });
+});
+
+test("M1D-3 classification authority is derived and exposes no literal evidence factory", () => {
+  assert.equal("causeExcludedComparatorAEvidenceV1" in differentialExecutionV1, false);
+  assert.equal("classifyComparatorAEvidenceV1" in differentialExecutionV1, false);
+  assert.equal("verifyDiscrepancyInvariantsV1" in differentialExecutionV1, false);
+  if (false) {
+    // @ts-expect-error Comparator A accepts verified runtime inputs, not raw evidence literals
+    compareLegacyToCompatibilityEffective({}, { kind: "cause-excluded-unresolved", executionsSucceeded: true });
+    // @ts-expect-error ownership-specific verifier has no caller-selectable emitter
+    verifyAdapterReportDiscrepanciesV1({ emitter: "verified-compatibility-binding", status: "pass", discrepancies: [] });
+  }
+});
+
+test("M1D-3 discrepancy verifier enforces emitter, RFC 6901, ownership, sorting, freeze, and status invariants", () => {
+  const discrepancy = (path: string, classification: "adapter-error" | "contract-error" | "compatibility-rule" | "unresolved-design-decision") =>
+    detachedFrozen({ path, left: { presence: "absent" as const }, right: { value: 1 }, classification });
+  verifyAdapterReportDiscrepanciesV1({ status: "fail", discrepancies: [discrepancy("/a~0b/c~1d", "adapter-error")] });
+  verifyAdapterReportDiscrepanciesV1({ status: "pass", discrepancies: [] });
+  for (const status of ["not-applicable-no-successful-legacy-output", "not-applicable-normalization-rejected", "deferred-missing-hash-bound-value", "ineligible-no-declaration", "rejected"] as const) {
+    verifyAdapterReportDiscrepanciesV1({ status, discrepancies: [] });
+    assert.throws(() => verifyAdapterReportDiscrepanciesV1({ status, discrepancies: [discrepancy("/status", "adapter-error")] }), /closed non-comparison status/);
+  }
+  assert.throws(() => verifyAdapterReportDiscrepanciesV1({ status: "pass", discrepancies: [discrepancy("/status", "adapter-error")] }), /pass result/);
+  assert.throws(() => verifyAdapterReportDiscrepanciesV1({ status: "fail", discrepancies: [] }), /requires discrepancies/);
+  assert.throws(() => verifyAdapterReportDiscrepanciesV1({ status: "fail", discrepancies: [discrepancy("relative", "adapter-error")] }), /RFC 6901/);
+  assert.throws(() => verifyAdapterReportDiscrepanciesV1({ status: "fail", discrepancies: [discrepancy("/bad~2escape", "adapter-error")] }), /RFC 6901/);
+  assert.throws(() => verifyAdapterReportDiscrepanciesV1({ status: "fail", discrepancies: [discrepancy("/", "adapter-error")] }), /RFC 6901/);
+  assert.throws(() => verifyAdapterReportDiscrepanciesV1({ status: "fail", discrepancies: [discrepancy("/b", "adapter-error"), discrepancy("/a", "adapter-error")] }), /code-unit order/);
+  assert.throws(() => verifyAdapterReportDiscrepanciesV1({ status: "fail", discrepancies: [discrepancy("/a", "adapter-error"), discrepancy("/a", "adapter-error")] }), /duplicate/);
+  assert.throws(() => verifyCompatibilityDiscrepanciesV1({ status: "fail", discrepancies: [discrepancy("/a", "adapter-error")] }), /forbidden for ownership boundary/);
+  assert.throws(() => verifyAdapterReportDiscrepanciesV1({ status: "fail", discrepancies: [discrepancy("/a", "compatibility-rule")] }), /forbidden for ownership boundary/);
+  assert.throws(() => verifyNativeExecutionDiscrepanciesV1({ status: "fail", discrepancies: [discrepancy("/a", "adapter-error")] }), /forbidden for ownership boundary/);
+  verifyNativeExecutionDiscrepanciesV1({ status: "fail", discrepancies: [discrepancy("/a", "contract-error")] });
+  assert.throws(() => verifyAdapterReportDiscrepanciesV1({ status: "fail", discrepancies: [discrepancy("/a", "contract-error")] }), /forbidden for ownership boundary/);
+  assert.throws(() => verifyAdapterReportDiscrepanciesV1({ status: "fail", discrepancies: [discrepancy("/a", "known-explicitly-deferred" as never)] }), /reserved or unknown/);
+  assert.throws(() => verifyCompatibilityDiscrepanciesV1({ status: "fail", discrepancies: [discrepancy("/a", "possible-legacy-runtime-defect" as never)] }), /reserved or unknown/);
+  const unfrozen = [{ path: "/a", left: { value: 1 }, right: 2, classification: "adapter-error" as const }];
+  assert.throws(() => verifyAdapterReportDiscrepanciesV1({ status: "fail", discrepancies: unfrozen }), /recursively frozen/);
+  const undefinedValue = detachedFrozen([{ path: "/a", left: undefined, right: 2, classification: "adapter-error" as const }]);
+  assert.throws(() => verifyAdapterReportDiscrepanciesV1({ status: "fail", discrepancies: undefinedValue }), /concrete/);
+});
+
+test("M1D-3 observation identity mutation matrix is adapter-owned", () => {
+  const paths = [
+    "/version", "/kind", "/profileId", "/caseId", "/scenario",
+    "/hashes/sourceSemanticPayloadHash", "/hashes/projectedSemanticPayloadHash",
+    "/hashes/compatibilityDeclarationsHash", "/hashes/envelopeHash",
+    "/nativeStateHasCompatibilityProperties",
+  ];
+  for (const path of paths) {
+    const discrepancies = detachedFrozen([{ path, left: "expected", right: "mutated", classification: "adapter-error" as const }]);
+    verifyAdapterReportDiscrepanciesV1({ status: "fail", discrepancies });
+  }
+  const reEnvelope = verifiedProfileEnvelope("legacy-real-estate-v1");
+  assert.throws(() => projectNativeSourceCaseV1(reEnvelope, neutralFixture("legacy-municipal-v1")), /identity mismatch/i);
+});
+
+test("M1D-3 Comparator A derives compatibility ownership and cause-excluded unresolved paths", () => {
+  const envelope = verifiedEnvelope();
+  const report = runDomainModelDifferentialV1({ envelope, fixture: fixture() });
+  const unresolvedLegacy = detachedFrozen({ ...report.legacyReference, comparisonSurface: { witness: { value: 1 } } });
+  const unresolvedEffective = detachedFrozen({ ...report.compatibilityEffectiveCandidate, comparisonSurface: { witness: { value: 2 } } });
+  assert.throws(() => compareLegacyToCompatibilityEffective({ envelope, legacy: unresolvedLegacy, pureNative: report.pureNative, effective: unresolvedEffective, comparatorB: report.comparatorB }), /compatibility prerequisite mismatch/);
+
+  const legacySurface = structuredClone(report.legacyReference.comparisonSurface) as Record<string, unknown>;
+  const attribution = report.comparatorB.attributions.find((entry) => entry.observedDifferences.length > 0);
+  assert.ok(attribution);
+  const observed = attribution.observedDifferences[0];
+  const segments = observed.path.split("/").slice(2).map((segment) => segment.replaceAll("~1", "/").replaceAll("~0", "~"));
+  let owner: Record<string, unknown> = legacySurface;
+  for (const segment of segments.slice(0, -1)) owner = Reflect.get(owner, segment) as Record<string, unknown>;
+  Reflect.set(owner, segments.at(-1)!, "m1d-compatibility-owned-witness");
+  const compatibilityLegacy = detachedFrozen({ ...report.legacyReference, comparisonSurface: legacySurface });
+  const compatibilityResult = compareLegacyToCompatibilityEffective({ envelope, legacy: compatibilityLegacy, pureNative: report.pureNative, effective: report.compatibilityEffectiveCandidate, comparatorB: report.comparatorB });
+  assert.equal(compatibilityResult.status, "fail");
+  assert.equal(compatibilityResult.discrepancies.find((entry) => entry.path === observed.path)?.classification, "compatibility-rule");
+
+  const unresolvedSurface = structuredClone(report.legacyReference.comparisonSurface) as Record<string, unknown>;
+  Reflect.set(unresolvedSurface, "mechanically-unowned-witness", 1);
+  const causeExcludedLegacy = detachedFrozen({ ...report.legacyReference, comparisonSurface: unresolvedSurface });
+  const unresolvedResult = compareLegacyToCompatibilityEffective({ envelope, legacy: causeExcludedLegacy, pureNative: report.pureNative, effective: report.compatibilityEffectiveCandidate, comparatorB: report.comparatorB });
+  assert.equal(unresolvedResult.status, "fail");
+  assert.deepEqual(unresolvedResult.discrepancies.at(-1), { path: "/comparisonSurface/mechanically-unowned-witness", left: 1, right: { presence: "absent" }, classification: "unresolved-design-decision" });
+});
+
+test("M1D-3 Comparator A rejects a passing Comparator B with discrepancies at the prerequisite boundary", () => {
+  const envelope = verifiedEnvelope();
+  const report = runDomainModelDifferentialV1({ envelope, fixture: fixture() });
+  const comparatorB = detachedFrozen({
+    ...report.comparatorB,
+    discrepancies: [{
+      path: "/comparisonSurface/fabricated-prerequisite-discrepancy",
+      left: { presence: "absent" as const },
+      right: "fabricated",
+      classification: "compatibility-rule" as const,
+    }],
+  });
+  assertDeepFrozen(comparatorB);
+  assert.throws(
+    () => compareLegacyToCompatibilityEffective({
+      envelope,
+      legacy: report.legacyReference,
+      pureNative: report.pureNative,
+      effective: report.compatibilityEffectiveCandidate,
+      comparatorB,
+    }),
+    (error: unknown) => {
+      assert.ok(error instanceof Error);
+      assert.equal(error.message, "M1D Comparator A requires a passing Comparator B to have an empty discrepancies list");
+      return true;
+    }
+  );
+});
+
+test("M1D-3 contract-error uses a real structural-semantic-hash pipeline", () => {
+  const envelope = verifiedProfileEnvelope("legacy-municipal-v1");
+  const raw = structuredClone(envelope.projection.contract) as unknown as {
+    identity: { semanticPayloadHash: string };
+    semanticPayload: { constraints: unknown[]; measures: unknown[] };
+  };
+  raw.semanticPayload.constraints = [];
+  raw.semanticPayload.measures = [];
+  const structural = parseDomainModelContractV1Structure(raw);
+  assert.equal(structural.ok, true);
+  if (!structural.ok) return;
+  const semantic = validateDomainModelContractV1Semantics(structural.value);
+  assert.equal(semantic.ok, true);
+  if (!semantic.ok) return;
+  raw.identity.semanticPayloadHash = hashDomainModelContractSemanticIdentityV1(semantic.value);
+  const verified = parseDomainModelContractV1(raw);
+  assert.equal(verified.ok, true);
+  if (!verified.ok) return;
+  const sourceCase = projectNativeSourceCaseV1(envelope, neutralFixture("legacy-municipal-v1"));
+  assert.throws(() => executePureNativeProjectionV1({ contract: verified.value, sourceCase }), /contract-error: missing structural-margin measure/);
+  const discrepancies = detachedFrozen([{ path: "/semanticPayload/measures", left: "required executable measure", right: { presence: "absent" as const }, classification: "contract-error" as const }]);
+  verifyNativeExecutionDiscrepanciesV1({ status: "fail", discrepancies });
+});
+
+test("M1D-3 report hash owns exact content, ignores object insertion order, and preserves array order", () => {
+  const report = runDomainModelDifferentialV1({ envelope: verifiedEnvelope(), fixture: fixture() });
+  const { reportHash: ignored, ...content } = report;
+  void ignored;
+  assert.equal(report.reportHash, hashDifferentialReportContent(content));
+  assert.equal(runDomainModelDifferentialV1({ envelope: verifiedEnvelope(), fixture: fixture() }).reportHash, report.reportHash);
+  assert.equal(hashDifferentialReportContent({ a: 1, b: 2 }), hashDifferentialReportContent({ b: 2, a: 1 }));
+  assert.notEqual(hashDifferentialReportContent({ ordered: [1, 2] }), hashDifferentialReportContent({ ordered: [2, 1] }));
+  assert.notEqual(hashDifferentialReportContent({ ...content, version: "mutated" }), report.reportHash);
+  const semanticMutations: Array<(value: unknown) => void> = [
+    (value) => { (value as { legacyReference: { comparisonSurface: { fixtureId: string } } }).legacyReference.comparisonSurface.fixtureId = "mutated"; },
+    (value) => { (value as { pureNative: { comparisonSurface: { fixtureId: string } } }).pureNative.comparisonSurface.fixtureId = "mutated"; },
+    (value) => { (value as { compatibilityEffectiveCandidate: { comparisonSurface: { fixtureId: string } } }).compatibilityEffectiveCandidate.comparisonSurface.fixtureId = "mutated"; },
+    (value) => { (value as { counterfactuals: unknown[] }).counterfactuals.reverse(); },
+    (value) => { (value as { comparatorA: { comparator: string } }).comparatorA.comparator = "mutated"; },
+    (value) => { (value as { comparatorB: { comparator: string } }).comparatorB.comparator = "mutated"; },
+  ];
+  for (const mutate of semanticMutations) {
+    const changed = structuredClone(content);
+    mutate(changed);
+    assert.notEqual(hashDifferentialReportContent(changed), report.reportHash);
+  }
+  const stale = detachedFrozen([{ path: "/reportHash", left: report.reportHash, right: "stale", classification: "adapter-error" as const }]);
+  verifyAdapterReportDiscrepanciesV1({ status: "fail", discrepancies: stale });
+  assert.notEqual(hashDifferentialReportContent(report), report.reportHash);
 });

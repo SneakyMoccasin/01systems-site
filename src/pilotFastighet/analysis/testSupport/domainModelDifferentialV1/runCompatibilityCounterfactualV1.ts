@@ -9,6 +9,8 @@ import {
   collectDiscrepancies,
   compareCodeUnits,
   detachedFrozen,
+  verifyAdapterReportDiscrepanciesV1,
+  verifyCompatibilityDiscrepanciesV1,
   type ActionAdmissionAttributionResultV1,
   type CompatibilityAttributionV1,
   type DifferentialDiscrepancyV1,
@@ -21,8 +23,8 @@ import {
   type NativeExecutionResultV1,
 } from "./executeVerifiedNativeProjectionV1";
 
-function failure(path: string, left: unknown, right: unknown): DifferentialDiscrepancyV1 {
-  return detachedFrozen({ path, left, right, classification: "compatibility-rule" as const });
+function failure(path: string, left: unknown, right: unknown, classification: "adapter-error" | "compatibility-rule" = "compatibility-rule"): DifferentialDiscrepancyV1 {
+  return detachedFrozen({ path, left, right, classification });
 }
 
 function reportValue(value: unknown): unknown {
@@ -236,11 +238,11 @@ export function comparePureNativeToCompatibilityEffective(input: Readonly<{
       }));
     }
     if (action.status !== "pass") {
-      failures.push(failure("/actionAttribution/consistency/status", action.status, "pass"));
+      failures.push(failure("/actionAttribution/consistency/status", action.status, "pass", "adapter-error"));
       failures.push(...action.discrepancies);
-      if (action.discrepancies.length === 0) failures.push(failure("/actionAttribution/consistency/discrepancies", [], "non-empty when status is fail"));
+      if (action.discrepancies.length === 0) failures.push(failure("/actionAttribution/consistency/discrepancies", [], "non-empty when status is fail", "adapter-error"));
     } else if (action.discrepancies.length !== 0) {
-      failures.push(failure("/actionAttribution/consistency/discrepancies", action.discrepancies, []));
+      failures.push(failure("/actionAttribution/consistency/discrepancies", action.discrepancies, [], "adapter-error"));
     }
     if (action.outputDisposition === "unchanged" && action.attributedDifferences.length !== 0) {
       failures.push(failure("/actionAttribution/consistency/outputDisposition", { outputDisposition: action.outputDisposition, attributedDifferenceCount: action.attributedDifferences.length }, { outputDisposition: "unchanged", attributedDifferenceCount: 0 }));
@@ -285,11 +287,20 @@ export function comparePureNativeToCompatibilityEffective(input: Readonly<{
   const duplicatePaths = attributions.flatMap((entry) => entry.observedOutputPaths).filter((path, index, all) => all.indexOf(path) !== index);
   if (duplicatePaths.length > 0) failures.push(failure("/attribution/duplicateOutputPaths", duplicatePaths, []));
   const discrepancies = failures.sort((a, b) => compareCodeUnits(a.path, b.path));
-  return detachedFrozen({
-    comparator: "pure-native-vs-full-compatibility-effective-v1",
+  const result = detachedFrozen({
+    comparator: "pure-native-vs-full-compatibility-effective-v1" as const,
     status: discrepancies.length === 0 ? "pass" as const : "fail" as const,
     primaryDifferences: primary.map((entry) => ({ path: entry.path, before: entry.left, after: entry.right })),
     attributions: discrepancies.length === 0 ? attributions : [],
     discrepancies,
   });
+  const adapterDiscrepancies = result.discrepancies.filter((entry) => entry.classification === "adapter-error");
+  const compatibilityDiscrepancies = result.discrepancies.filter((entry) => entry.classification === "compatibility-rule");
+  if (result.status === "pass") {
+    verifyCompatibilityDiscrepanciesV1({ status: "pass", discrepancies: [] });
+  } else {
+    if (adapterDiscrepancies.length > 0) verifyAdapterReportDiscrepanciesV1({ status: "fail", discrepancies: adapterDiscrepancies });
+    if (compatibilityDiscrepancies.length > 0) verifyCompatibilityDiscrepanciesV1({ status: "fail", discrepancies: compatibilityDiscrepancies });
+  }
+  return result;
 }

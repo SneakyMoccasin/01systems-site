@@ -1,4 +1,7 @@
+import { isDeepStrictEqual } from "node:util";
 import { hashBaselineValueV1 } from "../baselineCanonicalizationV1";
+import { hashLegacyProfileProjectionEnvelopeV1 } from "../domainModelContractV1/hashLegacyProfileProjectionEnvelopeV1";
+import type { HashVerifiedLegacyProfileProjectionEnvelopeV1 } from "../domainModelContractV1/legacyProfileProjectionEnvelopeV1";
 
 export type ObservationKind =
   | "legacy-reference"
@@ -49,6 +52,15 @@ export type DifferentialDiscrepancyV1 = Readonly<{
   right: unknown;
   classification: DiscrepancyClassification;
 }>;
+
+export type DiscrepancyResultStatusV1 =
+  | "pass"
+  | "fail"
+  | "not-applicable-no-successful-legacy-output"
+  | "not-applicable-normalization-rejected"
+  | "deferred-missing-hash-bound-value"
+  | "ineligible-no-declaration"
+  | "rejected";
 
 export type ComparatorAResultV1 = Readonly<{
   comparator: "legacy-vs-compatibility-effective-v1";
@@ -164,12 +176,82 @@ export function detachedFrozen<T>(value: T): T {
   return deepFreeze(structuredClone(value));
 }
 
+const ACTIVE_CLASSIFICATIONS = Object.freeze([
+  "adapter-error",
+  "contract-error",
+  "compatibility-rule",
+  "unresolved-design-decision",
+] as const);
+
 function deepFreeze<T>(value: T): T {
   if (value && typeof value === "object" && !Object.isFrozen(value)) {
     Object.freeze(value);
     for (const child of Object.values(value as Record<string, unknown>)) deepFreeze(child);
   }
   return value;
+}
+
+function isAbsoluteRfc6901Path(path: string): boolean {
+  if (path === "/") return true;
+  if (!path.startsWith("/")) return false;
+  for (let index = 0; index < path.length; index += 1) {
+    if (path[index] !== "~") continue;
+    if (path[index + 1] !== "0" && path[index + 1] !== "1") return false;
+    index += 1;
+  }
+  return true;
+}
+
+function isConcreteFrozen(value: unknown): boolean {
+  if (value === undefined) return false;
+  if (!value || typeof value !== "object") return true;
+  if (!Object.isFrozen(value)) return false;
+  return Object.values(value as Record<string, unknown>).every(isConcreteFrozen);
+}
+
+function verifyOwnedDiscrepanciesV1(input: Readonly<{
+  permittedClassification: "adapter-error" | "contract-error" | "compatibility-rule" | "unresolved-design-decision";
+  status: DiscrepancyResultStatusV1;
+  discrepancies: readonly DifferentialDiscrepancyV1[];
+  allowRootPath?: boolean;
+}>): void {
+  const paths = new Set<string>();
+  let previous: string | undefined;
+  for (const discrepancy of input.discrepancies) {
+    if (!(ACTIVE_CLASSIFICATIONS as readonly string[]).includes(discrepancy.classification)) throw new Error("M1D reserved or unknown discrepancy classification");
+    if (discrepancy.classification !== input.permittedClassification) throw new Error("M1D discrepancy classification is forbidden for ownership boundary");
+    if (!isAbsoluteRfc6901Path(discrepancy.path) || (discrepancy.path === "/" && !input.allowRootPath)) throw new Error("M1D invalid RFC 6901 discrepancy path");
+    if (!isConcreteFrozen(discrepancy.left) || !isConcreteFrozen(discrepancy.right)) throw new Error("M1D discrepancy values must be concrete and recursively frozen");
+    if (paths.has(discrepancy.path)) throw new Error("M1D duplicate or contradictory discrepancy path");
+    if (previous !== undefined && compareCodeUnits(previous, discrepancy.path) > 0) throw new Error("M1D discrepancies must use canonical code-unit order");
+    paths.add(discrepancy.path);
+    previous = discrepancy.path;
+  }
+  if (input.status === "pass" && input.discrepancies.length !== 0) throw new Error("M1D pass result cannot contain discrepancies");
+  if (input.status === "fail" && input.discrepancies.length === 0) throw new Error("M1D fail result requires discrepancies");
+  if (input.status !== "pass" && input.status !== "fail" && input.discrepancies.length !== 0) throw new Error("M1D closed non-comparison status cannot contain discrepancies");
+}
+
+type OwnedVerificationInputV1 = Readonly<{
+  status: DiscrepancyResultStatusV1;
+  discrepancies: readonly DifferentialDiscrepancyV1[];
+  allowRootPath?: boolean;
+}>;
+
+export function verifyAdapterReportDiscrepanciesV1(input: OwnedVerificationInputV1): void {
+  verifyOwnedDiscrepanciesV1({ ...input, permittedClassification: "adapter-error" });
+}
+
+export function verifyNativeExecutionDiscrepanciesV1(input: OwnedVerificationInputV1): void {
+  verifyOwnedDiscrepanciesV1({ ...input, permittedClassification: "contract-error" });
+}
+
+export function verifyCompatibilityDiscrepanciesV1(input: OwnedVerificationInputV1): void {
+  verifyOwnedDiscrepanciesV1({ ...input, permittedClassification: "compatibility-rule" });
+}
+
+function verifyComparatorADiscrepanciesV1(input: OwnedVerificationInputV1 & Readonly<{ classification: "compatibility-rule" | "unresolved-design-decision" }>): void {
+  verifyOwnedDiscrepanciesV1({ ...input, permittedClassification: input.classification });
 }
 
 function pathChild(path: string, key: string): string {
@@ -219,37 +301,108 @@ export function collectDiscrepancies(
 }
 
 export function compareLegacyToCompatibilityEffective(
-  legacy: DifferentialObservationV1,
-  effective: DifferentialObservationV1,
-  classification: DiscrepancyClassification = "unresolved-design-decision"
+  input: Readonly<{
+    envelope: HashVerifiedLegacyProfileProjectionEnvelopeV1;
+    legacy: DifferentialObservationV1;
+    pureNative: DifferentialObservationV1;
+    effective: DifferentialObservationV1;
+    comparatorB: FullCompatibilityComparatorV1;
+  }>
 ): ComparatorAResultV1 {
-  const discrepancies = collectDiscrepancies(
-    legacy.comparisonSurface,
-    effective.comparisonSurface,
-    classification,
+  const expectedHashes: M1CHashIdentity = {
+    sourceSemanticPayloadHash: input.envelope.source.semanticPayloadHash,
+    projectedSemanticPayloadHash: input.envelope.projection.semanticPayloadHash,
+    compatibilityDeclarationsHash: input.envelope.compatibility.declarationsHash,
+    envelopeHash: hashLegacyProfileProjectionEnvelopeV1(input.envelope),
+  };
+  const observations = [input.legacy, input.pureNative, input.effective] as const;
+  const expectedKinds: readonly ObservationKind[] = ["legacy-reference", "pure-native", "compatibility-effective"];
+  for (const [index, observation] of observations.entries()) {
+    if (!isConcreteFrozen(observation)) throw new Error("M1D Comparator A requires recursively frozen detached observations");
+    if (observation.kind !== expectedKinds[index]
+      || observation.profileId !== input.envelope.source.identity.profileId
+      || observation.caseId !== input.legacy.caseId
+      || observation.scenario !== "combined"
+      || observation.nativeStateHasCompatibilityProperties !== false
+      || !isDeepStrictEqual(observation.hashes, expectedHashes)) {
+      throw new Error("M1D Comparator A observation identity or hash binding mismatch");
+    }
+  }
+  if (input.comparatorB.comparator !== "pure-native-vs-full-compatibility-effective-v1" || input.comparatorB.status !== "pass" || !isConcreteFrozen(input.comparatorB)) {
+    throw new Error("M1D Comparator A requires a verified passing compatibility comparator");
+  }
+  if (!Array.isArray(input.comparatorB.discrepancies) || input.comparatorB.discrepancies.length !== 0) {
+    throw new Error("M1D Comparator A requires a passing Comparator B to have an empty discrepancies list");
+  }
+  const primary = collectDiscrepancies(
+    input.pureNative.comparisonSurface,
+    input.effective.comparisonSurface,
+    "compatibility-rule",
+    "/comparisonSurface"
+  ).sort((left, right) => compareCodeUnits(left.path, right.path));
+  const expectedPrimary = primary.map((entry) => ({ path: entry.path, before: entry.left, after: entry.right }));
+  if (!isDeepStrictEqual(expectedPrimary, input.comparatorB.primaryDifferences)) throw new Error("M1D Comparator A compatibility prerequisite mismatch");
+  const attributedDifferences = input.comparatorB.attributions
+    .flatMap((entry) => {
+      if (!isDeepStrictEqual(entry.observedOutputPaths, entry.observedDifferences.map((difference) => difference.path))) throw new Error("M1D Comparator A compatibility attribution path mismatch");
+      return entry.observedDifferences;
+    })
+    .slice()
+    .sort((left, right) => compareCodeUnits(left.path, right.path));
+  if (!isDeepStrictEqual(attributedDifferences, expectedPrimary)) throw new Error("M1D Comparator A received incomplete or superfluous compatibility attribution");
+  const compatibilityOwnedPaths = new Set(attributedDifferences.map((entry) => entry.path));
+
+  const firstPass = collectDiscrepancies(
+    input.legacy.comparisonSurface,
+    input.effective.comparisonSurface,
+    "unresolved-design-decision",
     "/comparisonSurface"
   ).sort((a, b) => compareCodeUnits(a.path, b.path));
-  return detachedFrozen({
+  const secondPass = collectDiscrepancies(
+    input.legacy.comparisonSurface,
+    input.effective.comparisonSurface,
+    "unresolved-design-decision",
+    "/comparisonSurface"
+  ).sort((a, b) => compareCodeUnits(a.path, b.path));
+  if (!isDeepStrictEqual(firstPass, secondPass)) throw new Error("M1D Comparator A mismatch is not reproducible");
+  const discrepancies = detachedFrozen(firstPass.map((entry) => ({
+    ...entry,
+    classification: compatibilityOwnedPaths.has(entry.path) ? "compatibility-rule" as const : "unresolved-design-decision" as const,
+  })));
+  const result = detachedFrozen({
     comparator: "legacy-vs-compatibility-effective-v1" as const,
     status: discrepancies.length === 0 ? "pass" as const : "fail" as const,
     ok: discrepancies.length === 0,
     discrepancies,
   });
+  const compatibilityDiscrepancies = result.discrepancies.filter((entry) => entry.classification === "compatibility-rule");
+  const unresolvedDiscrepancies = result.discrepancies.filter((entry) => entry.classification === "unresolved-design-decision");
+  if (result.status === "pass") {
+    verifyComparatorADiscrepanciesV1({ status: "pass", discrepancies: [], classification: "unresolved-design-decision" });
+  } else {
+    if (compatibilityDiscrepancies.length > 0) verifyComparatorADiscrepanciesV1({ status: "fail", discrepancies: compatibilityDiscrepancies, classification: "compatibility-rule" });
+    if (unresolvedDiscrepancies.length > 0) verifyComparatorADiscrepanciesV1({ status: "fail", discrepancies: unresolvedDiscrepancies, classification: "unresolved-design-decision" });
+  }
+  return result;
 }
 
 export function comparatorANotApplicableV1(): ComparatorAResultV1 {
-  return detachedFrozen({ comparator: "legacy-vs-compatibility-effective-v1" as const, status: "not-applicable-no-successful-legacy-output" as const, ok: null, discrepancies: [] });
+  const result = detachedFrozen({ comparator: "legacy-vs-compatibility-effective-v1" as const, status: "not-applicable-no-successful-legacy-output" as const, ok: null, discrepancies: [] });
+  verifyComparatorADiscrepanciesV1({ status: result.status, discrepancies: result.discrepancies, classification: "unresolved-design-decision" });
+  return result;
 }
 
 export function compareCompatibilityNormalizedLegacyEngineCoreV1(left: unknown, right: unknown, policyHash: string): CompatibilityNormalizedLegacyEngineCoreResultV1 {
   const discrepancies = collectDiscrepancies(left, right, "compatibility-rule", "/comparisonSurface").sort((a, b) => compareCodeUnits(a.path, b.path));
-  return detachedFrozen({
+  const result = detachedFrozen({
     reference: "compatibility-normalized-legacy-engine-core-reconstruction-v1" as const,
     comparator: "compatibility-normalized-legacy-engine-core-vs-native-effective-v1" as const,
     status: discrepancies.length === 0 ? "pass" as const : "fail" as const,
     policyHash,
     discrepancies,
   });
+  verifyCompatibilityDiscrepanciesV1({ status: result.status, discrepancies: result.discrepancies });
+  return result;
 }
 
 function isOutputAttributionPath(path: string): boolean {
@@ -280,7 +433,7 @@ export function deriveActionAdmissionAttributionV1(input: Readonly<{
     .filter((entry) => isOutputAttributionPath(entry.path))
     .map((entry) => ({ path: entry.path, before: entry.left, after: entry.right }));
   const status = discrepancies.length === 0 ? "pass" as const : "fail" as const;
-  return detachedFrozen({
+  const result = detachedFrozen({
     attribution: {
       comparator: "full-effective-with-action-vs-without-exact-action-declaration-v1" as const,
       status,
@@ -299,6 +452,9 @@ export function deriveActionAdmissionAttributionV1(input: Readonly<{
       discrepancies,
     },
   });
+  verifyCompatibilityDiscrepanciesV1({ status: result.attribution.status, discrepancies: result.attribution.discrepancies });
+  verifyCompatibilityDiscrepanciesV1({ status: result.counterfactual.status, discrepancies: result.counterfactual.discrepancies });
+  return result;
 }
 
 export function compareActualAdmissionV1(input: Readonly<{
@@ -328,7 +484,9 @@ export function compareActualAdmissionV1(input: Readonly<{
   const discrepancies = input.actualRuntimeExpectation === "reject-unsupported-driver-before-step-v1"
     ? collectDiscrepancies(expected, input.actual, "compatibility-rule", "/actualRuntimeRejection")
     : [{ path: "/declaredPolicy/actualRuntimeExpectation", left: "reject-unsupported-driver-before-step-v1", right: input.actualRuntimeExpectation, classification: "compatibility-rule" as const }];
-  return detachedFrozen({ comparator: "actual-runtime-admission-vs-declared-policy-v1" as const, status: discrepancies.length === 0 ? "pass" as const : "fail" as const, discrepancies });
+  const result = detachedFrozen({ comparator: "actual-runtime-admission-vs-declared-policy-v1" as const, status: discrepancies.length === 0 ? "pass" as const : "fail" as const, discrepancies });
+  verifyCompatibilityDiscrepanciesV1({ status: result.status, discrepancies: result.discrepancies });
+  return result;
 }
 
 export function hashDifferentialReportContent(value: unknown): string {
