@@ -5,6 +5,7 @@ import {
   buildPureNativePropagationOrderV1,
   PROPAGATION_DECLARATION_PATH,
   type CompatibilityExecutionPlanV1,
+  type AdmittedActionOccurrenceV1,
   type NativeSourceCaseProjectionV1,
   type OrderedPropagationOccurrenceV1,
   type RegistryOverlayEntryV1,
@@ -61,7 +62,7 @@ function validateSourceCase(contract: SemanticHashVerifiedDomainModelContractV1,
   }
 }
 
-function resolveCurve(curve: CurveDefinition, level: string, step: number): number {
+function resolveCurveAtLevel(curve: CurveDefinition, level: string, step: number): number {
   const amplitude = curve.amplitudeByLevel[level];
   if (typeof amplitude !== "number") fail(`missing curve amplitude ${curve.curveId}/${level}`);
   if (curve.type === "linear") return amplitude;
@@ -70,16 +71,32 @@ function resolveCurve(curve: CurveDefinition, level: string, step: number): numb
   return fail("unsupported curve discriminant");
 }
 
-function dimensions(contract: SemanticHashVerifiedDomainModelContractV1, state: NativeState, step: number): Dimensions {
+function resolveCurve(contract: SemanticHashVerifiedDomainModelContractV1, curve: CurveDefinition, score: number, step: number): number {
+  const levels = [...levelIndex(contract).entries()].sort((left, right) => left[1].rank - right[1].rank);
+  const clamped = Math.max(levels[0][1].anchor, Math.min(levels.at(-1)![1].anchor, score));
+  const lower = levels[Math.floor(clamped)]?.[0] ?? fail(`missing lower curve level ${clamped}`);
+  const upper = levels[Math.ceil(clamped)]?.[0] ?? fail(`missing upper curve level ${clamped}`);
+  const lowerValue = resolveCurveAtLevel(curve, lower, step);
+  const upperValue = resolveCurveAtLevel(curve, upper, step);
+  return lowerValue + (upperValue - lowerValue) * (clamped - Math.floor(clamped));
+}
+
+function dimensions(contract: SemanticHashVerifiedDomainModelContractV1, state: NativeState, step: number, usePreciseScores: boolean): Dimensions {
   const result = Object.fromEntries(contract.semanticPayload.dimensions.map((dimension) => [dimension.dimensionId, dimension.neutralValue])) as Dimensions;
   const curves = new Map(contract.semanticPayload.curves.map((curve) => [curve.curveId, curve]));
-  for (const driver of [...contract.semanticPayload.drivers].sort((a, b) => compareCodeUnits(a.driverId, b.driverId))) {
+  const drivers = new Map(contract.semanticPayload.drivers.map((driver) => [driver.driverId, driver]));
+  for (const driverId of Object.keys(state)) {
+    const driver = drivers.get(driverId);
+    if (!driver) continue;
     const node = state[driver.driverId];
     if (!node) fail(`missing native driver state ${driver.driverId}`);
     for (const impact of [...driver.impacts].sort((a, b) => compareCodeUnits(`${a.dimensionId}:${a.curveId}:${a.direction}`, `${b.dimensionId}:${b.curveId}:${b.direction}`))) {
       const curve = curves.get(impact.curveId);
       if (!curve) fail(`curve-fallback-hit:${driver.driverId}:missing-curve-configuration:step-${step}`);
-      const multiplier = resolveCurve(curve, node.levelId, step);
+      const score = usePreciseScores
+        ? node.score
+        : levelIndex(contract).get(node.levelId)?.anchor ?? fail(`missing level anchor ${node.levelId}`);
+      const multiplier = resolveCurve(contract, curve, score, step);
       const current = result[impact.dimensionId];
       if (typeof current !== "number") fail(`unknown dimension ${impact.dimensionId}`);
       result[impact.dimensionId] = impact.direction === "increase" ? current * multiplier : current / multiplier;
@@ -138,35 +155,86 @@ function transform(value: number, kind: string, neutral = 1): number {
   return fail(`unsupported measure transform ${kind}`);
 }
 
+function scoreLevel(contract: SemanticHashVerifiedDomainModelContractV1, score: number): string {
+  for (const scale of contract.semanticPayload.scales) {
+    for (const level of scale.levels) {
+      const materialization = level.materialization;
+      if (score < materialization.minimumInclusive) continue;
+      if (typeof materialization.maximumExclusive === "number" && score < materialization.maximumExclusive) return level.levelId;
+      if (typeof materialization.maximumInclusive === "number" && score <= materialization.maximumInclusive) return level.levelId;
+    }
+  }
+  return fail(`score outside declared materialization ranges ${score}`);
+}
+
+function applyScheduledActions(
+  contract: SemanticHashVerifiedDomainModelContractV1,
+  state: NativeState,
+  actions: NativeSourceCaseProjectionV1["schedules"]["A"],
+  executionStep: number
+): NativeState {
+  const index = new Map(contract.semanticPayload.actions.map((action) => [action.actionId, action]));
+  const deltas = new Map<string, number>();
+  for (const scheduled of [...actions]
+    .filter((entry) => entry.executionStep === executionStep)
+    .sort((a, b) => compareCodeUnits(a.actionId, b.actionId))) {
+    const action = index.get(scheduled.actionId) ?? fail(`unsupported native action ${scheduled.actionId}`);
+    for (const effect of [...action.effects].sort((a, b) => compareCodeUnits(a.driverId, b.driverId))) {
+      deltas.set(effect.driverId, (deltas.get(effect.driverId) ?? 0) + effect.delta);
+    }
+  }
+  if (deltas.size === 0) return state;
+  const next = structuredClone(state) as Record<string, { levelId: string; score: number }>;
+  for (const [driverId, delta] of deltas) {
+    const current = next[driverId] ?? fail(`missing action driver ${driverId}`);
+    const score = Math.max(0, Math.min(3, current.score + delta));
+    next[driverId] = { score, levelId: scoreLevel(contract, score) };
+  }
+  return next;
+}
+
 function runScenario(input: Readonly<{
   contract: SemanticHashVerifiedDomainModelContractV1;
   sourceCase: NativeSourceCaseProjectionV1;
   orderedOccurrences: readonly OrderedPropagationOccurrenceV1[];
   implicitNode: CompatibilityExecutionPlanV1["implicitNode"];
   registryOverlay: readonly RegistryOverlayEntryV1[];
+  actions: NativeSourceCaseProjectionV1["schedules"]["A"];
 }>) {
   const { contract, sourceCase } = input;
   const measure = contract.semanticPayload.measures.find((entry) => entry.measureId === "structural-margin") ?? fail("contract-error: missing structural-margin measure");
-  const constraint = contract.semanticPayload.constraints.find((entry) => entry.constraintId === "refinancing-constraint") ?? fail("contract-error: missing refinancing-constraint");
-  if (constraint.activation.kind !== "measure-below") fail("unsupported constraint activation");
+  const constraint = contract.semanticPayload.constraints.find((entry) => entry.constraintId === "refinancing-constraint");
+  if (constraint && constraint.activation.kind !== "measure-below") fail("unsupported constraint activation");
+  const constraintThreshold = constraint?.activation.kind === "measure-below" ? constraint.activation.threshold : null;
   let margin = measure.initialValue;
-  let lifecycle: "inactive" | "active" = constraint.initialLifecycle === "active" ? "active" : "inactive";
+  let lifecycle: "inactive" | "active" = constraint?.initialLifecycle === "active" ? "active" : "inactive";
   let activatedAtStep: number | undefined;
   let state: NativeState = structuredClone(sourceCase.initialState);
   const trajectory: unknown[] = [];
   let cascadeHistory: PropagationEventV1[] = [];
   for (let index = 0; index < sourceCase.horizon; index += 1) {
+    state = applyScheduledActions(contract, state, input.actions, index + 1);
+    for (const rule of measure.escalationRules) {
+      if (margin >= rule.whenBelow) continue;
+      const current = state[rule.driverId];
+      const transition = current && rule.transitions.find((entry) => entry.fromLevelId === current.levelId);
+      if (current && transition) {
+        const anchor = levelIndex(contract).get(transition.toLevelId)?.anchor ?? fail(`missing escalation level ${transition.toLevelId}`);
+        state = { ...state, [rule.driverId]: { levelId: transition.toLevelId, score: anchor } };
+      }
+    }
     const propagated = executeOrderedPropagationV1({ contract, initialState: state, orderedOccurrences: input.orderedOccurrences, implicitNode: input.implicitNode });
     state = propagated.state;
     cascadeHistory = [...cascadeHistory, ...propagated.events];
-    const base = dimensions(contract, state, index);
-    if (margin < constraint.activation.threshold && lifecycle !== "active") {
+    const base = dimensions(contract, state, index, false);
+    const pressureBase = dimensions(contract, state, index, true);
+    if (constraint && constraintThreshold !== null && margin < constraintThreshold && lifecycle !== "active") {
       lifecycle = "active";
       activatedAtStep = index;
     }
     const adjusted = { ...base };
-    if (lifecycle === "active") for (const effect of constraint.activeEffects) adjusted[effect.dimensionId] *= effect.value;
-    const basePressure = (base.load - 1) + (base.cost - 1) + (1 - base.recovery) + (base.sensitivity - 1);
+    if (constraint && lifecycle === "active") for (const effect of constraint.activeEffects) adjusted[effect.dimensionId] *= effect.value;
+    const basePressure = (pressureBase.load - 1) + (pressureBase.cost - 1) + (1 - pressureBase.recovery) + (pressureBase.sensitivity - 1);
     let erosion = 0;
     for (const term of measure.terms) {
       let sourceValue: number;
@@ -191,7 +259,7 @@ function runScenario(input: Readonly<{
       ...(activatedAtStep === undefined ? {} : { activatedAtStep }),
       lastUpdatedStep: activatedAtStep ?? 0,
     };
-    const registry: Record<string, unknown> = { RefinancingConstraint: refinancing };
+    const registry: Record<string, unknown> = constraint ? { RefinancingConstraint: refinancing } : {};
     for (const entry of input.registryOverlay) {
       if (Object.prototype.hasOwnProperty.call(registry, entry.sourceRegistryKey)) fail(`registry collision ${entry.sourceRegistryKey}`);
       registry[entry.sourceRegistryKey] = { type: entry.legacyType, lifecycle: entry.lifecycle, lastUpdatedStep: entry.lastUpdatedStep };
@@ -217,14 +285,17 @@ function executeCore(input: Readonly<{
 }>): NativeExecutionResultV1 {
   validateSourceCase(input.contract, input.sourceCase);
   const scenarioInput = { contract: input.contract, sourceCase: input.sourceCase, orderedOccurrences: input.orderedOccurrences, implicitNode: input.implicitNode, registryOverlay: input.registryOverlay };
-  const scenarioA = runScenario(scenarioInput);
-  const scenarioB = runScenario(scenarioInput);
-  const baseline = runScenario(scenarioInput);
+  const scenarioA = runScenario({ ...scenarioInput, actions: input.sourceCase.schedules.A });
+  const scenarioB = runScenario({ ...scenarioInput, actions: input.sourceCase.schedules.B });
+  const baseline = runScenario({ ...scenarioInput, actions: [] });
   const marginDifferenceByStep = scenarioB.marginHistory.map((margin, index) => margin - scenarioA.marginHistory[index]);
+  const firstDivergenceIndex = marginDifferenceByStep.findIndex((difference) => difference !== 0);
   const comparisonSurface = {
     schemaVersion: "canonical-engine-output-projection-v1",
     fixtureId: input.sourceCase.fixtureId,
-    executionSurface: "runCascadeAnalysis/preconfigured",
+    executionSurface: input.sourceCase.schedules.A.length === 0 && input.sourceCase.schedules.B.length === 0
+      ? "runCascadeAnalysis/preconfigured"
+      : "runCascadeAnalysis/scheduled",
     profileIdentity: structuredClone(input.sourceCase.executionProfileIdentity),
     horizon: input.sourceCase.horizon,
     plannedSchedules: input.sourceCase.schedules,
@@ -233,20 +304,45 @@ function executeCore(input: Readonly<{
     baseline,
     comparison: {
       marginDifferenceByStep,
-      firstDivergenceIndex: null,
+      firstDivergenceIndex: firstDivergenceIndex === -1 ? null : firstDivergenceIndex,
       terminalMarginDifference: scenarioB.marginHistory.at(-1)! - scenarioA.marginHistory.at(-1)!,
     },
-    executionProvenance: [],
+    executionProvenance: [...([...input.sourceCase.schedules.A]
+      .sort((a, b) => a.executionStep - b.executionStep || compareCodeUnits(a.actionId, b.actionId))
+      .map((entry) => ({ scenario: "scenarioA" as const, ...projectProvenance(input.contract, input.sourceCase, entry) }))),
+      ...([...input.sourceCase.schedules.B]
+        .sort((a, b) => a.executionStep - b.executionStep || compareCodeUnits(a.actionId, b.actionId))
+        .map((entry) => ({ scenario: "scenarioB" as const, ...projectProvenance(input.contract, input.sourceCase, entry) })))],
   };
-  const compatibilityLedger = input.registryOverlay.map((entry) => ({
+  const compatibilityLedger: CompatibilityLedgerEntry[] = input.declarationPaths.includes(PROPAGATION_DECLARATION_PATH)
+    ? [{ declarationPath: PROPAGATION_DECLARATION_PATH, status: "applied", mechanism: "legacy-ordered-propagation-v1", sourceId: null, nativeId: null, executionStep: 0 }]
+    : [];
+  compatibilityLedger.push(...input.registryOverlay.map((entry) => ({
     declarationPath: entry.declarationPath,
     status: "applied" as const,
     mechanism: "legacy-inert-registry-output-materialization-v1",
     sourceId: entry.sourceRegistryKey,
     nativeId: entry.compatibilityEntryId,
     executionStep: 0,
-  }));
+  })));
   return detachedFrozen({ comparisonSurface, compatibilityLedger, activatedDeclarationPaths: input.declarationPaths });
+}
+
+function projectProvenance(
+  contract: SemanticHashVerifiedDomainModelContractV1,
+  sourceCase: NativeSourceCaseProjectionV1,
+  entry: Readonly<{ actionId: string; executionStep: number }>
+) {
+  const action = contract.semanticPayload.actions.find((candidate) => candidate.actionId === entry.actionId)
+    ?? fail(`unsupported native action ${entry.actionId}`);
+  return {
+    actionId: entry.actionId,
+    scheduledStep: entry.executionStep,
+    actualExecutionStep: entry.executionStep,
+    appliedDriverDeltas: Object.fromEntries(action.effects
+      .map((effect) => [sourceCase.outputSourceIdByNativeId[effect.driverId] ?? fail(`missing action output mapping ${effect.driverId}`), effect.delta] as const)
+      .sort(([left], [right]) => compareCodeUnits(left, right))),
+  };
 }
 
 export function executePureNativeProjectionV1(input: Readonly<{
@@ -278,6 +374,33 @@ export function executeCompatibilityEffectiveProjectionV1(input: Readonly<{
   });
 }
 
+export function executeAdmittedCompatibilityActionV1(input: Readonly<{
+  envelope: HashVerifiedLegacyProfileProjectionEnvelopeV1;
+  sourceCase: NativeSourceCaseProjectionV1;
+  admitted: AdmittedActionOccurrenceV1;
+}>): NativeExecutionResultV1 {
+  const scheduled = { actionId: input.admitted.entry.sourceActionId, executionStep: input.admitted.occurrence.scheduledStep };
+  const executableSchedule = input.admitted.entry.retainedEffects.length === 0 ? [] : [scheduled];
+  const projectedCase = detachedFrozen({
+    ...input.sourceCase,
+    fixtureId: `${input.sourceCase.fixtureId}:${scheduled.actionId}:step-${scheduled.executionStep}`,
+    schedules: { A: executableSchedule, B: [] },
+  });
+  const executed = executeCompatibilityEffectiveProjectionV1({ envelope: input.envelope, sourceCase: projectedCase });
+  const surface = structuredClone(executed.comparisonSurface) as Record<string, unknown>;
+  surface.executionSurface = "runCascadeAnalysis/scheduled";
+  surface.plannedSchedules = { A: [scheduled], B: [] };
+  const ledger = [...executed.compatibilityLedger, {
+    declarationPath: input.admitted.declarationPath,
+    status: input.admitted.entry.retainedEffects.length === 0 ? "ignored" as const : "applied" as const,
+    mechanism: "legacy-action-admission-v1",
+    sourceId: input.admitted.entry.sourceActionId,
+    nativeId: input.admitted.entry.retainedEffects.length === 0 ? null : input.admitted.entry.sourceActionId,
+    executionStep: input.admitted.occurrence.scheduledStep,
+  }];
+  return detachedFrozen({ comparisonSurface: surface, compatibilityLedger: ledger, activatedDeclarationPaths: [...executed.activatedDeclarationPaths, input.admitted.declarationPath].sort(compareCodeUnits) });
+}
+
 export function executeDerivedRegistryCounterfactualsV1(input: Readonly<{
   envelope: HashVerifiedLegacyProfileProjectionEnvelopeV1;
   sourceCase: NativeSourceCaseProjectionV1;
@@ -291,6 +414,21 @@ export function executeDerivedRegistryCounterfactualsV1(input: Readonly<{
     registryOverlay: [entry],
     declarationPaths: [entry.declarationPath],
   })));
+}
+
+export function executeDerivedPropagationCounterfactualV1(input: Readonly<{
+  envelope: HashVerifiedLegacyProfileProjectionEnvelopeV1;
+  sourceCase: NativeSourceCaseProjectionV1;
+}>): NativeExecutionResultV1 {
+  const plan = buildLegacyCompatibilityExecutionPlanV1(input.envelope);
+  return executeCore({
+    contract: input.envelope.projection.contract,
+    sourceCase: input.sourceCase,
+    orderedOccurrences: plan.orderedPropagation,
+    implicitNode: plan.implicitNode,
+    registryOverlay: [],
+    declarationPaths: [PROPAGATION_DECLARATION_PATH],
+  });
 }
 
 export function executeCompatibilityPropagationWitnessV1(input: Readonly<{
@@ -315,4 +453,18 @@ export function executeImmediateVisibilityWitnessV1(input: Readonly<{
     implicitNode: plan.implicitNode,
   });
   return detachedFrozen({ ...result, declarationPath: PROPAGATION_DECLARATION_PATH });
+}
+
+export function evaluateSustainThresholdV1(input: Readonly<{
+  envelope: HashVerifiedLegacyProfileProjectionEnvelopeV1;
+}>) {
+  const declaration = input.envelope.compatibility.sustainThresholdOverride;
+  if (declaration && (declaration.sourceField !== "sustainThreshold" || declaration.comparison !== "margin-strictly-below-threshold" || declaration.applicability !== "this-envelope-source-only")) fail("sustainThreshold declaration mismatch");
+  return detachedFrozen({
+    declarationPath: declaration ? "/compatibility/sustainThresholdOverride" : null,
+    status: declaration ? "deferred-missing-hash-bound-value" as const : "ineligible-no-declaration" as const,
+    mechanismDeclared: declaration !== null,
+    hashBoundValue: "absent" as const,
+    execution: "deferred" as const,
+  });
 }
