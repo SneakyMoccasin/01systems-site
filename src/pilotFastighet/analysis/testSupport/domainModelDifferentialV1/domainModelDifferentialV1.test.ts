@@ -268,7 +268,7 @@ test("legacy comparison surface is the complete unmodified legacy execution outp
 test("pure-native boundary receives only a hash-verified native contract and projected source case", () => {
   const envelope = verifiedEnvelope();
   const sourceCase = projectNativeSourceCaseV1(envelope, fixture());
-  const forbidden = new Set(["compatibility", "driverIdMappings", "legacyRegistryProjection", "executionSemantics", "compatibilityOnlyEdges", "sustainThresholdOverride"]);
+  const forbidden = new Set(["compatibility", "driverIdMappings", "legacyRegistryProjection", "executionSemantics", "compatibilityOnlyEdges", "sustainThresholdDisposition"]);
   const reads: string[] = [];
   const guardedContract = new Proxy(envelope.projection.contract, { get(target, key, receiver) { reads.push(String(key)); if (forbidden.has(String(key))) throw new Error(`forbidden ${String(key)}`); return Reflect.get(target, key, receiver); } });
   const guardedSource = new Proxy(sourceCase, { get(target, key, receiver) { reads.push(String(key)); if (forbidden.has(String(key))) throw new Error(`forbidden ${String(key)}`); return Reflect.get(target, key, receiver); } });
@@ -851,15 +851,16 @@ test("action admission rejects every closed failure family atomically", () => {
   ]);
 });
 
-test("sustainThreshold execution stays deferred without a hash-bound caller value", () => {
+test("sustainThreshold is contractually excluded without caller-supplied authority", () => {
   for (const profileId of ["legacy-real-estate-v1", "legacy-consulting-v1"] as const) {
     const envelope = verifiedProfileEnvelope(profileId);
     assert.deepEqual(evaluateSustainThresholdV1({ envelope }), {
-      declarationPath: "/compatibility/sustainThresholdOverride",
-      status: "deferred-missing-hash-bound-value",
-      mechanismDeclared: true,
+      declarationPath: "/compatibility/sustainThresholdDisposition",
+      status: "excluded-no-authoritative-value",
+      historicalMechanismObserved: true,
       hashBoundValue: "absent",
-      execution: "deferred",
+      execution: "forbidden",
+      claim: "excluded-from-final-equivalence",
     });
     if (false) {
       // @ts-expect-error sustain execution cannot accept a caller-supplied value
@@ -867,13 +868,14 @@ test("sustainThreshold execution stays deferred without a hash-bound caller valu
     }
   }
   const municipal = verifiedProfileEnvelope("legacy-municipal-v1");
-  assert.equal(municipal.compatibility.sustainThresholdOverride, null);
+  assert.equal(municipal.compatibility.sustainThresholdDisposition, null);
   assert.deepEqual(evaluateSustainThresholdV1({ envelope: municipal }), {
     declarationPath: null,
     status: "ineligible-no-declaration",
-    mechanismDeclared: false,
+    historicalMechanismObserved: false,
     hashBoundValue: "absent",
-    execution: "deferred",
+    execution: "forbidden",
+    claim: "excluded-from-final-equivalence",
   });
 });
 
@@ -894,7 +896,7 @@ test("M1D-3 discrepancy verifier enforces emitter, RFC 6901, ownership, sorting,
     detachedFrozen({ path, left: { presence: "absent" as const }, right: { value: 1 }, classification });
   verifyAdapterReportDiscrepanciesV1({ status: "fail", discrepancies: [discrepancy("/a~0b/c~1d", "adapter-error")] });
   verifyAdapterReportDiscrepanciesV1({ status: "pass", discrepancies: [] });
-  for (const status of ["not-applicable-no-successful-legacy-output", "not-applicable-normalization-rejected", "deferred-missing-hash-bound-value", "ineligible-no-declaration", "rejected"] as const) {
+  for (const status of ["not-applicable-no-successful-legacy-output", "not-applicable-normalization-rejected", "excluded-no-authoritative-value", "ineligible-no-declaration", "rejected"] as const) {
     verifyAdapterReportDiscrepanciesV1({ status, discrepancies: [] });
     assert.throws(() => verifyAdapterReportDiscrepanciesV1({ status, discrepancies: [discrepancy("/status", "adapter-error")] }), /closed non-comparison status/);
   }

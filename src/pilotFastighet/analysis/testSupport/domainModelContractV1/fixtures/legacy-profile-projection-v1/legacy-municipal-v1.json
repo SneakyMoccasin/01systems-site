@@ -916,7 +916,7 @@
     }
   },
   "compatibility": {
-    "declarationsHash": "sha256:08c101f11de28bbc10864ba90fba63f24096767b05964a49ab9eea069007d96c",
+    "declarationsHash": "sha256:4252be6bdb7f17b681a9748338eadac2c77f2da94298838b330446ee312bed7e",
     "actionAdmission": {
       "schemaVersion": "legacy-action-admission-policy-v1",
       "protocol": "partition-source-effects-before-execution-v1",
@@ -1058,7 +1058,7 @@
       "secure_long_term_leases",
       "stagger_project_starts"
     ],
-    "sustainThresholdOverride": null,
+    "sustainThresholdDisposition": null,
     "propagation": {
       "edgeEvaluationOrder": "legacy-source-and-target-insertion-order-v1",
       "executionSemantics": {

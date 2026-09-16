@@ -1145,7 +1145,7 @@
     }
   },
   "compatibility": {
-    "declarationsHash": "sha256:62258283079ae9b5786b41b8522de238b6d3e6ade960fd47e327743cb35649c5",
+    "declarationsHash": "sha256:0b7515e994aedc36625de9a5f6658b3a3b703271a8244c4a9d65f8d3927c8654",
     "actionAdmission": {
       "schemaVersion": "legacy-action-admission-policy-v1",
       "protocol": "partition-source-effects-before-execution-v1",
@@ -1284,13 +1284,20 @@
       "secure_long_term_leases",
       "stagger_project_starts"
     ],
-    "sustainThresholdOverride": {
-      "kind": "legacy-risk-state-number-overrides-constraint-threshold-v1",
+    "sustainThresholdDisposition": {
+      "kind": "legacy-sustain-threshold-exclusion-v1",
       "sourceField": "sustainThreshold",
-      "constraintId": "refinancing-constraint",
-      "acceptedRuntimeType": "number-including-non-finite",
-      "comparison": "margin-strictly-below-threshold",
-      "applicability": "this-envelope-source-only"
+      "historicalObservation": {
+        "kind": "optional-runtime-field-read-observed-v1",
+        "constraintId": "refinancing-constraint",
+        "observedRuntimeType": "number-including-non-finite",
+        "observedComparison": "margin-strictly-below-threshold"
+      },
+      "valueStatus": "absent-unconfigured",
+      "contractDisposition": "excluded-no-authoritative-value",
+      "executionPolicy": "reject-at-equivalence-boundary-v1",
+      "claimPolicy": "no-sustain-parity-v1",
+      "futureSupport": "requires-versioned-amendment-and-authoritative-value-source-v1"
     },
     "propagation": {
       "edgeEvaluationOrder": "legacy-source-and-target-insertion-order-v1",

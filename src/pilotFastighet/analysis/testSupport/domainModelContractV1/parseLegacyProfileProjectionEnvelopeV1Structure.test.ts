@@ -24,7 +24,7 @@ function fresh(): any {
       compatibilityOnlyActions: [{ kind: "legacy-compatibility-only-action-v1", sourceProfileId: "legacy-consulting-v1", sourceActionId: "congestion_pricing", projectedNativeAction: "omitted-because-no-modeled-effects", admission: "legacy-adapter-only", ignoredEffects: [{ driverId: "modal_shift_pressure", delta: 2 }] }],
       driverIdMappings: [{ sourceDriverId: "demandRisk", projectedDriverId: "demand-risk" }, { sourceDriverId: "accessibility", projectedDriverId: "accessibility" }],
       excludedUnsupportedActionIds: ["congestion_pricing"],
-      sustainThresholdOverride: { kind: "legacy-risk-state-number-overrides-constraint-threshold-v1", sourceField: "sustainThreshold", constraintId: "refinancing-constraint", acceptedRuntimeType: "number-including-non-finite", comparison: "margin-strictly-below-threshold", applicability: "this-envelope-source-only" },
+      sustainThresholdDisposition: { kind: "legacy-sustain-threshold-exclusion-v1", sourceField: "sustainThreshold", historicalObservation: { kind: "optional-runtime-field-read-observed-v1", constraintId: "refinancing-constraint", observedRuntimeType: "number-including-non-finite", observedComparison: "margin-strictly-below-threshold" }, valueStatus: "absent-unconfigured", contractDisposition: "excluded-no-authoritative-value", executionPolicy: "reject-at-equivalence-boundary-v1", claimPolicy: "no-sustain-parity-v1", futureSupport: "requires-versioned-amendment-and-authoritative-value-source-v1" },
       propagation: {
         edgeEvaluationOrder: "legacy-source-and-target-insertion-order-v1",
         executionSemantics: { algorithm: "ordered-monotone-raise-fixed-point-v1", sourceReadPolicy: "missing-source-does-not-trigger-v1", targetReadPolicy: "missing-target-uses-declared-default-v1", targetComparison: "propagated-rank-strictly-greater-v1", writeVisibility: "later-occurrences-same-iteration-v1", iterationPolicy: "repeat-from-start-until-no-raise-v1", eventPolicy: { emission: "on-target-level-change-v1", step: "iteration-plus-one-v1", delaySteps: 1, duplicateSuppression: "no-change-no-event-v1" } },
@@ -84,7 +84,7 @@ const levels: readonly [string, (input: any) => any, string][] = [
   ["projection", (x) => x.projection, "contract"], ["projection.identity", (x) => x.projection.identity, "domainId"], ["compatibility", (x) => x.compatibility, "propagation"],
   ["ignored delta", (x) => x.compatibility.ignoredUnknownDriverDeltas[0], "sourceDriverId"], ["compatibility action", (x) => x.compatibility.compatibilityOnlyActions[0], "kind"],
   ["ignored effect", (x) => x.compatibility.compatibilityOnlyActions[0].ignoredEffects[0], "driverId"], ["mapping", (x) => x.compatibility.driverIdMappings[0], "sourceDriverId"],
-  ["sustain", (x) => x.compatibility.sustainThresholdOverride, "kind"], ["propagation", (x) => x.compatibility.propagation, "edgeEvaluationOrder"],
+  ["sustain", (x) => x.compatibility.sustainThresholdDisposition, "kind"], ["sustain observation", (x) => x.compatibility.sustainThresholdDisposition.historicalObservation, "kind"], ["propagation", (x) => x.compatibility.propagation, "edgeEvaluationOrder"],
   ["execution semantics", (x) => x.compatibility.propagation.executionSemantics, "algorithm"], ["event policy", (x) => x.compatibility.propagation.executionSemantics.eventPolicy, "emission"], ["implicit node", (x) => x.compatibility.propagation.implicitNode, "sourceNodeId"],
   ["order entry", (x) => x.compatibility.propagation.sourceEvaluationOrder[0], "sourcePosition"], ["compatibility edge", (x) => x.compatibility.propagation.compatibilityOnlyEdges[0], "compatibilityEdgeId"],
   ["excluded source", (x) => x.compatibility.excludedSourceValues[0], "kind"], ["fallback", (x) => x.compatibility.curveFallbackDeclaration, "policyId"],
@@ -95,6 +95,16 @@ const levels: readonly [string, (input: any) => any, string][] = [
 test("rejects unknown fields and diagnostics at every envelope object level", () => {
   for (const [, locate] of levels) { const input = fresh(); locate(input).unexpected = true; expectIssue(input, "unknown-field"); }
   const input = fresh(); input.diagnostics = []; expectIssue(input, "unknown-field", "/diagnostics");
+});
+
+test("rejects old sustain authority and every numeric sustain field", () => {
+  const oldAuthority = fresh();
+  oldAuthority.compatibility.sustainThresholdOverride = { kind: "legacy-risk-state-number-overrides-constraint-threshold-v1", sourceField: "sustainThreshold" };
+  expectIssue(oldAuthority, "unknown-field", "/compatibility/sustainThresholdOverride");
+  for (const [value, code] of [[0.8, "unknown-field"], [1.2, "unknown-field"], [Number.NaN, "non-finite-number"], [Number.POSITIVE_INFINITY, "non-finite-number"], [Number.NEGATIVE_INFINITY, "non-finite-number"], [-0, "negative-zero"]] as const) {
+    const input = fresh(); input.compatibility.sustainThresholdDisposition.sustainThreshold = value;
+    expectIssue(input, code, "/compatibility/sustainThresholdDisposition/sustainThreshold");
+  }
 });
 
 test("rejects missing required fields at every envelope object level", () => {
@@ -137,10 +147,12 @@ test("locks all envelope literal and discriminant families", () => {
     [(x) => { x.engineProtocolVersion = "v2"; }, "invalid-literal", "/engineProtocolVersion"], [(x) => { x.source.semanticPayloadVersion = "v2"; }, "invalid-literal", "/source/semanticPayloadVersion"],
     [(x) => { x.projection.semanticPayloadHashPolicy = "v2"; }, "invalid-literal", "/projection/semanticPayloadHashPolicy"], [(x) => { x.compatibility.declarationsVersion = "v2"; }, "invalid-literal", "/compatibility/declarationsVersion"],
     [(x) => { x.compatibility.compatibilityOnlyActions[0].kind = "other"; }, "invalid-literal", "/compatibility/compatibilityOnlyActions/0/kind"], [(x) => { x.compatibility.compatibilityOnlyActions[0].projectedNativeAction = "other"; }, "invalid-literal", "/compatibility/compatibilityOnlyActions/0/projectedNativeAction"],
-    [(x) => { x.compatibility.compatibilityOnlyActions[0].admission = "native"; }, "invalid-literal", "/compatibility/compatibilityOnlyActions/0/admission"], [(x) => { x.compatibility.sustainThresholdOverride.kind = "other"; }, "invalid-literal", "/compatibility/sustainThresholdOverride/kind"],
-    [(x) => { x.compatibility.sustainThresholdOverride.sourceField = "other"; }, "invalid-literal", "/compatibility/sustainThresholdOverride/sourceField"], [(x) => { x.compatibility.sustainThresholdOverride.constraintId = "other"; }, "invalid-literal", "/compatibility/sustainThresholdOverride/constraintId"],
-    [(x) => { x.compatibility.sustainThresholdOverride.acceptedRuntimeType = "finite"; }, "invalid-literal", "/compatibility/sustainThresholdOverride/acceptedRuntimeType"], [(x) => { x.compatibility.sustainThresholdOverride.comparison = "other"; }, "invalid-literal", "/compatibility/sustainThresholdOverride/comparison"],
-    [(x) => { x.compatibility.sustainThresholdOverride.applicability = "global"; }, "invalid-literal", "/compatibility/sustainThresholdOverride/applicability"],
+    [(x) => { x.compatibility.compatibilityOnlyActions[0].admission = "native"; }, "invalid-literal", "/compatibility/compatibilityOnlyActions/0/admission"], [(x) => { x.compatibility.sustainThresholdDisposition.kind = "other"; }, "invalid-literal", "/compatibility/sustainThresholdDisposition/kind"],
+    [(x) => { x.compatibility.sustainThresholdDisposition.sourceField = "other"; }, "invalid-literal", "/compatibility/sustainThresholdDisposition/sourceField"], [(x) => { x.compatibility.sustainThresholdDisposition.historicalObservation.kind = "other"; }, "invalid-literal", "/compatibility/sustainThresholdDisposition/historicalObservation/kind"],
+    [(x) => { x.compatibility.sustainThresholdDisposition.historicalObservation.constraintId = "other"; }, "invalid-literal", "/compatibility/sustainThresholdDisposition/historicalObservation/constraintId"], [(x) => { x.compatibility.sustainThresholdDisposition.historicalObservation.observedRuntimeType = "finite"; }, "invalid-literal", "/compatibility/sustainThresholdDisposition/historicalObservation/observedRuntimeType"],
+    [(x) => { x.compatibility.sustainThresholdDisposition.historicalObservation.observedComparison = "other"; }, "invalid-literal", "/compatibility/sustainThresholdDisposition/historicalObservation/observedComparison"], [(x) => { x.compatibility.sustainThresholdDisposition.valueStatus = "configured"; }, "invalid-literal", "/compatibility/sustainThresholdDisposition/valueStatus"],
+    [(x) => { x.compatibility.sustainThresholdDisposition.contractDisposition = "other"; }, "invalid-literal", "/compatibility/sustainThresholdDisposition/contractDisposition"], [(x) => { x.compatibility.sustainThresholdDisposition.executionPolicy = "execute"; }, "invalid-literal", "/compatibility/sustainThresholdDisposition/executionPolicy"],
+    [(x) => { x.compatibility.sustainThresholdDisposition.claimPolicy = "parity"; }, "invalid-literal", "/compatibility/sustainThresholdDisposition/claimPolicy"], [(x) => { x.compatibility.sustainThresholdDisposition.futureSupport = "current"; }, "invalid-literal", "/compatibility/sustainThresholdDisposition/futureSupport"],
     [(x) => { x.compatibility.propagation.edgeEvaluationOrder = "sorted"; }, "invalid-literal", "/compatibility/propagation/edgeEvaluationOrder"], [(x) => { x.compatibility.propagation.compatibilityOnlyEdges[0].triggerPredicate = "other"; }, "invalid-literal", "/compatibility/propagation/compatibilityOnlyEdges/0/triggerPredicate"],
     [(x) => { x.compatibility.propagation.compatibilityOnlyEdges[0].triggerLevelIds.reverse(); }, "invalid-literal", "/compatibility/propagation/compatibilityOnlyEdges/0/triggerLevelIds/0"], [(x) => { x.compatibility.propagation.executionSemantics.algorithm = "other"; }, "invalid-literal", "/compatibility/propagation/executionSemantics/algorithm"],
     [(x) => { x.compatibility.propagation.executionSemantics.sourceReadPolicy = "other"; }, "invalid-literal", "/compatibility/propagation/executionSemantics/sourceReadPolicy"], [(x) => { x.compatibility.propagation.executionSemantics.targetReadPolicy = "other"; }, "invalid-literal", "/compatibility/propagation/executionSemantics/targetReadPolicy"],

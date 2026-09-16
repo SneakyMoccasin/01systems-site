@@ -26,7 +26,7 @@ const PROFILES = ["legacy-real-estate-v1", "legacy-municipal-v1", "legacy-consul
 const FIXTURES = { "legacy-real-estate-v1": realEstateFixture, "legacy-municipal-v1": municipalFixture, "legacy-consulting-v1": consultingFixture } as const;
 const SOURCE_FIXTURES = { "legacy-real-estate-v1": realEstateSourceFixture, "legacy-municipal-v1": municipalSourceFixture, "legacy-consulting-v1": consultingSourceFixture } as const;
 const SOURCE_HASHES = { "legacy-real-estate-v1": "sha256:898817bed271a470aecd941612a2bd49a95bec8acf480e5f645ffa0b9b5b33bc", "legacy-municipal-v1": "sha256:81ae1fa9f8a21a46c4cd04e4540c98db5750bd1305ecc6e215162d8da634193b", "legacy-consulting-v1": "sha256:b1bfcc87c86142264d3bd8d9082475720bdf3dcf8d7d7ec97583a5b40c5e08a7" } as const;
-const ENVELOPE_HASHES = { "legacy-real-estate-v1": "sha256:a202b3d24dda2507d496f2264af73e3eacd1a2fd161fd4b38d75a2b1b82d2989", "legacy-municipal-v1": "sha256:e06441b7889e8c1528a76fe5050612c795d2c4301e6e44720193f8bddbb30c64", "legacy-consulting-v1": "sha256:30bb1be2e49f15a8c1ad32678884d2b94eeceffdb6d12a832c637770b961dd71" } as const;
+const ENVELOPE_HASHES = { "legacy-real-estate-v1": "sha256:644b16b57b6cd87529a40b8c46fbef727d76d5f2ae3e8daa9bcbed854bf7f89d", "legacy-municipal-v1": "sha256:0aa41b573af6f1144e517538f3675d9e35b2214bf367d486c3eb57c5534fd324", "legacy-consulting-v1": "sha256:f2589416e7b48ffb9c3b42990e0485b591132aaebb4e8982dbdff559604790d1" } as const;
 const compareText = (left: string, right: string): number => left < right ? -1 : left > right ? 1 : 0;
 const keys = (value: object): string[] => Object.keys(value).sort(compareText);
 type Mutable<T> = T extends readonly (infer U)[] ? Mutable<U>[] : T extends object ? { -readonly [K in keyof T]: Mutable<T[K]> } : T;
@@ -178,7 +178,7 @@ test("makes each hash domain sensitive to its owned fields", () => {
     value => { value.ignoredUnknownDriverDeltas[0].delta -= 1; },
     value => { value.driverIdMappings[0].projectedDriverId += "-changed"; },
     value => { value.excludedUnsupportedActionIds.reverse(); },
-    value => { if (value.sustainThresholdOverride) value.sustainThresholdOverride.sourceField = "changed"; },
+    value => { if (value.sustainThresholdDisposition) value.sustainThresholdDisposition.sourceField = "changed"; },
     value => { value.propagation.sourceEvaluationOrder.reverse(); },
     value => { value.propagation.compatibilityOnlyEdges[0].occurrencePosition += 1; },
     value => { value.excludedSourceValues[0].sourcePath += ".changed"; },
@@ -213,18 +213,20 @@ test("characterizes exact clamp materialization boundaries without runtime impor
   for (const [value, expected] of cases) assert.equal(materialize(value), expected);
 });
 
-test("locks the source-local sustain threshold declaration without claiming runtime equivalence", () => {
+test("locks the source-local sustain exclusion without claiming runtime equivalence", () => {
   const expected = {
-    kind: "legacy-risk-state-number-overrides-constraint-threshold-v1",
+    kind: "legacy-sustain-threshold-exclusion-v1",
     sourceField: "sustainThreshold",
-    constraintId: "refinancing-constraint",
-    acceptedRuntimeType: "number-including-non-finite",
-    comparison: "margin-strictly-below-threshold",
-    applicability: "this-envelope-source-only",
+    historicalObservation: { kind: "optional-runtime-field-read-observed-v1", constraintId: "refinancing-constraint", observedRuntimeType: "number-including-non-finite", observedComparison: "margin-strictly-below-threshold" },
+    valueStatus: "absent-unconfigured",
+    contractDisposition: "excluded-no-authoritative-value",
+    executionPolicy: "reject-at-equivalence-boundary-v1",
+    claimPolicy: "no-sustain-parity-v1",
+    futureSupport: "requires-versioned-amendment-and-authoritative-value-source-v1",
   };
-  assert.deepEqual(realEstateFixture.compatibility.sustainThresholdOverride, expected);
-  assert.deepEqual(consultingFixture.compatibility.sustainThresholdOverride, expected);
-  assert.equal(municipalFixture.compatibility.sustainThresholdOverride, null);
+  assert.deepEqual(realEstateFixture.compatibility.sustainThresholdDisposition, expected);
+  assert.deepEqual(consultingFixture.compatibility.sustainThresholdDisposition, expected);
+  assert.equal(municipalFixture.compatibility.sustainThresholdDisposition, null);
   assert.equal(realEstateFixture.projection.contract.semanticPayload.constraints[0].activation.threshold, .8);
   assert.equal(consultingFixture.projection.contract.semanticPayload.constraints[0].activation.threshold, .8);
   const assertFiniteNumbers = (value: unknown): void => {
@@ -237,8 +239,8 @@ test("locks the source-local sustain threshold declaration without claiming runt
   }
 });
 
-test("characterizes JavaScript comparison semantics declared by M1C while runtime equivalence remains M1D scope", () => {
-  // This is a language-level characterization of the declaration, not execution of or proof about existing runtime code.
+test("characterizes historical JavaScript behavior without authorizing sustain execution", () => {
+  // Historical runtime characterization only; these values are not contract inputs or equivalence evidence.
   const isBelow = (margin: number, override: unknown, fallback = .8): boolean => margin < (typeof override === "number" ? override : fallback);
   assert.equal(isBelow(.7, .75), true); assert.equal(isBelow(.7, "invalid"), true);
   assert.equal(isBelow(.7, Number.NaN), false); assert.equal(isBelow(0, Number.POSITIVE_INFINITY), true); assert.equal(isBelow(0, Number.NEGATIVE_INFINITY), false);
@@ -295,7 +297,7 @@ test("proves cross-profile uniqueness, idempotence and collision behavior", () =
 });
 
 test("locks native identifier hygiene and checked-in fixture bytes", () => {
-  const fixtureHashes = { "legacy-real-estate-v1": "4d5c72ce45762b051c1504e0fdb2d27342dd050ce11c46c7b88501140b2f6ebf", "legacy-municipal-v1": "a2b64816e6368f1ad551dceb80a3cfd879ffb653bba3aa1bd7f7c26bfddad433", "legacy-consulting-v1": "89fc8e84e73bc3363e530cb7e3a65bc224479199b4030d99d7db0c338ce4792a" } as const;
+  const fixtureHashes = { "legacy-real-estate-v1": "f261eaae7e07fb1587a35cfdfce34c2155085de2034c5afdebc20262e8c46ee9", "legacy-municipal-v1": "0566e5817a0751ec78211c053eb0a99d719bca656873070521d0bfd59b2b890d", "legacy-consulting-v1": "73007b7297d007afd96dc6d9d22462536bf8f16294b8f20e6e27cec84c865de3" } as const;
   const sourceOnly = ["demandRisk", "pricingPowerRisk", "tenantStabilityRisk", "maintenanceIntensityRisk", "operationalEfficiencyRisk", "energyExposureRisk", "interestRateExposureRisk", "leverageLevelRisk", "refinancingRisk", "marketVolatilityRisk", "regulatoryPressureRisk", "capitalCommitmentRigidityRisk"];
   // M1B does not export ID_PATTERN, so this is its exact parser rule rather than a competing variant.
   const idPattern = /^[a-z][a-z0-9]*(?:[-_.][a-z0-9]+)*$/;

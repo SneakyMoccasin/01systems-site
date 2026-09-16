@@ -58,7 +58,7 @@ export type DiscrepancyResultStatusV1 =
   | "fail"
   | "not-applicable-no-successful-legacy-output"
   | "not-applicable-normalization-rejected"
-  | "deferred-missing-hash-bound-value"
+  | "excluded-no-authoritative-value"
   | "ineligible-no-declaration"
   | "rejected";
 

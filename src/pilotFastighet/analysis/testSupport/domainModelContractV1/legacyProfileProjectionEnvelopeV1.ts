@@ -114,13 +114,20 @@ export type LegacyDriverIdMappingV1 = Readonly<{
   projectedDriverId: StableId;
 }>;
 
-export type LegacySustainThresholdOverrideV1 = Readonly<{
-  kind: "legacy-risk-state-number-overrides-constraint-threshold-v1";
+export type LegacySustainThresholdExclusionV1 = Readonly<{
+  kind: "legacy-sustain-threshold-exclusion-v1";
   sourceField: "sustainThreshold";
-  constraintId: "refinancing-constraint";
-  acceptedRuntimeType: "number-including-non-finite";
-  comparison: "margin-strictly-below-threshold";
-  applicability: "this-envelope-source-only";
+  historicalObservation: Readonly<{
+    kind: "optional-runtime-field-read-observed-v1";
+    constraintId: "refinancing-constraint";
+    observedRuntimeType: "number-including-non-finite";
+    observedComparison: "margin-strictly-below-threshold";
+  }>;
+  valueStatus: "absent-unconfigured";
+  contractDisposition: "excluded-no-authoritative-value";
+  executionPolicy: "reject-at-equivalence-boundary-v1";
+  claimPolicy: "no-sustain-parity-v1";
+  futureSupport: "requires-versioned-amendment-and-authoritative-value-source-v1";
 }>;
 
 export type LegacyPropagationEvaluationOrderEntryV1 = Readonly<{
@@ -264,7 +271,7 @@ export type RawLegacyProfileProjectionEnvelopeV1 = Readonly<{
     compatibilityOnlyActions: readonly CompatibilityOnlyActionV1[];
     driverIdMappings: readonly LegacyDriverIdMappingV1[];
     excludedUnsupportedActionIds: readonly string[];
-    sustainThresholdOverride: LegacySustainThresholdOverrideV1 | null;
+    sustainThresholdDisposition: LegacySustainThresholdExclusionV1 | null;
     propagation: LegacyPropagationCompatibilityV1;
     excludedSourceValues: readonly ExcludedSourceValueV1[];
     legacyRegistryProjection: LegacyRegistryProjectionCompatibilityV1;
@@ -287,7 +294,7 @@ export type DerivedLegacyProjectionDiagnosticV1 = Readonly<{
     | "legacy-ignored-unknown-driver-delta"
     | "legacy-compatibility-only-action"
     | "legacy-action-admission-declared"
-    | "legacy-sustain-threshold-override-declared"
+    | "legacy-sustain-threshold-excluded"
     | "legacy-propagation-execution-semantics-declared"
     | "legacy-propagation-evaluation-order-declared"
     | "legacy-propagation-only-edge"

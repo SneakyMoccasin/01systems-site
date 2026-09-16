@@ -458,13 +458,14 @@ export function executeImmediateVisibilityWitnessV1(input: Readonly<{
 export function evaluateSustainThresholdV1(input: Readonly<{
   envelope: HashVerifiedLegacyProfileProjectionEnvelopeV1;
 }>) {
-  const declaration = input.envelope.compatibility.sustainThresholdOverride;
-  if (declaration && (declaration.sourceField !== "sustainThreshold" || declaration.comparison !== "margin-strictly-below-threshold" || declaration.applicability !== "this-envelope-source-only")) fail("sustainThreshold declaration mismatch");
+  const declaration = input.envelope.compatibility.sustainThresholdDisposition;
+  if (declaration && (declaration.sourceField !== "sustainThreshold" || declaration.contractDisposition !== "excluded-no-authoritative-value" || declaration.executionPolicy !== "reject-at-equivalence-boundary-v1")) fail("sustainThreshold disposition mismatch");
   return detachedFrozen({
-    declarationPath: declaration ? "/compatibility/sustainThresholdOverride" : null,
-    status: declaration ? "deferred-missing-hash-bound-value" as const : "ineligible-no-declaration" as const,
-    mechanismDeclared: declaration !== null,
+    declarationPath: declaration ? "/compatibility/sustainThresholdDisposition" : null,
+    status: declaration ? "excluded-no-authoritative-value" as const : "ineligible-no-declaration" as const,
+    historicalMechanismObserved: declaration !== null,
     hashBoundValue: "absent" as const,
-    execution: "deferred" as const,
+    execution: "forbidden" as const,
+    claim: "excluded-from-final-equivalence" as const,
   });
 }
