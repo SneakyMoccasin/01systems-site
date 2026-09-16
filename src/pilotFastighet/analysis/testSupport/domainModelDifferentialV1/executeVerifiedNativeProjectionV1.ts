@@ -455,15 +455,37 @@ export function executeImmediateVisibilityWitnessV1(input: Readonly<{
   return detachedFrozen({ ...result, declarationPath: PROPAGATION_DECLARATION_PATH });
 }
 
+export type SustainThresholdEvaluationV1 =
+  | Readonly<{
+      declarationPath: null;
+      status: "ineligible-no-declaration";
+      historicalMechanismObserved: false;
+      hashBoundValue: "absent";
+    }>
+  | Readonly<{
+      declarationPath: "/compatibility/sustainThresholdDisposition";
+      status: "excluded-no-authoritative-value";
+      historicalMechanismObserved: true;
+      hashBoundValue: "absent";
+      execution: "forbidden";
+      claim: "excluded-from-final-equivalence";
+    }>;
+
 export function evaluateSustainThresholdV1(input: Readonly<{
   envelope: HashVerifiedLegacyProfileProjectionEnvelopeV1;
-}>) {
+}>): SustainThresholdEvaluationV1 {
   const declaration = input.envelope.compatibility.sustainThresholdDisposition;
-  if (declaration && (declaration.sourceField !== "sustainThreshold" || declaration.contractDisposition !== "excluded-no-authoritative-value" || declaration.executionPolicy !== "reject-at-equivalence-boundary-v1")) fail("sustainThreshold disposition mismatch");
+  if (!declaration) return detachedFrozen({
+    declarationPath: null,
+    status: "ineligible-no-declaration" as const,
+    historicalMechanismObserved: false as const,
+    hashBoundValue: "absent" as const,
+  });
+  if (declaration.sourceField !== "sustainThreshold" || declaration.contractDisposition !== "excluded-no-authoritative-value" || declaration.executionPolicy !== "reject-at-equivalence-boundary-v1") fail("sustainThreshold disposition mismatch");
   return detachedFrozen({
-    declarationPath: declaration ? "/compatibility/sustainThresholdDisposition" : null,
-    status: declaration ? "excluded-no-authoritative-value" as const : "ineligible-no-declaration" as const,
-    historicalMechanismObserved: declaration !== null,
+    declarationPath: "/compatibility/sustainThresholdDisposition" as const,
+    status: "excluded-no-authoritative-value" as const,
+    historicalMechanismObserved: true as const,
     hashBoundValue: "absent" as const,
     execution: "forbidden" as const,
     claim: "excluded-from-final-equivalence" as const,

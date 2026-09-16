@@ -854,7 +854,10 @@ test("action admission rejects every closed failure family atomically", () => {
 test("sustainThreshold is contractually excluded without caller-supplied authority", () => {
   for (const profileId of ["legacy-real-estate-v1", "legacy-consulting-v1"] as const) {
     const envelope = verifiedProfileEnvelope(profileId);
-    assert.deepEqual(evaluateSustainThresholdV1({ envelope }), {
+    const before = structuredClone(envelope);
+    const first = evaluateSustainThresholdV1({ envelope });
+    const second = evaluateSustainThresholdV1({ envelope });
+    assert.deepEqual(first, {
       declarationPath: "/compatibility/sustainThresholdDisposition",
       status: "excluded-no-authoritative-value",
       historicalMechanismObserved: true,
@@ -862,21 +865,38 @@ test("sustainThreshold is contractually excluded without caller-supplied authori
       execution: "forbidden",
       claim: "excluded-from-final-equivalence",
     });
+    assert.deepEqual(second, first);
+    assert.notStrictEqual(second, first);
+    assertDeepFrozen(first);
+    assert.deepEqual(envelope, before);
     if (false) {
       // @ts-expect-error sustain execution cannot accept a caller-supplied value
       evaluateSustainThresholdV1({ envelope, compatibilityOverride: 1.2 });
     }
   }
   const municipal = verifiedProfileEnvelope("legacy-municipal-v1");
+  const municipalBefore = structuredClone(municipal);
   assert.equal(municipal.compatibility.sustainThresholdDisposition, null);
-  assert.deepEqual(evaluateSustainThresholdV1({ envelope: municipal }), {
+  const first = evaluateSustainThresholdV1({ envelope: municipal });
+  const second = evaluateSustainThresholdV1({ envelope: municipal });
+  assert.deepEqual(first, {
     declarationPath: null,
     status: "ineligible-no-declaration",
     historicalMechanismObserved: false,
     hashBoundValue: "absent",
-    execution: "forbidden",
-    claim: "excluded-from-final-equivalence",
   });
+  assert.equal(Object.hasOwn(first, "declarationPath"), true);
+  assert.equal(Object.hasOwn(first, "historicalMechanismObserved"), true);
+  assert.equal(Object.hasOwn(first, "hashBoundValue"), true);
+  assert.equal(Object.hasOwn(first, "execution"), false);
+  assert.equal(Object.hasOwn(first, "claim"), false);
+  const serialized = JSON.stringify(first);
+  assert.equal(serialized.includes('"execution"'), false);
+  assert.equal(serialized.includes('"claim"'), false);
+  assert.deepEqual(second, first);
+  assert.notStrictEqual(second, first);
+  assertDeepFrozen(first);
+  assert.deepEqual(municipal, municipalBefore);
 });
 
 test("M1D-3 classification authority is derived and exposes no literal evidence factory", () => {
