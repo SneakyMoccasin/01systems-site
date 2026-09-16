@@ -33,6 +33,82 @@ export type CompatibilityOnlyActionV1 = Readonly<{
   ignoredEffects: readonly Readonly<{ driverId: string; delta: number }>[];
 }>;
 
+export type VerifiedDeclarationPathV1 = string;
+export type LegacyRetainedActionEffectV1 = Readonly<{
+  sourceDriverId: StableId;
+  projectedDriverId: StableId;
+  delta: number;
+  disposition: "apply-to-projected-native-driver-v1";
+}>;
+export type LegacyIgnoredActionEffectV1 = Readonly<{
+  sourceDriverId: StableId;
+  delta: number;
+  disposition: "ignore-without-state-node-v1";
+  reason: "driver-absent-from-native-contract-v1";
+}>;
+export type LegacyActionAdmissionEntryV1 = Readonly<{
+  entryId: StableId;
+  sourceProfileId: StableId;
+  sourceActionId: StableId;
+  admissionMode: "admit-after-exact-effect-partition-v1";
+  outputDisposition: "output-neutral-v1" | "retained-native-effects-v1";
+  retainedEffects: readonly LegacyRetainedActionEffectV1[];
+  ignoredEffects: readonly LegacyIgnoredActionEffectV1[];
+}>;
+export type LegacyActionAdmissionPolicyV1 = Readonly<{
+  schemaVersion: "legacy-action-admission-policy-v1";
+  protocol: "partition-source-effects-before-execution-v1";
+  scheduleInput: "source-action-id-and-execution-step-v1";
+  ordering: "execution-step-then-source-action-id-code-unit-v1";
+  duplicatePolicy: "reject-duplicate-source-action-per-scenario-v1";
+  undeclaredActionPolicy: "reject-before-execution-v1";
+  undeclaredEffectPolicy: "reject-before-execution-v1";
+  normalizationFailurePolicy: "atomic-no-output-no-provenance-v1";
+  actualRuntimeExpectation: "reject-unsupported-driver-before-step-v1";
+  normalizedProvenancePolicy: "separate-closed-compatibility-provenance-v1";
+  entries: readonly LegacyActionAdmissionEntryV1[];
+}>;
+
+export type NormalizedObservationKindV1 = "compatibility-normalized-reference" | "compatibility-effective-native";
+export type NormalizedScenarioV1 = "scenarioA" | "scenarioB";
+export type AdmittedActionProvenanceV1 = Readonly<{
+  version: "normalized-action-admission-provenance-v1";
+  outcome: "admitted";
+  observationKind: NormalizedObservationKindV1;
+  profileId: StableId;
+  scenario: NormalizedScenarioV1;
+  entryId: StableId;
+  sourceActionId: StableId;
+  declarationPath: VerifiedDeclarationPathV1;
+  scheduledStep: number;
+  actualStep: number;
+  retainedEffects: readonly LegacyRetainedActionEffectV1[];
+  ignoredEffects: readonly LegacyIgnoredActionEffectV1[];
+  outputDisposition: "output-neutral-v1" | "retained-native-effects-v1";
+  outputChanged: boolean;
+}>;
+export type RejectedActionFailureV1 =
+  | Readonly<{ failureStage: "profile-binding"; failureReason: "wrong-profile" }>
+  | Readonly<{ failureStage: "action-admission"; failureReason: "undeclared-action" }>
+  | Readonly<{ failureStage: "schedule-validation"; failureReason: "duplicate-action" | "step-outside-horizon" }>
+  | Readonly<{ failureStage: "effect-partition"; failureReason: "source-effect-inventory-mismatch" | "missing-effect" | "extra-effect" | "duplicate-effect" | "mapping-mismatch" }>;
+export type RejectedActionProvenanceV1 = Readonly<{
+  version: "normalized-action-admission-provenance-v1";
+  outcome: "rejected";
+  observationKind: NormalizedObservationKindV1;
+  profileId: StableId;
+  scenario: NormalizedScenarioV1;
+  entryId: StableId | null;
+  sourceActionId: StableId;
+  declarationPath: VerifiedDeclarationPathV1 | null;
+  scheduledStep: number;
+  canonicalSourceEffects: readonly Readonly<{ sourceDriverId: StableId; delta: number }>[];
+  engineOutput: "absent";
+  stateMutation: false;
+  canonicalExecutionProvenance: "absent";
+}> & RejectedActionFailureV1;
+export type NormalizedActionAdmissionProvenanceV1 = AdmittedActionProvenanceV1 | RejectedActionProvenanceV1;
+
 export type LegacyDriverIdMappingV1 = Readonly<{
   sourceDriverId: string;
   projectedDriverId: StableId;
@@ -183,6 +259,7 @@ export type RawLegacyProfileProjectionEnvelopeV1 = Readonly<{
   compatibility: Readonly<{
     declarationsVersion: "legacy-compatibility-declarations-v1";
     declarationsHash: PrefixedSha256;
+    actionAdmission: LegacyActionAdmissionPolicyV1;
     ignoredUnknownDriverDeltas: readonly IgnoredUnknownDriverDeltaV1[];
     compatibilityOnlyActions: readonly CompatibilityOnlyActionV1[];
     driverIdMappings: readonly LegacyDriverIdMappingV1[];
@@ -209,6 +286,7 @@ export type DerivedLegacyProjectionDiagnosticV1 = Readonly<{
   code:
     | "legacy-ignored-unknown-driver-delta"
     | "legacy-compatibility-only-action"
+    | "legacy-action-admission-declared"
     | "legacy-sustain-threshold-override-declared"
     | "legacy-propagation-execution-semantics-declared"
     | "legacy-propagation-evaluation-order-declared"

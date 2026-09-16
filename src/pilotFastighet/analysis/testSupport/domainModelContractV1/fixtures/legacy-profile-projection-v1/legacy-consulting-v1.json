@@ -1145,7 +1145,43 @@
     }
   },
   "compatibility": {
-    "declarationsHash": "sha256:a7f19cfa77d31693fe9f011b6ba1a12618aed3171871af410b282a8ee101407e",
+    "declarationsHash": "sha256:62258283079ae9b5786b41b8522de238b6d3e6ade960fd47e327743cb35649c5",
+    "actionAdmission": {
+      "schemaVersion": "legacy-action-admission-policy-v1",
+      "protocol": "partition-source-effects-before-execution-v1",
+      "scheduleInput": "source-action-id-and-execution-step-v1",
+      "ordering": "execution-step-then-source-action-id-code-unit-v1",
+      "duplicatePolicy": "reject-duplicate-source-action-per-scenario-v1",
+      "undeclaredActionPolicy": "reject-before-execution-v1",
+      "undeclaredEffectPolicy": "reject-before-execution-v1",
+      "normalizationFailurePolicy": "atomic-no-output-no-provenance-v1",
+      "actualRuntimeExpectation": "reject-unsupported-driver-before-step-v1",
+      "normalizedProvenancePolicy": "separate-closed-compatibility-provenance-v1",
+      "entries": [
+        {
+          "entryId": "legacy-action-admission-v1.legacy-consulting-v1.congestion_pricing",
+          "sourceProfileId": "legacy-consulting-v1",
+          "sourceActionId": "congestion_pricing",
+          "admissionMode": "admit-after-exact-effect-partition-v1",
+          "outputDisposition": "output-neutral-v1",
+          "retainedEffects": [],
+          "ignoredEffects": [
+            {
+              "sourceDriverId": "modal_shift_pressure",
+              "delta": 2,
+              "disposition": "ignore-without-state-node-v1",
+              "reason": "driver-absent-from-native-contract-v1"
+            },
+            {
+              "sourceDriverId": "political_feasibility",
+              "delta": -1,
+              "disposition": "ignore-without-state-node-v1",
+              "reason": "driver-absent-from-native-contract-v1"
+            }
+          ]
+        }
+      ]
+    },
     "declarationsVersion": "legacy-compatibility-declarations-v1",
     "ignoredUnknownDriverDeltas": [],
     "compatibilityOnlyActions": [

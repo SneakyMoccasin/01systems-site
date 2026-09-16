@@ -1124,7 +1124,67 @@
     }
   },
   "compatibility": {
-    "declarationsHash": "sha256:f67fdbe29c54a68c3f35de5bed354a29133fb51da5360da8fe8d1e863ac0b72e",
+    "declarationsHash": "sha256:2861190f027ac80b238017e8cd691e6cd201c848de5d225f1881c0da876a120a",
+    "actionAdmission": {
+      "schemaVersion": "legacy-action-admission-policy-v1",
+      "protocol": "partition-source-effects-before-execution-v1",
+      "scheduleInput": "source-action-id-and-execution-step-v1",
+      "ordering": "execution-step-then-source-action-id-code-unit-v1",
+      "duplicatePolicy": "reject-duplicate-source-action-per-scenario-v1",
+      "undeclaredActionPolicy": "reject-before-execution-v1",
+      "undeclaredEffectPolicy": "reject-before-execution-v1",
+      "normalizationFailurePolicy": "atomic-no-output-no-provenance-v1",
+      "actualRuntimeExpectation": "reject-unsupported-driver-before-step-v1",
+      "normalizedProvenancePolicy": "separate-closed-compatibility-provenance-v1",
+      "entries": [
+        {
+          "entryId": "legacy-action-admission-v1.legacy-real-estate-v1.increase_liquidity_buffer",
+          "sourceProfileId": "legacy-real-estate-v1",
+          "sourceActionId": "increase_liquidity_buffer",
+          "admissionMode": "admit-after-exact-effect-partition-v1",
+          "outputDisposition": "retained-native-effects-v1",
+          "retainedEffects": [
+            {
+              "sourceDriverId": "refinancingRisk",
+              "projectedDriverId": "refinancing-risk",
+              "delta": -1,
+              "disposition": "apply-to-projected-native-driver-v1"
+            }
+          ],
+          "ignoredEffects": [
+            {
+              "sourceDriverId": "liquidityPressure",
+              "delta": -1,
+              "disposition": "ignore-without-state-node-v1",
+              "reason": "driver-absent-from-native-contract-v1"
+            }
+          ]
+        },
+        {
+          "entryId": "legacy-action-admission-v1.legacy-real-estate-v1.stagger_project_starts",
+          "sourceProfileId": "legacy-real-estate-v1",
+          "sourceActionId": "stagger_project_starts",
+          "admissionMode": "admit-after-exact-effect-partition-v1",
+          "outputDisposition": "retained-native-effects-v1",
+          "retainedEffects": [
+            {
+              "sourceDriverId": "capitalCommitmentRigidityRisk",
+              "projectedDriverId": "capital-commitment-rigidity-risk",
+              "delta": -1,
+              "disposition": "apply-to-projected-native-driver-v1"
+            }
+          ],
+          "ignoredEffects": [
+            {
+              "sourceDriverId": "implementationPacingRisk",
+              "delta": -1,
+              "disposition": "ignore-without-state-node-v1",
+              "reason": "driver-absent-from-native-contract-v1"
+            }
+          ]
+        }
+      ]
+    },
     "declarationsVersion": "legacy-compatibility-declarations-v1",
     "ignoredUnknownDriverDeltas": [
       {
