@@ -916,7 +916,7 @@
     }
   },
   "compatibility": {
-    "declarationsHash": "sha256:b5b8b11bbea58ae2df38baad536aa54bd8825794e31720f0e0b76c196ac052a3",
+    "declarationsHash": "sha256:1b079ac5ee7cce11ce1a82087776433be4ea3963e72e991cb64a816fb278d857",
     "declarationsVersion": "legacy-compatibility-declarations-v1",
     "ignoredUnknownDriverDeltas": [],
     "compatibilityOnlyActions": [
@@ -1025,6 +1025,21 @@
     "sustainThresholdOverride": null,
     "propagation": {
       "edgeEvaluationOrder": "legacy-source-and-target-insertion-order-v1",
+      "executionSemantics": {
+        "algorithm": "ordered-monotone-raise-fixed-point-v1",
+        "sourceReadPolicy": "missing-source-does-not-trigger-v1",
+        "targetReadPolicy": "missing-target-uses-declared-default-v1",
+        "targetComparison": "propagated-rank-strictly-greater-v1",
+        "writeVisibility": "later-occurrences-same-iteration-v1",
+        "iterationPolicy": "repeat-from-start-until-no-raise-v1",
+        "eventPolicy": {
+          "emission": "on-target-level-change-v1",
+          "step": "iteration-plus-one-v1",
+          "delaySteps": 1,
+          "duplicateSuppression": "no-change-no-event-v1"
+        }
+      },
+      "implicitNode": null,
       "sourceEvaluationOrder": [
         {
           "sourcePosition": 0,

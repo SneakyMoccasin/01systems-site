@@ -1124,7 +1124,7 @@
     }
   },
   "compatibility": {
-    "declarationsHash": "sha256:3c52fd64d9e56eee0ebbcd91a4f9dc23b09bb9b067a42899328e803575df0f29",
+    "declarationsHash": "sha256:f67fdbe29c54a68c3f35de5bed354a29133fb51da5360da8fe8d1e863ac0b72e",
     "declarationsVersion": "legacy-compatibility-declarations-v1",
     "ignoredUnknownDriverDeltas": [
       {
@@ -1234,6 +1234,30 @@
     },
     "propagation": {
       "edgeEvaluationOrder": "legacy-source-and-target-insertion-order-v1",
+      "executionSemantics": {
+        "algorithm": "ordered-monotone-raise-fixed-point-v1",
+        "sourceReadPolicy": "missing-source-does-not-trigger-v1",
+        "targetReadPolicy": "missing-target-uses-declared-default-v1",
+        "targetComparison": "propagated-rank-strictly-greater-v1",
+        "writeVisibility": "later-occurrences-same-iteration-v1",
+        "iterationPolicy": "repeat-from-start-until-no-raise-v1",
+        "eventPolicy": {
+          "emission": "on-target-level-change-v1",
+          "step": "iteration-plus-one-v1",
+          "delaySteps": 1,
+          "duplicateSuppression": "no-change-no-event-v1"
+        }
+      },
+      "implicitNode": {
+        "sourceNodeId": "liquidityPressure",
+        "adapterLocalNodeId": "liquidity-pressure",
+        "initialLevel": "absent",
+        "initialScore": "absent",
+        "targetMissingDefaultLevelId": "low",
+        "materialization": "on-propagation-raise-v1",
+        "scoreMaterialization": "projected-level-anchor-after-propagation-v1",
+        "impacts": "none"
+      },
       "sourceEvaluationOrder": [
         {
           "sourcePosition": 0,
@@ -1388,12 +1412,11 @@
           "compatibilityEdgeId": "legacy-compat-edge-v1.leverage-level-risk.to.liquidity-pressure",
           "sourcePropagatedLevelId": "HIGH",
           "projectedPropagatedLevelId": "high",
-          "implicitSourceNodeId": "liquidityPressure",
-          "adapterLocalImplicitNodeId": "liquidity-pressure",
-          "missingReadDefaultLevelId": "low",
-          "materializeOnRaise": true,
-          "hasScore": false,
-          "hasImpacts": false
+          "triggerPredicate": "source-level-in-set-v1",
+          "triggerLevelIds": [
+            "high",
+            "severe"
+          ]
         },
         {
           "sourcePosition": 2,
@@ -1406,12 +1429,11 @@
           "compatibilityEdgeId": "legacy-compat-edge-v1.refinancing-risk.to.liquidity-pressure",
           "sourcePropagatedLevelId": "HIGH",
           "projectedPropagatedLevelId": "high",
-          "implicitSourceNodeId": "liquidityPressure",
-          "adapterLocalImplicitNodeId": "liquidity-pressure",
-          "missingReadDefaultLevelId": "low",
-          "materializeOnRaise": true,
-          "hasScore": false,
-          "hasImpacts": false
+          "triggerPredicate": "source-level-in-set-v1",
+          "triggerLevelIds": [
+            "high",
+            "severe"
+          ]
         },
         {
           "sourcePosition": 3,
@@ -1424,12 +1446,11 @@
           "compatibilityEdgeId": "legacy-compat-edge-v1.liquidity-pressure.to.capital-commitment-rigidity-risk",
           "sourcePropagatedLevelId": "HIGH",
           "projectedPropagatedLevelId": "high",
-          "implicitSourceNodeId": "liquidityPressure",
-          "adapterLocalImplicitNodeId": "liquidity-pressure",
-          "missingReadDefaultLevelId": "low",
-          "materializeOnRaise": true,
-          "hasScore": false,
-          "hasImpacts": false
+          "triggerPredicate": "source-level-in-set-v1",
+          "triggerLevelIds": [
+            "high",
+            "severe"
+          ]
         }
       ]
     },

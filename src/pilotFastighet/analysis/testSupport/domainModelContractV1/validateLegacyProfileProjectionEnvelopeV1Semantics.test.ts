@@ -23,6 +23,41 @@ test("unsupported action complements require exact canonical storage order",()=>
 test("every source tuple field and compatibility action effect fails closed",()=>{for(const key of ["sourceProfileId","sourceActionId","sourceDriverId","delta"])expectSemantic(x=>{x.compatibility.ignoredUnknownDriverDeltas[0][key]=key==="delta"?-2:"changed";},"compatibility-declaration-mismatch","/compatibility/ignoredUnknownDriverDeltas");for(const profile of ["legacy-municipal-v1","legacy-consulting-v1"] as const){for(const key of ["sourceProfileId","sourceActionId"])expectSemantic(x=>{x.compatibility.compatibilityOnlyActions[0][key]="changed";},"compatibility-action-mismatch","/compatibility/compatibilityOnlyActions",profile);for(const key of ["driverId","delta"])expectSemantic(x=>{x.compatibility.compatibilityOnlyActions[0].ignoredEffects[0][key]=key==="delta"?3:"changed";},"compatibility-action-mismatch","/compatibility/compatibilityOnlyActions",profile);}});
 test("order, liquidity evidence and excluded inventory mutations fail closed",()=>{for(const mutate of [(x:any)=>x.compatibility.propagation.sourceEvaluationOrder.pop(),(x:any)=>x.compatibility.propagation.sourceEvaluationOrder.push(structuredClone(x.compatibility.propagation.sourceEvaluationOrder[0])),(x:any)=>{x.compatibility.propagation.sourceEvaluationOrder[1].sourcePosition=9;},(x:any)=>x.compatibility.propagation.sourceEvaluationOrder.reverse()])expectSemantic(mutate,"legacy-propagation-order-mismatch","/compatibility/propagation");for(const key of ["sourcePosition","edgePosition","occurrencePosition","sourceLegacySourceDriverId","sourceLegacyTargetDriverId","adapterLocalSourceDriverId","adapterLocalTargetDriverId","compatibilityEdgeId","sourcePropagatedLevelId","projectedPropagatedLevelId"])expectSemantic(x=>{const e=x.compatibility.propagation.compatibilityOnlyEdges[0];e[key]=typeof e[key]==="number"?99:"changed";},"legacy-propagation-order-mismatch","/compatibility/propagation");for(const key of ["sourcePath","sourceValueHash"])expectSemantic(x=>{x.compatibility.excludedSourceValues[0][key]=key==="sourceValueHash"?`sha256:${"2".repeat(64)}`:"changed";},"compatibility-declaration-mismatch","/compatibility/excludedSourceValues");});
 
+for(const profile of ["legacy-real-estate-v1","legacy-consulting-v1"] as const)test(`${profile} rejects a structurally valid missing implicit node`,()=>{
+  const raw=structuredClone(makeValidEnvelope(profile).raw);
+  raw.compatibility.propagation.implicitNode=null;
+  const structural=parseLegacyProfileProjectionEnvelopeV1Structure(raw);
+  assert.equal(structural.ok,true);
+  if(!structural.ok)return;
+  const semantic=validateLegacyProfileProjectionEnvelopeV1Semantics(structural.value);
+  assert.equal(semantic.ok,false);
+  if(!semantic.ok)assert.ok(semantic.issues.some(x=>x.code==="legacy-propagation-order-mismatch"&&x.path==="/compatibility/propagation"),JSON.stringify(semantic.issues));
+});
+
+test("legacy-municipal-v1 rejects a structurally valid RE/CO implicit node",()=>{
+  const raw=structuredClone(makeValidEnvelope("legacy-municipal-v1").raw);
+  raw.compatibility.propagation.implicitNode=structuredClone(makeValidEnvelope("legacy-real-estate-v1").raw.compatibility.propagation.implicitNode);
+  const structural=parseLegacyProfileProjectionEnvelopeV1Structure(raw);
+  assert.equal(structural.ok,true);
+  if(!structural.ok)return;
+  const semantic=validateLegacyProfileProjectionEnvelopeV1Semantics(structural.value);
+  assert.equal(semantic.ok,false);
+  if(!semantic.ok)assert.ok(semantic.issues.some(x=>x.code==="legacy-propagation-order-mismatch"&&x.path==="/compatibility/propagation"),JSON.stringify(semantic.issues));
+});
+
+test("legacy-municipal-v1 rejects a structurally valid compatibility-only edge and retains an exact zero-edge contract",()=>{
+  const municipal=makeValidEnvelope("legacy-municipal-v1");
+  assert.equal(municipal.raw.compatibility.propagation.compatibilityOnlyEdges.length,0);
+  const raw=structuredClone(municipal.raw);
+  raw.compatibility.propagation.compatibilityOnlyEdges.push(structuredClone(makeValidEnvelope("legacy-real-estate-v1").raw.compatibility.propagation.compatibilityOnlyEdges[0]));
+  const structural=parseLegacyProfileProjectionEnvelopeV1Structure(raw);
+  assert.equal(structural.ok,true);
+  if(!structural.ok)return;
+  const semantic=validateLegacyProfileProjectionEnvelopeV1Semantics(structural.value);
+  assert.equal(semantic.ok,false);
+  if(!semantic.ok)assert.ok(semantic.issues.some(x=>x.code==="legacy-propagation-order-mismatch"&&x.path==="/compatibility/propagation"),JSON.stringify(semantic.issues));
+});
+
 test("registry projection enforces profile complement, tuples, order, evidence and independent state hashes",()=>{
   for(const profile of ["legacy-real-estate-v1","legacy-municipal-v1","legacy-consulting-v1"] as const){const value=makeValidEnvelope(profile).semantic.compatibility.legacyRegistryProjection;assert.deepEqual(value.entries.map(x=>x.sourceRegistryKey),profile==="legacy-municipal-v1"?["RefinancingConstraint","LiquidityConstraint","CovenantConstraint","Custom"]:["LiquidityConstraint","CovenantConstraint","Custom"]);}
   const mutations:((x:any)=>void)[]=[
@@ -65,7 +100,7 @@ for(const profile of ["legacy-real-estate-v1","legacy-consulting-v1"] as const)t
   if(!semantic.ok)assert.ok(semantic.issues.some(x=>x.code==="legacy-registry-projection-mismatch"&&x.path==="/compatibility/legacyRegistryProjection"),JSON.stringify(semantic.issues));
 });
 
-test("locked literals, discriminants and booleans fail at the structural leaf",()=>{const action=(key:string)=>expectStructural(x=>{x.compatibility.compatibilityOnlyActions[0][key]="changed";},"invalid-literal",`/compatibility/compatibilityOnlyActions/0/${key}`,"legacy-municipal-v1");action("projectedNativeAction");action("admission");for(const key of ["implicitSourceNodeId","adapterLocalImplicitNodeId","missingReadDefaultLevelId"])expectStructural(x=>{x.compatibility.propagation.compatibilityOnlyEdges[0][key]="changed";},"invalid-literal",`/compatibility/propagation/compatibilityOnlyEdges/0/${key}`);for(const key of ["materializeOnRaise","hasScore","hasImpacts"])expectStructural(x=>{x.compatibility.propagation.compatibilityOnlyEdges[0][key]=!x.compatibility.propagation.compatibilityOnlyEdges[0][key];},"invalid-literal",`/compatibility/propagation/compatibilityOnlyEdges/0/${key}`);expectStructural(x=>{x.compatibility.excludedSourceValues[0].reasonCode="changed";},"invalid-discriminant","/compatibility/excludedSourceValues/0/reasonCode");});
+test("locked literals and discriminants fail at the structural leaf",()=>{const action=(key:string)=>expectStructural(x=>{x.compatibility.compatibilityOnlyActions[0][key]="changed";},"invalid-literal",`/compatibility/compatibilityOnlyActions/0/${key}`,"legacy-municipal-v1");action("projectedNativeAction");action("admission");expectStructural(x=>{x.compatibility.propagation.compatibilityOnlyEdges[0].triggerPredicate="changed";},"invalid-literal","/compatibility/propagation/compatibilityOnlyEdges/0/triggerPredicate");expectStructural(x=>{x.compatibility.propagation.compatibilityOnlyEdges[0].triggerLevelIds.reverse();},"invalid-literal","/compatibility/propagation/compatibilityOnlyEdges/0/triggerLevelIds/0");for(const key of ["sourceNodeId","adapterLocalNodeId","initialLevel","initialScore","targetMissingDefaultLevelId","materialization","scoreMaterialization","impacts"])expectStructural(x=>{x.compatibility.propagation.implicitNode[key]="changed";},"invalid-literal",`/compatibility/propagation/implicitNode/${key}`);expectStructural(x=>{x.compatibility.excludedSourceValues[0].reasonCode="changed";},"invalid-discriminant","/compatibility/excludedSourceValues/0/reasonCode");});
 test("native fields are closed across scales, drivers, actions, edges, curves, measures and constraints",()=>{const cases:[(x:any)=>void,LegacyProfileProjectionEnvelopeV1SemanticIssueCode,string][]=[
   [x=>{x.projection.contract.semanticPayload.scales[0].levels[0].anchor=.1;},"driver-projection-mismatch","/projection/contract/semanticPayload/scales"],[x=>{x.projection.contract.semanticPayload.drivers[0].initial={levelId:"high",score:2};},"driver-projection-mismatch","/projection/contract/semanticPayload/drivers"],[x=>{x.projection.contract.semanticPayload.drivers[0].adverseLevelIds=["severe"];},"driver-projection-mismatch","/projection/contract/semanticPayload/drivers"],[x=>{x.projection.contract.semanticPayload.drivers[0].impacts[0].direction="decrease";},"driver-projection-mismatch","/projection/contract/semanticPayload/drivers"],
   [x=>{x.projection.contract.semanticPayload.actions[0].effects[0].driverId="pricing-power-risk";},"native-action-mismatch","/projection/contract/semanticPayload/actions"],[x=>{x.projection.contract.semanticPayload.actions[0].effects[0].delta+=.1;},"native-action-mismatch","/projection/contract/semanticPayload/actions"],[x=>{x.projection.contract.semanticPayload.propagation.edges[0].propagatedLevelId="severe";},"native-propagation-mismatch","/projection/contract/semanticPayload/propagation"],

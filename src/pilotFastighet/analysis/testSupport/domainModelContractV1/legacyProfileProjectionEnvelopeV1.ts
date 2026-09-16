@@ -66,16 +66,40 @@ export type LegacyCompatibilityOnlyPropagationEdgeV1 = Readonly<{
   compatibilityEdgeId: StableId;
   sourcePropagatedLevelId: string;
   projectedPropagatedLevelId: StableId;
-  implicitSourceNodeId: "liquidityPressure";
-  adapterLocalImplicitNodeId: "liquidity-pressure";
-  missingReadDefaultLevelId: "low";
-  materializeOnRaise: true;
-  hasScore: false;
-  hasImpacts: false;
+  triggerPredicate: "source-level-in-set-v1";
+  triggerLevelIds: readonly ["high", "severe"];
+}>;
+
+export type LegacyCompatibilityPropagationExecutionSemanticsV1 = Readonly<{
+  algorithm: "ordered-monotone-raise-fixed-point-v1";
+  sourceReadPolicy: "missing-source-does-not-trigger-v1";
+  targetReadPolicy: "missing-target-uses-declared-default-v1";
+  targetComparison: "propagated-rank-strictly-greater-v1";
+  writeVisibility: "later-occurrences-same-iteration-v1";
+  iterationPolicy: "repeat-from-start-until-no-raise-v1";
+  eventPolicy: Readonly<{
+    emission: "on-target-level-change-v1";
+    step: "iteration-plus-one-v1";
+    delaySteps: 1;
+    duplicateSuppression: "no-change-no-event-v1";
+  }>;
+}>;
+
+export type LegacyCompatibilityImplicitNodeV1 = Readonly<{
+  sourceNodeId: "liquidityPressure";
+  adapterLocalNodeId: "liquidity-pressure";
+  initialLevel: "absent";
+  initialScore: "absent";
+  targetMissingDefaultLevelId: "low";
+  materialization: "on-propagation-raise-v1";
+  scoreMaterialization: "projected-level-anchor-after-propagation-v1";
+  impacts: "none";
 }>;
 
 export type LegacyPropagationCompatibilityV1 = Readonly<{
   edgeEvaluationOrder: "legacy-source-and-target-insertion-order-v1";
+  executionSemantics: LegacyCompatibilityPropagationExecutionSemanticsV1;
+  implicitNode: LegacyCompatibilityImplicitNodeV1 | null;
   sourceEvaluationOrder: readonly LegacyPropagationEvaluationOrderEntryV1[];
   compatibilityOnlyEdges: readonly LegacyCompatibilityOnlyPropagationEdgeV1[];
 }>;
@@ -186,6 +210,7 @@ export type DerivedLegacyProjectionDiagnosticV1 = Readonly<{
     | "legacy-ignored-unknown-driver-delta"
     | "legacy-compatibility-only-action"
     | "legacy-sustain-threshold-override-declared"
+    | "legacy-propagation-execution-semantics-declared"
     | "legacy-propagation-evaluation-order-declared"
     | "legacy-propagation-only-edge"
     | "legacy-source-value-excluded"
