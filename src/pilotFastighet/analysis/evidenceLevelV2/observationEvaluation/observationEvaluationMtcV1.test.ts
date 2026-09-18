@@ -1,8 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
+import { contractSemanticIdentityMtcV1 } from "../identity/contractSemanticIdentityMtcV1";
+import { deriveObservationSourcesMtcV1 } from "../observationSource/deriveObservationSourcesMtcV1";
 import { observationSourceResultIdentityMtcV1 } from "../observationSource/observationSourceIdentityMtcV1";
 import type { ObservationSourceBindingResultMtcV1 } from "../observationSource/observationSourceMtcV1";
+import { parseObservationSourceBindingsMtcV1 } from "../observationSource/parseObservationSourceBindingsMtcV1";
 import { CONTRACT_LIMITS_MTC_V1 } from "../protocol/contractLimitsMtcV1";
 import { observationFixtureMtcV1 } from "../testSupport/domainNeutralObservationFixtureMtcV1";
 import { evaluateObservationsMtcV1 } from "./evaluateObservationsMtcV1";
@@ -54,6 +57,77 @@ test("repeated source activation adds provenance occurrences without strength or
   assert.equal(new Set(yAtTwo.causalPaths.map((path) => path.sourceEventIdentity)).size, 2);
   assert.deepEqual(result.history[1].consumedBindingIds, ["binding:alpha-completed"]);
   assert.equal(yAtTwo.result, "exposed");
+});
+
+test("repeated activation changes only provenance and never categorical state or persistence", () => {
+  const single = observationFixtureMtcV1();
+  const repeated = observationFixtureMtcV1({ includeCompletionBinding: true });
+  const singleResult = evaluateObservationsMtcV1(single.sources, single.bindings, single.contract, single.context);
+  const repeatedResult = evaluateObservationsMtcV1(repeated.sources, repeated.bindings, repeated.contract, repeated.context);
+  assert.equal(singleResult.status, "evaluated"); assert.equal(repeatedResult.status, "evaluated");
+  if (singleResult.status !== "evaluated" || repeatedResult.status !== "evaluated") return;
+
+  const yState = (result: typeof singleResult) => result.history.map((period) => {
+    const observation = period.observations.find((item) => item.nodeId === "observation:y")!;
+    return {
+      period: period.period,
+      result: observation.result,
+      firstVisiblePeriod: Math.min(...observation.causalPaths.map((path) => path.firstVisiblePeriod)),
+      finalVisiblePeriod: Math.max(...observation.causalPaths.map((path) => path.finalVisiblePeriod)),
+    };
+  });
+  assert.deepEqual(yState(repeatedResult), yState(singleResult));
+  assert.deepEqual(repeatedResult.terminalBoundary, singleResult.terminalBoundary);
+  assert.equal(repeatedResult.terminalBoundary.boundary, repeated.context.finalPeriod + 1);
+  assert.equal(repeatedResult.history[1].observations.find((item) => item.nodeId === "observation:y")!.causalPaths.length, 2);
+  assert.notDeepEqual(repeatedResult.history[1].observations.find((item) => item.nodeId === "observation:y")!.causalPaths, singleResult.history[1].observations.find((item) => item.nodeId === "observation:y")!.causalPaths);
+  assert.equal(JSON.stringify([singleResult, repeatedResult]).match(/magnitude|strength|weight|score/g), null);
+  assert.deepEqual(repeated.execution, single.execution);
+});
+
+test("multi-path convergence changes only retained paths and never categorical state or persistence", () => {
+  const fixture = observationFixtureMtcV1();
+  const layer1Before = structuredClone(fixture.execution);
+  const singleBindingResult = parseObservationSourceBindingsMtcV1({
+    schemaVersion: "ce-two-layer-mtc-source-bindings-v1",
+    scenarioIdentity: fixture.scenario.semanticIdentity,
+    contractIdentity: contractSemanticIdentityMtcV1(fixture.contract),
+    bindings: [{
+      bindingId: "binding:alpha-admitted",
+      eventKind: "initiative-admitted",
+      initiativeInstanceId: "instance:alpha",
+      targetNodeId: "observation:z",
+    }],
+  }, fixture.scenario, fixture.contract);
+  assert.equal(singleBindingResult.ok, true); if (!singleBindingResult.ok) return;
+  const singleSources = deriveObservationSourcesMtcV1(fixture.execution, fixture.scenario, fixture.contract, singleBindingResult.value);
+  const singleResult = evaluateObservationsMtcV1(singleSources, singleBindingResult.value, fixture.contract, fixture.context);
+  const multiResult = evaluateObservationsMtcV1(fixture.sources, fixture.bindings, fixture.contract, fixture.context);
+  assert.equal(singleResult.status, "evaluated"); assert.equal(multiResult.status, "evaluated");
+  if (singleResult.status !== "evaluated" || multiResult.status !== "evaluated") return;
+
+  const wState = (result: typeof singleResult) => result.history.map((period) => {
+    const matches = period.observations.filter((item) => item.nodeId === "observation:w");
+    assert.equal(matches.length, 1);
+    const observation = matches[0];
+    return {
+      period: period.period,
+      result: observation.result,
+      firstVisiblePeriod: Math.min(...observation.causalPaths.map((path) => path.firstVisiblePeriod)),
+      finalVisiblePeriod: Math.max(...observation.causalPaths.map((path) => path.finalVisiblePeriod)),
+    };
+  });
+  assert.deepEqual(wState(multiResult), wState(singleResult));
+  assert.equal(multiResult.terminalBoundary.boundary, singleResult.terminalBoundary.boundary);
+  assert.equal(multiResult.terminalBoundary.terminatedNodeIds.some((nodeId) => nodeId === "observation:w"), true);
+  assert.equal(singleResult.terminalBoundary.terminatedNodeIds.some((nodeId) => nodeId === "observation:w"), true);
+  const multiPaths = multiResult.history[0].observations.find((item) => item.nodeId === "observation:w")!.causalPaths;
+  const singlePaths = singleResult.history[0].observations.find((item) => item.nodeId === "observation:w")!.causalPaths;
+  assert.deepEqual(multiPaths.map((path) => path.edgeIds), [["edge:x-y", "edge:y-w"], ["edge:x-z", "edge:z-w"]]);
+  assert.deepEqual(singlePaths.map((path) => path.edgeIds), [["edge:z-w"]]);
+  assert.equal(JSON.stringify([singleResult, multiResult]).match(/magnitude|strength|weight|score/g), null);
+  assert.deepEqual(fixture.execution, layer1Before);
+  assert.equal(singleSources.executionIdentity, fixture.sources.executionIdentity);
 });
 
 test("unmapped sources and failed-period absence create no inferred activation", () => {
