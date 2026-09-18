@@ -50,6 +50,34 @@ test("temporary history divergence and terminal equivalence are both retained", 
   assert.equal(result.historicalDivergence, true); assert.equal(result.terminalStructuralEquivalent, true); assert.equal(result.terminalDecisionSpaceEquivalent, true);
 });
 
+test("terminal-boundary Decision Space closes a timing-only interval after the final period commit", () => {
+  const a = comparisonRunFixtureMtcV1({ foundationPeriod: 5 });
+  const b = comparisonRunFixtureMtcV1({ foundationPeriod: 6 });
+  assert.equal(a.result.decisionSpaceHistory.at(-1)?.point.kind, "period-commit");
+  assert.deepEqual(b.result.decisionSpaceHistory.at(-1)?.point, { kind: "terminal-boundary", periodOrBoundary: 7 });
+  const result = compareSingleRunsMtcV1(a, b); assert.equal(result.status, "compared"); if (result.status !== "compared") return;
+  assert.equal(result.authorityThroughPeriod, 6); assert.equal(result.historicalDivergence, true);
+  assert.equal(result.terminalStructuralEquivalent, true); assert.equal(result.terminalDecisionSpaceEquivalent, true);
+  const interval = result.intervals.find((item) => item.dimension === "decision-space" && item.subjectId === "instance:foundation");
+  assert.deepEqual(interval?.convergencePoint, { kind: "terminal-boundary", period: 7 });
+  assert.equal(interval?.persistsThroughAuthorityBoundary, false);
+  assert.equal(result.differences.some((difference) => difference.point.kind === "terminal-boundary" && difference.dimension === "decision-space"), false);
+  const reversed = compareSingleRunsMtcV1(b, a); assert.equal(reversed.status, "compared"); if (reversed.status !== "compared") return;
+  assert.equal(reversed.terminalDecisionSpaceEquivalent, true);
+  assert.deepEqual(reversed.intervals.find((item) => item.dimension === "decision-space" && item.subjectId === "instance:foundation")?.convergencePoint, { kind: "terminal-boundary", period: 7 });
+  assert.ok(result.differences.every((difference) => difference.point.kind !== "terminal-boundary"));
+  assert.equal(JSON.stringify(result).includes("winner"), false); assert.equal(JSON.stringify(result).includes("score"), false);
+});
+
+test("a genuine authoritative terminal Decision Space difference remains non-equivalent", () => {
+  const durationTwo = (raw: Record<string, unknown>) => { (raw.initiatives as Array<Record<string, unknown>>)[0].durationPeriods = 2; };
+  const a = comparisonRunFixtureMtcV1({ foundationPeriod: 5, mutateScenario: durationTwo });
+  const b = comparisonRunFixtureMtcV1({ foundationPeriod: 6, mutateScenario: durationTwo });
+  const result = compareSingleRunsMtcV1(a, b); assert.equal(result.status, "compared"); if (result.status !== "compared") return;
+  assert.equal(result.terminalDecisionSpaceEquivalent, false);
+  assert.ok(result.differences.some((difference) => difference.point.kind === "terminal-boundary" && difference.dimension === "decision-space"));
+});
+
 test("sequence-only fairness fails closed for every non-schedule semantic mutation", () => {
   const base = comparisonRunFixtureMtcV1();
   const mutations = [

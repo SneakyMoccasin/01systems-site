@@ -23,12 +23,12 @@ function verify(input: ComparisonRunInputMtcV1): void {
   if (rebuilt.resultIdentity !== input.result.resultIdentity) throw new TypeError("CP5A result identity verification failed at comparison boundary");
 }
 function scenarioProjection(s: PreparedScenarioMtcV1) {
-  return { schemaVersion: s.schemaVersion, scenarioId: s.scenarioId, revision: s.revision, domainContract: s.domainContract, initiatives: s.initiatives.map((item) => ({ instanceId: item.instanceId, initiativeTypeId: item.initiativeTypeId, durationPeriods: item.durationPeriods, initialLifecycle: item.initialLifecycle, terminalLifecycle: item.terminalLifecycle, dependencies: item.dependencies, resourceClaims: item.resourceClaims })), resources: s.resources, initialConstraints: s.initialConstraints, initialEntitlements: s.initialEntitlements };
+  return { schemaVersion: s.schemaVersion, scenarioId: s.scenarioId, revision: s.revision, domainContract: s.domainContract, initiatives: s.initiatives.map((item) => ({ instanceId: item.instanceId, initiativeTypeId: item.initiativeTypeId, durationPeriods: item.durationPeriods, initialLifecycle: item.initialLifecycle, dependencies: item.dependencies, resourceClaims: item.resourceClaims })), resources: s.resources, initialConstraints: s.initialConstraints, initialEntitlements: s.initialEntitlements };
 }
 function bindingProjection(input: ComparisonRunInputMtcV1) { const bindings = input.result.layer2?.bindings ?? input.sourceBindings; return bindings ? { schemaVersion: bindings.schemaVersion, bindings: bindings.bindings } : { absent: true as const }; }
 function stateProjection(state: Layer1RuntimeStateMtcV1) { const copy = structuredClone(state) as unknown as Record<string, unknown>; delete copy.stateIdentity; return copy; }
 function snapshotSemantic(s: DecisionSpaceSnapshotMtcV1) { return { eligible: s.eligibleInitiativeIds, ineligible: s.ineligibleInitiativeIds, active: s.activeInitiativeIds, terminal: s.terminalInitiativeIds, classifications: s.classifications }; }
-function pointKey(point: ComparisonPointMtcV1): string { return `${point.kind === "initial" ? "0" : "1"}:${String(point.period).padStart(12, "0")}`; }
+function pointKey(point: ComparisonPointMtcV1): string { return `${point.kind === "initial" ? "0" : point.kind === "period-commit" ? "1" : "2"}:${String(point.period).padStart(12, "0")}`; }
 function differenceKey(dimension: DifferenceDimensionMtcV1, subjectId: string): string { return `${dimension}:${subjectId}`; }
 
 function comparability(a: ComparisonRunInputMtcV1, b: ComparisonRunInputMtcV1) {
@@ -41,7 +41,11 @@ function comparability(a: ComparisonRunInputMtcV1, b: ComparisonRunInputMtcV1) {
   return checks.filter(([, av, bv]) => !equal(av, bv)).map(([dimension, av, bv]) => ({ dimension, aIdentity: identity(`CE:COMPARE:A:${dimension}`, av), bIdentity: identity(`CE:COMPARE:B:${dimension}`, bv) })).sort((x, y) => compareCanonicalStringsMtcV1(x.dimension, y.dimension));
 }
 
-function timeline(result: SingleRunResultMtcV1, through: number) { return result.decisionSpaceHistory.filter((s) => s.point.kind === "initial" || (s.point.kind === "period-commit" && s.point.periodOrBoundary <= through)).map((s) => ({ point: { kind: s.point.kind as "initial" | "period-commit", period: s.point.periodOrBoundary }, snapshot: s, state: s.point.kind === "initial" ? result.execution.initialState : result.execution.history.find((r) => r.period === s.point.periodOrBoundary)!.resultingState })); }
+function timeline(result: SingleRunResultMtcV1, through: number, terminalBoundary?: number) {
+  const rows = result.decisionSpaceHistory.filter((s) => s.point.kind === "initial" || (s.point.kind === "period-commit" && s.point.periodOrBoundary <= through)).map((s) => ({ point: { kind: s.point.kind as "initial" | "period-commit", period: s.point.periodOrBoundary } as ComparisonPointMtcV1, snapshot: s, state: s.point.kind === "initial" ? result.execution.initialState : result.execution.history.find((r) => r.period === s.point.periodOrBoundary)!.resultingState }));
+  if (terminalBoundary !== undefined && result.execution.status === "completed-horizon") rows.push({ point: { kind: "terminal-boundary", period: terminalBoundary }, snapshot: result.decisionSpaceHistory.at(-1)!, state: result.execution.terminalState });
+  return rows;
+}
 function add(differences: ComparedDifferenceMtcV1[], dimension: DifferenceDimensionMtcV1, subjectId: string, point: ComparisonPointMtcV1, aSemantic: unknown, bSemantic: unknown, a: SingleRunResultMtcV1, b: SingleRunResultMtcV1, as?: DecisionSpaceSnapshotMtcV1, bs?: DecisionSpaceSnapshotMtcV1, paths?: { a: string[]; b: string[] }) {
   if (equal(aSemantic, bSemantic)) return;
   differences.push({ differenceKey: differenceKey(dimension, subjectId), dimension, subjectId, point, aSemantic, bSemantic, provenance: { aResultIdentity: a.resultIdentity, bResultIdentity: b.resultIdentity, ...(as ? { aSnapshotIdentity: as.snapshotIdentity } : {}), ...(bs ? { bSnapshotIdentity: bs.snapshotIdentity } : {}), ...(paths ? { aPathIdentities: paths.a, bPathIdentities: paths.b } : {}) } });
@@ -56,7 +60,9 @@ export function compareSingleRunsMtcV1(a: ComparisonRunInputMtcV1, b: Comparison
   if (boundedSides.length) return finish({ ...base, status: "incomplete-bounds" as const, boundedSides });
   const committed = (input: ComparisonRunInputMtcV1) => input.result.execution.status === "failed-unresolved" ? input.result.execution.lastCommittedState.committedThroughPeriod : input.scenario.horizon.finalPeriod;
   const authorityThroughPeriod = Math.min(committed(a), committed(b));
-  const at = timeline(a.result, authorityThroughPeriod); const bt = timeline(b.result, authorityThroughPeriod);
+  const terminalSnapshot = [...a.result.decisionSpaceHistory, ...b.result.decisionSpaceHistory].find((snapshot) => snapshot.point.kind === "terminal-boundary");
+  const terminalBoundary = a.result.execution.status === "completed-horizon" && b.result.execution.status === "completed-horizon" ? terminalSnapshot?.point.periodOrBoundary : undefined;
+  const at = timeline(a.result, authorityThroughPeriod, terminalBoundary); const bt = timeline(b.result, authorityThroughPeriod, terminalBoundary);
   const differences: ComparedDifferenceMtcV1[] = []; const decisionSpaceDifferences: DecisionSpaceSetDifferenceMtcV1[] = [];
   for (let index = 0; index < Math.min(at.length, bt.length); index += 1) {
     const ar = at[index], br = bt[index]; const point = ar.point;

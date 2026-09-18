@@ -6,7 +6,7 @@ export const COMPARISON_VERSION_MTC_V1 = "ce-two-layer-mtc-comparison-v1" as con
 export const SEQUENCE_TIMING_ONLY_MTC_V1 = "SEQUENCE_TIMING_ONLY" as const;
 
 export type ComparabilityReasonMtcV1 = Readonly<{ dimension: string; aIdentity: string; bIdentity: string }>;
-export type ComparisonPointMtcV1 = Readonly<{ kind: "initial" | "period-commit"; period: number }>;
+export type ComparisonPointMtcV1 = Readonly<{ kind: "initial" | "period-commit" | "terminal-boundary"; period: number }>;
 export type DifferenceDimensionMtcV1 = "initiative-lifecycle" | "resource-state" | "constraint-state" | "entitlement-state" | "decision-space" | "source-event" | "layer2-observation" | "layer2-paths" | "run-status";
 export interface ComparedDifferenceMtcV1 {
   readonly differenceKey: string;
