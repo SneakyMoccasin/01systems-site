@@ -239,6 +239,7 @@ export function parseContractMtcV1(raw: unknown): ParseContractResultMtcV1 {
   const resourceUnits = new Map<string, string>();
   const constraintIds = new Set<string>();
   const entitlementIds = new Set<string>();
+  const entitlementKinds = new Map<string, string>();
   const pendingRules: Array<{ item: RecordValue; path: string }> = [];
 
   const initiatives = layer1 && arrayValue(
@@ -322,6 +323,7 @@ export function parseContractMtcV1(raw: unknown): ParseContractResultMtcV1 {
     if (validId(item.entitlementId, `${path}/entitlementId`, issues)) {
       unique(item.entitlementId, `${path}/entitlementId`, seen, issues);
       entitlementIds.add(item.entitlementId);
+      entitlementKinds.set(item.entitlementId, item.kind as string);
     }
     if (item.kind !== "reusable" && item.kind !== "consumable") {
       add(issues, "invalid-discriminant", `${path}/kind`, "Unsupported entitlement kind.");
@@ -378,6 +380,9 @@ export function parseContractMtcV1(raw: unknown): ParseContractResultMtcV1 {
       }
       if (item.consumption !== "retain" && item.consumption !== "consume-on-admission") {
         add(issues, "invalid-discriminant", `${path}/consumption`, "Unsupported entitlement consumption.");
+      } else if (typeof item.entitlementId === "string" && entitlementKinds.has(item.entitlementId)) {
+        const expected = entitlementKinds.get(item.entitlementId) === "reusable" ? "retain" : "consume-on-admission";
+        if (item.consumption !== expected) add(issues, "entitlement-kind-mismatch", `${path}/consumption`, "Consumption must match the declared entitlement kind.");
       }
     }
   });

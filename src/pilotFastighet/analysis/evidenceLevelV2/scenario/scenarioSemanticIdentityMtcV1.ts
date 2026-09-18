@@ -3,9 +3,25 @@ import { hashCanonicalMtcV1 } from "../identity/hashCanonicalMtcV1";
 import type { TwoLayerMtcScenarioV1 } from "./scenarioMtcV1";
 
 export function projectScenarioSemanticsMtcV1(scenario: TwoLayerMtcScenarioV1): unknown {
-  const semantic: Partial<TwoLayerMtcScenarioV1> = structuredClone(scenario);
-  Reflect.deleteProperty(semantic, "metadata");
-  return semantic;
+  return {
+    schemaVersion: scenario.schemaVersion,
+    scenarioId: scenario.scenarioId,
+    revision: scenario.revision,
+    domainContract: scenario.domainContract,
+    horizon: scenario.horizon,
+    initiatives: scenario.initiatives.map((initiative) => ({
+      instanceId: initiative.instanceId,
+      initiativeTypeId: initiative.initiativeTypeId,
+      scheduledStartPeriod: initiative.scheduledStartPeriod,
+      durationPeriods: initiative.durationPeriods,
+      initialLifecycle: initiative.initialLifecycle,
+      dependencies: initiative.dependencies,
+      resourceClaims: initiative.resourceClaims,
+    })),
+    resources: scenario.resources,
+    initialConstraints: scenario.initialConstraints,
+    initialEntitlements: scenario.initialEntitlements,
+  };
 }
 
 export function scenarioSemanticIdentityMtcV1(scenario: TwoLayerMtcScenarioV1): string {

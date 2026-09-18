@@ -159,6 +159,16 @@ test("quantitative resources require exact canonical decimals and exact unit ide
   assert.ok(issueCodes(raw).includes("unit-mismatch"));
 });
 
+test("entitlement consumption exactly matches reusable and consumable kinds", () => {
+  for (const [kind, consumption] of [["reusable", "consume-on-admission"], ["consumable", "retain"]] as const) {
+    const raw = minimalLayer1ContractMtcV1();
+    (raw.layer1 as Record<string, unknown>).entitlements = [{ entitlementId: "entitlement:test", kind }];
+    const initiative = (raw.layer1 as { initiativeTypes: Array<{ eligibilityRules: unknown[] }> }).initiativeTypes[0];
+    initiative.eligibilityRules.push({ ruleId: "rule:entitlement", kind: "entitlement-available", entitlementId: "entitlement:test", consumption });
+    assert.ok(issueCodes(raw).includes("entitlement-kind-mismatch"));
+  }
+});
+
 test("observation edges reject self edges, duplicate pairs, unknown nodes, and cycles", () => {
   const self = minimalTwoLayerContractMtcV1();
   const selfEdge = ((self.layer2 as { edges: Array<Record<string, unknown>> }).edges)[0];

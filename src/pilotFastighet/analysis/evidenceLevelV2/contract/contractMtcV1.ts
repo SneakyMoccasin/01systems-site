@@ -143,6 +143,7 @@ export type ContractIssueCodeMtcV1 =
   | "unknown-reference"
   | "forbidden-cross-layer-reference"
   | "resource-kind-mismatch"
+  | "entitlement-kind-mismatch"
   | "unit-mismatch"
   | "self-edge"
   | "causal-cycle"
