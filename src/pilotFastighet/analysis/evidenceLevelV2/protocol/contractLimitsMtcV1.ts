@@ -9,4 +9,8 @@ export const CONTRACT_LIMITS_MTC_V1 = Object.freeze({
   maxObservationEdges: 2_048,
   maxObservationDepth: 64,
   maxDisplayStringBytes: 512,
+  maxScenarioInitiatives: 256,
+  maxScenarioDependencies: 16_384,
+  maxScenarioResourceInstances: 512,
+  maxScenarioResourceClaims: 16_384,
 } as const);
