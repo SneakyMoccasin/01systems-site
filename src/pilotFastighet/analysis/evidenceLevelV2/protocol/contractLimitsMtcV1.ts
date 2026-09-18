@@ -15,4 +15,7 @@ export const CONTRACT_LIMITS_MTC_V1 = Object.freeze({
   maxScenarioResourceClaims: 16_384,
   maxSourceBindings: 1_024,
   maxSourceEvents: 65_536,
+  maxObservationPaths: 65_536,
+  maxObservationHistoryPeriods: 4_096,
+  maxObservationOccurrences: 262_144,
 } as const);

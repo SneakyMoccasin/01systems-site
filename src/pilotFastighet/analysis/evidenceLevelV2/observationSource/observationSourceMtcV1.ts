@@ -57,6 +57,7 @@ export interface ObservationSourceBindingResultMtcV1 {
   readonly contractIdentity: string;
   readonly executionIdentity: string;
   readonly bindingIdentity: string;
+  readonly horizon: Readonly<{ firstPeriod: number; finalPeriod: number }>;
   readonly sourceEvents: readonly ObservationSourceEventMtcV1[];
   readonly activationCandidates: readonly ObservationActivationCandidateMtcV1[];
   readonly unmappedSourceEventIdentities: readonly string[];

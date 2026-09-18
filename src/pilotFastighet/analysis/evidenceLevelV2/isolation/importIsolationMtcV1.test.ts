@@ -112,3 +112,22 @@ test("application barrels, routes, and persistence have no MTC module edge", () 
   );
   assert.deepEqual(edges, []);
 });
+
+test("Layer 1 and the CP4A boundary cannot depend on Layer 2 evaluation", () => {
+  const protectedMarkers = [
+    `${MTC_MARKER}scenario${path.sep}`,
+    `${MTC_MARKER}execution${path.sep}`,
+    `${MTC_MARKER}observationSource${path.sep}`,
+  ];
+  const evaluationMarker = `${MTC_MARKER}observationEvaluation${path.sep}`;
+  const protectedRoots = allFiles.filter(
+    (file) =>
+      !isTestFile(file) &&
+      !file.includes(TEST_SUPPORT_MARKER) &&
+      protectedMarkers.some((marker) => file.includes(marker)),
+  );
+  const leaked = [...reachableFrom(protectedRoots)].filter((file) =>
+    file.includes(evaluationMarker),
+  );
+  assert.deepEqual(leaked, []);
+});

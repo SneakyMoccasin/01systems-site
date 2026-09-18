@@ -108,6 +108,7 @@ export function deriveObservationSourcesMtcV1(
     resultVersion: OBSERVATION_SOURCE_RESULT_VERSION,
     scenarioIdentity, contractIdentity, executionIdentity: execution.executionIdentity,
     bindingIdentity: bindings.semanticIdentity,
+    horizon: structuredClone(scenario.horizon),
     sourceEvents: freezeDeep(sourceEvents), activationCandidates: freezeDeep(activationCandidates),
     unmappedSourceEventIdentities: freezeDeep(unmappedSourceEventIdentities),
   };
