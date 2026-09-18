@@ -131,3 +131,23 @@ test("Layer 1 and the CP4A boundary cannot depend on Layer 2 evaluation", () => 
   );
   assert.deepEqual(leaked, []);
 });
+
+test("CP1 through CP4 production modules cannot depend on CP5A read models", () => {
+  const protectedMarkers = [
+    `${MTC_MARKER}canonical${path.sep}`,
+    `${MTC_MARKER}contract${path.sep}`,
+    `${MTC_MARKER}scenario${path.sep}`,
+    `${MTC_MARKER}execution${path.sep}`,
+    `${MTC_MARKER}observationSource${path.sep}`,
+    `${MTC_MARKER}observationEvaluation${path.sep}`,
+  ];
+  const cp5Markers = [
+    `${MTC_MARKER}decisionSpace${path.sep}`,
+    `${MTC_MARKER}singleRunResult${path.sep}`,
+  ];
+  const protectedRoots = allFiles.filter(
+    (file) => !isTestFile(file) && !file.includes(TEST_SUPPORT_MARKER) && protectedMarkers.some((marker) => file.includes(marker)),
+  );
+  const leaked = [...reachableFrom(protectedRoots)].filter((file) => cp5Markers.some((marker) => file.includes(marker)));
+  assert.deepEqual(leaked, []);
+});

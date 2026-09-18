@@ -54,6 +54,8 @@ export interface PeriodRecordMtcV1 {
   readonly entitlementConsumptions: readonly Readonly<{ instanceId: CanonicalSemanticIdMtcV1; ruleId: CanonicalSemanticIdMtcV1; entitlementId: CanonicalSemanticIdMtcV1 }>[];
   readonly lifecycleTransitions: readonly Readonly<{ instanceId: CanonicalSemanticIdMtcV1; from: "pending" | "active"; to: "active" | "completed" }>[];
   readonly resultingStateIdentity: string;
+  /** Additive immutable committed-state read boundary for CP5A. */
+  readonly resultingState: Layer1RuntimeStateMtcV1;
 }
 
 export interface TerminalBoundaryRecordMtcV1 {
@@ -74,6 +76,8 @@ export interface ExecutionBaseMtcV1 {
   readonly scenarioIdentity: string;
   readonly contractIdentity: string;
   readonly initialStateIdentity: string;
+  /** Additive immutable pre-horizon state read boundary for CP5A. */
+  readonly initialState: Layer1RuntimeStateMtcV1;
   readonly history: readonly PeriodRecordMtcV1[];
 }
 
