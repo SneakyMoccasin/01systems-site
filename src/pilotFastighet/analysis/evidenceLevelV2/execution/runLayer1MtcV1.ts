@@ -19,6 +19,7 @@ import {
   type ResourceEventMtcV1,
   type TerminalBoundaryRecordMtcV1,
 } from "./executionMtcV1";
+import { layer1ExecutionIdentityMtcV1 } from "./executionIdentityMtcV1";
 
 type MutableState = {
   committedThroughPeriod: number;
@@ -198,10 +199,6 @@ function reserveAndConsume(state: MutableState, eligible: PreparedInitiativeMtcV
   return { reservations, consumptions };
 }
 
-function executionIdentity(value: Omit<Layer1ExecutionOutcomeMtcV1, "executionIdentity">): string {
-  return hashCanonicalMtcV1("CE:TWO-LAYER-MTC:LAYER1-EXECUTION", TWO_LAYER_MTC_EXECUTION_VERSION, canonicalJsonBytesMtcV1(value));
-}
-
 export function runLayer1MtcV1(scenario: PreparedScenarioMtcV1, contract: TwoLayerMtcContractV1): Layer1ExecutionOutcomeMtcV1 {
   const contractIdentity = contractSemanticIdentityMtcV1(contract);
   if (scenario.domainContract.semanticId !== contract.semanticId || scenario.domainContract.semanticIdentity !== contractIdentity) throw new TypeError("Prepared scenario is not bound to the supplied contract");
@@ -223,7 +220,7 @@ export function runLayer1MtcV1(scenario: PreparedScenarioMtcV1, contract: TwoLay
         failedPeriod: period, lastCommittedState: committed,
         attempt: freezeDeep({ priorStateIdentity: committed.stateIdentity, tentativeCompletions: boundary.completions, tentativeReleases: boundary.releases, scheduledCandidates: candidates.map((item) => item.instanceId), eligibility, conflicts: admissionConflicts }),
       };
-      return freezeDeep({ ...base, executionIdentity: executionIdentity(base as never) });
+      return freezeDeep({ ...base, executionIdentity: layer1ExecutionIdentityMtcV1(base as never) });
     }
     const { reservations, consumptions } = reserveAndConsume(state, eligible, contract);
     state.committedThroughPeriod = period; state.boundary = period + 1;
@@ -238,5 +235,5 @@ export function runLayer1MtcV1(scenario: PreparedScenarioMtcV1, contract: TwoLay
   const terminalState = immutableState(terminalMutable);
   const terminalBoundary: TerminalBoundaryRecordMtcV1 = freezeDeep({ boundary: terminalBoundaryValue, priorStateIdentity: committed.stateIdentity, completions: terminalChanges.completions, releases: terminalChanges.releases, resultingStateIdentity: terminalState.stateIdentity });
   const base = { executionVersion: TWO_LAYER_MTC_EXECUTION_VERSION, scenarioIdentity: scenario.semanticIdentity, contractIdentity, initialStateIdentity: initial.stateIdentity, history: freezeDeep(history), status: "completed-horizon" as const, terminalBoundary, terminalState };
-  return freezeDeep({ ...base, executionIdentity: executionIdentity(base as never) });
+  return freezeDeep({ ...base, executionIdentity: layer1ExecutionIdentityMtcV1(base as never) });
 }

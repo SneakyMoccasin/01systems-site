@@ -13,4 +13,6 @@ export const CONTRACT_LIMITS_MTC_V1 = Object.freeze({
   maxScenarioDependencies: 16_384,
   maxScenarioResourceInstances: 512,
   maxScenarioResourceClaims: 16_384,
+  maxSourceBindings: 1_024,
+  maxSourceEvents: 65_536,
 } as const);
