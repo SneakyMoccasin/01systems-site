@@ -14,6 +14,7 @@ export type ProjectedFindingMtcV1 = Readonly<{
   comparisonIdentity: string;
   differenceKeys: readonly string[];
   interval?: DifferenceIntervalMtcV1;
+  terminalEquivalence?: Readonly<{ structural: true; decisionSpace: true }>;
   provenance: Readonly<{ aResultIdentity: string; bResultIdentity: string; aSnapshotIdentities: readonly string[]; bSnapshotIdentities: readonly string[]; aPathIdentities: readonly string[]; bPathIdentities: readonly string[] }>;
 }>;
 
@@ -54,7 +55,7 @@ export function projectComparisonFindingsMtcV1(comparison: ComparisonResultMtcV1
     if (comparison.firstDivergence) { const rows = comparison.differences.filter((row) => row.point.kind === comparison.firstDivergence!.point.kind && row.point.period === comparison.firstDivergence!.point.period); raw.push({ category: "first-divergence", comparisonIdentity: comparison.comparisonIdentity, differenceKeys: [...new Set(rows.map((row) => row.differenceKey))].sort(compareCanonicalStringsMtcV1), provenance: provenance(rows, a, b) }); }
     for (const key of [...new Set(comparison.differences.map((row) => row.differenceKey))].sort(compareCanonicalStringsMtcV1)) { const rows = comparison.differences.filter((row) => row.differenceKey === key); raw.push({ category: "comparison-difference", comparisonIdentity: comparison.comparisonIdentity, differenceKeys: [key], provenance: provenance(rows, a, b) }); }
     for (const interval of comparison.intervals.filter((item) => item.convergencePoint).sort((x, y) => compareCanonicalStringsMtcV1(x.differenceKey, y.differenceKey))) { const rows = comparison.differences.filter((row) => row.differenceKey === interval.differenceKey); raw.push({ category: "convergence", comparisonIdentity: comparison.comparisonIdentity, differenceKeys: [interval.differenceKey], interval, provenance: provenance(rows, a, b) }); }
-    raw.push({ category: "terminal-equivalence", comparisonIdentity: comparison.comparisonIdentity, differenceKeys: [], provenance: provenance([], a, b) });
+    if (comparison.terminalStructuralEquivalent && comparison.terminalDecisionSpaceEquivalent) raw.push({ category: "terminal-equivalence", comparisonIdentity: comparison.comparisonIdentity, differenceKeys: [], terminalEquivalence: { structural: true, decisionSpace: true }, provenance: provenance([], a, b) });
   }
   if (raw.length > MAX_PROJECTED_FINDINGS_MTC_V1) throw new RangeError(`Finding projection bound exceeded: ${raw.length}`);
   const findings = raw.map((finding) => ({ ...finding, findingIdentity: hashCanonicalMtcV1("CE:TWO-LAYER-MTC:FINDING", FINDING_PROJECTION_VERSION_MTC_V1, canonicalJsonBytesMtcV1(finding)) })).sort((x, y) => compareCanonicalStringsMtcV1(x.category, y.category) || compareCanonicalStringsMtcV1(x.differenceKeys.join("\u0000"), y.differenceKeys.join("\u0000")) || compareCanonicalStringsMtcV1(x.findingIdentity, y.findingIdentity));

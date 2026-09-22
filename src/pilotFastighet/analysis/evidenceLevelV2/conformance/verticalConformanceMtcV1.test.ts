@@ -5,6 +5,7 @@ import { compareSingleRunsMtcV1 } from "../comparison/compareSingleRunsMtcV1";
 import { comparisonIdentityMtcV1 } from "../comparison/comparisonIdentityMtcV1";
 import type { ComparisonResultMtcV1 } from "../comparison/comparisonMtcV1";
 import { MAX_PROJECTED_FINDINGS_MTC_V1, projectComparisonFindingsMtcV1 } from "./projectComparisonFindingsMtcV1";
+import { comparisonRunFixtureMtcV1 } from "../testSupport/domainNeutralComparisonFixtureMtcV1";
 import { verticalConformanceFixtureMtcV1 } from "../testSupport/verticalConformanceFixtureMtcV1";
 
 test("primary six-initiative fixture executes the real vertical chain with timing-only fairness", () => {
@@ -108,4 +109,34 @@ test("existing typed bounds and lower-layer authority remain unchanged", () => {
   assert.equal(fixture.A.result.execution, fixture.A.execution); assert.equal(fixture.A.result.layer2?.evaluation, fixture.A.evaluation);
   assert.equal(fixture.A.result.decisionSpaceHistory[0].committedStateIdentity, fixture.A.execution.initialState.stateIdentity);
   assert.equal(fixture.comparison.status, "compared");
+});
+
+test("compared false/false terminal inequality does not project terminal equivalence", () => {
+  const fixture = verticalConformanceFixtureMtcV1(); assert.equal(fixture.comparison.status, "compared"); if (fixture.comparison.status !== "compared") return;
+  assert.equal(fixture.comparison.terminalStructuralEquivalent, false); assert.equal(fixture.comparison.terminalDecisionSpaceEquivalent, false);
+  const projection = projectComparisonFindingsMtcV1(fixture.comparison, fixture.A.result, fixture.B.result);
+  assert.equal(projection.findings.some((finding) => finding.category === "terminal-equivalence"), false);
+  assert.ok(projection.findings.some((finding) => finding.category === "comparison-difference"));
+  assert.equal(projection.comparisonIdentity, fixture.comparison.comparisonIdentity); assert.deepEqual(projection.orientation, { A: fixture.A.result.resultIdentity, B: fixture.B.result.resultIdentity });
+});
+
+test("true/true terminal facts project exactly one evidence-bound terminal-equivalence finding", () => {
+  const run = comparisonRunFixtureMtcV1();
+  const comparison = compareSingleRunsMtcV1(run, run); assert.equal(comparison.status, "compared"); if (comparison.status !== "compared") return;
+  assert.equal(comparison.terminalStructuralEquivalent, true); assert.equal(comparison.terminalDecisionSpaceEquivalent, true);
+  const projection = projectComparisonFindingsMtcV1(comparison, run.result, run.result);
+  const terminal = projection.findings.filter((finding) => finding.category === "terminal-equivalence"); assert.equal(terminal.length, 1);
+  assert.deepEqual(terminal[0].terminalEquivalence, { structural: true, decisionSpace: true }); assert.equal(terminal[0].comparisonIdentity, comparison.comparisonIdentity);
+  assert.deepEqual(terminal[0].provenance, { aResultIdentity: run.result.resultIdentity, bResultIdentity: run.result.resultIdentity, aSnapshotIdentities: [], bSnapshotIdentities: [], aPathIdentities: [], bPathIdentities: [] });
+  assert.deepEqual(projection.orientation, { A: run.result.resultIdentity, B: run.result.resultIdentity });
+  assert.ok(projection.findings.some((finding) => finding.category === "no-compared-difference"));
+});
+
+test("reachable mixed false/true terminal facts remain distinct and do not project whole terminal equivalence", () => {
+  const addSecond = (samePeriod: boolean) => (raw: Record<string, unknown>) => { const rows = raw.initiatives as Array<Record<string, unknown>>; rows.push({ ...structuredClone(rows[1]), instanceId: "instance:independent-second", scheduledStartPeriod: samePeriod ? 4 : 5 }); };
+  const completed = comparisonRunFixtureMtcV1({ mutateScenario: addSecond(false) }); const unresolved = comparisonRunFixtureMtcV1({ mutateScenario: addSecond(true) });
+  const comparison = compareSingleRunsMtcV1(completed, unresolved); assert.equal(comparison.status, "compared"); if (comparison.status !== "compared") return;
+  assert.equal(comparison.terminalStructuralEquivalent, false); assert.equal(comparison.terminalDecisionSpaceEquivalent, true);
+  const projection = projectComparisonFindingsMtcV1(comparison, completed.result, unresolved.result);
+  assert.equal(projection.findings.some((finding) => finding.category === "terminal-equivalence"), false);
 });
