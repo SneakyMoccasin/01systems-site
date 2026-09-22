@@ -154,9 +154,19 @@ test("CP1 through CP4 production modules cannot depend on CP5A read models", () 
 
 test("CP1 through CP5A production modules cannot depend on CP5B comparison", () => {
   const comparisonMarker = `${MTC_MARKER}comparison${path.sep}`;
+  const conformanceMarker = `${MTC_MARKER}conformance${path.sep}`;
   const protectedRoots = allFiles.filter(
-    (file) => file.includes(MTC_MARKER) && !file.includes(comparisonMarker) && !isTestFile(file) && !file.includes(TEST_SUPPORT_MARKER),
+    (file) => file.includes(MTC_MARKER) && !file.includes(comparisonMarker) && !file.includes(conformanceMarker) && !isTestFile(file) && !file.includes(TEST_SUPPORT_MARKER),
   );
   const leaked = [...reachableFrom(protectedRoots)].filter((file) => file.includes(comparisonMarker));
+  assert.deepEqual(leaked, []);
+});
+
+test("CP1 through CP5B production modules cannot depend on CP6 conformance", () => {
+  const conformanceMarker = `${MTC_MARKER}conformance${path.sep}`;
+  const protectedRoots = allFiles.filter(
+    (file) => file.includes(MTC_MARKER) && !file.includes(conformanceMarker) && !isTestFile(file) && !file.includes(TEST_SUPPORT_MARKER),
+  );
+  const leaked = [...reachableFrom(protectedRoots)].filter((file) => file.includes(conformanceMarker));
   assert.deepEqual(leaked, []);
 });
