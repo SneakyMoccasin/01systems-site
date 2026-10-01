@@ -1,0 +1,686 @@
+[
+  {
+    "transition_audit": "PASS",
+    "weeks_checked": 27,
+    "rows_checked": 98,
+    "budget_transitions_checked": 98,
+    "executed": [
+      {
+        "week": 0,
+        "decision": "D1"
+      },
+      {
+        "week": 0,
+        "decision": "D2"
+      },
+      {
+        "week": 0,
+        "decision": "D9"
+      },
+      {
+        "week": 0,
+        "decision": "D7"
+      },
+      {
+        "week": 2,
+        "decision": "D3"
+      },
+      {
+        "week": 2,
+        "decision": "D5"
+      },
+      {
+        "week": 10,
+        "decision": "D6"
+      },
+      {
+        "week": 12,
+        "decision": "D8"
+      }
+    ],
+    "rejected_attempts": [],
+    "script_is_legal": true,
+    "d8_weeks": [
+      12
+    ],
+    "week_end_balances": [
+      {
+        "week": 0,
+        "budget": 3
+      },
+      {
+        "week": 1,
+        "budget": 3
+      },
+      {
+        "week": 2,
+        "budget": 5
+      },
+      {
+        "week": 3,
+        "budget": 5
+      },
+      {
+        "week": 4,
+        "budget": 5
+      },
+      {
+        "week": 5,
+        "budget": 5
+      },
+      {
+        "week": 6,
+        "budget": 5
+      },
+      {
+        "week": 7,
+        "budget": 5
+      },
+      {
+        "week": 8,
+        "budget": 5
+      },
+      {
+        "week": 9,
+        "budget": 5
+      },
+      {
+        "week": 10,
+        "budget": 4
+      },
+      {
+        "week": 11,
+        "budget": 4
+      },
+      {
+        "week": 12,
+        "budget": 4
+      },
+      {
+        "week": 13,
+        "budget": 4
+      },
+      {
+        "week": 14,
+        "budget": 4
+      },
+      {
+        "week": 15,
+        "budget": 4
+      },
+      {
+        "week": 16,
+        "budget": 4
+      },
+      {
+        "week": 17,
+        "budget": 4
+      },
+      {
+        "week": 18,
+        "budget": 4
+      },
+      {
+        "week": 19,
+        "budget": 4
+      },
+      {
+        "week": 20,
+        "budget": 4
+      },
+      {
+        "week": 21,
+        "budget": 4
+      },
+      {
+        "week": 22,
+        "budget": 4
+      },
+      {
+        "week": 23,
+        "budget": 4
+      },
+      {
+        "week": 24,
+        "budget": 4
+      },
+      {
+        "week": 25,
+        "budget": 4
+      },
+      {
+        "week": 26,
+        "budget": 4
+      }
+    ],
+    "final_budget": 4,
+    "pending_after_horizon": [],
+    "sweden": {
+      "continuous_sweden": false,
+      "snapshots_checked": 196,
+      "violation_count": 165,
+      "first_violation": {
+        "index": 15,
+        "week": 2,
+        "side": "after",
+        "action": "D5",
+        "missing": [
+          "original_machine_in_use_in_sweden"
+        ]
+      }
+    }
+  },
+  {
+    "transition_audit": "PASS",
+    "weeks_checked": 27,
+    "rows_checked": 98,
+    "budget_transitions_checked": 98,
+    "executed": [
+      {
+        "week": 0,
+        "decision": "D1"
+      },
+      {
+        "week": 0,
+        "decision": "D2"
+      },
+      {
+        "week": 0,
+        "decision": "D9"
+      },
+      {
+        "week": 0,
+        "decision": "D7"
+      },
+      {
+        "week": 2,
+        "decision": "D3"
+      },
+      {
+        "week": 2,
+        "decision": "D5"
+      },
+      {
+        "week": 10,
+        "decision": "D6"
+      },
+      {
+        "week": 12,
+        "decision": "D8"
+      }
+    ],
+    "rejected_attempts": [],
+    "script_is_legal": true,
+    "d8_weeks": [
+      12
+    ],
+    "week_end_balances": [
+      {
+        "week": 0,
+        "budget": 3
+      },
+      {
+        "week": 1,
+        "budget": 3
+      },
+      {
+        "week": 2,
+        "budget": 5
+      },
+      {
+        "week": 3,
+        "budget": 5
+      },
+      {
+        "week": 4,
+        "budget": 5
+      },
+      {
+        "week": 5,
+        "budget": 5
+      },
+      {
+        "week": 6,
+        "budget": 5
+      },
+      {
+        "week": 7,
+        "budget": 5
+      },
+      {
+        "week": 8,
+        "budget": 5
+      },
+      {
+        "week": 9,
+        "budget": 5
+      },
+      {
+        "week": 10,
+        "budget": 4
+      },
+      {
+        "week": 11,
+        "budget": 4
+      },
+      {
+        "week": 12,
+        "budget": 4
+      },
+      {
+        "week": 13,
+        "budget": 4
+      },
+      {
+        "week": 14,
+        "budget": 4
+      },
+      {
+        "week": 15,
+        "budget": 4
+      },
+      {
+        "week": 16,
+        "budget": 4
+      },
+      {
+        "week": 17,
+        "budget": 4
+      },
+      {
+        "week": 18,
+        "budget": 4
+      },
+      {
+        "week": 19,
+        "budget": 4
+      },
+      {
+        "week": 20,
+        "budget": 4
+      },
+      {
+        "week": 21,
+        "budget": 4
+      },
+      {
+        "week": 22,
+        "budget": 4
+      },
+      {
+        "week": 23,
+        "budget": 4
+      },
+      {
+        "week": 24,
+        "budget": 4
+      },
+      {
+        "week": 25,
+        "budget": 4
+      },
+      {
+        "week": 26,
+        "budget": 4
+      }
+    ],
+    "final_budget": 4,
+    "pending_after_horizon": [],
+    "sweden": {
+      "continuous_sweden": false,
+      "snapshots_checked": 196,
+      "violation_count": 165,
+      "first_violation": {
+        "index": 15,
+        "week": 2,
+        "side": "after",
+        "action": "D5",
+        "missing": [
+          "original_machine_in_use_in_sweden"
+        ]
+      }
+    }
+  },
+  {
+    "transition_audit": "PASS",
+    "weeks_checked": 27,
+    "rows_checked": 98,
+    "budget_transitions_checked": 98,
+    "executed": [
+      {
+        "week": 0,
+        "decision": "D1"
+      },
+      {
+        "week": 0,
+        "decision": "D2"
+      },
+      {
+        "week": 0,
+        "decision": "D9"
+      },
+      {
+        "week": 0,
+        "decision": "D7"
+      },
+      {
+        "week": 2,
+        "decision": "D3"
+      },
+      {
+        "week": 2,
+        "decision": "D5"
+      },
+      {
+        "week": 10,
+        "decision": "D6"
+      },
+      {
+        "week": 12,
+        "decision": "D8"
+      }
+    ],
+    "rejected_attempts": [],
+    "script_is_legal": true,
+    "d8_weeks": [
+      12
+    ],
+    "week_end_balances": [
+      {
+        "week": 0,
+        "budget": 3
+      },
+      {
+        "week": 1,
+        "budget": 3
+      },
+      {
+        "week": 2,
+        "budget": 5
+      },
+      {
+        "week": 3,
+        "budget": 5
+      },
+      {
+        "week": 4,
+        "budget": 5
+      },
+      {
+        "week": 5,
+        "budget": 5
+      },
+      {
+        "week": 6,
+        "budget": 5
+      },
+      {
+        "week": 7,
+        "budget": 5
+      },
+      {
+        "week": 8,
+        "budget": 5
+      },
+      {
+        "week": 9,
+        "budget": 5
+      },
+      {
+        "week": 10,
+        "budget": 4
+      },
+      {
+        "week": 11,
+        "budget": 4
+      },
+      {
+        "week": 12,
+        "budget": 4
+      },
+      {
+        "week": 13,
+        "budget": 4
+      },
+      {
+        "week": 14,
+        "budget": 4
+      },
+      {
+        "week": 15,
+        "budget": 4
+      },
+      {
+        "week": 16,
+        "budget": 4
+      },
+      {
+        "week": 17,
+        "budget": 4
+      },
+      {
+        "week": 18,
+        "budget": 4
+      },
+      {
+        "week": 19,
+        "budget": 4
+      },
+      {
+        "week": 20,
+        "budget": 4
+      },
+      {
+        "week": 21,
+        "budget": 4
+      },
+      {
+        "week": 22,
+        "budget": 4
+      },
+      {
+        "week": 23,
+        "budget": 4
+      },
+      {
+        "week": 24,
+        "budget": 4
+      },
+      {
+        "week": 25,
+        "budget": 4
+      },
+      {
+        "week": 26,
+        "budget": 4
+      }
+    ],
+    "final_budget": 4,
+    "pending_after_horizon": [],
+    "sweden": {
+      "continuous_sweden": false,
+      "snapshots_checked": 196,
+      "violation_count": 165,
+      "first_violation": {
+        "index": 15,
+        "week": 2,
+        "side": "after",
+        "action": "D5",
+        "missing": [
+          "original_machine_in_use_in_sweden"
+        ]
+      }
+    }
+  },
+  {
+    "transition_audit": "PASS",
+    "weeks_checked": 27,
+    "rows_checked": 98,
+    "budget_transitions_checked": 98,
+    "executed": [
+      {
+        "week": 0,
+        "decision": "D1"
+      },
+      {
+        "week": 0,
+        "decision": "D2"
+      },
+      {
+        "week": 0,
+        "decision": "D9"
+      },
+      {
+        "week": 0,
+        "decision": "D7"
+      },
+      {
+        "week": 2,
+        "decision": "D3"
+      },
+      {
+        "week": 2,
+        "decision": "D5"
+      },
+      {
+        "week": 10,
+        "decision": "D6"
+      },
+      {
+        "week": 12,
+        "decision": "D8"
+      }
+    ],
+    "rejected_attempts": [],
+    "script_is_legal": true,
+    "d8_weeks": [
+      12
+    ],
+    "week_end_balances": [
+      {
+        "week": 0,
+        "budget": 3
+      },
+      {
+        "week": 1,
+        "budget": 3
+      },
+      {
+        "week": 2,
+        "budget": 5
+      },
+      {
+        "week": 3,
+        "budget": 5
+      },
+      {
+        "week": 4,
+        "budget": 5
+      },
+      {
+        "week": 5,
+        "budget": 5
+      },
+      {
+        "week": 6,
+        "budget": 5
+      },
+      {
+        "week": 7,
+        "budget": 5
+      },
+      {
+        "week": 8,
+        "budget": 5
+      },
+      {
+        "week": 9,
+        "budget": 5
+      },
+      {
+        "week": 10,
+        "budget": 4
+      },
+      {
+        "week": 11,
+        "budget": 4
+      },
+      {
+        "week": 12,
+        "budget": 4
+      },
+      {
+        "week": 13,
+        "budget": 4
+      },
+      {
+        "week": 14,
+        "budget": 4
+      },
+      {
+        "week": 15,
+        "budget": 4
+      },
+      {
+        "week": 16,
+        "budget": 4
+      },
+      {
+        "week": 17,
+        "budget": 4
+      },
+      {
+        "week": 18,
+        "budget": 4
+      },
+      {
+        "week": 19,
+        "budget": 4
+      },
+      {
+        "week": 20,
+        "budget": 4
+      },
+      {
+        "week": 21,
+        "budget": 4
+      },
+      {
+        "week": 22,
+        "budget": 4
+      },
+      {
+        "week": 23,
+        "budget": 4
+      },
+      {
+        "week": 24,
+        "budget": 4
+      },
+      {
+        "week": 25,
+        "budget": 4
+      },
+      {
+        "week": 26,
+        "budget": 4
+      }
+    ],
+    "final_budget": 4,
+    "pending_after_horizon": [],
+    "sweden": {
+      "continuous_sweden": false,
+      "snapshots_checked": 196,
+      "violation_count": 165,
+      "first_violation": {
+        "index": 15,
+        "week": 2,
+        "side": "after",
+        "action": "D5",
+        "missing": [
+          "original_machine_in_use_in_sweden"
+        ]
+      }
+    }
+  }
+]

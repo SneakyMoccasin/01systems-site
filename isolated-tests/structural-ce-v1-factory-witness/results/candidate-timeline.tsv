@@ -1,0 +1,99 @@
+row	week	kind	action	outcome	budget_before	budget_after	se_premises	original_machine	se_team	source
+0	0	initial	INITIAL		8	8	True	sweden_in_use	True	Berättelsens startläge; v1
+1	0	week_begin	WEEK_BEGIN		8	8	True	sweden_in_use	True	v1 Tid
+2	0	decision	D1		8	8	True	sweden_in_use	True	Berättelsen D1; v1 engångsregel
+3	0	decision	D2		8	6	True	sweden_in_use	True	Berättelsen D2, Budget
+4	0	decision	D9		6	3	True	sweden_in_use	True	Berättelsen D9, Budget
+5	0	decision	D7		3	3	True	sweden_in_use	True	Berättelsen D7
+6	0	week_end	WEEK_END		3	3	True	sweden_in_use	True	v1 Tid
+7	0	advance	ADVANCE		3	3	True	sweden_in_use	True	v1 ADVANCE
+8	1	week_begin	WEEK_BEGIN		3	3	True	sweden_in_use	True	v1 Tid
+9	1	week_end	WEEK_END		3	3	True	sweden_in_use	True	v1 Tid
+10	1	advance	ADVANCE		3	3	True	sweden_in_use	True	v1 ADVANCE
+11	2	week_begin	WEEK_BEGIN		3	3	True	sweden_in_use	True	v1 Tid
+12	2	event	E_BANK	approved	3	9	True	sweden_in_use	True	D1
+13	2	event	E_PL_PREMISES	timer	9	9	True	sweden_in_use	True	D2
+14	2	decision	D3		9	7	True	sweden_in_use	True	Berättelsen D3, Budget
+15	2	decision	D4		7	1	True	sweden_in_use	True	Berättelsen D4, Budget
+16	2	week_end	WEEK_END		1	1	True	sweden_in_use	True	v1 Tid
+17	2	advance	ADVANCE		1	1	True	sweden_in_use	True	v1 ADVANCE
+18	3	week_begin	WEEK_BEGIN		1	1	True	sweden_in_use	True	v1 Tid
+19	3	event	E_CUSTOMER	approved	1	1	True	sweden_in_use	True	D7
+20	3	week_end	WEEK_END		1	1	True	sweden_in_use	True	v1 Tid
+21	3	advance	ADVANCE		1	1	True	sweden_in_use	True	v1 ADVANCE
+22	4	week_begin	WEEK_BEGIN		1	1	True	sweden_in_use	True	v1 Tid
+23	4	week_end	WEEK_END		1	1	True	sweden_in_use	True	v1 Tid
+24	4	advance	ADVANCE		1	1	True	sweden_in_use	True	v1 ADVANCE
+25	5	week_begin	WEEK_BEGIN		1	1	True	sweden_in_use	True	v1 Tid
+26	5	event	E_PL_OFFER_EXPIRES	timer	1	1	True	sweden_in_use	True	D2: giltigt till och med vecka 4; v1 expiry
+27	5	week_end	WEEK_END		1	1	True	sweden_in_use	True	v1 Tid
+28	5	advance	ADVANCE		1	1	True	sweden_in_use	True	v1 ADVANCE
+29	6	week_begin	WEEK_BEGIN		1	1	True	sweden_in_use	True	v1 Tid
+30	6	event	E_PL_TEAM	timer	1	1	True	sweden_in_use	True	D3
+31	6	week_end	WEEK_END		1	1	True	sweden_in_use	True	v1 Tid
+32	6	advance	ADVANCE		1	1	True	sweden_in_use	True	v1 ADVANCE
+33	7	week_begin	WEEK_BEGIN		1	1	True	sweden_in_use	True	v1 Tid
+34	7	event	E_SE_OFFER_EXPIRES	timer	1	1	True	sweden_in_use	True	D9: beslut till och med vecka 6; v1 expiry
+35	7	week_end	WEEK_END		1	1	True	sweden_in_use	True	v1 Tid
+36	7	advance	ADVANCE		1	1	True	sweden_in_use	True	v1 ADVANCE
+37	8	week_begin	WEEK_BEGIN		1	1	True	sweden_in_use	True	v1 Tid
+38	8	event_skipped	E_SE_TEAM_LEAVES		1	1	True	sweden_in_use	True	D9: osäkrat arbetslag lämnar vid vecka 8
+39	8	week_end	WEEK_END		1	1	True	sweden_in_use	True	v1 Tid
+40	8	advance	ADVANCE		1	1	True	sweden_in_use	True	v1 ADVANCE
+41	9	week_begin	WEEK_BEGIN		1	1	True	sweden_in_use	True	v1 Tid
+42	9	week_end	WEEK_END		1	1	True	sweden_in_use	True	v1 Tid
+43	9	advance	ADVANCE		1	1	True	sweden_in_use	True	v1 ADVANCE
+44	10	week_begin	WEEK_BEGIN		1	1	True	sweden_in_use	True	v1 Tid
+45	10	event	E_NEW_MACHINE	timer	1	1	True	sweden_in_use	True	D4
+46	10	decision	D6		1	0	True	sweden_in_use	True	Berättelsen D6, Budget
+47	10	week_end	WEEK_END		0	0	True	sweden_in_use	True	v1 Tid
+48	10	advance	ADVANCE		0	0	True	sweden_in_use	True	v1 ADVANCE
+49	11	week_begin	WEEK_BEGIN		0	0	True	sweden_in_use	True	v1 Tid
+50	11	week_end	WEEK_END		0	0	True	sweden_in_use	True	v1 Tid
+51	11	advance	ADVANCE		0	0	True	sweden_in_use	True	v1 ADVANCE
+52	12	week_begin	WEEK_BEGIN		0	0	True	sweden_in_use	True	v1 Tid
+53	12	event	E_QUALITY	approved	0	0	True	sweden_in_use	True	D6
+54	12	decision	D8		0	0	True	sweden_in_use	True	Berättelsen D8
+55	12	week_end	WEEK_END		0	0	True	sweden_in_use	True	v1 Tid
+56	12	advance	ADVANCE		0	0	True	sweden_in_use	True	v1 ADVANCE
+57	13	week_begin	WEEK_BEGIN		0	0	True	sweden_in_use	True	v1 Tid
+58	13	week_end	WEEK_END		0	0	True	sweden_in_use	True	v1 Tid
+59	13	advance	ADVANCE		0	0	True	sweden_in_use	True	v1 ADVANCE
+60	14	week_begin	WEEK_BEGIN		0	0	True	sweden_in_use	True	v1 Tid
+61	14	week_end	WEEK_END		0	0	True	sweden_in_use	True	v1 Tid
+62	14	advance	ADVANCE		0	0	True	sweden_in_use	True	v1 ADVANCE
+63	15	week_begin	WEEK_BEGIN		0	0	True	sweden_in_use	True	v1 Tid
+64	15	week_end	WEEK_END		0	0	True	sweden_in_use	True	v1 Tid
+65	15	advance	ADVANCE		0	0	True	sweden_in_use	True	v1 ADVANCE
+66	16	week_begin	WEEK_BEGIN		0	0	True	sweden_in_use	True	v1 Tid
+67	16	week_end	WEEK_END		0	0	True	sweden_in_use	True	v1 Tid
+68	16	advance	ADVANCE		0	0	True	sweden_in_use	True	v1 ADVANCE
+69	17	week_begin	WEEK_BEGIN		0	0	True	sweden_in_use	True	v1 Tid
+70	17	week_end	WEEK_END		0	0	True	sweden_in_use	True	v1 Tid
+71	17	advance	ADVANCE		0	0	True	sweden_in_use	True	v1 ADVANCE
+72	18	week_begin	WEEK_BEGIN		0	0	True	sweden_in_use	True	v1 Tid
+73	18	week_end	WEEK_END		0	0	True	sweden_in_use	True	v1 Tid
+74	18	advance	ADVANCE		0	0	True	sweden_in_use	True	v1 ADVANCE
+75	19	week_begin	WEEK_BEGIN		0	0	True	sweden_in_use	True	v1 Tid
+76	19	week_end	WEEK_END		0	0	True	sweden_in_use	True	v1 Tid
+77	19	advance	ADVANCE		0	0	True	sweden_in_use	True	v1 ADVANCE
+78	20	week_begin	WEEK_BEGIN		0	0	True	sweden_in_use	True	v1 Tid
+79	20	week_end	WEEK_END		0	0	True	sweden_in_use	True	v1 Tid
+80	20	advance	ADVANCE		0	0	True	sweden_in_use	True	v1 ADVANCE
+81	21	week_begin	WEEK_BEGIN		0	0	True	sweden_in_use	True	v1 Tid
+82	21	week_end	WEEK_END		0	0	True	sweden_in_use	True	v1 Tid
+83	21	advance	ADVANCE		0	0	True	sweden_in_use	True	v1 ADVANCE
+84	22	week_begin	WEEK_BEGIN		0	0	True	sweden_in_use	True	v1 Tid
+85	22	week_end	WEEK_END		0	0	True	sweden_in_use	True	v1 Tid
+86	22	advance	ADVANCE		0	0	True	sweden_in_use	True	v1 ADVANCE
+87	23	week_begin	WEEK_BEGIN		0	0	True	sweden_in_use	True	v1 Tid
+88	23	week_end	WEEK_END		0	0	True	sweden_in_use	True	v1 Tid
+89	23	advance	ADVANCE		0	0	True	sweden_in_use	True	v1 ADVANCE
+90	24	week_begin	WEEK_BEGIN		0	0	True	sweden_in_use	True	v1 Tid
+91	24	week_end	WEEK_END		0	0	True	sweden_in_use	True	v1 Tid
+92	24	advance	ADVANCE		0	0	True	sweden_in_use	True	v1 ADVANCE
+93	25	week_begin	WEEK_BEGIN		0	0	True	sweden_in_use	True	v1 Tid
+94	25	week_end	WEEK_END		0	0	True	sweden_in_use	True	v1 Tid
+95	25	advance	ADVANCE		0	0	True	sweden_in_use	True	v1 ADVANCE
+96	26	week_begin	WEEK_BEGIN		0	0	True	sweden_in_use	True	v1 Tid
+97	26	week_end	WEEK_END		0	0	True	sweden_in_use	True	v1 Tid

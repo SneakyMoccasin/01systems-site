@@ -1,0 +1,146 @@
+[
+  {
+    "transition_audit": "PASS",
+    "weeks_checked": 27,
+    "rows_checked": 86,
+    "budget_transitions_checked": 86,
+    "executed": [
+      {
+        "week": 0,
+        "decision": "D9"
+      },
+      {
+        "week": 26,
+        "decision": "D10"
+      }
+    ],
+    "rejected_attempts": [],
+    "script_is_legal": true,
+    "d8_weeks": [],
+    "week_end_balances": [
+      {
+        "week": 0,
+        "budget": 5
+      },
+      {
+        "week": 1,
+        "budget": 5
+      },
+      {
+        "week": 2,
+        "budget": 5
+      },
+      {
+        "week": 3,
+        "budget": 5
+      },
+      {
+        "week": 4,
+        "budget": 5
+      },
+      {
+        "week": 5,
+        "budget": 5
+      },
+      {
+        "week": 6,
+        "budget": 5
+      },
+      {
+        "week": 7,
+        "budget": 5
+      },
+      {
+        "week": 8,
+        "budget": 5
+      },
+      {
+        "week": 9,
+        "budget": 5
+      },
+      {
+        "week": 10,
+        "budget": 5
+      },
+      {
+        "week": 11,
+        "budget": 5
+      },
+      {
+        "week": 12,
+        "budget": 5
+      },
+      {
+        "week": 13,
+        "budget": 5
+      },
+      {
+        "week": 14,
+        "budget": 5
+      },
+      {
+        "week": 15,
+        "budget": 5
+      },
+      {
+        "week": 16,
+        "budget": 5
+      },
+      {
+        "week": 17,
+        "budget": 5
+      },
+      {
+        "week": 18,
+        "budget": 5
+      },
+      {
+        "week": 19,
+        "budget": 5
+      },
+      {
+        "week": 20,
+        "budget": 5
+      },
+      {
+        "week": 21,
+        "budget": 5
+      },
+      {
+        "week": 22,
+        "budget": 5
+      },
+      {
+        "week": 23,
+        "budget": 5
+      },
+      {
+        "week": 24,
+        "budget": 5
+      },
+      {
+        "week": 25,
+        "budget": 5
+      },
+      {
+        "week": 26,
+        "budget": 5
+      }
+    ],
+    "final_budget": 5,
+    "pending_after_horizon": [
+      {
+        "id": "E_SE_PREMISES_END",
+        "due": 34,
+        "origin": "D10",
+        "scheduled_at": 26
+      }
+    ],
+    "sweden": {
+      "continuous_sweden": true,
+      "snapshots_checked": 172,
+      "violation_count": 0,
+      "first_violation": null
+    }
+  }
+]

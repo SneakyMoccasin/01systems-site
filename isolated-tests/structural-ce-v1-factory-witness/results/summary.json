@@ -1,0 +1,195 @@
+{
+  "status": "PASS",
+  "python": "3.9.6",
+  "input_sha256": {
+    "README.md": "b1ebf339796c0b269fade538176a08b17df2eab1259d0f193581ad3e31ca0749",
+    "audit_history.py": "81df362bddd925adb71e349e9ec59e0a07d9710e791755bdf2c69fb79c0d9c51",
+    "candidate.json": "e7da23a9e34a360a6a85f1251c0880d689f2338da3bf855a79737998650e20f0",
+    "checks.py": "101642a875c55668860e542fc2ea6658010c81f659cbd4ec4a42f662b2abc26f",
+    "model.json": "be6506fd0655ad2f6ef66db710f086591d70e168cd4ce56a88b8f06b748f7ec8",
+    "replay.py": "e68b41c52aa14a8fd0844907c5d852c31224e3304b9ef8d0111bf68cba9ec9e6",
+    "run.py": "adcf2f6b1ee9bca0d2c2f2784312979716bec0978619f77b0fe555fd2ddb63ef",
+    "scenarios.json": "ad75c497a7b705d3025a79e702f1f0bc505e86aa7e4d79ebf3228a8669076518",
+    "sources/factory-assumed.txt": "85387b224f5896554a2f5562a94f7eb9fe23a3ebf02f6f5e57670c8bfca9add8",
+    "sources/structural-ce-v1-frozen.txt": "d78afa9bf74ec1c361d656693201d7302f24236b8f0fc9aea6141f10a729c257"
+  },
+  "scope": "Fixed witness replay and separate saved-history inspection; no composite goal operator, no CE2 engine verification, no product-value proof.",
+  "main_trace_count": 12,
+  "main_transition_rows_checked": 1172,
+  "main_swedish_snapshots_checked": 2344,
+  "scenarios": [
+    {
+      "id": "candidate",
+      "description": "Exakt kandidat, alla tre externa besked godkända",
+      "status": "PASS",
+      "paths": 2,
+      "all_event_orders_checked": true,
+      "order_sensitive_for_checked_properties": false,
+      "d8_weeks": [
+        12
+      ],
+      "legal": true,
+      "continuous_sweden": true,
+      "first_sweden_loss": null,
+      "final_budget": 0,
+      "blocked_attempts": []
+    },
+    {
+      "id": "bank_rejected",
+      "description": "Samma kandidat, endast bankbesked ändrat till avslag",
+      "status": "PASS",
+      "paths": 2,
+      "all_event_orders_checked": true,
+      "order_sensitive_for_checked_properties": false,
+      "d8_weeks": [],
+      "legal": false,
+      "continuous_sweden": true,
+      "first_sweden_loss": null,
+      "final_budget": 1,
+      "blocked_attempts": [
+        "D4",
+        "D6",
+        "D8"
+      ]
+    },
+    {
+      "id": "customer_absent",
+      "description": "Samma kandidat, endast kundbesked ändrat till uteblivet",
+      "status": "PASS",
+      "paths": 2,
+      "all_event_orders_checked": true,
+      "order_sensitive_for_checked_properties": false,
+      "d8_weeks": [],
+      "legal": false,
+      "continuous_sweden": true,
+      "first_sweden_loss": null,
+      "final_budget": 0,
+      "blocked_attempts": [
+        "D8"
+      ]
+    },
+    {
+      "id": "quality_rejected",
+      "description": "Samma kandidat, endast kvalitetsbesked ändrat till underkänt",
+      "status": "PASS",
+      "paths": 2,
+      "all_event_orders_checked": true,
+      "order_sensitive_for_checked_properties": false,
+      "d8_weeks": [],
+      "legal": false,
+      "continuous_sweden": true,
+      "first_sweden_loss": null,
+      "final_budget": 0,
+      "blocked_attempts": [
+        "D8"
+      ]
+    },
+    {
+      "id": "machine_moved",
+      "description": "Separat variant: ersätt D4 med D5 vid samma position vecka 2; övriga beslut och besked oförändrade",
+      "status": "PASS",
+      "paths": 4,
+      "all_event_orders_checked": true,
+      "order_sensitive_for_checked_properties": false,
+      "d8_weeks": [
+        12
+      ],
+      "legal": true,
+      "continuous_sweden": false,
+      "first_sweden_loss": {
+        "index": 15,
+        "week": 2,
+        "side": "after",
+        "action": "D5",
+        "missing": [
+          "original_machine_in_use_in_sweden"
+        ]
+      },
+      "final_budget": 4,
+      "blocked_attempts": []
+    }
+  ],
+  "supplementary_checks": [
+    {
+      "id": "once_only",
+      "status": "PASS",
+      "paths": 1,
+      "description": "D9 två gånger samma vecka: andra försöket avvisas utan ytterligare kostnad."
+    },
+    {
+      "id": "lease_week_4",
+      "status": "PASS",
+      "paths": 1,
+      "description": "D2 tillåts sista giltiga veckan 4 och lokalen blir tillgänglig vecka 6."
+    },
+    {
+      "id": "lease_week_5",
+      "status": "PASS",
+      "paths": 1,
+      "description": "Expiry vecka 5 behandlas före D2 och blockerar beslutet."
+    },
+    {
+      "id": "secure_week_6",
+      "status": "PASS",
+      "paths": 1,
+      "description": "D9 tillåts sista giltiga veckan 6; avgångseventet vecka 8 förfaller utan effekt."
+    },
+    {
+      "id": "secure_week_7",
+      "status": "PASS",
+      "paths": 1,
+      "description": "Expiry vecka 7 blockerar D9; det osäkrade arbetslaget lämnar vecka 8."
+    },
+    {
+      "id": "quality_then_d8_at_horizon",
+      "status": "PASS",
+      "paths": 2,
+      "description": "Kvalitetsbesked vid vecka 26 behandlas före D8; horisonten är inklusive."
+    },
+    {
+      "id": "lease_loss_at_horizon",
+      "status": "PASS",
+      "paths": 1,
+      "description": "Uppsägning vecka 18 ger lokalbortfall vecka 26, vilket historikkontrollen upptäcker."
+    },
+    {
+      "id": "effect_beyond_horizon",
+      "status": "PASS",
+      "paths": 1,
+      "description": "D10 vid horisonten får schemalägga vecka 34; effekten utförs inte i förtid."
+    },
+    {
+      "id": "modernization_timer",
+      "status": "PASS",
+      "paths": 1,
+      "description": "D11 kräver redan säkrat arbetslag; kostnad 5 och färdigmarkör efter sex veckor."
+    },
+    {
+      "id": "both_machines_allowed",
+      "status": "PASS",
+      "paths": 4,
+      "description": "D4 och D5 kan båda genomföras; två maskiner räknas utan exklusivitetsregel."
+    },
+    {
+      "id": "detect_budget_tampering",
+      "status": "PASS",
+      "paths": 0,
+      "description": "En manipulerad budget efter D9 avvisas av historikgranskaren.",
+      "caught": "Wrong transition effects at row 4"
+    },
+    {
+      "id": "detect_wrong_schedule",
+      "status": "PASS",
+      "paths": 0,
+      "description": "En manipulerad maskinleveransvecka avvisas av historikgranskaren.",
+      "caught": "Wrong transition effects at row 15"
+    },
+    {
+      "id": "detect_missing_week_marker",
+      "status": "PASS",
+      "paths": 0,
+      "description": "En saknad veckostart på en vecka utan beslut avvisas av historikgranskaren.",
+      "caught": "Events not exhausted"
+    }
+  ]
+}

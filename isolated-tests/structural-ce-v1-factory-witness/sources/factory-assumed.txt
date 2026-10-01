@@ -1,0 +1,81 @@
+Pröva följande fabriksfall mot det bifogade Structural CE v1.0-kontraktet.
+
+Gör först en representationskontroll och modellspecifikation. Gör inga kodändringar eller ändringar i CE2.
+
+Alla verksamhetsuppgifter nedan är konstruerade ASSUMED-förutsättningar. Lägg inte till egna regler för att få modellen att fungera.
+
+Leverera:
+1. Materiella oklarheter eller motsägelser i underlaget.
+2. Initialt tillstånd, beslut, förvillkor, effekter, events, externa utfall och deadlines, med spårbarhet till berättelsen.
+3. Bedömning av den centrala frågans och kontrollfrågornas representerbarhet: PASS, FAIL eller INCONCLUSIVE.
+4. Minsta nästa steg för mekanisk kontroll.
+
+Granska särskilt om ”Sverige behålls som ett fungerande alternativ” är tillräckligt tidsbestämt. Skilj mellan beslutstillgänglighet, tillstånd vid en tidpunkt, obruten funktion och gemensam säkringsbarhet. Om underlaget inte avgör vilken egenskap som avses, redovisa det som en öppen fråga. Välj inte en enklare tolkning själv.
+
+Räkna inte ett stort förgrenat spel för hand och kalla resultaten verifierade.
+
+# Fabriksflytt till Polen – beslutsunderlag för CE-test
+
+Ett svenskt tillverkningsföretag överväger att etablera produktion i Polen. Ledningen vill kunna godkänna produktionsstart där inom 26 veckor. Samtidigt vill den förstå hur länge det går att behålla Sverige som ett fungerande alternativ.
+
+Företaget har en svensk fabrik med en central produktionsmaskin och ett erfaret arbetslag. Maskinen kan behållas i Sverige eller flyttas till Polen. Ett annat alternativ är att köpa en ny maskin till Polen.
+
+Startläget är vecka 0. Horisonten är slutet av vecka 26. Beslut kan fattas varje vecka. Alla belopp avser miljoner kronor.
+
+## Budget
+
+Företaget har 8 miljoner tillgängliga. Banken kan bevilja ytterligare 6 miljoner.
+
+Ett åtagande kräver tillgänglig finansiering. Kostnaden dras när beslutet fattas och återbetalas inte. Löpande drift, intäkter och lönsamhet ingår inte i budgeten.
+
+## Tillåtna beslut
+
+1. **Ansöka om finansiering.** Kan göras från vecka 0. Två veckor efter ansökan kan banken godkänna, avslå eller ännu inte ha svarat. Godkännande tillför 6 miljoner. Utan svar görs ingen ytterligare bankprövning inom horisonten.
+
+2. **Teckna avtal för den polska lokalen.** Kostar 2 miljoner. Erbjudandet gäller till och med vecka 4. Lokalen blir tillgänglig två veckor efter avtalet.
+
+3. **Rekrytera och utbilda det polska arbetslaget.** Kräver tillgänglig polsk lokal och kostar 2 miljoner. Arbetslaget blir redo fyra veckor efter beslutet.
+
+4. **Beställa en ny maskin till Polen.** Kräver tecknat lokalavtal och kostar 6 miljoner. Maskinen är installerad och tillgänglig åtta veckor efter beställningen. Den svenska maskinen påverkas inte.
+
+5. **Flytta den svenska maskinen till Polen.** Kräver tillgänglig polsk lokal och kostar 2 miljoner. Maskinen tas ur bruk i Sverige direkt och blir tillgänglig i Polen fyra veckor senare. Någon återflytt ingår inte i de erbjudna besluten.
+
+6. **Beställa kvalitetsprövning i Polen.** Kräver tillgänglig lokal, maskin och utbildat arbetslag. Kostar 1 miljon. Två veckor senare kan prövningen godkännas, underkännas eller sakna färdigt resultat. Någon omprövning ingår inte.
+
+7. **Begära kundens godkännande av den polska produktionsplatsen.** Kräver tecknat polskt lokalavtal. Tre veckor senare kan kunden godkänna, neka eller ännu inte ha svarat. Ingen ny prövning ingår inom horisonten.
+
+8. **Godkänna produktionsstart i Polen.** Kräver tillgänglig polsk lokal, maskin och utbildat arbetslag samt godkänd kvalitetsprövning och kundgodkännande.
+
+9. **Säkra det svenska arbetslaget fram till vecka 26.** Kan beslutas till och med vecka 6 och kostar 3 miljoner. Utan beslutet lämnar nyckelpersonerna vid vecka 8. Med beslutet stannar de till horisonten.
+
+10. **Säga upp den svenska lokalen.** Kan göras från vecka 0. Tillgången upphör åtta veckor senare. Uppsägningen kan inte återtas.
+
+11. **Beställa modernisering av den svenska produktionen.** Kräver tillgänglig svensk lokal och maskin samt att arbetslaget har säkrats. Kostar 5 miljoner. Moderniseringen blir färdig sex veckor senare. Den ger ingen ny maskin och ersätter inte förlorad lokal eller personal.
+
+Ledningen får avstå eller vänta. Både en ny maskin och en flytt av den gamla får genomföras om förutsättningarna och pengarna räcker; de är inte automatiskt ömsesidigt uteslutande.
+
+## Sverige som alternativ
+
+Företaget har kvar den svenska produktionsförmågan när det fortfarande har tillgång till:
+- den svenska lokalen,
+- den svenska maskinen i bruk,
+- det svenska arbetslaget.
+
+Definitionen säger inte hur många produkter fabriken kan leverera eller om en viss kundorder uppfylls.
+
+Beslut 8 betyder att ledningen kan godkänna produktionsstart i Polen när de angivna villkoren är uppfyllda. Det garanterar inte framtida volym, kvalitet eller lönsamhet.
+
+## Central beslutsfråga
+
+Hur förändrar ledningens beslut och deras tidpunkter möjligheten att godkänna produktionsstart i Polen inom vecka 26, samtidigt som Sverige behålls som ett fungerande alternativ?
+
+Ledningen vill jämföra ny maskin med flyttad maskin och förstå konsekvenserna av att binda pengar till svensk kontinuitet eller modernisering medan etableringen i Polen fortfarande är osäker.
+
+## Kontrollfrågor
+
+1. Vilka beslut kan ledningen ta direkt med startlägets förutsättningar?
+2. Vilka möjligheter återstår om banken avslår eller inte svarar?
+3. Vad händer med Sverige som alternativ när den befintliga maskinen flyttas?
+4. Vilka beslut måste fattas före en viss vecka för att fortfarande få avsedd effekt inom horisonten?
+5. Kan ledningen godkänna produktionsstart i Polen om kunden eller kvalitetsprövningen inte lämnar ett färdigt svar?
+6. Vilka senare beslut kan bli otillgängliga efter att pengar bundits till ett tidigare åtagande?

@@ -1,0 +1,65 @@
+{
+  "name": "Factory witness — frozen Structural CE v1 translation",
+  "provenance": "All business inputs are user-supplied ASSUMED premises. Rules implement the model specified in the conversation; no CE2 dependency.",
+  "clock": {"start": 0, "horizon": 26, "step": 1, "events_before_decisions": true, "horizon_inclusive": true, "maximum_scheduled_due": 34},
+  "domains": {
+    "budget": {"integer": [0, 14]},
+    "se_premises": {"enum": [true, false]},
+    "original_machine": {"enum": ["sweden_in_use", "in_transit", "poland"]},
+    "se_team": {"enum": [true, false]},
+    "se_team_secured": {"enum": [true, false]},
+    "se_securing_offer": {"enum": [true, false]},
+    "pl_offer": {"enum": [true, false]},
+    "pl_lease": {"enum": [true, false]},
+    "pl_premises": {"enum": [true, false]},
+    "pl_team": {"enum": [true, false]},
+    "new_machine": {"enum": ["not_ordered", "ordered", "installed"]},
+    "pl_machines": {"integer": [0, 2]},
+    "bank": {"enum": ["not_requested", "pending", "approved", "rejected", "waiting_no_further_review"]},
+    "quality": {"enum": ["not_requested", "pending", "approved", "rejected", "waiting_no_further_review"]},
+    "customer": {"enum": ["not_requested", "pending", "approved", "rejected", "waiting_no_further_review"]},
+    "production_authorized": {"enum": [true, false]},
+    "modernization_complete": {"enum": [true, false]}
+  },
+  "initial": {
+    "budget": 8, "se_premises": true, "original_machine": "sweden_in_use",
+    "se_team": true, "se_team_secured": false, "se_securing_offer": true,
+    "pl_offer": true, "pl_lease": false, "pl_premises": false, "pl_team": false,
+    "new_machine": "not_ordered", "pl_machines": 0,
+    "bank": "not_requested", "quality": "not_requested", "customer": "not_requested",
+    "production_authorized": false, "modernization_complete": false
+  },
+  "reference_event_order": ["E_PL_OFFER_EXPIRES", "E_SE_OFFER_EXPIRES", "E_SE_TEAM_LEAVES", "E_BANK", "E_PL_PREMISES", "E_PL_TEAM", "E_NEW_MACHINE", "E_MOVED_MACHINE", "E_QUALITY", "E_CUSTOMER", "E_SE_PREMISES_END", "E_MODERNIZATION"],
+  "initial_events": [
+    {"id": "E_PL_OFFER_EXPIRES", "due": 5, "origin": "initial", "scheduled_at": 0},
+    {"id": "E_SE_OFFER_EXPIRES", "due": 7, "origin": "initial", "scheduled_at": 0},
+    {"id": "E_SE_TEAM_LEAVES", "due": 8, "origin": "initial", "scheduled_at": 0}
+  ],
+  "decisions": {
+    "D1": {"label": "Ansöka om finansiering", "source": "Berättelsen D1; v1 engångsregel", "cost": 0, "requires": [], "set": {"bank": "pending"}, "schedule": {"id": "E_BANK", "delay": 2}},
+    "D2": {"label": "Teckna polskt lokalavtal", "source": "Berättelsen D2, Budget", "cost": 2, "requires": [["pl_offer", "eq", true], ["budget", "ge", 2]], "set": {"pl_lease": true}, "schedule": {"id": "E_PL_PREMISES", "delay": 2}},
+    "D3": {"label": "Rekrytera och utbilda polskt arbetslag", "source": "Berättelsen D3, Budget", "cost": 2, "requires": [["pl_premises", "eq", true], ["budget", "ge", 2]], "set": {}, "schedule": {"id": "E_PL_TEAM", "delay": 4}},
+    "D4": {"label": "Beställa ny maskin", "source": "Berättelsen D4, Budget", "cost": 6, "requires": [["pl_lease", "eq", true], ["budget", "ge", 6]], "set": {"new_machine": "ordered"}, "schedule": {"id": "E_NEW_MACHINE", "delay": 8}},
+    "D5": {"label": "Flytta svensk maskin", "source": "Berättelsen D5, Budget", "cost": 2, "requires": [["pl_premises", "eq", true], ["budget", "ge", 2]], "set": {"original_machine": "in_transit"}, "schedule": {"id": "E_MOVED_MACHINE", "delay": 4}},
+    "D6": {"label": "Beställa kvalitetsprövning", "source": "Berättelsen D6, Budget", "cost": 1, "requires": [["pl_premises", "eq", true], ["pl_machines", "ge", 1], ["pl_team", "eq", true], ["budget", "ge", 1]], "set": {"quality": "pending"}, "schedule": {"id": "E_QUALITY", "delay": 2}},
+    "D7": {"label": "Begära kundgodkännande", "source": "Berättelsen D7", "cost": 0, "requires": [["pl_lease", "eq", true]], "set": {"customer": "pending"}, "schedule": {"id": "E_CUSTOMER", "delay": 3}},
+    "D8": {"label": "Godkänna produktionsstart", "source": "Berättelsen D8", "cost": 0, "requires": [["pl_premises", "eq", true], ["pl_machines", "ge", 1], ["pl_team", "eq", true], ["quality", "eq", "approved"], ["customer", "eq", "approved"]], "set": {"production_authorized": true}},
+    "D9": {"label": "Säkra svenskt arbetslag", "source": "Berättelsen D9, Budget", "cost": 3, "requires": [["se_securing_offer", "eq", true], ["budget", "ge", 3]], "set": {"se_team_secured": true}},
+    "D10": {"label": "Säga upp svensk lokal", "source": "Berättelsen D10", "cost": 0, "requires": [], "set": {}, "schedule": {"id": "E_SE_PREMISES_END", "delay": 8}},
+    "D11": {"label": "Beställa svensk modernisering", "source": "Berättelsen D11, Budget", "cost": 5, "requires": [["se_premises", "eq", true], ["original_machine", "eq", "sweden_in_use"], ["se_team_secured", "eq", true], ["budget", "ge", 5]], "set": {}, "schedule": {"id": "E_MODERNIZATION", "delay": 6}}
+  },
+  "events": {
+    "E_PL_OFFER_EXPIRES": {"source": "D2: giltigt till och med vecka 4; v1 expiry", "requires": [], "outcomes": {"timer": {"set": {"pl_offer": false}}}},
+    "E_SE_OFFER_EXPIRES": {"source": "D9: beslut till och med vecka 6; v1 expiry", "requires": [], "outcomes": {"timer": {"set": {"se_securing_offer": false}}}},
+    "E_SE_TEAM_LEAVES": {"source": "D9: osäkrat arbetslag lämnar vid vecka 8", "requires": [["se_team_secured", "eq", false]], "outcomes": {"timer": {"set": {"se_team": false}}}},
+    "E_BANK": {"source": "D1", "requires": [["bank", "eq", "pending"]], "outcomes": {"approved": {"set": {"bank": "approved"}, "add": {"budget": 6}}, "rejected": {"set": {"bank": "rejected"}}, "absent": {"set": {"bank": "waiting_no_further_review"}}}},
+    "E_PL_PREMISES": {"source": "D2", "requires": [], "outcomes": {"timer": {"set": {"pl_premises": true}}}},
+    "E_PL_TEAM": {"source": "D3", "requires": [], "outcomes": {"timer": {"set": {"pl_team": true}}}},
+    "E_NEW_MACHINE": {"source": "D4", "requires": [], "outcomes": {"timer": {"set": {"new_machine": "installed"}, "add": {"pl_machines": 1}}}},
+    "E_MOVED_MACHINE": {"source": "D5", "requires": [], "outcomes": {"timer": {"set": {"original_machine": "poland"}, "add": {"pl_machines": 1}}}},
+    "E_QUALITY": {"source": "D6", "requires": [["quality", "eq", "pending"]], "outcomes": {"approved": {"set": {"quality": "approved"}}, "rejected": {"set": {"quality": "rejected"}}, "absent": {"set": {"quality": "waiting_no_further_review"}}}},
+    "E_CUSTOMER": {"source": "D7", "requires": [["customer", "eq", "pending"]], "outcomes": {"approved": {"set": {"customer": "approved"}}, "rejected": {"set": {"customer": "rejected"}}, "absent": {"set": {"customer": "waiting_no_further_review"}}}},
+    "E_SE_PREMISES_END": {"source": "D10", "requires": [], "outcomes": {"timer": {"set": {"se_premises": false}}}},
+    "E_MODERNIZATION": {"source": "D11: endast färdigmarkör, inga återställda resurser", "requires": [], "outcomes": {"timer": {"set": {"modernization_complete": true}}}}
+  }
+}

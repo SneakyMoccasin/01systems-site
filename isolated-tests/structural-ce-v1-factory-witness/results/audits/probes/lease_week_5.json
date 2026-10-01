@@ -1,0 +1,151 @@
+[
+  {
+    "transition_audit": "PASS",
+    "weeks_checked": 27,
+    "rows_checked": 85,
+    "budget_transitions_checked": 85,
+    "executed": [],
+    "rejected_attempts": [
+      {
+        "week": 5,
+        "decision": "D2",
+        "failures": [
+          [
+            "pl_offer",
+            "eq",
+            true,
+            false
+          ]
+        ]
+      }
+    ],
+    "script_is_legal": false,
+    "d8_weeks": [],
+    "week_end_balances": [
+      {
+        "week": 0,
+        "budget": 8
+      },
+      {
+        "week": 1,
+        "budget": 8
+      },
+      {
+        "week": 2,
+        "budget": 8
+      },
+      {
+        "week": 3,
+        "budget": 8
+      },
+      {
+        "week": 4,
+        "budget": 8
+      },
+      {
+        "week": 5,
+        "budget": 8
+      },
+      {
+        "week": 6,
+        "budget": 8
+      },
+      {
+        "week": 7,
+        "budget": 8
+      },
+      {
+        "week": 8,
+        "budget": 8
+      },
+      {
+        "week": 9,
+        "budget": 8
+      },
+      {
+        "week": 10,
+        "budget": 8
+      },
+      {
+        "week": 11,
+        "budget": 8
+      },
+      {
+        "week": 12,
+        "budget": 8
+      },
+      {
+        "week": 13,
+        "budget": 8
+      },
+      {
+        "week": 14,
+        "budget": 8
+      },
+      {
+        "week": 15,
+        "budget": 8
+      },
+      {
+        "week": 16,
+        "budget": 8
+      },
+      {
+        "week": 17,
+        "budget": 8
+      },
+      {
+        "week": 18,
+        "budget": 8
+      },
+      {
+        "week": 19,
+        "budget": 8
+      },
+      {
+        "week": 20,
+        "budget": 8
+      },
+      {
+        "week": 21,
+        "budget": 8
+      },
+      {
+        "week": 22,
+        "budget": 8
+      },
+      {
+        "week": 23,
+        "budget": 8
+      },
+      {
+        "week": 24,
+        "budget": 8
+      },
+      {
+        "week": 25,
+        "budget": 8
+      },
+      {
+        "week": 26,
+        "budget": 8
+      }
+    ],
+    "final_budget": 8,
+    "pending_after_horizon": [],
+    "sweden": {
+      "continuous_sweden": false,
+      "snapshots_checked": 170,
+      "violation_count": 111,
+      "first_violation": {
+        "index": 29,
+        "week": 8,
+        "side": "after",
+        "action": "E_SE_TEAM_LEAVES",
+        "missing": [
+          "se_team"
+        ]
+      }
+    }
+  }
+]

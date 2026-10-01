@@ -1,0 +1,7 @@
+[
+  {"id": "candidate", "description": "Exakt kandidat, alla tre externa besked godkända", "outcome_overrides": {}, "replace_decisions": {}, "expected": {"paths": 2, "legal": true, "d8": true, "sweden": true, "budget": 0, "rejected": []}},
+  {"id": "bank_rejected", "description": "Samma kandidat, endast bankbesked ändrat till avslag", "outcome_overrides": {"E_BANK": "rejected"}, "replace_decisions": {}, "expected": {"paths": 2, "legal": false, "d8": false, "sweden": true, "budget": 1, "rejected": ["D4", "D6", "D8"]}},
+  {"id": "customer_absent", "description": "Samma kandidat, endast kundbesked ändrat till uteblivet", "outcome_overrides": {"E_CUSTOMER": "absent"}, "replace_decisions": {}, "expected": {"paths": 2, "legal": false, "d8": false, "sweden": true, "budget": 0, "rejected": ["D8"]}},
+  {"id": "quality_rejected", "description": "Samma kandidat, endast kvalitetsbesked ändrat till underkänt", "outcome_overrides": {"E_QUALITY": "rejected"}, "replace_decisions": {}, "expected": {"paths": 2, "legal": false, "d8": false, "sweden": true, "budget": 0, "rejected": ["D8"]}},
+  {"id": "machine_moved", "description": "Separat variant: ersätt D4 med D5 vid samma position vecka 2; övriga beslut och besked oförändrade", "outcome_overrides": {}, "replace_decisions": {"D4": "D5"}, "expected": {"paths": 4, "legal": true, "d8": true, "sweden": false, "budget": 4, "rejected": []}}
+]

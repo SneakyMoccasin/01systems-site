@@ -1,0 +1,7 @@
+{
+  "name": "Exakt kandidatbana från rapporten",
+  "source": "Användarens godkända precisering och föregående rapports kandidatbana",
+  "decisions_by_week": {"0": ["D1", "D2", "D9", "D7"], "2": ["D3", "D4"], "10": ["D6"], "12": ["D8"]},
+  "external_outcomes": {"E_BANK": "approved", "E_CUSTOMER": "approved", "E_QUALITY": "approved"},
+  "otherwise": "No decisions. Visit every week through 26 inclusive; ADVANCE only after every due event and listed decision attempt."
+}

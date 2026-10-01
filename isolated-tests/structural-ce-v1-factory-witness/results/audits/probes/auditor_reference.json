@@ -1,0 +1,328 @@
+[
+  {
+    "transition_audit": "PASS",
+    "weeks_checked": 27,
+    "rows_checked": 98,
+    "budget_transitions_checked": 98,
+    "executed": [
+      {
+        "week": 0,
+        "decision": "D1"
+      },
+      {
+        "week": 0,
+        "decision": "D2"
+      },
+      {
+        "week": 0,
+        "decision": "D9"
+      },
+      {
+        "week": 0,
+        "decision": "D7"
+      },
+      {
+        "week": 2,
+        "decision": "D3"
+      },
+      {
+        "week": 2,
+        "decision": "D4"
+      },
+      {
+        "week": 10,
+        "decision": "D6"
+      },
+      {
+        "week": 12,
+        "decision": "D8"
+      }
+    ],
+    "rejected_attempts": [],
+    "script_is_legal": true,
+    "d8_weeks": [
+      12
+    ],
+    "week_end_balances": [
+      {
+        "week": 0,
+        "budget": 3
+      },
+      {
+        "week": 1,
+        "budget": 3
+      },
+      {
+        "week": 2,
+        "budget": 1
+      },
+      {
+        "week": 3,
+        "budget": 1
+      },
+      {
+        "week": 4,
+        "budget": 1
+      },
+      {
+        "week": 5,
+        "budget": 1
+      },
+      {
+        "week": 6,
+        "budget": 1
+      },
+      {
+        "week": 7,
+        "budget": 1
+      },
+      {
+        "week": 8,
+        "budget": 1
+      },
+      {
+        "week": 9,
+        "budget": 1
+      },
+      {
+        "week": 10,
+        "budget": 0
+      },
+      {
+        "week": 11,
+        "budget": 0
+      },
+      {
+        "week": 12,
+        "budget": 0
+      },
+      {
+        "week": 13,
+        "budget": 0
+      },
+      {
+        "week": 14,
+        "budget": 0
+      },
+      {
+        "week": 15,
+        "budget": 0
+      },
+      {
+        "week": 16,
+        "budget": 0
+      },
+      {
+        "week": 17,
+        "budget": 0
+      },
+      {
+        "week": 18,
+        "budget": 0
+      },
+      {
+        "week": 19,
+        "budget": 0
+      },
+      {
+        "week": 20,
+        "budget": 0
+      },
+      {
+        "week": 21,
+        "budget": 0
+      },
+      {
+        "week": 22,
+        "budget": 0
+      },
+      {
+        "week": 23,
+        "budget": 0
+      },
+      {
+        "week": 24,
+        "budget": 0
+      },
+      {
+        "week": 25,
+        "budget": 0
+      },
+      {
+        "week": 26,
+        "budget": 0
+      }
+    ],
+    "final_budget": 0,
+    "pending_after_horizon": [],
+    "sweden": {
+      "continuous_sweden": true,
+      "snapshots_checked": 196,
+      "violation_count": 0,
+      "first_violation": null
+    }
+  },
+  {
+    "transition_audit": "PASS",
+    "weeks_checked": 27,
+    "rows_checked": 98,
+    "budget_transitions_checked": 98,
+    "executed": [
+      {
+        "week": 0,
+        "decision": "D1"
+      },
+      {
+        "week": 0,
+        "decision": "D2"
+      },
+      {
+        "week": 0,
+        "decision": "D9"
+      },
+      {
+        "week": 0,
+        "decision": "D7"
+      },
+      {
+        "week": 2,
+        "decision": "D3"
+      },
+      {
+        "week": 2,
+        "decision": "D4"
+      },
+      {
+        "week": 10,
+        "decision": "D6"
+      },
+      {
+        "week": 12,
+        "decision": "D8"
+      }
+    ],
+    "rejected_attempts": [],
+    "script_is_legal": true,
+    "d8_weeks": [
+      12
+    ],
+    "week_end_balances": [
+      {
+        "week": 0,
+        "budget": 3
+      },
+      {
+        "week": 1,
+        "budget": 3
+      },
+      {
+        "week": 2,
+        "budget": 1
+      },
+      {
+        "week": 3,
+        "budget": 1
+      },
+      {
+        "week": 4,
+        "budget": 1
+      },
+      {
+        "week": 5,
+        "budget": 1
+      },
+      {
+        "week": 6,
+        "budget": 1
+      },
+      {
+        "week": 7,
+        "budget": 1
+      },
+      {
+        "week": 8,
+        "budget": 1
+      },
+      {
+        "week": 9,
+        "budget": 1
+      },
+      {
+        "week": 10,
+        "budget": 0
+      },
+      {
+        "week": 11,
+        "budget": 0
+      },
+      {
+        "week": 12,
+        "budget": 0
+      },
+      {
+        "week": 13,
+        "budget": 0
+      },
+      {
+        "week": 14,
+        "budget": 0
+      },
+      {
+        "week": 15,
+        "budget": 0
+      },
+      {
+        "week": 16,
+        "budget": 0
+      },
+      {
+        "week": 17,
+        "budget": 0
+      },
+      {
+        "week": 18,
+        "budget": 0
+      },
+      {
+        "week": 19,
+        "budget": 0
+      },
+      {
+        "week": 20,
+        "budget": 0
+      },
+      {
+        "week": 21,
+        "budget": 0
+      },
+      {
+        "week": 22,
+        "budget": 0
+      },
+      {
+        "week": 23,
+        "budget": 0
+      },
+      {
+        "week": 24,
+        "budget": 0
+      },
+      {
+        "week": 25,
+        "budget": 0
+      },
+      {
+        "week": 26,
+        "budget": 0
+      }
+    ],
+    "final_budget": 0,
+    "pending_after_horizon": [],
+    "sweden": {
+      "continuous_sweden": true,
+      "snapshots_checked": 196,
+      "violation_count": 0,
+      "first_violation": null
+    }
+  }
+]

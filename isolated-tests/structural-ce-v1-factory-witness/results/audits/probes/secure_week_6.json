@@ -1,0 +1,135 @@
+[
+  {
+    "transition_audit": "PASS",
+    "weeks_checked": 27,
+    "rows_checked": 85,
+    "budget_transitions_checked": 85,
+    "executed": [
+      {
+        "week": 6,
+        "decision": "D9"
+      }
+    ],
+    "rejected_attempts": [],
+    "script_is_legal": true,
+    "d8_weeks": [],
+    "week_end_balances": [
+      {
+        "week": 0,
+        "budget": 8
+      },
+      {
+        "week": 1,
+        "budget": 8
+      },
+      {
+        "week": 2,
+        "budget": 8
+      },
+      {
+        "week": 3,
+        "budget": 8
+      },
+      {
+        "week": 4,
+        "budget": 8
+      },
+      {
+        "week": 5,
+        "budget": 8
+      },
+      {
+        "week": 6,
+        "budget": 5
+      },
+      {
+        "week": 7,
+        "budget": 5
+      },
+      {
+        "week": 8,
+        "budget": 5
+      },
+      {
+        "week": 9,
+        "budget": 5
+      },
+      {
+        "week": 10,
+        "budget": 5
+      },
+      {
+        "week": 11,
+        "budget": 5
+      },
+      {
+        "week": 12,
+        "budget": 5
+      },
+      {
+        "week": 13,
+        "budget": 5
+      },
+      {
+        "week": 14,
+        "budget": 5
+      },
+      {
+        "week": 15,
+        "budget": 5
+      },
+      {
+        "week": 16,
+        "budget": 5
+      },
+      {
+        "week": 17,
+        "budget": 5
+      },
+      {
+        "week": 18,
+        "budget": 5
+      },
+      {
+        "week": 19,
+        "budget": 5
+      },
+      {
+        "week": 20,
+        "budget": 5
+      },
+      {
+        "week": 21,
+        "budget": 5
+      },
+      {
+        "week": 22,
+        "budget": 5
+      },
+      {
+        "week": 23,
+        "budget": 5
+      },
+      {
+        "week": 24,
+        "budget": 5
+      },
+      {
+        "week": 25,
+        "budget": 5
+      },
+      {
+        "week": 26,
+        "budget": 5
+      }
+    ],
+    "final_budget": 5,
+    "pending_after_horizon": [],
+    "sweden": {
+      "continuous_sweden": true,
+      "snapshots_checked": 170,
+      "violation_count": 0,
+      "first_violation": null
+    }
+  }
+]
