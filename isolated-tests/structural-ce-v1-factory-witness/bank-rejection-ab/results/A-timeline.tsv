@@ -1,0 +1,97 @@
+week	kind	id	decision_name	outcome	budget_before	budget_after	blocked_reasons	se_premises	original_machine	se_team
+0	initial	INITIAL			8	8	[]	True	sweden_in_use	True
+0	week_begin	WEEK_BEGIN			8	8	[]	True	sweden_in_use	True
+0	decision	D1	Ansöka om finansiering		8	8	[]	True	sweden_in_use	True
+0	decision	D2	Teckna polskt lokalavtal		8	6	[]	True	sweden_in_use	True
+0	decision	D7	Begära kundgodkännande		6	6	[]	True	sweden_in_use	True
+0	decision	D9	Säkra svenskt arbetslag		6	3	[]	True	sweden_in_use	True
+0	week_end	WEEK_END			3	3	[]	True	sweden_in_use	True
+0	advance	ADVANCE			3	3	[]	True	sweden_in_use	True
+1	week_begin	WEEK_BEGIN			3	3	[]	True	sweden_in_use	True
+1	week_end	WEEK_END			3	3	[]	True	sweden_in_use	True
+1	advance	ADVANCE			3	3	[]	True	sweden_in_use	True
+2	week_begin	WEEK_BEGIN			3	3	[]	True	sweden_in_use	True
+2	event	E_BANK		rejected	3	3	[]	True	sweden_in_use	True
+2	event	E_PL_PREMISES		timer	3	3	[]	True	sweden_in_use	True
+2	decision	D3	Rekrytera och utbilda polskt arbetslag		3	1	[]	True	sweden_in_use	True
+2	rejected_attempt	D5	Flytta svensk maskin		1	1	"[[""budget"", ""ge"", 2, 1]]"	True	sweden_in_use	True
+2	week_end	WEEK_END			1	1	[]	True	sweden_in_use	True
+2	advance	ADVANCE			1	1	[]	True	sweden_in_use	True
+3	week_begin	WEEK_BEGIN			1	1	[]	True	sweden_in_use	True
+3	event	E_CUSTOMER		approved	1	1	[]	True	sweden_in_use	True
+3	week_end	WEEK_END			1	1	[]	True	sweden_in_use	True
+3	advance	ADVANCE			1	1	[]	True	sweden_in_use	True
+4	week_begin	WEEK_BEGIN			1	1	[]	True	sweden_in_use	True
+4	week_end	WEEK_END			1	1	[]	True	sweden_in_use	True
+4	advance	ADVANCE			1	1	[]	True	sweden_in_use	True
+5	week_begin	WEEK_BEGIN			1	1	[]	True	sweden_in_use	True
+5	event	E_PL_OFFER_EXPIRES		timer	1	1	[]	True	sweden_in_use	True
+5	week_end	WEEK_END			1	1	[]	True	sweden_in_use	True
+5	advance	ADVANCE			1	1	[]	True	sweden_in_use	True
+6	week_begin	WEEK_BEGIN			1	1	[]	True	sweden_in_use	True
+6	event	E_PL_TEAM		timer	1	1	[]	True	sweden_in_use	True
+6	rejected_attempt	D6	Beställa kvalitetsprövning		1	1	"[[""pl_machines"", ""ge"", 1, 0]]"	True	sweden_in_use	True
+6	week_end	WEEK_END			1	1	[]	True	sweden_in_use	True
+6	advance	ADVANCE			1	1	[]	True	sweden_in_use	True
+7	week_begin	WEEK_BEGIN			1	1	[]	True	sweden_in_use	True
+7	event	E_SE_OFFER_EXPIRES		timer	1	1	[]	True	sweden_in_use	True
+7	week_end	WEEK_END			1	1	[]	True	sweden_in_use	True
+7	advance	ADVANCE			1	1	[]	True	sweden_in_use	True
+8	week_begin	WEEK_BEGIN			1	1	[]	True	sweden_in_use	True
+8	event_skipped	E_SE_TEAM_LEAVES			1	1	"[[""se_team_secured"", ""eq"", false, true]]"	True	sweden_in_use	True
+8	rejected_attempt	D8	Godkänna produktionsstart		1	1	"[[""pl_machines"", ""ge"", 1, 0], [""quality"", ""eq"", ""approved"", ""not_requested""]]"	True	sweden_in_use	True
+8	week_end	WEEK_END			1	1	[]	True	sweden_in_use	True
+8	advance	ADVANCE			1	1	[]	True	sweden_in_use	True
+9	week_begin	WEEK_BEGIN			1	1	[]	True	sweden_in_use	True
+9	week_end	WEEK_END			1	1	[]	True	sweden_in_use	True
+9	advance	ADVANCE			1	1	[]	True	sweden_in_use	True
+10	week_begin	WEEK_BEGIN			1	1	[]	True	sweden_in_use	True
+10	week_end	WEEK_END			1	1	[]	True	sweden_in_use	True
+10	advance	ADVANCE			1	1	[]	True	sweden_in_use	True
+11	week_begin	WEEK_BEGIN			1	1	[]	True	sweden_in_use	True
+11	week_end	WEEK_END			1	1	[]	True	sweden_in_use	True
+11	advance	ADVANCE			1	1	[]	True	sweden_in_use	True
+12	week_begin	WEEK_BEGIN			1	1	[]	True	sweden_in_use	True
+12	week_end	WEEK_END			1	1	[]	True	sweden_in_use	True
+12	advance	ADVANCE			1	1	[]	True	sweden_in_use	True
+13	week_begin	WEEK_BEGIN			1	1	[]	True	sweden_in_use	True
+13	week_end	WEEK_END			1	1	[]	True	sweden_in_use	True
+13	advance	ADVANCE			1	1	[]	True	sweden_in_use	True
+14	week_begin	WEEK_BEGIN			1	1	[]	True	sweden_in_use	True
+14	week_end	WEEK_END			1	1	[]	True	sweden_in_use	True
+14	advance	ADVANCE			1	1	[]	True	sweden_in_use	True
+15	week_begin	WEEK_BEGIN			1	1	[]	True	sweden_in_use	True
+15	week_end	WEEK_END			1	1	[]	True	sweden_in_use	True
+15	advance	ADVANCE			1	1	[]	True	sweden_in_use	True
+16	week_begin	WEEK_BEGIN			1	1	[]	True	sweden_in_use	True
+16	week_end	WEEK_END			1	1	[]	True	sweden_in_use	True
+16	advance	ADVANCE			1	1	[]	True	sweden_in_use	True
+17	week_begin	WEEK_BEGIN			1	1	[]	True	sweden_in_use	True
+17	week_end	WEEK_END			1	1	[]	True	sweden_in_use	True
+17	advance	ADVANCE			1	1	[]	True	sweden_in_use	True
+18	week_begin	WEEK_BEGIN			1	1	[]	True	sweden_in_use	True
+18	week_end	WEEK_END			1	1	[]	True	sweden_in_use	True
+18	advance	ADVANCE			1	1	[]	True	sweden_in_use	True
+19	week_begin	WEEK_BEGIN			1	1	[]	True	sweden_in_use	True
+19	week_end	WEEK_END			1	1	[]	True	sweden_in_use	True
+19	advance	ADVANCE			1	1	[]	True	sweden_in_use	True
+20	week_begin	WEEK_BEGIN			1	1	[]	True	sweden_in_use	True
+20	week_end	WEEK_END			1	1	[]	True	sweden_in_use	True
+20	advance	ADVANCE			1	1	[]	True	sweden_in_use	True
+21	week_begin	WEEK_BEGIN			1	1	[]	True	sweden_in_use	True
+21	week_end	WEEK_END			1	1	[]	True	sweden_in_use	True
+21	advance	ADVANCE			1	1	[]	True	sweden_in_use	True
+22	week_begin	WEEK_BEGIN			1	1	[]	True	sweden_in_use	True
+22	week_end	WEEK_END			1	1	[]	True	sweden_in_use	True
+22	advance	ADVANCE			1	1	[]	True	sweden_in_use	True
+23	week_begin	WEEK_BEGIN			1	1	[]	True	sweden_in_use	True
+23	week_end	WEEK_END			1	1	[]	True	sweden_in_use	True
+23	advance	ADVANCE			1	1	[]	True	sweden_in_use	True
+24	week_begin	WEEK_BEGIN			1	1	[]	True	sweden_in_use	True
+24	week_end	WEEK_END			1	1	[]	True	sweden_in_use	True
+24	advance	ADVANCE			1	1	[]	True	sweden_in_use	True
+25	week_begin	WEEK_BEGIN			1	1	[]	True	sweden_in_use	True
+25	week_end	WEEK_END			1	1	[]	True	sweden_in_use	True
+25	advance	ADVANCE			1	1	[]	True	sweden_in_use	True
+26	week_begin	WEEK_BEGIN			1	1	[]	True	sweden_in_use	True
+26	week_end	WEEK_END			1	1	[]	True	sweden_in_use	True

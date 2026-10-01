@@ -1,0 +1,157 @@
+{
+  "status": "PASS",
+  "original_input_sha256": {
+    "README.md": "b1ebf339796c0b269fade538176a08b17df2eab1259d0f193581ad3e31ca0749",
+    "audit_history.py": "81df362bddd925adb71e349e9ec59e0a07d9710e791755bdf2c69fb79c0d9c51",
+    "candidate.json": "e7da23a9e34a360a6a85f1251c0880d689f2338da3bf855a79737998650e20f0",
+    "checks.py": "101642a875c55668860e542fc2ea6658010c81f659cbd4ec4a42f662b2abc26f",
+    "model.json": "be6506fd0655ad2f6ef66db710f086591d70e168cd4ce56a88b8f06b748f7ec8",
+    "replay.py": "e68b41c52aa14a8fd0844907c5d852c31224e3304b9ef8d0111bf68cba9ec9e6",
+    "run.py": "adcf2f6b1ee9bca0d2c2f2784312979716bec0978619f77b0fe555fd2ddb63ef",
+    "scenarios.json": "ad75c497a7b705d3025a79e702f1f0bc505e86aa7e4d79ebf3228a8669076518",
+    "sources/factory-assumed.txt": "85387b224f5896554a2f5562a94f7eb9fe23a3ebf02f6f5e57670c8bfca9add8",
+    "sources/structural-ce-v1-frozen.txt": "d78afa9bf74ec1c361d656693201d7302f24236b8f0fc9aea6141f10a729c257"
+  },
+  "new_input_sha256": {
+    "scripts.json": "2abd03e14806ba202a899b01986de4766ddde81ab50432a5b9a7bbef59136c0d",
+    "run.py": "2f8508a381e8548794934e2d9f03745f119f5cc191ace9225a92d604e3a7939f"
+  },
+  "scope": "Only fixed A and B; unchanged model and contract; no strategy search.",
+  "runs": {
+    "A": {
+      "status": "PASS",
+      "event_order_count": 2,
+      "weeks_checked_per_path": 27,
+      "history_rows_checked": 192,
+      "budget_at_week_end": {
+        "0": 3,
+        "1": 3,
+        "2": 1,
+        "3": 1,
+        "4": 1,
+        "5": 1,
+        "6": 1,
+        "7": 1,
+        "8": 1,
+        "9": 1,
+        "10": 1,
+        "11": 1,
+        "12": 1,
+        "13": 1,
+        "14": 1,
+        "15": 1,
+        "16": 1,
+        "17": 1,
+        "18": 1,
+        "19": 1,
+        "20": 1,
+        "21": 1,
+        "22": 1,
+        "23": 1,
+        "24": 1,
+        "25": 1,
+        "26": 1
+      },
+      "d8_weeks": [],
+      "rejected_attempts": [
+        {
+          "week": 2,
+          "decision": "D5",
+          "failures": [
+            [
+              "budget",
+              "ge",
+              2,
+              1
+            ]
+          ]
+        },
+        {
+          "week": 6,
+          "decision": "D6",
+          "failures": [
+            [
+              "pl_machines",
+              "ge",
+              1,
+              0
+            ]
+          ]
+        },
+        {
+          "week": 8,
+          "decision": "D8",
+          "failures": [
+            [
+              "pl_machines",
+              "ge",
+              1,
+              0
+            ],
+            [
+              "quality",
+              "eq",
+              "approved",
+              "not_requested"
+            ]
+          ]
+        }
+      ],
+      "continuous_sweden": true,
+      "first_sweden_loss": null,
+      "no_events_from_rejected_decisions": true,
+      "quality_event_week": null
+    },
+    "B": {
+      "status": "PASS",
+      "event_order_count": 8,
+      "weeks_checked_per_path": 27,
+      "history_rows_checked": 776,
+      "budget_at_week_end": {
+        "0": 6,
+        "1": 6,
+        "2": 2,
+        "3": 2,
+        "4": 2,
+        "5": 2,
+        "6": 1,
+        "7": 1,
+        "8": 1,
+        "9": 1,
+        "10": 1,
+        "11": 1,
+        "12": 1,
+        "13": 1,
+        "14": 1,
+        "15": 1,
+        "16": 1,
+        "17": 1,
+        "18": 1,
+        "19": 1,
+        "20": 1,
+        "21": 1,
+        "22": 1,
+        "23": 1,
+        "24": 1,
+        "25": 1,
+        "26": 1
+      },
+      "d8_weeks": [
+        8
+      ],
+      "rejected_attempts": [],
+      "continuous_sweden": false,
+      "first_sweden_loss": {
+        "index": 14,
+        "week": 2,
+        "side": "after",
+        "action": "D5",
+        "missing": [
+          "original_machine_in_use_in_sweden"
+        ]
+      },
+      "no_events_from_rejected_decisions": true,
+      "quality_event_week": 8
+    }
+  }
+}
