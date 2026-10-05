@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Lokal jämförelse av två kontrollerade transportförlopp över 26 veckor.">
+  <title>Transportövergången · A och B</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2313263b'/%3E%3Cpath d='M7 10h18M7 22h18' stroke='%2325bdba' stroke-width='3'/%3E%3Ccircle cx='12' cy='10' r='4' fill='%23f5ae48'/%3E%3Ccircle cx='22' cy='22' r='4' fill='%23f5ae48'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-inner"><span class="wordmark">STRUCTURAL CE <span>TRANSPORT</span></span><span class="badge">Konstruerat exempel</span></div>
+  </header>
+  <main>
+    <section class="intro" aria-labelledby="title">
+      <p class="eyebrow">En centrumkorridor · två fasta förlopp · 26 veckor</p>
+      <h1 id="title">Samma åtgärder och slutbudget –<br class="wide"> olika tidpunkter och olika övergång.</h1>
+      <p class="context">Förberäknade, kontrollerade modellförlopp. Befintlig busstrafik och befintliga cykelmöjligheter kvarstår.</p>
+    </section>
+    <section class="controls" aria-label="Välj elutfall och vecka">
+      <fieldset id="outcomes"><legend>Elanslutningens utfall</legend><div class="segmented">
+        <label><input type="radio" name="outcome" value="ready" checked><span>Färdigställd</span></label>
+        <label><input type="radio" name="outcome" value="rejected"><span>Avslag</span></label>
+        <label><input type="radio" name="outcome" value="absent"><span>Uteblivet besked</span></label>
+      </div></fieldset>
+      <div class="week-control"><div class="week-heading"><label for="week">Jämför vid veckoslut</label><output id="week-label" for="week">Vecka 14</output></div>
+        <input id="week" type="range" min="0" max="26" step="1" value="14" aria-valuetext="Vecka 14, efter veckans händelser och beslut">
+        <div class="range-labels"><span>Vecka 0</span><span>Vecka 26</span></div>
+      </div>
+    </section>
+    <p class="outcome-note" id="outcome-note"></p>
+    <div id="load-state" role="status">Läser kontrollerade resultat…</div>
+    <section class="comparison" id="comparison" aria-label="Förlopp A och B"></section>
+    <section class="equivalence" id="equivalence" aria-live="polite"></section>
+    <footer>
+      <p><strong>Vad som visas:</strong> färdiga förutsättningar, genomförda godkännanden och beslut enligt modellen. Godkänd trafikökning är inte faktisk eller bestående trafikdrift. Ingen trafikminskning beräknas.</p>
+      <details><summary>Om underlaget och visningen</summary>
+        <p>Sex sparade fall: två förlopp med tre elutfall. Samtliga samtidiga eventordningar har kontrollerats. Visningen läser referenshistoriken och resultaten från två identiska kontrollkörningar; inga nya simuleringar görs.</p>
+        <p>Veckoväljaren visar läget efter veckans händelser och beslut. Glappen avser enbart de planerade förbättringarna efter att 100 parkeringsplatser tagits bort. Vid avslag och uteblivet besked finns ingen ny elprövning inom horisonten.</p>
+        <p id="evidence"></p>
+      </details>
+    </footer>
+  </main>
+  <noscript><p class="error">Aktivera JavaScript för att läsa och jämföra de sparade förloppen.</p></noscript>
+</body>
+</html>

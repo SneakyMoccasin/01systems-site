@@ -1,0 +1,40 @@
+Transportdemo – visningskontroll
+
+PASS för visningen av de sparade resultaten. Inga nya modellförlopp kördes.
+
+Automatisk kontroll med verify.py:
+- Alla sex fall och 162 veckoslut motsvarar exakt de sparade historikerna.
+- 138 namngivna händelser, beslut och diagnostikrader kontrollerade.
+- Samtliga sammanställningsvärden, budgetvärden och saknade förvillkor bevaras.
+- I B visas parkeringsbeslutet även när trafikgodkännandet blockeras.
+- Ändrad resultatfil avvisas via kontrollsumma; endast en temporär kopia ändrades.
+- Inga simulations- eller modellgranskningsmoduler importeras.
+- JavaScript-syntaxkontroll med node --check passerade.
+
+Kontroll i den lokala webbläsaren:
+- Alla tre elutfall och samtliga 27 veckor valdes via sidans radioknappar och
+  tangentbordsstyrda veckoväljare: 81 vyer, 162 A/B-statusar.
+- Visad budget, parkeringsstatus, färdiga bussförutsättningar, godkänd
+  trafikökning, cykelöppning och gap stämde med kontrollvärdena.
+- Kvarstående gap visar exakt ”minst 24 veckor till horisonten vecka 26” i A
+  och ”minst 12 veckor till horisonten vecka 26” i de två negativa elutfallen.
+- Inga T-ID eller event-ID förekommer i den synliga sidtexten.
+- Vecka 12 i uteblivet-grenen: A saknar tillgänglig depå, installerad laddning
+  och färdig elanslutning (besked inväntas). B saknar färdig elanslutning
+  (uteblivet besked utan ny prövning). B:s parkeringsbeställning visas ändå.
+- Utfälld tidigare blockering och status vid B:s parkeringsborttagning vecka 14
+  visar rätt namn, orsaker, fem färdiga bussförutsättningar, godkännande,
+  cykelöppning, signalprioritering, cykelparkering och 1 Mkr kvar i ready-fallet.
+- Desktop: A/B sida vid sida, lika breda kort och samma linjära tidsaxel.
+- Smal vy 390 × 844: korten staplas, kontroller kan användas, ingen horisontell
+  sidskroll. Den tillfälliga breddinställningen återställdes efter kontroll.
+- Inga console-fel eller varningar observerades.
+
+En felplacerad axelmärkning upptäcktes i den första visuella kontrollen:
+0, 4, 8, 12, 16, 20, 26 var jämnt fördelade trots olika sista intervall.
+Den korrigerades till positionen vecka/26, och båda axlarna kontrollerades
+efter omladdning. Modellresultat och kontrollvärden ändrades inte.
+
+validation.json sparar dataöverföringskontrollen, källhashar och kontrollen
+att samtliga 124 befintliga transport-/fabriksfiler är byteoförändrade.
+Endast demomappen ingår i den nya checkpointen. Ingen publicering genomfördes.

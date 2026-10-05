@@ -1,0 +1,37 @@
+{
+  "status": "PASS",
+  "saved_cases_checked": 6,
+  "week_end_snapshots_checked": 162,
+  "named_entries_checked": 138,
+  "summary_metrics_exact": true,
+  "missing_preconditions_exact": true,
+  "no_simulation_imports": true,
+  "changed_result_rejected": true,
+  "source_sha256": {
+    "summary.json": "52c707aaf80901e29af1b8481a191baf65e28f5703372ac639caae794f1cddf5",
+    "histories/A_absent.json.gz": "2e2193ef81191e42dcdd7b69be6f0d293192d92ed3bc42b53c61531b18e1c13e",
+    "histories/A_ready.json.gz": "aaa83643c2855c124ae188439cdb319df72b849e3445700358b6369f2f47b42c",
+    "histories/A_rejected.json.gz": "e73be489c0573f2ed47bc4b01c7e202bc4b541f04608b16bd12e7d090aa7f88e",
+    "histories/B_absent.json.gz": "5906724c8b6dce1069dc1f07a6382a8578cb174d3b6eb269696decfe597cb71f",
+    "histories/B_ready.json.gz": "c800bbdb333c9e66c8adcf55d5a742bf1de11571fc700061bbdb0cb96fd40f4c",
+    "histories/B_rejected.json.gz": "c90f2b9887d1e2634ebec8bb3b42fd91ec62c7ae2949add84844b1a4f06ad8f9"
+  },
+  "existing_transport_and_factory_files_unchanged": 124,
+  "tracked_files_unchanged": true,
+  "verified_source_commit": "09d91e523aff3ab314c797c5dfcf2bc5fb0c5af4",
+  "browser": {
+    "status": "PASS",
+    "outcomes": 3,
+    "week_views": 81,
+    "arm_snapshots": 162,
+    "horizontal_overflow": false,
+    "mobile_viewport": [
+      390,
+      844
+    ],
+    "console_errors": 0,
+    "console_warnings": 0,
+    "rendered_T_IDs": false
+  },
+  "publication": false
+}
