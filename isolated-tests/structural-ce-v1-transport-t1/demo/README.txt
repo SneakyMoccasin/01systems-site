@@ -28,10 +28,12 @@ inte en prognos om senare start. Avslag skiljs från ett explicit vänteläge
 utan ytterligare prövning. Godkännande ska inte tolkas som faktisk drift.
 
 Datakälla
-data.py läser results/run-1/summary.json och de sex sparade referenshistorikerna
-i histories/*.json.gz. Filernas SHA-256 måste motsvara båda manifesten i
-results/reproducibility.json. Summan måste ha status PASS och de rapporterade
-observationerna ska vara oberoende av eventordning. Ingen modellmotor,
+data.py läser ../same-parking-week14/results/run-1/summary.json och de sex
+sparade referenshistorikerna i samma körnings histories/*.json.gz. Filernas
+SHA-256 måste motsvara båda manifesten i den jämförelsens reproducibility.json.
+Sammanställningen måste ha status PASS och veckosluten vara ordningsoberoende.
+A:s momentana cycle_ready-markör vid borttagningen varierar med eventordningen;
+detta visas uttryckligen. Det påverkar inte cykelöppningen eller glappen. Ingen modellmotor,
 granskare eller simulationsmodul importeras av demon. Resultatfilerna ändras
 inte. UI:t använder sparade veckoslut, färdigveckor, gap och blockeringsrader.
 
@@ -44,10 +46,12 @@ Kontrollera dataöverföringen utan att köra några modellförlopp:
   node --check isolated-tests/structural-ce-v1-transport-t1/demo/dist/app.js
 
 verify.py jämför alla 162 veckoslut och samtliga namngivna händelser/beslut
-med de sparade historikerna. Den kontrollerar också att borttagningen i B
-fortfarande visas när trafikgodkännandet blockeras. Node behövs endast för
+med de sparade historikerna. Den kontrollerar också att parkeringsbeslutet i A och B
+fortfarande visas efter blockerat trafikgodkännande vecka 12. Node behövs endast för
 den valfria JavaScript-syntaxkontrollen, inte för att öppna demon.
 
 Visningskontroll och kontrollsummor för skyddade original redovisas separat
-i validation.txt och validation.json. Demons filer ligger endast här; den
-frysta körspecifikationen, resultaten, CE2 och fabrikscheckpointen bevaras.
+i validation.txt och validation.json. Demons filer ligger endast här. Den nya jämförelsen ligger separat i
+../same-parking-week14/. Originalets frysta underlag, skript och resultat,
+CE2, v1-kontraktet och fabrikscheckpointen bevaras. Ändringen från demo-
+checkpoint 439837d beskrivs i change-report.txt.

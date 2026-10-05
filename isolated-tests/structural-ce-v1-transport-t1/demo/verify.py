@@ -20,6 +20,12 @@ def main():
         assert len(display["weeks"]) == 27
         with gzip.open(CASE / "results/run-1/histories" / (name + ".json.gz"), "rt") as stream:
             original = json.load(stream)["paths"][0]["history"]
+        assert display["decision_weeks"] == {r["action"]: r["week"] for r in original if r["kind"] == "decision"}
+        assert display["grid_review_week"] == next(r["week"] for r in original if r["kind"] == "event" and r["action"] == "E_T2")
+        if name.startswith("A_"):
+            assert metrics["parking_sensitive_fields"] == ["cycle_ready"]
+            assert metrics["at_parking"]["cycle_ready"] is None
+            assert {v["cycle_ready"] for v in metrics["at_parking_variants"]} == {False, True}
         for point in display["weeks"]:
             week = point["week"]
             end = next(row for row in original if row["week"] == week and row["kind"] == "week_end")
@@ -44,7 +50,7 @@ def main():
         assert display["weeks"][removal]["state"]["parking_removed"] == 100
         assert display["weeks"][removal - 1]["state"]["parking_removed"] == 0
         assert metrics["traffic_gap"]["unresolved_at_horizon"] == name.endswith(("rejected", "absent"))
-        if name.startswith("B_") and not name.endswith("ready"):
+        if name.startswith("A_") or not name.endswith("ready"):
             at_12 = display["weeks"][12]["entries"]
             assert any(e["kind"] == "rejected_attempt" and e["label"] == DECISIONS["T7"] for e in at_12)
             assert any(e["kind"] == "decision" and e["label"] == DECISIONS["T12"] for e in at_12)

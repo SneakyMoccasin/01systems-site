@@ -1,0 +1,62 @@
+Ändringsrapport – gemensamt parkeringsdatum
+
+Utgångspunkt: demo-checkpoint 439837d7d4b584fda62721e9ea89e00f2ad86652.
+Enda ändringen i förloppen: A:s parkeringsbeslut flyttas från vecka 0 till
+vecka 12, efter försöket att godkänna trafikökningen. B är oförändrat.
+Originalets frysta underlag, modell, skript och resultat bevaras byte för byte.
+Den nya körspecifikationen, förväntade kontrollvärden, skript och resultat ligger
+separat i same-parking-week14/. Inga verksamhetsregler har ändrats.
+
+MEKANISK KONTROLL: PASS inom de sex fasta, konstruerade modellförloppen.
+312 historiker per körning: åtta eventordningar i A och 96 i B för varje elutfall.
+Alla sparades och återlästes av den separata granskaren: 40 872 rader och
+81 744 före-/eftersnapshots per körning. Budget, förvillkor, engångsregel,
+schemaläggning och blockerade försök utan kostnad/effekt/events kontrollerade.
+Tio kompletterande gräns- och felinjektionskontroller passerade.
+Två körningar gav 25 byteidentiska resultatfiler vardera.
+
+Positivt elutfall                       A              B
+Bussleverans                           vecka 8        vecka 12
+Alla bussvillkor klara / godkännande    vecka 20       vecka 12
+Faktisk parkeringsborttagning           vecka 14       vecka 14
+Glapp utan trafikgodkännande            6 veckor       0 veckor
+Cykelstråk öppnat                       vecka 16       vecka 10
+Cykelglapp                              2 veckor       0 veckor
+Slutbudget                             1 Mkr          1 Mkr
+
+Vid avslag eller uteblivet besked saknas trafikgodkännande i båda förloppen:
+minst 12 veckor till horisonten vecka 26, fortfarande öppet glapp.
+A:s veckoslutsbudget efter betalningar: vecka 0:22, 4:20, 6:9, 8:4, 12:3,
+14:2 och 16:1 Mkr. Budget vid själva borttagningseventet är 3 Mkr i A.
+
+Vid borttagningen har A levererade bussar och tillgängliga chaufförer,
+men saknar depå, installerad laddning och färdig elanslutning. B har samtliga
+fem villkor och godkännande vid positivt elutfall; annars saknas el och godkännande.
+B:s cykelstråk är öppet; A:s öppnas vecka 16. Befintlig trafik kvarstår.
+
+Inga avvikelser från efterfrågade kontrollvärden. En momentant ordningskänslig
+observation redovisas: A:s cykelstråk blir färdigt samma vecka som parkeringen
+tas bort. Markören cycle_ready kan därför vara falsk eller sann precis efter
+borttagningseventet. Båda varianterna sparas, och UI:t förklarar skillnaden.
+Vid veckans beslutstidpunkt är stråket färdigt i alla ordningar; öppning vecka
+16, cykelglapp, bussgodkännanden och alla veckoslut är ordningsoberoende.
+Ingen prioritet mellan dessa samtidiga events har lagts till.
+
+Första A/B-skillnad vecka 0. Likvärdiga veckoslut från vecka 20 och samma
+sluttillstånd vecka 26 i respektive elutfall (768 A/B-par per utfall).
+Historikerna förblir olika. B:s historikfiler är byteidentiska med originalets.
+
+GRÄNSSNITT
+Ny huvudvisning med gemensamt parkeringsdatum, tidigare bussleverans i A,
+fem färdigveckor samt depå-/laddberoenden som förklarar senare godkännande.
+Rubriken är ”Bussarna kommer tidigare – men hela paketet blir klart senare.”
+A/B, tre elutfall, veckoväljare, faktiska blockeringsorsaker och budget kvarstår.
+Färdiga förutsättningar och godkänd trafikökning visas separat. Godkännande
+är inte faktisk drift; exemplet är konstruerat, med förberäknade kontrollerade
+modellförlopp. Ingen trafikminskning eller optimal ordning beräknas.
+Alla 162 A/B-veckolägen kontrollerades mot nya resultat i lokal webbläsare.
+Se validation.txt/json för visningskontroll och README.txt för öppningsinstruktioner.
+
+Start: python3 -B isolated-tests/structural-ce-v1-transport-t1/demo/serve.py --port 8765
+Adress: http://127.0.0.1:8765/
+Inga paket krävs och ingenting publiceras.

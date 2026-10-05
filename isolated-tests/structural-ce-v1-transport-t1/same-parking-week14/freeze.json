@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "frozen_at": "2026-10-05T09:29:56.020234+00:00",
+  "sha256": {
+    "run-spec.txt": "4fdc799a149e122d8231613b925eff834ab45da43897aab30f9398bf7a939fdd",
+    "scripts.json": "083bb0dbfb263fc00cfdafa2fba26a3098328c6a7fbad27a6d3df0d846dc3ce9",
+    "expected.json": "674f46faf2941cf1db32b23721c2c7a3c8db10bda5590d8f21bbfb2410ff80ee",
+    "../model.json": "8a80e6a25d6c146b115a119ae33dedcb5ce794419c932ed159595c515e76cc4e",
+    "../scripts.json": "a326906a520552f76488a3044dae53f28cba0b6d23544579f97eadba03f6a03e",
+    "../replay.py": "b44a662cd75d0e2a0fd5ffe9e1a4459fca76229b49247f5dec6d40f463614ee7",
+    "../audit_history.py": "d29249d798807d6701e0b74bc79f44285eb6a666aca86d3b34d0ad36ce839289",
+    "../observe.py": "dd6c45a82bc390104a77d203d3e204d68d69d9cb3a55b16b94f587982495d06e",
+    "../checks.py": "425994e9c7e83d243e10879d8997a26cef4ee705fc29fde6dc2e91897266ccf3",
+    "../run.py": "340a3054c5c2edeabb484d1414d3689f8bc5efe8535541ad28610e466d28e6fd",
+    "../../structural-ce-v1-factory-witness/sources/structural-ce-v1-frozen.txt": "d78afa9bf74ec1c361d656693201d7302f24236b8f0fc9aea6141f10a729c257"
+  }
+}

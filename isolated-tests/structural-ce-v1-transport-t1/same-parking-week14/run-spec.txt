@@ -1,0 +1,66 @@
+Samma parkeringsdatum – separat jämförelse, version 1
+
+Utgångsläge: transportdemo-checkpoint 439837d. Originalets underlag, modell,
+skript, körspecifikation, verktyg och resultat bevaras byte för byte.
+Enda verksamhetsändring: A:s T12 flyttas från vecka 0 till vecka 12, efter T7.
+T12 genomförs även om T7 blockeras. B och alla modellregler förblir oförändrade.
+scripts.json är det nya skriptet. Modellen läses från ../model.json och dess
+oförändrade kontrollsumma verifieras. Ingen ny budget, kostnad eller ledtid.
+
+Frysning före körning
+freeze.json låser denna specifikation, scripts.json, expected.json samt
+originalmodell, originalskript, replay.py, audit_history.py, observe.py,
+checks.py, run.py och det frysta v1-kontraktet. Verktyg återanvänds läsande.
+expected.json innehåller jämförelsevärden, inte ersättningsdata: uppspelningen
+får bara modell, skript och elutfall. Resultat och budget ska härledas från
+sparade, återlästa historiker och jämföras mot förväntningarna efteråt.
+
+Sex fall och full eventtäckning
+Veckor 0–26 inklusive. A/B × ready/rejected/absent. Förfallna events före beslut,
+positiva ledtider, inga reparerande ledningsval, engångsregel för genomföranden.
+Avvisade försök och B:s villkorade överhoppning vecka 20 är diagnostik utan effekt.
+Referensordning är modellens ursprungliga ordning, inte en belagd fysisk ordning.
+Alla samtidiga permutationer provas: A vecka 8, 14 och 16, alltså 8 historiker
+per elutfall. B vecka 8, 10 och 12, alltså 96 per utfall. Totalt 312 historiker.
+
+Ny samtidighet och observationsgräns
+A:s parkeringsborttagning och cykelstråkets färdigställande sker båda vecka 14.
+Direkt efter borttagningseventet kan cycle_ready vara false eller true beroende
+på eventordningen. Detta är ett öppet redovisat ordningskänsligt ögonblicksvärde.
+Det får inte döljas genom att ge cykeleventet en obelagd faktisk prioritet.
+Samtliga varianter av färdigstatus, snapshot och det tekniskt avlästa
+beslutsutrymmet sparas per historik. Mellan events är beslutsutrymmet inte en
+beslutstidpunkt; samtliga förfallna events måste först behandlas.
+För sammanställningen skiljs gemensamma värden från varianterna. Vid veckans
+beslutstidpunkt och veckoslut är cykelstråket färdigt i samtliga ordningar,
+men det öppnas först vecka 16. Inget nytt beroende eller eventförvillkor införs.
+
+Övriga observationer följer originalet: faktisk parkeringseffekt, första
+färdigmarkör, första T7-villkor vid beslutstidpunkt, faktiskt T7/T11-genomförande,
+glapp från borttagningen och observerad kvarstående frånvaro fram till vecka 26.
+Avslag och uteblivet hålls isär. Historier sparas irreversibelt. Likvärdighet
+avser samma epok, verksamhetsstate/budget, tagna besluts mängd och aktuell kö.
+
+Förväntningar enligt användaren: bussleverans A8/B12, T7-villkor och T7 A20/B12
+i ready-fallet, parkering A14/B14, bussgap A6/B0, cykelöppning A16/B10,
+cykelgap A2/B0, slutbudget A1/B1. Vid rejected/absent genomförs inget T7,
+bussgapet är 12 veckor och fortsatt öppet vid horisonten i båda förloppen.
+Direkt kontrollsummering av A:s planerade accepterade kostnader ger saldo
+22 vecka 0, 20 vecka 4, 9 vecka 6, 4 vecka 8, 3 vecka 12, 2 vecka 14 och 1
+vecka 16. Dessa är separata förväntningar; löpande bokföring beräknas i körningen.
+
+Kontroll
+Spara och återläs historiker. Oförändrad separat audit_history.py granskar
+full före/efter-state, budget, förvillkor, engångsregel, exakta avvisningsorsaker,
+köer, schemaläggning, eventordning och alla veckor. Verifiera särskilt T7 före
+T12 i A12, T12 trots blockering, inga effekter/events från blockerade försök,
+färdigstatusens samtliga varianter vid borttagning och slutlig likvärdighet.
+Jämför B:s nya historiker mot originalets: B ska vara identiskt. Jämför A:s
+färdigveckor och godkännanden mot originalet; endast T12/parkering, dess
+budgettidpunkt och därav följande observationsgap får ändras.
+Två kompletta körningar och bytevis SHA-256-jämförelse av samtliga resultat.
+Vid avvikelse: FAIL och utredning; ändra inte regler eller kontrollvärden tyst.
+
+PASS gäller den avgränsade prövningen med uttrycklig rapportering av A:s
+ordningskänsliga cykelmarkör. Inget robust momentant cykelfärdigvärde hävdas.
+Ingen slutsats om optimal ordning, faktisk drift, trafikminskning eller hela v1.

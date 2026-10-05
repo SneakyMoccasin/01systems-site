@@ -4,7 +4,7 @@ import hashlib
 import json
 from pathlib import Path
 
-CASE = Path(__file__).resolve().parent.parent
+CASE = Path(__file__).resolve().parent.parent / "same-parking-week14"
 DECISIONS = {
     "T1": "Beställa elbusspaketet", "T2": "Beställa elanslutningen",
     "T3": "Beställa depåutbyggnaden", "T4": "Beställa laddutrustningen",
@@ -57,7 +57,8 @@ def load_payload(case=CASE):
         raise ValueError("Det sparade resultatet är inte godkänt.")
     cases = {}
     for name, metrics in summary["scenarios"].items():
-        if metrics["status"] != "PASS" or metrics["order_sensitive_for_reported_observations"]:
+        if (metrics["status"] != "PASS" or metrics["order_sensitive_week_end"]
+                or any(field != "cycle_ready" for field in metrics["parking_sensitive_fields"])):
             raise ValueError("Förloppet saknar entydigt kontrollerat resultat: " + name)
         with gzip.open(verified("histories/" + name + ".json.gz"), "rt", encoding="utf-8") as stream:
             stored = json.load(stream)
@@ -79,9 +80,12 @@ def load_payload(case=CASE):
                                 "grid_status": row["before"]["state"]["grid"], "source_index": row["index"]})
             weeks.append({"week": week, "state": snapshot["state"],
                           "t7_requirements_met": point["t7_requirements_met"], "entries": entries})
-        cases[name] = {"metrics": metrics, "weeks": weeks}
+        decisions = {row["action"]: row["week"] for row in history if row["kind"] == "decision"}
+        grid_review = next(row["week"] for row in history if row["kind"] == "event" and row["action"] == "E_T2")
+        cases[name] = {"metrics": metrics, "weeks": weeks, "decision_weeks": decisions,
+                       "grid_review_week": grid_review}
     return {"schema": 1, "start": 0, "horizon": 26, "initial_budget": 30,
             "cases": cases, "comparisons": summary["comparisons"],
             "evidence": {"status": "PASS", "paths": summary["main_paths"],
-                         "source": "results/run-1", "source_sha256": source_hashes,
+                         "source": "same-parking-week14/results/run-1", "source_sha256": source_hashes,
                          "reproducibility_sha256": digest(result / "reproducibility.json")}}

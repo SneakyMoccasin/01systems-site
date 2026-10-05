@@ -1,0 +1,27 @@
+[
+  {
+    "all_rejections_without_effects": true,
+    "blocked": [
+      {
+        "decision": "T1",
+        "missing": [
+          "once_only"
+        ],
+        "week": 0
+      }
+    ],
+    "executed": [
+      {
+        "decision": "T1",
+        "week": 0
+      }
+    ],
+    "final_budget": 22,
+    "rows_checked": 111,
+    "skipped": [],
+    "snapshots_checked": 222,
+    "spent": 8,
+    "status": "PASS",
+    "weeks_checked": 27
+  }
+]

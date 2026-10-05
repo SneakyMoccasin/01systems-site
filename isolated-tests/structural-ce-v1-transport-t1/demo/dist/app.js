@@ -55,6 +55,23 @@ function statusLine(label, value, type = "pending") {
   return `<div class="status-line"><span>${label}</span><span class="value ${type}">${value}</span></div>`;
 }
 
+function dependencies(record) {
+  const m = record.metrics;
+  const milestone = key => m.milestones[key] === null ? "Ej klart inom vecka 26" : `Vecka ${m.milestones[key]}`;
+  const labels = [["buses_delivered","Elbussar levererade"], ["depot_ready","Depå tillgänglig"],
+    ["charger_installed","Laddutrustning installerad"], ["grid_ready","Elanslutning färdig"], ["drivers_ready","Chaufförer tillgängliga"]];
+  const resolution = m.t7_requirements_week === null
+    ? `Elprövningen vecka ${record.grid_review_week} ${outcome === "rejected" ? "ger avslag" : "saknar färdigt besked"}. Därför kan trafikökningen inte godkännas inom horisonten.`
+    : `Elanslutningen blir färdig vecka ${m.milestones.grid_ready}. Alla fem förutsättningar är då klara och trafikökningen godkänns vecka ${m.t7_execution_week}.`;
+  return `<section class="dependencies" aria-label="Bussatsningens beroenden och färdigveckor">
+    <h3>Fem förutsättningar för trafikgodkännandet</h3>
+    <dl class="milestones">${labels.map(([key,label]) => `<div><dt>${label}</dt><dd data-milestone="${key}">${milestone(key)}</dd></div>`).join("")}</dl>
+    <p class="dependency-chain">Laddbeställningen kräver depåavtal. Installationen kräver både tillgänglig depå och levererad laddutrustning.</p>
+    <p class="dependency-dates">Depåavtal vecka ${record.decision_weeks.T3} · laddutrustning beställs vecka ${record.decision_weeks.T4} och levereras vecka ${m.milestones.charger_delivered}.</p>
+    <p class="dependency-explanation">Depån blir tillgänglig vecka ${m.milestones.depot_ready}. Laddinstallationen beställs vecka ${record.decision_weeks.T5} och blir färdig vecka ${m.milestones.charger_installed}. ${resolution}</p>
+  </section>`;
+}
+
 function activities(entries) {
   if (!entries.length) return '<li class="none">Inga nya beslut eller färdigställanden denna vecka.</li>';
   return entries.map(entry => {
@@ -92,12 +109,14 @@ function armView(arm) {
     <div class="timeline" aria-label="Hela förlopp ${arm}, vecka 0 till 26">
       <div class="axis" aria-hidden="true">${[0,4,8,12,16,20,26].map(value => `<span style="left:${pos(value)}%">${value}</span>`).join("")}</div>
       ${lane("100 p-platser borta",m.parking_week,"park",`Från v. ${m.parking_week}`)}
+      ${lane("Elbussar levererade",m.milestones.buses_delivered,"delivered",`Levererade v. ${m.milestones.buses_delivered}`)}
       ${lane("Bussens förutsättningar",m.t7_requirements_week,"ready",m.t7_requirements_week === null ? "Ej klara vid v. 26" : `Klara v. ${m.t7_requirements_week}`)}
       ${lane("Trafikökning godkänd",m.t7_execution_week,"bus",m.t7_execution_week === null ? "Ej godkänd vid v. 26" : `Godkänd v. ${m.t7_execution_week}`,m.parking_week)}
       ${lane("Cykelstråk öppnat",m.cycle_open_week,"cycle",`Öppnat v. ${m.cycle_open_week}`,m.parking_week)}
       ${budgetChart(record)}
       <div class="legend"><span><i class="swatch gap"></i>Glapp efter borttagning</span><span><i class="swatch cursor"></i>Vald vecka ${week}</span></div>
     </div>
+    ${dependencies(record)}
     <section class="gaps" aria-label="Glapp för hela förloppet"><span class="section-label">Efter parkeringsborttagningen · hela förloppet</span><div class="gap-grid">
       ${gapBox("Utan godkänd trafikökning",m.traffic_gap)}${gapBox("Utan öppnat cykelstråk",m.cycle_gap)}
     </div></section>
@@ -118,6 +137,7 @@ function armView(arm) {
     <details class="parking-readout"><summary>Vid parkeringsborttagningen · vecka ${m.parking_week}</summary>
       <p>${parkingConditions} av 5 bussförutsättningar klara. ${parkingBus} ${parkingCycle}</p>
       <p>Signalprioritering: ${parkingReady.signal_ready ? "färdig" : "inte färdig"}. Cykelparkering: ${parkingReady.cycle_parking_ready ? "tillgänglig" : "inte tillgänglig"}. Kvarvarande budget: ${m.parking_snapshot.state.budget} Mkr.</p>
+      ${m.parking_sensitive_fields.length ? '<p class="order-note">Cykelstråket blir färdigt samma vecka. Precis vid borttagningen varierar färdigmarkören med eventordningen; vid veckans beslutstidpunkt är stråket färdigt i alla ordningar. Det är ännu inte öppnat.</p>' : ''}
     </details>
   </article>`;
 }

@@ -1,0 +1,86 @@
+Samma parkeringsdatum – mekanisk kontroll
+
+PASS för de sex fasta förloppen. Inga avvikelser mot användarens förväntade veckor, gap eller budget.
+A:s momentana cykelfärdigstatus vid borttagningen är ordningskänslig och redovisas separat.
+
+Endast A:s T12 har flyttats från vecka 0 till vecka 12 efter T7. B och modellen är oförändrade.
+Alla historiker sparades och återlästes före separat övergångsgranskning.
+312 huvudhistoriker; 40872 rader; 81744 före-/eftersnapshots.
+A: 8 eventordningar per utfall. B: 96. Alla kombinationer kontrollerade.
+
+Fall | Bussar | T7-villkor | T7 genomfört | Parkering borta | Cykel öppnad | Bussgap | Cykelgap | Slutbudget
+A_ready | 8 | 20 | 20 | 14 | 16 | 6 veckor | 2 | 1 Mkr
+B_ready | 12 | 12 | 12 | 14 | 10 | 0 veckor | 0 | 1 Mkr
+A_rejected | 8 | None | None | 14 | 16 | 12 minst, kvarstår till vecka 26 | 2 | 1 Mkr
+B_rejected | 12 | None | None | 14 | 10 | 12 minst, kvarstår till vecka 26 | 0 | 1 Mkr
+A_absent | 8 | None | None | 14 | 16 | 12 minst, kvarstår till vecka 26 | 2 | 1 Mkr
+B_absent | 12 | None | None | 14 | 10 | 12 minst, kvarstår till vecka 26 | 0 | 1 Mkr
+None betyder inte inträffat inom horisonten, inte en framtida prognos.
+
+FÄRDIGSTÄLLANDEN OCH BLOCKERINGAR
+
+A_ready
+Milstolpar: {'buses_delivered': 8, 'depot_ready': 16, 'charger_delivered': 10, 'charger_installed': 18, 'drivers_ready': 8, 'signal_ready': 12, 'cycle_ready': 14, 'cycle_parking_ready': 16, 'cycle_open': 16, 'grid_ready': 20, 'traffic_authorized': 20}
+Blockeringar: [{'week': 12, 'decision': 'T7', 'missing': ['depot_ready', 'charger_installed', 'grid']}]
+Budget vid varje veckoslut: {'0': 22, '1': 22, '2': 22, '3': 22, '4': 20, '5': 20, '6': 9, '7': 9, '8': 4, '9': 4, '10': 4, '11': 4, '12': 3, '13': 3, '14': 2, '15': 2, '16': 1, '17': 1, '18': 1, '19': 1, '20': 1, '21': 1, '22': 1, '23': 1, '24': 1, '25': 1, '26': 1}
+Gemensam status precis vid borttagning: {'buses_delivered': True, 'depot_ready': False, 'charger_delivered': True, 'charger_installed': False, 'drivers_ready': True, 'signal_ready': True, 'cycle_ready': None, 'cycle_parking_ready': False, 'cycle_open': False, 'grid_ready': False, 'traffic_authorized': False, 'grid_status': 'pending'}
+Alla statusvarianter precis vid borttagning: [{'buses_delivered': True, 'depot_ready': False, 'charger_delivered': True, 'charger_installed': False, 'drivers_ready': True, 'signal_ready': True, 'cycle_ready': True, 'cycle_parking_ready': False, 'cycle_open': False, 'grid_ready': False, 'traffic_authorized': False, 'grid_status': 'pending'}, {'buses_delivered': True, 'depot_ready': False, 'charger_delivered': True, 'charger_installed': False, 'drivers_ready': True, 'signal_ready': True, 'cycle_ready': False, 'cycle_parking_ready': False, 'cycle_open': False, 'grid_ready': False, 'traffic_authorized': False, 'grid_status': 'pending'}]
+
+B_ready
+Milstolpar: {'buses_delivered': 12, 'depot_ready': 10, 'charger_delivered': 6, 'charger_installed': 12, 'drivers_ready': 8, 'signal_ready': 12, 'cycle_ready': 8, 'cycle_parking_ready': 10, 'cycle_open': 10, 'grid_ready': 12, 'traffic_authorized': 12}
+Blockeringar: []
+Budget vid varje veckoslut: {'0': 17, '1': 17, '2': 15, '3': 15, '4': 5, '5': 5, '6': 5, '7': 5, '8': 3, '9': 3, '10': 2, '11': 2, '12': 1, '13': 1, '14': 1, '15': 1, '16': 1, '17': 1, '18': 1, '19': 1, '20': 1, '21': 1, '22': 1, '23': 1, '24': 1, '25': 1, '26': 1}
+Gemensam status precis vid borttagning: {'buses_delivered': True, 'depot_ready': True, 'charger_delivered': True, 'charger_installed': True, 'drivers_ready': True, 'signal_ready': True, 'cycle_ready': True, 'cycle_parking_ready': True, 'cycle_open': True, 'grid_ready': True, 'traffic_authorized': True, 'grid_status': 'ready'}
+Alla statusvarianter precis vid borttagning: [{'buses_delivered': True, 'depot_ready': True, 'charger_delivered': True, 'charger_installed': True, 'drivers_ready': True, 'signal_ready': True, 'cycle_ready': True, 'cycle_parking_ready': True, 'cycle_open': True, 'grid_ready': True, 'traffic_authorized': True, 'grid_status': 'ready'}]
+
+A_rejected
+Milstolpar: {'buses_delivered': 8, 'depot_ready': 16, 'charger_delivered': 10, 'charger_installed': 18, 'drivers_ready': 8, 'signal_ready': 12, 'cycle_ready': 14, 'cycle_parking_ready': 16, 'cycle_open': 16, 'grid_ready': None, 'traffic_authorized': None}
+Blockeringar: [{'week': 12, 'decision': 'T7', 'missing': ['depot_ready', 'charger_installed', 'grid']}, {'week': 20, 'decision': 'T7', 'missing': ['grid']}]
+Budget vid varje veckoslut: {'0': 22, '1': 22, '2': 22, '3': 22, '4': 20, '5': 20, '6': 9, '7': 9, '8': 4, '9': 4, '10': 4, '11': 4, '12': 3, '13': 3, '14': 2, '15': 2, '16': 1, '17': 1, '18': 1, '19': 1, '20': 1, '21': 1, '22': 1, '23': 1, '24': 1, '25': 1, '26': 1}
+Gemensam status precis vid borttagning: {'buses_delivered': True, 'depot_ready': False, 'charger_delivered': True, 'charger_installed': False, 'drivers_ready': True, 'signal_ready': True, 'cycle_ready': None, 'cycle_parking_ready': False, 'cycle_open': False, 'grid_ready': False, 'traffic_authorized': False, 'grid_status': 'pending'}
+Alla statusvarianter precis vid borttagning: [{'buses_delivered': True, 'depot_ready': False, 'charger_delivered': True, 'charger_installed': False, 'drivers_ready': True, 'signal_ready': True, 'cycle_ready': True, 'cycle_parking_ready': False, 'cycle_open': False, 'grid_ready': False, 'traffic_authorized': False, 'grid_status': 'pending'}, {'buses_delivered': True, 'depot_ready': False, 'charger_delivered': True, 'charger_installed': False, 'drivers_ready': True, 'signal_ready': True, 'cycle_ready': False, 'cycle_parking_ready': False, 'cycle_open': False, 'grid_ready': False, 'traffic_authorized': False, 'grid_status': 'pending'}]
+
+B_rejected
+Milstolpar: {'buses_delivered': 12, 'depot_ready': 10, 'charger_delivered': 6, 'charger_installed': 12, 'drivers_ready': 8, 'signal_ready': 12, 'cycle_ready': 8, 'cycle_parking_ready': 10, 'cycle_open': 10, 'grid_ready': None, 'traffic_authorized': None}
+Blockeringar: [{'week': 12, 'decision': 'T7', 'missing': ['grid']}, {'week': 20, 'decision': 'T7', 'missing': ['grid']}]
+Budget vid varje veckoslut: {'0': 17, '1': 17, '2': 15, '3': 15, '4': 5, '5': 5, '6': 5, '7': 5, '8': 3, '9': 3, '10': 2, '11': 2, '12': 1, '13': 1, '14': 1, '15': 1, '16': 1, '17': 1, '18': 1, '19': 1, '20': 1, '21': 1, '22': 1, '23': 1, '24': 1, '25': 1, '26': 1}
+Gemensam status precis vid borttagning: {'buses_delivered': True, 'depot_ready': True, 'charger_delivered': True, 'charger_installed': True, 'drivers_ready': True, 'signal_ready': True, 'cycle_ready': True, 'cycle_parking_ready': True, 'cycle_open': True, 'grid_ready': False, 'traffic_authorized': False, 'grid_status': 'rejected'}
+Alla statusvarianter precis vid borttagning: [{'buses_delivered': True, 'depot_ready': True, 'charger_delivered': True, 'charger_installed': True, 'drivers_ready': True, 'signal_ready': True, 'cycle_ready': True, 'cycle_parking_ready': True, 'cycle_open': True, 'grid_ready': False, 'traffic_authorized': False, 'grid_status': 'rejected'}]
+
+A_absent
+Milstolpar: {'buses_delivered': 8, 'depot_ready': 16, 'charger_delivered': 10, 'charger_installed': 18, 'drivers_ready': 8, 'signal_ready': 12, 'cycle_ready': 14, 'cycle_parking_ready': 16, 'cycle_open': 16, 'grid_ready': None, 'traffic_authorized': None}
+Blockeringar: [{'week': 12, 'decision': 'T7', 'missing': ['depot_ready', 'charger_installed', 'grid']}, {'week': 20, 'decision': 'T7', 'missing': ['grid']}]
+Budget vid varje veckoslut: {'0': 22, '1': 22, '2': 22, '3': 22, '4': 20, '5': 20, '6': 9, '7': 9, '8': 4, '9': 4, '10': 4, '11': 4, '12': 3, '13': 3, '14': 2, '15': 2, '16': 1, '17': 1, '18': 1, '19': 1, '20': 1, '21': 1, '22': 1, '23': 1, '24': 1, '25': 1, '26': 1}
+Gemensam status precis vid borttagning: {'buses_delivered': True, 'depot_ready': False, 'charger_delivered': True, 'charger_installed': False, 'drivers_ready': True, 'signal_ready': True, 'cycle_ready': None, 'cycle_parking_ready': False, 'cycle_open': False, 'grid_ready': False, 'traffic_authorized': False, 'grid_status': 'pending'}
+Alla statusvarianter precis vid borttagning: [{'buses_delivered': True, 'depot_ready': False, 'charger_delivered': True, 'charger_installed': False, 'drivers_ready': True, 'signal_ready': True, 'cycle_ready': True, 'cycle_parking_ready': False, 'cycle_open': False, 'grid_ready': False, 'traffic_authorized': False, 'grid_status': 'pending'}, {'buses_delivered': True, 'depot_ready': False, 'charger_delivered': True, 'charger_installed': False, 'drivers_ready': True, 'signal_ready': True, 'cycle_ready': False, 'cycle_parking_ready': False, 'cycle_open': False, 'grid_ready': False, 'traffic_authorized': False, 'grid_status': 'pending'}]
+
+B_absent
+Milstolpar: {'buses_delivered': 12, 'depot_ready': 10, 'charger_delivered': 6, 'charger_installed': 12, 'drivers_ready': 8, 'signal_ready': 12, 'cycle_ready': 8, 'cycle_parking_ready': 10, 'cycle_open': 10, 'grid_ready': None, 'traffic_authorized': None}
+Blockeringar: [{'week': 12, 'decision': 'T7', 'missing': ['grid']}, {'week': 20, 'decision': 'T7', 'missing': ['grid']}]
+Budget vid varje veckoslut: {'0': 17, '1': 17, '2': 15, '3': 15, '4': 5, '5': 5, '6': 5, '7': 5, '8': 3, '9': 3, '10': 2, '11': 2, '12': 1, '13': 1, '14': 1, '15': 1, '16': 1, '17': 1, '18': 1, '19': 1, '20': 1, '21': 1, '22': 1, '23': 1, '24': 1, '25': 1, '26': 1}
+Gemensam status precis vid borttagning: {'buses_delivered': True, 'depot_ready': True, 'charger_delivered': True, 'charger_installed': True, 'drivers_ready': True, 'signal_ready': True, 'cycle_ready': True, 'cycle_parking_ready': True, 'cycle_open': True, 'grid_ready': False, 'traffic_authorized': False, 'grid_status': 'waiting_no_further_review'}
+Alla statusvarianter precis vid borttagning: [{'buses_delivered': True, 'depot_ready': True, 'charger_delivered': True, 'charger_installed': True, 'drivers_ready': True, 'signal_ready': True, 'cycle_ready': True, 'cycle_parking_ready': True, 'cycle_open': True, 'grid_ready': False, 'traffic_authorized': False, 'grid_status': 'waiting_no_further_review'}]
+
+ORDNINGSKÄNSLIGHET
+I A vecka 14 kan cykelstråkets färdigställande inträffa före eller efter parkeringsborttagningen.
+cycle_ready är därför false eller true direkt efter borttagningseventet. null i sammanställningen
+betyder varierar mellan eventordningar. Ingen fysisk ordning är belagd. Samtliga varianter sparas.
+Även eventkön och det tekniskt avlästa beslutsutrymmet mitt i eventfasen kan skilja sig.
+Ledningen väljer först efter samtliga events; då är cykelstråket färdigt i alla ordningar.
+Cykelstråket öppnas först vecka 16; cykelglappet är två veckor oavsett ordning.
+Veckoslut, bussförutsättningar, faktiska godkännanden och rapporterade gap är ordningsoberoende.
+
+B:s sparade historiker är byteidentiska med originalets för respektive elutfall.
+A:s övriga beslutstidpunkter, färdigveckor och godkännanden är oförändrade.
+T12 genomförs efter blockerat T7 i A vecka 12 och i B:s negativa elutfall.
+Avvisade försök har inga kostnader, effekter eller events och innebär inte test-FAIL.
+
+JÄMFÖRELSE
+ready: 768 A/B-par. Första skillnad vecka 0; likvärdiga veckoslut från 20; likvärdiga vecka 26: True.
+rejected: 768 A/B-par. Första skillnad vecka 0; likvärdiga veckoslut från 20; likvärdiga vecka 26: True.
+absent: 768 A/B-par. Första skillnad vecka 0; likvärdiga veckoslut från 20; likvärdiga vecka 26: True.
+Historikerna förblir olika. Likvärdighet avser aktuellt state/budget, tid, tagna beslut och kö.
+Kompletterande gräns-/felinjektionskontroller: 10 PASS.
+Konstruerat ASSUMED-exempel. Inga slutsatser om faktisk drift, optimal ordning eller trafikminskning.
+
+Två kompletta körningar: 25 byteidentiska resultatfiler vardera. 124 originalfiler oförändrade.
