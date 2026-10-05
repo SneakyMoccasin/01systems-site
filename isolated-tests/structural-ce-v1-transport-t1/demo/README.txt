@@ -55,3 +55,15 @@ i validation.txt och validation.json. Demons filer ligger endast här. Den nya j
 ../same-parking-week14/. Originalets frysta underlag, skript och resultat,
 CE2, v1-kontraktet och fabrikscheckpointen bevaras. Ändringen från demo-
 checkpoint 439837d beskrivs i change-report.txt.
+
+Utgifter (komplettering efter checkpoint 083b72c)
+Vid respektive budget finns ”Utgifter till och med vecka X”. Fäll ut listan
+för beslutsvecka, åtagande, kostnad och separat färdigstatus vid valt veckoslut.
+Totalt spenderat och kvarvarande budget visas tillsammans. Kostnaderna hämtas
+från modellen i de verifierade historikfilerna; bara genomförda beslut med
+positiv kostnad räknas. Betalt innebär inte färdigt. Elanslutningens kostnad
+kvarstår även vid avslag eller uteblivet besked. Inga nya simuleringar behövs.
+verify.py omfattar även alla utgiftsposter, modellmarkörer och budgetsummor.
+Verifieringsresultatet och visningskontrollen finns i validation-expenses.txt
+och validation-expenses.json. Tidigare validation.txt/json avser föregående
+demo-checkpoint och bevaras som dokumentation av den kontrollen.

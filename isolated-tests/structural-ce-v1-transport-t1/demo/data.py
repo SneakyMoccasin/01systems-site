@@ -28,6 +28,43 @@ MISSING = {"depot_ready": "Tillgänglig ny depådel", "charger_installed": "Inst
            "charger_delivered": "Levererad laddutrustning", "depot_contract": "Tecknat depåavtal",
            "cycle_ready": "Färdigt cykelstråk", "once_only": "Beslutet får bara genomföras en gång"}
 
+# Presentation mappings only: status is read from explicit model markers at week end.
+COMMITMENTS = {
+    "T1": ("Elbussar", "buses_delivered", {False: "Inte levererade", True: "Levererade"}),
+    "T2": ("Elanslutning", "grid", {"pending": "Besked inväntas", "ready": "Färdig",
+           "rejected": "Avslag – inte färdig", "waiting_no_further_review": "Uteblivet besked – ingen ny prövning"}),
+    "T3": ("Depåutbyggnad", "depot_ready", {False: "Inte tillgänglig", True: "Tillgänglig"}),
+    "T4": ("Laddutrustning", "charger_delivered", {False: "Inte levererad", True: "Levererad"}),
+    "T5": ("Installation av laddutrustning", "charger_installed", {False: "Inte installerad", True: "Installerad"}),
+    "T6": ("Rekrytering och utbildning av chaufförer", "drivers_ready", {False: "Inte tillgängliga", True: "Tillgängliga"}),
+    "T8": ("Signalprioritering", "signal_ready", {False: "Inte färdig", True: "Färdig"}),
+    "T9": ("Förbättring av cykelstråket", "cycle_ready", {False: "Inte färdigt", True: "Färdigt"}),
+    "T10": ("Cykelparkering", "cycle_parking_ready", {False: "Inte tillgänglig", True: "Tillgänglig"}),
+    "T12": ("Borttagning av 100 parkeringsplatser", "parking_removed", {0: "Inte borttagna", 100: "Borttagna"}),
+}
+
+
+def expenses_at(history, model, week, state):
+    expenses = []
+    for row in history:
+        if row["kind"] != "decision" or row["week"] > week:
+            continue
+        action = row["action"]
+        decision = model["decisions"][action]
+        if decision["cost"] == 0:
+            continue
+        completion = None
+        label = DECISIONS[action]
+        if action in COMMITMENTS:
+            label, field, labels = COMMITMENTS[action]
+            event = model["events"][decision["schedule"]["id"]]
+            if not all(field in outcome["set"] for outcome in event["outcomes"].values()):
+                raise ValueError("Färdigmarkören saknas i modellen: " + field)
+            completion = {"field": field, "value": state[field], "label": labels[state[field]]}
+        expenses.append({"week": row["week"], "label": label, "cost": decision["cost"],
+                         "source_index": row["index"], "completion": completion})
+    return expenses
+
 
 def json_file(path):
     return json.loads(path.read_text(encoding="utf-8"))
@@ -79,7 +116,11 @@ def load_payload(case=CASE):
                                             for f in row.get("failures", [])],
                                 "grid_status": row["before"]["state"]["grid"], "source_index": row["index"]})
             weeks.append({"week": week, "state": snapshot["state"],
-                          "t7_requirements_met": point["t7_requirements_met"], "entries": entries})
+                          "t7_requirements_met": point["t7_requirements_met"], "entries": entries,
+                          "expenses": expenses_at(history, stored["model"], week, snapshot["state"])})
+            weeks[-1]["spent"] = sum(item["cost"] for item in weeks[-1]["expenses"])
+            if weeks[-1]["spent"] + snapshot["state"]["budget"] != stored["model"]["initial"]["budget"]:
+                raise ValueError("Utgifterna stämmer inte med sparad budget: " + name)
         decisions = {row["action"]: row["week"] for row in history if row["kind"] == "decision"}
         grid_review = next(row["week"] for row in history if row["kind"] == "event" and row["action"] == "E_T2")
         cases[name] = {"metrics": metrics, "weeks": weeks, "decision_weeks": decisions,

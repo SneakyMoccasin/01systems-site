@@ -84,6 +84,20 @@ function activities(entries) {
   }).join("");
 }
 
+function expensesView(snapshot, arm) {
+  return `<details class="expenses" id="expenses-${arm}">
+    <summary>Utgifter till och med vecka ${week}</summary>
+    <div class="expense-totals"><span>Totalt spenderat: <strong data-spent>${snapshot.spent} Mkr</strong></span><span>Kvar: <strong data-expense-budget>${snapshot.state.budget} Mkr</strong> av 30 Mkr</span></div>
+    <div class="expense-columns" aria-hidden="true"><span>Vecka</span><span>Åtagande · färdigstatus vid veckoslut</span><span>Mkr</span></div>
+    <ul class="expense-list">${snapshot.expenses.map(item => `<li data-source-index="${item.source_index}">
+      <span class="expense-week"><span class="sr-only">Vecka </span>${item.week}</span>
+      <span class="expense-name">${escapeText(item.label)}</span><strong class="expense-cost">${item.cost}<span class="sr-only"> Mkr</span></strong>
+      <span class="expense-completion"><span>Färdigstatus: </span><span data-completion>${escapeText(item.completion?.label || "Ingen färdigmarkör i modellen")}</span></span>
+    </li>`).join("")}</ul>
+    <p class="expense-note">Betalning och färdigstatus visas separat. Levererad laddutrustning betyder inte installerad laddning; färdigt cykelstråk betyder inte öppnat.</p>
+  </details>`;
+}
+
 function armView(arm) {
   const record = results.cases[`${arm}_${outcome}`];
   const m = record.metrics;
@@ -122,6 +136,8 @@ function armView(arm) {
     </div></section>
     <section class="snapshot" aria-label="Status vecka ${week}">
       <div class="snapshot-heading"><h3>Läget vecka ${week}</h3><div class="budget"><strong data-budget>${s.budget} Mkr</strong><span>kvar av 30</span></div></div>
+      <p class="cost-note">Illustrativa kostnader – inte en projektkalkyl. Modellens kostnader betalas vid genomfört beslut.</p>
+      ${expensesView(snapshot, arm)}
       <div class="statuses">
         ${statusLine("Parkering",s.parking_removed === 100 ? "100 platser borttagna" : "100 platser kvar")}
         ${statusLine("Bussens förutsättningar",ready ? "Alla fem klara" : `${readyCount} av 5 klara`,ready ? "positive" : "pending")}
@@ -152,7 +168,9 @@ function render() {
     rejected:"Avslag tolv veckor efter beställning: vecka 20 i A och vecka 12 i B. Ingen ny prövning inom horisonten.",
     absent:"Färdigt besked uteblir tolv veckor efter beställning: vecka 20 i A och vecka 12 i B. Vänteläget kvarstår utan ny prövning inom horisonten.",
   }[outcome];
+  const openExpenses = [...comparison.querySelectorAll(".expenses[open]")].map(item => item.id);
   comparison.innerHTML = armView("A") + armView("B");
+  openExpenses.forEach(id => {document.getElementById(id).open = true;});
   const comparisonResult = results.comparisons[outcome];
   const a = results.cases[`A_${outcome}`].metrics;
   const b = results.cases[`B_${outcome}`].metrics;

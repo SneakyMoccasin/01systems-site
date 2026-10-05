@@ -1,0 +1,63 @@
+Transportdemo – utgifter vid vald vecka
+
+Utgångspunkt: checkpoint 083b72cf8c56972ac91cb2b1bfe20d3722373224.
+PASS för utgiftsvisningen i samtliga sex sparade fall och 162 A/B-veckolägen.
+Ingen simulering har körts. Modellen, beslutsskripten och körresultaten är oförändrade.
+
+ÄNDRING
+Varje förlopp har en kompakt utfällbar lista vid budgeten: ”Utgifter till och
+med vecka X”. Listan är stängd från början och följer vald vecka och elutfall.
+En öppen lista förblir öppen när användaren ändrar vecka eller utfall.
+Den visar beslutsvecka, åtagande, kostnad, totalt spenderat och kvar av 30 Mkr.
+Texten ”Illustrativa kostnader – inte en projektkalkyl. Modellens kostnader
+betalas vid genomfört beslut.” visas nära budgeten även när listan är stängd.
+Huvudbudskap, tidslinjer, blockeringsförklaringar och övrig jämförelse bevaras.
+
+KÄLLOR OCH STATUS
+Endast rader av typen decision till och med vald vecka tas med, med positiv
+kostnad från modellen inbäddad i samma kontrollsummeverifierade historikfil.
+Verifieringen jämför också den modellen med originalets model.json.
+Inga blockerade eller överhoppade försök tas med. Nollkostnadsbeslut utelämnas.
+Färdigstatus står på en separat rad och läses ur det sparade veckoslutet.
+Markörerna är buses_delivered, grid, depot_ready, charger_delivered,
+charger_installed, drivers_ready, signal_ready, cycle_ready,
+cycle_parking_ready och parking_removed. Kopplingen till respektive besluts
+schemalagda event kontrolleras mot modellen; inga nya markörer härleds.
+Laddutrustningens leverans skiljs från installation, och färdigt cykelstråk
+skiljs från öppnat stråk. Elkostnaden kvarstår vid avslag och uteblivet besked,
+med korrekt status från historiken. En eventuell post utan modellerad
+färdigmarkör skulle visas med ”Ingen färdigmarkör i modellen”.
+
+VERIFIERING
+python3 -B isolated-tests/structural-ce-v1-transport-t1/demo/verify.py
+node --check isolated-tests/structural-ce-v1-transport-t1/demo/dist/app.js
+
+- Sex fall, 162 veckoslut, 1 236 utgiftsposter och deras färdigstatus kontrollerade.
+- Varje post motsvarar ett genomfört beslut, rätt vecka, modellkostnad och
+  historikrad. Kostnaden motsvarar även den sparade budgetförändringen.
+- Spenderat + kvarvarande budget = 30 Mkr i samtliga veckolägen.
+- Slututgiften är 29 Mkr och slutbudgeten 1 Mkr i alla sex fall.
+- 103 kontroller av blockerade försök vid efterföljande veckoslut: ingen utgiftspost.
+- Alla ursprungliga adapterkontroller passerade; inga simulationsimporter.
+- Ändrad resultatfil avvisas via kontrollsumma. JavaScript-syntaxkontroll passerade.
+
+WEBBLÄSARE
+Samtliga tre utfall och 27 veckor valdes med radio och tangentbordsstyrd
+veckoväljare. Båda utgiftslistorna hölls öppna. Alla 162 A/B-visningar och
+1 236 rader jämfördes med en kompakt kontrolltabell hämtad ur den verifierade
+adapterutmatningen: vecka, namn, kostnad, källrad, färdigstatus och totalsummor.
+Kostnadstext och bevarat öppningsläge kontrollerades i samtliga lägen.
+Desktop 1280 px och smal vy 390 × 844 granskades visuellt. Långa namn och
+uteblivet elbesked radbryts inom listan. Ingen horisontell sidskroll.
+Inga console-fel eller varningar. Slutligen återställdes normal bredd,
+positivt elutfall, vecka 14 och stängda utgiftslistor.
+
+BEVARANDE
+Alla tidigare transportfiler utanför demo/, inklusive båda jämförelsernas
+skript och sparade resultat, samt fabriksfiler och tidigare ospårade filer
+kontrollerades byte för byte. Endast demofiler ändras i checkpointen.
+CE2 och v1-kontraktet är oförändrade. Ingenting har publicerats.
+Detaljer och källhashar finns i validation-expenses.json.
+
+Demon kör lokalt på http://127.0.0.1:8765/.
+Start: python3 -B isolated-tests/structural-ce-v1-transport-t1/demo/serve.py --port 8765
