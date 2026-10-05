@@ -1,0 +1,404 @@
+{
+  "absent": {
+    "equal_week_end_states": [
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26
+    ],
+    "final_decision_space_equal": true,
+    "final_equivalent": true,
+    "first_commitment_decision_spaces": {
+      "A": [
+        "T2",
+        "T3",
+        "T6",
+        "T8",
+        "T9",
+        "T10",
+        "T12"
+      ],
+      "B": [
+        "T1",
+        "T2",
+        "T4",
+        "T6",
+        "T8",
+        "T9",
+        "T10",
+        "T12"
+      ]
+    },
+    "first_commitment_states": {
+      "A": {
+        "pending": [
+          {
+            "due": 8,
+            "id": "E_T1",
+            "origin": "T1",
+            "scheduled_at": 0
+          }
+        ],
+        "state": {
+          "budget": 22,
+          "buses_delivered": false,
+          "charger_delivered": false,
+          "charger_installed": false,
+          "cycle_open": false,
+          "cycle_parking_ready": false,
+          "cycle_ready": false,
+          "depot_contract": false,
+          "depot_ready": false,
+          "drivers_ready": false,
+          "grid": "not_ordered",
+          "parking_removed": 0,
+          "signal_ready": false,
+          "traffic_authorized": false
+        },
+        "taken": [
+          "T1"
+        ],
+        "week": 0
+      },
+      "B": {
+        "pending": [
+          {
+            "due": 10,
+            "id": "E_T3",
+            "origin": "T3",
+            "scheduled_at": 0
+          }
+        ],
+        "state": {
+          "budget": 25,
+          "buses_delivered": false,
+          "charger_delivered": false,
+          "charger_installed": false,
+          "cycle_open": false,
+          "cycle_parking_ready": false,
+          "cycle_ready": false,
+          "depot_contract": true,
+          "depot_ready": false,
+          "drivers_ready": false,
+          "grid": "not_ordered",
+          "parking_removed": 0,
+          "signal_ready": false,
+          "traffic_authorized": false
+        },
+        "taken": [
+          "T3"
+        ],
+        "week": 0
+      }
+    },
+    "first_commitments": {
+      "A": "T1",
+      "B": "T3"
+    },
+    "first_difference_week": 0,
+    "first_week_end_full_equivalence": 20,
+    "histories_equal": false,
+    "initial_equal": true,
+    "pair_count": 384,
+    "week_end_decision_space_equal": {
+      "0": false,
+      "1": false,
+      "10": false,
+      "11": false,
+      "12": false,
+      "13": false,
+      "14": false,
+      "15": false,
+      "16": true,
+      "17": true,
+      "18": true,
+      "19": true,
+      "2": false,
+      "20": true,
+      "21": true,
+      "22": true,
+      "23": true,
+      "24": true,
+      "25": true,
+      "26": true,
+      "3": false,
+      "4": false,
+      "5": false,
+      "6": false,
+      "7": false,
+      "8": false,
+      "9": false
+    }
+  },
+  "ready": {
+    "equal_week_end_states": [
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26
+    ],
+    "final_decision_space_equal": true,
+    "final_equivalent": true,
+    "first_commitment_decision_spaces": {
+      "A": [
+        "T2",
+        "T3",
+        "T6",
+        "T8",
+        "T9",
+        "T10",
+        "T12"
+      ],
+      "B": [
+        "T1",
+        "T2",
+        "T4",
+        "T6",
+        "T8",
+        "T9",
+        "T10",
+        "T12"
+      ]
+    },
+    "first_commitment_states": {
+      "A": {
+        "pending": [
+          {
+            "due": 8,
+            "id": "E_T1",
+            "origin": "T1",
+            "scheduled_at": 0
+          }
+        ],
+        "state": {
+          "budget": 22,
+          "buses_delivered": false,
+          "charger_delivered": false,
+          "charger_installed": false,
+          "cycle_open": false,
+          "cycle_parking_ready": false,
+          "cycle_ready": false,
+          "depot_contract": false,
+          "depot_ready": false,
+          "drivers_ready": false,
+          "grid": "not_ordered",
+          "parking_removed": 0,
+          "signal_ready": false,
+          "traffic_authorized": false
+        },
+        "taken": [
+          "T1"
+        ],
+        "week": 0
+      },
+      "B": {
+        "pending": [
+          {
+            "due": 10,
+            "id": "E_T3",
+            "origin": "T3",
+            "scheduled_at": 0
+          }
+        ],
+        "state": {
+          "budget": 25,
+          "buses_delivered": false,
+          "charger_delivered": false,
+          "charger_installed": false,
+          "cycle_open": false,
+          "cycle_parking_ready": false,
+          "cycle_ready": false,
+          "depot_contract": true,
+          "depot_ready": false,
+          "drivers_ready": false,
+          "grid": "not_ordered",
+          "parking_removed": 0,
+          "signal_ready": false,
+          "traffic_authorized": false
+        },
+        "taken": [
+          "T3"
+        ],
+        "week": 0
+      }
+    },
+    "first_commitments": {
+      "A": "T1",
+      "B": "T3"
+    },
+    "first_difference_week": 0,
+    "first_week_end_full_equivalence": 20,
+    "histories_equal": false,
+    "initial_equal": true,
+    "pair_count": 384,
+    "week_end_decision_space_equal": {
+      "0": false,
+      "1": false,
+      "10": false,
+      "11": false,
+      "12": false,
+      "13": false,
+      "14": false,
+      "15": false,
+      "16": true,
+      "17": true,
+      "18": true,
+      "19": true,
+      "2": false,
+      "20": true,
+      "21": true,
+      "22": true,
+      "23": true,
+      "24": true,
+      "25": true,
+      "26": true,
+      "3": false,
+      "4": false,
+      "5": false,
+      "6": false,
+      "7": false,
+      "8": false,
+      "9": false
+    }
+  },
+  "rejected": {
+    "equal_week_end_states": [
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26
+    ],
+    "final_decision_space_equal": true,
+    "final_equivalent": true,
+    "first_commitment_decision_spaces": {
+      "A": [
+        "T2",
+        "T3",
+        "T6",
+        "T8",
+        "T9",
+        "T10",
+        "T12"
+      ],
+      "B": [
+        "T1",
+        "T2",
+        "T4",
+        "T6",
+        "T8",
+        "T9",
+        "T10",
+        "T12"
+      ]
+    },
+    "first_commitment_states": {
+      "A": {
+        "pending": [
+          {
+            "due": 8,
+            "id": "E_T1",
+            "origin": "T1",
+            "scheduled_at": 0
+          }
+        ],
+        "state": {
+          "budget": 22,
+          "buses_delivered": false,
+          "charger_delivered": false,
+          "charger_installed": false,
+          "cycle_open": false,
+          "cycle_parking_ready": false,
+          "cycle_ready": false,
+          "depot_contract": false,
+          "depot_ready": false,
+          "drivers_ready": false,
+          "grid": "not_ordered",
+          "parking_removed": 0,
+          "signal_ready": false,
+          "traffic_authorized": false
+        },
+        "taken": [
+          "T1"
+        ],
+        "week": 0
+      },
+      "B": {
+        "pending": [
+          {
+            "due": 10,
+            "id": "E_T3",
+            "origin": "T3",
+            "scheduled_at": 0
+          }
+        ],
+        "state": {
+          "budget": 25,
+          "buses_delivered": false,
+          "charger_delivered": false,
+          "charger_installed": false,
+          "cycle_open": false,
+          "cycle_parking_ready": false,
+          "cycle_ready": false,
+          "depot_contract": true,
+          "depot_ready": false,
+          "drivers_ready": false,
+          "grid": "not_ordered",
+          "parking_removed": 0,
+          "signal_ready": false,
+          "traffic_authorized": false
+        },
+        "taken": [
+          "T3"
+        ],
+        "week": 0
+      }
+    },
+    "first_commitments": {
+      "A": "T1",
+      "B": "T3"
+    },
+    "first_difference_week": 0,
+    "first_week_end_full_equivalence": 20,
+    "histories_equal": false,
+    "initial_equal": true,
+    "pair_count": 384,
+    "week_end_decision_space_equal": {
+      "0": false,
+      "1": false,
+      "10": false,
+      "11": false,
+      "12": false,
+      "13": false,
+      "14": false,
+      "15": false,
+      "16": true,
+      "17": true,
+      "18": true,
+      "19": true,
+      "2": false,
+      "20": true,
+      "21": true,
+      "22": true,
+      "23": true,
+      "24": true,
+      "25": true,
+      "26": true,
+      "3": false,
+      "4": false,
+      "5": false,
+      "6": false,
+      "7": false,
+      "8": false,
+      "9": false
+    }
+  }
+}

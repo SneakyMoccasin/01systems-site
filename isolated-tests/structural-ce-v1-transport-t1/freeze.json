@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "frozen_before_runtime_implementation": true,
+  "frozen_at_utc": "2026-10-05T08:35:20.870208+00:00",
+  "sha256": {
+    "sources/transport-t1-user.txt": "0c04a766a47d2bcab5c29e55882cda1ab0f50bfc2e1f76962a36e4875c2a73d6",
+    "sources/transport-t1-user.txt.sha256": "ac4174f576b43c13c2ac276a9760ba455c02af322ed1c2aed2bee608fc84a8c2",
+    "run-spec.txt": "271591bd2c3988d81e25db1d12df9720b3bb46e4008519be81487c3a569212f8",
+    "model.json": "8a80e6a25d6c146b115a119ae33dedcb5ce794419c932ed159595c515e76cc4e",
+    "scripts.json": "a326906a520552f76488a3044dae53f28cba0b6d23544579f97eadba03f6a03e",
+    "expected.json": "56bdae45213a5b066745b3c94f1df5954b1826588142b8a6c76b04f2fb72a033",
+    "../structural-ce-v1-factory-witness/sources/structural-ce-v1-frozen.txt": "d78afa9bf74ec1c361d656693201d7302f24236b8f0fc9aea6141f10a729c257"
+  }
+}

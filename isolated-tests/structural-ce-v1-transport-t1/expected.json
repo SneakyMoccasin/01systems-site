@@ -1,0 +1,489 @@
+{
+  "provenance": "Frozen before implementation/replay; directly derived from the preceding representation report and user tables. No runtime-generated oracle.",
+  "scenarios": {
+    "A_ready": {
+      "arm": "A",
+      "outcome": "ready",
+      "path_count": 4,
+      "parking_week": 2,
+      "parking_removed": 100,
+      "milestones": {
+        "buses_delivered": 8,
+        "depot_ready": 16,
+        "charger_delivered": 10,
+        "charger_installed": 18,
+        "drivers_ready": 8,
+        "signal_ready": 12,
+        "cycle_ready": 14,
+        "cycle_parking_ready": 16,
+        "cycle_open": 16,
+        "grid_ready": 20,
+        "traffic_authorized": 20
+      },
+      "at_parking": {
+        "buses_delivered": false,
+        "depot_ready": false,
+        "charger_delivered": false,
+        "charger_installed": false,
+        "drivers_ready": false,
+        "signal_ready": false,
+        "cycle_ready": false,
+        "cycle_parking_ready": false,
+        "cycle_open": false,
+        "grid_ready": false,
+        "traffic_authorized": false,
+        "grid_status": "not_ordered"
+      },
+      "t7_requirements_week": 20,
+      "t7_execution_week": 20,
+      "cycle_open_week": 16,
+      "traffic_gap": {
+        "weeks": 18,
+        "unresolved_at_horizon": false
+      },
+      "cycle_gap": {
+        "weeks": 14,
+        "unresolved_at_horizon": false
+      },
+      "blocked": [
+        {
+          "week": 12,
+          "decision": "T7",
+          "missing": [
+            "depot_ready",
+            "charger_installed",
+            "grid"
+          ]
+        }
+      ],
+      "skipped": [],
+      "budget_after_decision_weeks": {
+        "0": 21,
+        "4": 19,
+        "6": 8,
+        "8": 3,
+        "14": 2,
+        "16": 1
+      },
+      "final_budget": 1,
+      "final_grid": "ready",
+      "pending_at_horizon": []
+    },
+    "B_ready": {
+      "arm": "B",
+      "outcome": "ready",
+      "path_count": 96,
+      "parking_week": 14,
+      "parking_removed": 100,
+      "milestones": {
+        "buses_delivered": 12,
+        "depot_ready": 10,
+        "charger_delivered": 6,
+        "charger_installed": 12,
+        "drivers_ready": 8,
+        "signal_ready": 12,
+        "cycle_ready": 8,
+        "cycle_parking_ready": 10,
+        "cycle_open": 10,
+        "grid_ready": 12,
+        "traffic_authorized": 12
+      },
+      "at_parking": {
+        "buses_delivered": true,
+        "depot_ready": true,
+        "charger_delivered": true,
+        "charger_installed": true,
+        "drivers_ready": true,
+        "signal_ready": true,
+        "cycle_ready": true,
+        "cycle_parking_ready": true,
+        "cycle_open": true,
+        "grid_ready": true,
+        "traffic_authorized": true,
+        "grid_status": "ready"
+      },
+      "t7_requirements_week": 12,
+      "t7_execution_week": 12,
+      "cycle_open_week": 10,
+      "traffic_gap": {
+        "weeks": 0,
+        "unresolved_at_horizon": false
+      },
+      "cycle_gap": {
+        "weeks": 0,
+        "unresolved_at_horizon": false
+      },
+      "blocked": [],
+      "skipped": [
+        {
+          "week": 20,
+          "decision": "T7"
+        }
+      ],
+      "budget_after_decision_weeks": {
+        "0": 17,
+        "2": 15,
+        "4": 5,
+        "8": 3,
+        "10": 2,
+        "12": 1
+      },
+      "final_budget": 1,
+      "final_grid": "ready",
+      "pending_at_horizon": []
+    },
+    "A_rejected": {
+      "arm": "A",
+      "outcome": "rejected",
+      "path_count": 4,
+      "parking_week": 2,
+      "parking_removed": 100,
+      "milestones": {
+        "buses_delivered": 8,
+        "depot_ready": 16,
+        "charger_delivered": 10,
+        "charger_installed": 18,
+        "drivers_ready": 8,
+        "signal_ready": 12,
+        "cycle_ready": 14,
+        "cycle_parking_ready": 16,
+        "cycle_open": 16,
+        "grid_ready": null,
+        "traffic_authorized": null
+      },
+      "at_parking": {
+        "buses_delivered": false,
+        "depot_ready": false,
+        "charger_delivered": false,
+        "charger_installed": false,
+        "drivers_ready": false,
+        "signal_ready": false,
+        "cycle_ready": false,
+        "cycle_parking_ready": false,
+        "cycle_open": false,
+        "grid_ready": false,
+        "traffic_authorized": false,
+        "grid_status": "not_ordered"
+      },
+      "t7_requirements_week": null,
+      "t7_execution_week": null,
+      "cycle_open_week": 16,
+      "traffic_gap": {
+        "weeks": 24,
+        "unresolved_at_horizon": true
+      },
+      "cycle_gap": {
+        "weeks": 14,
+        "unresolved_at_horizon": false
+      },
+      "blocked": [
+        {
+          "week": 12,
+          "decision": "T7",
+          "missing": [
+            "depot_ready",
+            "charger_installed",
+            "grid"
+          ]
+        },
+        {
+          "week": 20,
+          "decision": "T7",
+          "missing": [
+            "grid"
+          ]
+        }
+      ],
+      "skipped": [],
+      "budget_after_decision_weeks": {
+        "0": 21,
+        "4": 19,
+        "6": 8,
+        "8": 3,
+        "14": 2,
+        "16": 1
+      },
+      "final_budget": 1,
+      "final_grid": "rejected",
+      "pending_at_horizon": []
+    },
+    "B_rejected": {
+      "arm": "B",
+      "outcome": "rejected",
+      "path_count": 96,
+      "parking_week": 14,
+      "parking_removed": 100,
+      "milestones": {
+        "buses_delivered": 12,
+        "depot_ready": 10,
+        "charger_delivered": 6,
+        "charger_installed": 12,
+        "drivers_ready": 8,
+        "signal_ready": 12,
+        "cycle_ready": 8,
+        "cycle_parking_ready": 10,
+        "cycle_open": 10,
+        "grid_ready": null,
+        "traffic_authorized": null
+      },
+      "at_parking": {
+        "buses_delivered": true,
+        "depot_ready": true,
+        "charger_delivered": true,
+        "charger_installed": true,
+        "drivers_ready": true,
+        "signal_ready": true,
+        "cycle_ready": true,
+        "cycle_parking_ready": true,
+        "cycle_open": true,
+        "grid_ready": false,
+        "traffic_authorized": false,
+        "grid_status": "rejected"
+      },
+      "t7_requirements_week": null,
+      "t7_execution_week": null,
+      "cycle_open_week": 10,
+      "traffic_gap": {
+        "weeks": 12,
+        "unresolved_at_horizon": true
+      },
+      "cycle_gap": {
+        "weeks": 0,
+        "unresolved_at_horizon": false
+      },
+      "blocked": [
+        {
+          "week": 12,
+          "decision": "T7",
+          "missing": [
+            "grid"
+          ]
+        },
+        {
+          "week": 20,
+          "decision": "T7",
+          "missing": [
+            "grid"
+          ]
+        }
+      ],
+      "skipped": [],
+      "budget_after_decision_weeks": {
+        "0": 17,
+        "2": 15,
+        "4": 5,
+        "8": 3,
+        "10": 2,
+        "12": 1
+      },
+      "final_budget": 1,
+      "final_grid": "rejected",
+      "pending_at_horizon": []
+    },
+    "A_absent": {
+      "arm": "A",
+      "outcome": "absent",
+      "path_count": 4,
+      "parking_week": 2,
+      "parking_removed": 100,
+      "milestones": {
+        "buses_delivered": 8,
+        "depot_ready": 16,
+        "charger_delivered": 10,
+        "charger_installed": 18,
+        "drivers_ready": 8,
+        "signal_ready": 12,
+        "cycle_ready": 14,
+        "cycle_parking_ready": 16,
+        "cycle_open": 16,
+        "grid_ready": null,
+        "traffic_authorized": null
+      },
+      "at_parking": {
+        "buses_delivered": false,
+        "depot_ready": false,
+        "charger_delivered": false,
+        "charger_installed": false,
+        "drivers_ready": false,
+        "signal_ready": false,
+        "cycle_ready": false,
+        "cycle_parking_ready": false,
+        "cycle_open": false,
+        "grid_ready": false,
+        "traffic_authorized": false,
+        "grid_status": "not_ordered"
+      },
+      "t7_requirements_week": null,
+      "t7_execution_week": null,
+      "cycle_open_week": 16,
+      "traffic_gap": {
+        "weeks": 24,
+        "unresolved_at_horizon": true
+      },
+      "cycle_gap": {
+        "weeks": 14,
+        "unresolved_at_horizon": false
+      },
+      "blocked": [
+        {
+          "week": 12,
+          "decision": "T7",
+          "missing": [
+            "depot_ready",
+            "charger_installed",
+            "grid"
+          ]
+        },
+        {
+          "week": 20,
+          "decision": "T7",
+          "missing": [
+            "grid"
+          ]
+        }
+      ],
+      "skipped": [],
+      "budget_after_decision_weeks": {
+        "0": 21,
+        "4": 19,
+        "6": 8,
+        "8": 3,
+        "14": 2,
+        "16": 1
+      },
+      "final_budget": 1,
+      "final_grid": "waiting_no_further_review",
+      "pending_at_horizon": []
+    },
+    "B_absent": {
+      "arm": "B",
+      "outcome": "absent",
+      "path_count": 96,
+      "parking_week": 14,
+      "parking_removed": 100,
+      "milestones": {
+        "buses_delivered": 12,
+        "depot_ready": 10,
+        "charger_delivered": 6,
+        "charger_installed": 12,
+        "drivers_ready": 8,
+        "signal_ready": 12,
+        "cycle_ready": 8,
+        "cycle_parking_ready": 10,
+        "cycle_open": 10,
+        "grid_ready": null,
+        "traffic_authorized": null
+      },
+      "at_parking": {
+        "buses_delivered": true,
+        "depot_ready": true,
+        "charger_delivered": true,
+        "charger_installed": true,
+        "drivers_ready": true,
+        "signal_ready": true,
+        "cycle_ready": true,
+        "cycle_parking_ready": true,
+        "cycle_open": true,
+        "grid_ready": false,
+        "traffic_authorized": false,
+        "grid_status": "waiting_no_further_review"
+      },
+      "t7_requirements_week": null,
+      "t7_execution_week": null,
+      "cycle_open_week": 10,
+      "traffic_gap": {
+        "weeks": 12,
+        "unresolved_at_horizon": true
+      },
+      "cycle_gap": {
+        "weeks": 0,
+        "unresolved_at_horizon": false
+      },
+      "blocked": [
+        {
+          "week": 12,
+          "decision": "T7",
+          "missing": [
+            "grid"
+          ]
+        },
+        {
+          "week": 20,
+          "decision": "T7",
+          "missing": [
+            "grid"
+          ]
+        }
+      ],
+      "skipped": [],
+      "budget_after_decision_weeks": {
+        "0": 17,
+        "2": 15,
+        "4": 5,
+        "8": 3,
+        "10": 2,
+        "12": 1
+      },
+      "final_budget": 1,
+      "final_grid": "waiting_no_further_review",
+      "pending_at_horizon": []
+    }
+  },
+  "comparisons": {
+    "ready": {
+      "first_difference_week": 0,
+      "first_commitments": {
+        "A": "T1",
+        "B": "T3"
+      },
+      "final_equivalent": true,
+      "first_week_end_full_equivalence": 20
+    },
+    "rejected": {
+      "first_difference_week": 0,
+      "first_commitments": {
+        "A": "T1",
+        "B": "T3"
+      },
+      "final_equivalent": true,
+      "first_week_end_full_equivalence": 20
+    },
+    "absent": {
+      "first_difference_week": 0,
+      "first_commitments": {
+        "A": "T1",
+        "B": "T3"
+      },
+      "final_equivalent": true,
+      "first_week_end_full_equivalence": 20
+    }
+  },
+  "event_groups": {
+    "A": {
+      "8": [
+        "E_T1",
+        "E_T6"
+      ],
+      "16": [
+        "E_T3",
+        "E_T10"
+      ]
+    },
+    "B": {
+      "8": [
+        "E_T6",
+        "E_T9"
+      ],
+      "10": [
+        "E_T3",
+        "E_T10"
+      ],
+      "12": [
+        "E_T1",
+        "E_T2",
+        "E_T5",
+        "E_T8"
+      ]
+    }
+  }
+}

@@ -1,0 +1,146 @@
+{
+  "A": {
+    "decisions_by_week": {
+      "0": [
+        {
+          "id": "T1",
+          "only_if_not_taken": false
+        },
+        {
+          "id": "T12",
+          "only_if_not_taken": false
+        }
+      ],
+      "4": [
+        {
+          "id": "T6",
+          "only_if_not_taken": false
+        }
+      ],
+      "6": [
+        {
+          "id": "T3",
+          "only_if_not_taken": false
+        },
+        {
+          "id": "T4",
+          "only_if_not_taken": false
+        },
+        {
+          "id": "T9",
+          "only_if_not_taken": false
+        }
+      ],
+      "8": [
+        {
+          "id": "T2",
+          "only_if_not_taken": false
+        },
+        {
+          "id": "T8",
+          "only_if_not_taken": false
+        }
+      ],
+      "12": [
+        {
+          "id": "T7",
+          "only_if_not_taken": false
+        }
+      ],
+      "14": [
+        {
+          "id": "T10",
+          "only_if_not_taken": false
+        }
+      ],
+      "16": [
+        {
+          "id": "T5",
+          "only_if_not_taken": false
+        },
+        {
+          "id": "T11",
+          "only_if_not_taken": false
+        }
+      ],
+      "20": [
+        {
+          "id": "T7",
+          "only_if_not_taken": false
+        }
+      ]
+    },
+    "source": "sources/transport-t1-user.txt: Förlopp A"
+  },
+  "B": {
+    "decisions_by_week": {
+      "0": [
+        {
+          "id": "T3",
+          "only_if_not_taken": false
+        },
+        {
+          "id": "T2",
+          "only_if_not_taken": false
+        },
+        {
+          "id": "T9",
+          "only_if_not_taken": false
+        }
+      ],
+      "2": [
+        {
+          "id": "T4",
+          "only_if_not_taken": false
+        }
+      ],
+      "4": [
+        {
+          "id": "T1",
+          "only_if_not_taken": false
+        },
+        {
+          "id": "T6",
+          "only_if_not_taken": false
+        }
+      ],
+      "8": [
+        {
+          "id": "T8",
+          "only_if_not_taken": false
+        },
+        {
+          "id": "T10",
+          "only_if_not_taken": false
+        }
+      ],
+      "10": [
+        {
+          "id": "T5",
+          "only_if_not_taken": false
+        },
+        {
+          "id": "T11",
+          "only_if_not_taken": false
+        }
+      ],
+      "12": [
+        {
+          "id": "T7",
+          "only_if_not_taken": false
+        },
+        {
+          "id": "T12",
+          "only_if_not_taken": false
+        }
+      ],
+      "20": [
+        {
+          "id": "T7",
+          "only_if_not_taken": true
+        }
+      ]
+    },
+    "source": "sources/transport-t1-user.txt: Förlopp B"
+  }
+}

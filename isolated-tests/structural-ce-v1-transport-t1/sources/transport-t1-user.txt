@@ -1,0 +1,107 @@
+# Transportfall T1 – alternativ till bilen före parkeringsborttagning
+
+## Situation och analysfråga
+
+En kommun vill förbättra alternativen till bilen i en avgränsad centrumkorridor. Den planerar utökad busstrafik med elbussar, signalprioritering, ett förbättrat cykelstråk och cykelparkering. Samtidigt ska 100 parkeringsplatser tas bort.
+
+Vi ska jämföra två fasta förlopp med samma åtgärder, kostnader, ledtider och externa regler men olika ordning och tidpunkter.
+
+**Central fråga:** Vilka planerade transportalternativ är färdiga respektive godkända när parkeringsplatserna faktiskt försvinner, och hur länge dröjer det därefter innan återstående förutsättningar blir klara?
+
+Detta är ingen beräkning av trafikminskning, resande eller utsläpp.
+
+## Startläge och avgränsning
+
+- Start: vecka 0. Horisont: vecka 26. Beslutstidpunkt varje heltalsvecka.
+- Kommunen har 30 miljoner tillgängliga för åtagandena nedan.
+- Befintlig busstrafik och befintliga cykelmöjligheter kvarstår. De modelleras som oförändrade; vi analyserar de planerade förbättringarna.
+- Ingen del av den nya bussatsningen eller cykelsatsningen är beställd, färdig eller godkänd vid start.
+- Förfallna events behandlas före veckans beslut.
+- Varje beslut får genomföras högst en gång. Ett blockerat försök har ingen effekt och förbrukar inte beslutet.
+- Kostnader dras vid beslut och återbetalas inte. Ingen ytterligare finansiering finns.
+- Löpande driftkostnader, byggresurser, arbetspass och laddscheman ligger utanför fallet.
+
+## Beslut och effekter
+
+Alla beslut kräver att de ännu inte har genomförts och att budgeten täcker kostnaden.
+
+| ID | Beslut | Kostnad | Övriga krav och följder |
+|---|---|---:|---|
+| T1 | Beställa elbusspaketet | 8 | Bussarna levereras åtta veckor senare. Paketet är avsett enbart för den aktuella trafikökningen. |
+| T2 | Beställa elanslutningen | 4 | Tolv veckor senare inträffar en extern prövningspunkt: anslutningen färdigställs, avslås eller saknar färdigt besked. Avslag eller uteblivet besked ger ingen anslutning och ingen ny prövning inom horisonten. |
+| T3 | Beställa depåutbyggnaden | 5 | Depåavtal tecknas direkt. Den nya depådelen blir tillgänglig tio veckor senare. |
+| T4 | Beställa laddutrustningen | 2 | Kräver tecknat depåavtal. Utrustningen levereras fyra veckor senare. Leverans betyder inte installerad eller användbar laddning. |
+| T5 | Beställa installation av laddutrustningen | 1 | Kräver tillgänglig ny depådel och levererad laddutrustning. Installationen blir färdig två veckor senare. Elanslutning krävs separat för trafikgodkännandet. |
+| T6 | Rekrytera och utbilda chaufförspaketet | 2 | Chaufförspaketet blir tillgängligt fyra veckor senare och är avsett enbart för den aktuella trafikökningen. |
+| T7 | Godkänna den utökade busstrafiken | 0 | Kräver levererade bussar, tillgänglig depådel, installerad laddutrustning, färdig elanslutning och tillgängligt chaufförspaket. Sätter markören ”trafikökning godkänd”. |
+| T8 | Beställa signalprioritering | 1 | Funktionen blir färdig fyra veckor senare. Den är en separat förbättring och inget krav för T7. |
+| T9 | Beställa förbättring av cykelstråket | 4 | Stråket blir färdigt åtta veckor senare. |
+| T10 | Beställa cykelparkeringen | 1 | Cykelparkeringen blir tillgänglig två veckor senare. Den är inget krav för att öppna cykelstråket. |
+| T11 | Godkänna öppning av cykelstråket | 0 | Kräver färdigt cykelstråk. Sätter markören ”cykelstråk öppnat”. |
+| T12 | Beställa borttagning av 100 parkeringsplatser | 1 | Platserna försvinner två veckor senare. Beslutet kräver inga färdiga buss- eller cykelalternativ. Återställning ingår inte. |
+
+Samtliga åtaganden kostar tillsammans 29 miljoner. Budgeten ska kontrolleras, men fallet är inte konstruerat för att göra ett av förloppen ekonomiskt omöjligt.
+
+För busspaketet antar vi uttryckligen att de angivna bussarna, chaufförerna, depådelen, laddinstallationen och elanslutningen är tillräckliga för just detta paket. Vi modellerar inte flera linjepaket som konkurrerar om samma tillgångar.
+
+”Trafikökning godkänd” betyder att de deklarerade villkoren är uppfyllda vid beslutet. Det är ingen simulering av faktisk eller bestående trafikdrift.
+
+## Två fasta skript
+
+Båda förloppen använder utfallet ”elanslutningen färdigställs” vid den prövningspunkt som T2 initierar. Övriga färdigställanden följer de angivna fasta ledtiderna.
+
+Besluten på varje rad försöks i den angivna ordningen. Ett blockerat försök loggas; endast uttryckligt angivna senare försök görs.
+
+### Förlopp A
+
+| Vecka | Beslut i ordning |
+|---|---|
+| 0 | T1 beställ bussar, T12 beställ parkeringsborttagning |
+| 4 | T6 rekrytera och utbilda chaufförer |
+| 6 | T3 beställ depå, T4 beställ laddutrustning, T9 beställ cykelstråk |
+| 8 | T2 beställ elanslutning, T8 beställ signalprioritering |
+| 12 | Försök T7 godkänna utökad busstrafik |
+| 14 | T10 beställ cykelparkering |
+| 16 | T5 beställ laddinstallation, T11 godkänn öppning av cykelstråket |
+| 20 | Försök T7 igen |
+| Övriga veckor | ADVANCE utan nya beslut |
+
+### Förlopp B
+
+| Vecka | Beslut i ordning |
+|---|---|
+| 0 | T3 beställ depå, T2 beställ elanslutning, T9 beställ cykelstråk |
+| 2 | T4 beställ laddutrustning |
+| 4 | T1 beställ bussar, T6 rekrytera och utbilda chaufförer |
+| 8 | T8 beställ signalprioritering, T10 beställ cykelparkering |
+| 10 | T5 beställ laddinstallation, T11 godkänn öppning av cykelstråket |
+| 12 | Försök T7 godkänna utökad busstrafik, T12 beställ parkeringsborttagning |
+| 20 | Försök T7 igen endast om beslutet inte redan genomförts |
+| Övriga veckor | ADVANCE utan nya beslut |
+
+## Kontrollfrågor
+
+1. När försvinner parkeringen i respektive förlopp?
+2. Vilka förbättringar är då färdiga, godkända eller öppnade?
+3. Vad blockerar eventuella försök att godkänna utökad busstrafik?
+4. När uppfylls samtliga deklarerade krav för trafikgodkännandet?
+5. Hur länge efter parkeringsborttagningen saknas trafikgodkännandet respektive det öppnade cykelstråket?
+6. När skiljer sig förloppen första gången, och är tillstånden likvärdiga vid vecka 26?
+7. Vad händer med de angivna skripten om elanslutningen avslås eller beskedet uteblir?
+
+För fråga 5 betyder ”saknas” endast att den aktuella modelldefinierade förbättringen inte är godkänd eller öppnad. Det betyder inte att alla befintliga alternativ till bilen saknas.
+
+## Uppdrag till Cody
+
+Gör först en slutlig representationskontroll mot fryst Structural CE v1.0. Bygg inget gränssnitt ännu.
+
+Kontrollera särskilt:
+- att förloppen har samma åtgärder och förutsättningar,
+- att färdigställande, godkännande och faktisk drift inte blandas ihop,
+- att inga extra förvillkor införs för parkeringsborttagningen,
+- att externa besked och samtidiga events behandlas enligt kontraktet,
+- att tidsjämförelserna kan göras genom avläsning av historiken utan nya måloperatorer.
+
+Rapportera materiella oklarheter och representationsgap utan att reparera underlaget tyst. Spara denna version som underlag; föreslagna ändringar ska redovisas separat. Gör inga ändringar i CE2 eller fabrikscheckpointen.
+
+Leverera PASS, FAIL eller INCONCLUSIVE för den avgränsade frågan samt minsta nästa steg för mekanisk kontroll.

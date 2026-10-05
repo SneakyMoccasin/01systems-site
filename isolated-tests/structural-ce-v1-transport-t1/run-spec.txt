@@ -1,0 +1,99 @@
+Transportfall T1 – fryst körspecifikation, version 1
+
+Fryst före implementation och första uppspelning. Originalunderlaget ändras inte.
+Underlag: sources/transport-t1-user.txt. Alla verksamhetsvärden behandlas som
+användarens konstruerade ASSUMED-premisser, inte verifierade kommunuppgifter.
+Kontrakt: ../structural-ce-v1-factory-witness/sources/structural-ce-v1-frozen.txt.
+freeze.json låser underlag, kontrakt, denna specifikation, modell, skript och
+förväntade kontrollvärden med SHA-256. Modell och skript är översättningar av
+originalet; expected.json är ett separat, före körningen härlett kontrollfacit.
+
+Omfattning
+Exakt A och B, vardera med ready, rejected och absent för elanslutningen.
+Start 0, heltalsveckor 0–26 inklusive horisontens events och beslut. Inga
+ledningsval söks. Beslut följer respektive ordnade veckolista. T2:s besked kommer
+tolv veckor efter genomförd T2, alltså vecka 20 i A och 12 i B. Samma externa
+regel och utfall jämförs, inte samma absoluta beskedsvecka.
+
+Övergångar
+Alla förfallna events körs före veckans beslut. Referensordning: stigande
+ursprungligt T-nummer, uttryckligen listad i model.json. Den är en teknisk
+redovisningsordning, inte ett påstående om faktisk fysisk ordning. Samtliga
+permutationer vid samtliga samtidigheter körs, inklusive deras kartesiska
+produkt över veckorna. Inga historiker slås ihop. Förväntat A: 2! × 2! = 4
+historiker per utfall; B: 2! × 2! × 4! = 96. Totalt 300 huvudhistoriker.
+
+Beslut kan genomföras högst en gång och kräver budget >= kostnad samt uttryckliga
+förvillkor. Endast accepterade beslut kostar, ändrar state och schemalägger
+events. Ett blockerat försök är en diagnostikrad med exakt oförändrad snapshot,
+inklusive budget, genomförda beslut och eventkö. Det förbrukar inte beslutet.
+Ingen automatisk omprövning läggs till. B:s T7 vecka 20 hoppas över endast om
+T7 redan genomförts; detta loggas separat som script_skip, inte blockering.
+Inga andra villkor eller kontingenta ledningsval införs.
+
+T12 kräver inga transportalternativ. Även när T7 blockeras vecka 12 i B ska
+T12 försöka genomföras som nästa skriptpost. Parkeringsborttagning sker genom
+ett separat event efter två veckor, aldrig vid beställningen.
+
+Deterministiska färdigställanden får inga nya förvillkor. Elprövningen kräver
+att grid=pending från T2. absent sätter waiting_no_further_review; rejected
+sätter rejected. Ingen av dessa grenar schemalägger en ny prövning. Ett ej
+tillämpligt event loggas separat och får inte förväxlas med uteblivet besked.
+
+Observationer, frysta definitioner
+1. Färdigstatus/godkännanden vid parkeringsborttagningen avläses direkt efter
+   borttagningseventet. I dessa sex fall finns inga andra events samma vecka.
+2. Första T7-förutsättningar uppfyllda avläses vid beslutstidpunkten efter
+   veckans samtliga events, före besluten. Att T7 redan genomförts ändrar inte
+   frågan om dess materiella villkor. Tillgänglig nu redovisas separat och
+   utesluter redan tagna beslut. T7-genomförande kräver en faktisk beslutsrad.
+3. För varje färdigmarkör och godkännandemarkör registreras första övergången.
+   Gap = max(0, markörvecka − parkeringsvecka). Om markören inte inträffar
+   inom horisonten redovisas observerad väntan 26 − parkeringsvecka och
+   unresolved_at_horizon=true, inte en påhittad slutlig väntetid eller oändlighet.
+   Kvarstående elväntan (absent) skiljs från avslag, även om båda saknar T7.
+4. Första skillnad jämför samma initiala tillstånd och respektive första
+   commitment vid vecka 0. Därutöver jämförs varje veckoslut på samma epok.
+5. Full aktuell tillståndslikvärdighet avser verksamhetsstate inklusive budget,
+   samma tid, mängden genomförda beslut och kanoniskt sorterad aktuell eventkö.
+   Historikordning och äldre eventmetadata är inte ett krav på lika förflutet.
+   Decision Space jämförs separat. Ingen positiv marginaleffekt eller optimal
+   ordning härleds från jämförelsen.
+
+Frysta förväntningar från representationsrapporten
+ready: A tar bort parkering vecka 2, alla T7-krav/T7 vecka 20, cykelstråk
+färdigt 14 och öppnat 16, gap 18 respektive 14 veckor. B tar bort parkering
+vecka 14, alla T7-krav/T7 vecka 12, cykelstråk färdigt 8 och öppnat 10,
+båda gap 0. A har inga planerade förbättringar klara vid borttagningen;
+B har samtliga klara, trafikökningen godkänd och cykelstråket öppnat.
+Avslag/uteblivet: T7 genomförs inte, parkering och cykelöppning oförändrade;
+kvarstående frånvaro av trafikgodkännande till vecka 26 är 24 veckor i A och
+12 i B. I alla grenar kostar åtagandena 29, slutbudget 1, första skillnad är
+vecka 0 och tillstånden är likvärdiga vid vecka 26 inom samma utfall.
+Detaljer, budgetpunkter, blockeringsorsaker, eventgrupper och ytterligare
+direkt härledda milstolpar finns i expected.json. Dessa ändras inte utifrån
+körresultat. Avvikelser ska utredas och rapporteras; inget facit skrivs om tyst.
+
+Kontroll och evidens
+Spara fullständiga före-/eftersnapshots, schemaläggning, utfall och källor.
+Återläs historiker från disk. En separat granskare utan import av replay-kod
+rekonstruerar samtliga övergångar, ordningen, varje tidssteg, budgetbokföring,
+exakta förvillkorsfel, engångsregel och eventkö. Den kontrollerar ursprunget
+till varje event mot faktiskt genomfört beslut. Förväntningsjämförelse sker
+för varje permutation, inte bara en referenshistorik eller slutstate.
+
+Avsiktliga blockeringar ger inte FAIL. FAIL betyder avvikelse från regler,
+frysta kontrollvärden, täckning eller integritet. Separata felinjektioner och
+gränsprober ska kontrollera granskarens förmåga att upptäcka budgetfel,
+felaktig schemaläggning, effekter från avvisade försök, engångsbrott och
+felaktigt saknade tidssteg. Sådana prober ändrar inte huvudfallen.
+
+Två kompletta körningar görs med samma frysta indata och verktygsversion.
+Resultatfiler jämförs byte för byte med SHA-256, inklusive komprimerade
+historiker. Komprimering ska vara deterministisk. Inga realtidsstämplar eller
+absoluta utmatningssökvägar får påverka deterministiska resultat.
+
+PASS gäller endast dessa fasta förlopp under de deklarerade premisserna.
+Det verifierar inte verklig drift, trafikminskning, resande, utsläpp, strategier,
+hela v1, CE2 eller produktvärde. Inga ändringar görs i originalunderlaget,
+v1-kontraktet, CE2 eller fabrikscheckpointen. Endast transportmappen committas.

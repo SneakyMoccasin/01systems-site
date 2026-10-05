@@ -1,0 +1,493 @@
+{
+  "provenance": "User-supplied constructed ASSUMED case, not verified municipal data. Finite readiness and approval markers only.",
+  "clock": {
+    "start": 0,
+    "horizon": 26,
+    "step": 1
+  },
+  "domains": {
+    "buses_delivered": {
+      "enum": [
+        false,
+        true
+      ]
+    },
+    "depot_contract": {
+      "enum": [
+        false,
+        true
+      ]
+    },
+    "depot_ready": {
+      "enum": [
+        false,
+        true
+      ]
+    },
+    "charger_delivered": {
+      "enum": [
+        false,
+        true
+      ]
+    },
+    "charger_installed": {
+      "enum": [
+        false,
+        true
+      ]
+    },
+    "drivers_ready": {
+      "enum": [
+        false,
+        true
+      ]
+    },
+    "signal_ready": {
+      "enum": [
+        false,
+        true
+      ]
+    },
+    "cycle_ready": {
+      "enum": [
+        false,
+        true
+      ]
+    },
+    "cycle_parking_ready": {
+      "enum": [
+        false,
+        true
+      ]
+    },
+    "traffic_authorized": {
+      "enum": [
+        false,
+        true
+      ]
+    },
+    "cycle_open": {
+      "enum": [
+        false,
+        true
+      ]
+    },
+    "budget": {
+      "integer": [
+        0,
+        30
+      ]
+    },
+    "grid": {
+      "enum": [
+        "not_ordered",
+        "pending",
+        "ready",
+        "rejected",
+        "waiting_no_further_review"
+      ]
+    },
+    "parking_removed": {
+      "enum": [
+        0,
+        100
+      ]
+    }
+  },
+  "initial": {
+    "buses_delivered": false,
+    "depot_contract": false,
+    "depot_ready": false,
+    "charger_delivered": false,
+    "charger_installed": false,
+    "drivers_ready": false,
+    "signal_ready": false,
+    "cycle_ready": false,
+    "cycle_parking_ready": false,
+    "traffic_authorized": false,
+    "cycle_open": false,
+    "budget": 30,
+    "grid": "not_ordered",
+    "parking_removed": 0
+  },
+  "initial_events": [],
+  "decisions": {
+    "T1": {
+      "cost": 8,
+      "requires": [
+        [
+          "budget",
+          "ge",
+          8
+        ]
+      ],
+      "set": {},
+      "source": "sources/transport-t1-user.txt: beslutstabell T1",
+      "schedule": {
+        "id": "E_T1",
+        "delay": 8
+      }
+    },
+    "T2": {
+      "cost": 4,
+      "requires": [
+        [
+          "budget",
+          "ge",
+          4
+        ]
+      ],
+      "set": {
+        "grid": "pending"
+      },
+      "source": "sources/transport-t1-user.txt: beslutstabell T2",
+      "schedule": {
+        "id": "E_T2",
+        "delay": 12
+      }
+    },
+    "T3": {
+      "cost": 5,
+      "requires": [
+        [
+          "budget",
+          "ge",
+          5
+        ]
+      ],
+      "set": {
+        "depot_contract": true
+      },
+      "source": "sources/transport-t1-user.txt: beslutstabell T3",
+      "schedule": {
+        "id": "E_T3",
+        "delay": 10
+      }
+    },
+    "T4": {
+      "cost": 2,
+      "requires": [
+        [
+          "budget",
+          "ge",
+          2
+        ],
+        [
+          "depot_contract",
+          "eq",
+          true
+        ]
+      ],
+      "set": {},
+      "source": "sources/transport-t1-user.txt: beslutstabell T4",
+      "schedule": {
+        "id": "E_T4",
+        "delay": 4
+      }
+    },
+    "T5": {
+      "cost": 1,
+      "requires": [
+        [
+          "budget",
+          "ge",
+          1
+        ],
+        [
+          "depot_ready",
+          "eq",
+          true
+        ],
+        [
+          "charger_delivered",
+          "eq",
+          true
+        ]
+      ],
+      "set": {},
+      "source": "sources/transport-t1-user.txt: beslutstabell T5",
+      "schedule": {
+        "id": "E_T5",
+        "delay": 2
+      }
+    },
+    "T6": {
+      "cost": 2,
+      "requires": [
+        [
+          "budget",
+          "ge",
+          2
+        ]
+      ],
+      "set": {},
+      "source": "sources/transport-t1-user.txt: beslutstabell T6",
+      "schedule": {
+        "id": "E_T6",
+        "delay": 4
+      }
+    },
+    "T7": {
+      "cost": 0,
+      "requires": [
+        [
+          "budget",
+          "ge",
+          0
+        ],
+        [
+          "buses_delivered",
+          "eq",
+          true
+        ],
+        [
+          "depot_ready",
+          "eq",
+          true
+        ],
+        [
+          "charger_installed",
+          "eq",
+          true
+        ],
+        [
+          "grid",
+          "eq",
+          "ready"
+        ],
+        [
+          "drivers_ready",
+          "eq",
+          true
+        ]
+      ],
+      "set": {
+        "traffic_authorized": true
+      },
+      "source": "sources/transport-t1-user.txt: beslutstabell T7"
+    },
+    "T8": {
+      "cost": 1,
+      "requires": [
+        [
+          "budget",
+          "ge",
+          1
+        ]
+      ],
+      "set": {},
+      "source": "sources/transport-t1-user.txt: beslutstabell T8",
+      "schedule": {
+        "id": "E_T8",
+        "delay": 4
+      }
+    },
+    "T9": {
+      "cost": 4,
+      "requires": [
+        [
+          "budget",
+          "ge",
+          4
+        ]
+      ],
+      "set": {},
+      "source": "sources/transport-t1-user.txt: beslutstabell T9",
+      "schedule": {
+        "id": "E_T9",
+        "delay": 8
+      }
+    },
+    "T10": {
+      "cost": 1,
+      "requires": [
+        [
+          "budget",
+          "ge",
+          1
+        ]
+      ],
+      "set": {},
+      "source": "sources/transport-t1-user.txt: beslutstabell T10",
+      "schedule": {
+        "id": "E_T10",
+        "delay": 2
+      }
+    },
+    "T11": {
+      "cost": 0,
+      "requires": [
+        [
+          "budget",
+          "ge",
+          0
+        ],
+        [
+          "cycle_ready",
+          "eq",
+          true
+        ]
+      ],
+      "set": {
+        "cycle_open": true
+      },
+      "source": "sources/transport-t1-user.txt: beslutstabell T11"
+    },
+    "T12": {
+      "cost": 1,
+      "requires": [
+        [
+          "budget",
+          "ge",
+          1
+        ]
+      ],
+      "set": {},
+      "source": "sources/transport-t1-user.txt: beslutstabell T12",
+      "schedule": {
+        "id": "E_T12",
+        "delay": 2
+      }
+    }
+  },
+  "events": {
+    "E_T1": {
+      "requires": [],
+      "outcomes": {
+        "timer": {
+          "set": {
+            "buses_delivered": true
+          }
+        }
+      },
+      "source": "sources/transport-t1-user.txt: beslutstabell T1"
+    },
+    "E_T2": {
+      "requires": [
+        [
+          "grid",
+          "eq",
+          "pending"
+        ]
+      ],
+      "outcomes": {
+        "ready": {
+          "set": {
+            "grid": "ready"
+          }
+        },
+        "rejected": {
+          "set": {
+            "grid": "rejected"
+          }
+        },
+        "absent": {
+          "set": {
+            "grid": "waiting_no_further_review"
+          }
+        }
+      },
+      "source": "sources/transport-t1-user.txt: beslutstabell T2"
+    },
+    "E_T3": {
+      "requires": [],
+      "outcomes": {
+        "timer": {
+          "set": {
+            "depot_ready": true
+          }
+        }
+      },
+      "source": "sources/transport-t1-user.txt: beslutstabell T3"
+    },
+    "E_T4": {
+      "requires": [],
+      "outcomes": {
+        "timer": {
+          "set": {
+            "charger_delivered": true
+          }
+        }
+      },
+      "source": "sources/transport-t1-user.txt: beslutstabell T4"
+    },
+    "E_T5": {
+      "requires": [],
+      "outcomes": {
+        "timer": {
+          "set": {
+            "charger_installed": true
+          }
+        }
+      },
+      "source": "sources/transport-t1-user.txt: beslutstabell T5"
+    },
+    "E_T6": {
+      "requires": [],
+      "outcomes": {
+        "timer": {
+          "set": {
+            "drivers_ready": true
+          }
+        }
+      },
+      "source": "sources/transport-t1-user.txt: beslutstabell T6"
+    },
+    "E_T8": {
+      "requires": [],
+      "outcomes": {
+        "timer": {
+          "set": {
+            "signal_ready": true
+          }
+        }
+      },
+      "source": "sources/transport-t1-user.txt: beslutstabell T8"
+    },
+    "E_T9": {
+      "requires": [],
+      "outcomes": {
+        "timer": {
+          "set": {
+            "cycle_ready": true
+          }
+        }
+      },
+      "source": "sources/transport-t1-user.txt: beslutstabell T9"
+    },
+    "E_T10": {
+      "requires": [],
+      "outcomes": {
+        "timer": {
+          "set": {
+            "cycle_parking_ready": true
+          }
+        }
+      },
+      "source": "sources/transport-t1-user.txt: beslutstabell T10"
+    },
+    "E_T12": {
+      "requires": [],
+      "outcomes": {
+        "timer": {
+          "set": {
+            "parking_removed": 100
+          }
+        }
+      },
+      "source": "sources/transport-t1-user.txt: beslutstabell T12"
+    }
+  },
+  "reference_event_order": [
+    "E_T1",
+    "E_T2",
+    "E_T3",
+    "E_T4",
+    "E_T5",
+    "E_T6",
+    "E_T8",
+    "E_T9",
+    "E_T10",
+    "E_T12"
+  ]
+}

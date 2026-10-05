@@ -1,0 +1,7 @@
+{
+  "status": "PASS",
+  "original_transport_source_unchanged": true,
+  "factory_files_unchanged": 57,
+  "tracked_worktree_diff_unchanged_from_before_task": true,
+  "verification_stage": "after two runs, before staging transport files"
+}

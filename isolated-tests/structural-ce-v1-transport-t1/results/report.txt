@@ -1,0 +1,163 @@
+Transportfall T1 – mekanisk kontroll
+
+PASS: de sex fasta fallen överensstämmer med fryst körspecifikation och kontrollvärden.
+Inga avvikelser mot de frysta kontrollvärdena påvisades.
+
+Omfattning: användarens konstruerade ASSUMED-premisser, veckor 0–26 inklusive.
+Inga slutsatser om faktisk drift, trafikminskning, resande, utsläpp, optimal ordning,
+generell säkringsbarhet, hela v1, CE2 eller produktvärde. Befintliga alternativ kvarstår.
+
+METOD
+Varje historieartefakt sparades som deterministisk JSON.gz och lästes tillbaka.
+audit_history.py importerar ingen uppspelningskod och rekonstruerar alla övergångar.
+Kontroller: full före/efter-state, budgetdomän och separat kostnadsbokföring, exakta
+förvillkorsfel, engångsregel, accepterade eventursprung, positiv ledtid, event före
+beslut, hela skriptet och varje vecka. Avvisade försök får inga effekter eller events.
+Avsiktliga blockeringar är diagnostik, inte testfel. B:s redan genomförda T7 hoppas
+över vecka 20 endast i ready-grenen; det är inte ett nytt avvisat försök.
+
+A: fyra eventordningar per utfall. B: 96 eventordningar per utfall.
+Varje kombination kontrolleras mot samma frysta förväntningar; ingen historik slås ihop.
+Totalt 300 huvudhistoriker, 39300 historikrader och
+78600 granskade före-/eftersnapshots per komplett körning.
+
+HUVUDRESULTAT
+Fall | parkering borta | T7-villkor | T7 genomfört | cykel öppnad | bussgap | cykelgap | slutbudget
+A_ready | 2 | 20 | 20 | 16 | 18 veckor | 14 veckor | 1 Mkr
+B_ready | 14 | 12 | 12 | 10 | 0 veckor | 0 veckor | 1 Mkr
+A_rejected | 2 | ej inom 26 | ej inom 26 | 16 | 24 veckor, kvarstår vid 26 | 14 veckor | 1 Mkr
+B_rejected | 14 | ej inom 26 | ej inom 26 | 10 | 12 veckor, kvarstår vid 26 | 0 veckor | 1 Mkr
+A_absent | 2 | ej inom 26 | ej inom 26 | 16 | 24 veckor, kvarstår vid 26 | 14 veckor | 1 Mkr
+B_absent | 14 | ej inom 26 | ej inom 26 | 10 | 12 veckor, kvarstår vid 26 | 0 veckor | 1 Mkr
+
+BORTTAGNING OCH ÅTERSTÅENDE FÄRDIGSTÄLLANDEN
+Färdigstatus mäts direkt efter E_T12; borttagning är inte beställningsbeslutet.
+Varje rad nedan anger: markör = status vid borttagning; första vecka; gap därefter.
+Gap 0 betyder att markören redan uppnåtts. Kvarstår betyder endast observerad väntan
+till vecka 26, inte en beräknad slutlig väntetid.
+
+A_ready: 100 platser borta vecka 2; elstatus not_ordered
+  Bussar levererade: nej; vecka 8; 6 veckor
+  Depå tillgänglig: nej; vecka 16; 14 veckor
+  Laddutrustning levererad: nej; vecka 10; 8 veckor
+  Laddning installerad: nej; vecka 18; 16 veckor
+  Chaufförer tillgängliga: nej; vecka 8; 6 veckor
+  Signalprioritering färdig: nej; vecka 12; 10 veckor
+  Cykelstråk färdigt: nej; vecka 14; 12 veckor
+  Cykelparkering tillgänglig: nej; vecka 16; 14 veckor
+  Cykelstråk öppnat: nej; vecka 16; 14 veckor
+  Elanslutning färdig: nej; vecka 20; 18 veckor
+  Trafikökning godkänd: nej; vecka 20; 18 veckor
+  Blockerade försök: T7 vecka 12: depot_ready, charger_installed, grid
+  Elstatus vid horisonten: ready; eventkö: tom.
+
+B_ready: 100 platser borta vecka 14; elstatus ready
+  Bussar levererade: ja; vecka 12; 0 veckor
+  Depå tillgänglig: ja; vecka 10; 0 veckor
+  Laddutrustning levererad: ja; vecka 6; 0 veckor
+  Laddning installerad: ja; vecka 12; 0 veckor
+  Chaufförer tillgängliga: ja; vecka 8; 0 veckor
+  Signalprioritering färdig: ja; vecka 12; 0 veckor
+  Cykelstråk färdigt: ja; vecka 8; 0 veckor
+  Cykelparkering tillgänglig: ja; vecka 10; 0 veckor
+  Cykelstråk öppnat: ja; vecka 10; 0 veckor
+  Elanslutning färdig: ja; vecka 12; 0 veckor
+  Trafikökning godkänd: ja; vecka 12; 0 veckor
+  Blockerade försök: inga
+  Elstatus vid horisonten: ready; eventkö: tom.
+
+A_rejected: 100 platser borta vecka 2; elstatus not_ordered
+  Bussar levererade: nej; vecka 8; 6 veckor
+  Depå tillgänglig: nej; vecka 16; 14 veckor
+  Laddutrustning levererad: nej; vecka 10; 8 veckor
+  Laddning installerad: nej; vecka 18; 16 veckor
+  Chaufförer tillgängliga: nej; vecka 8; 6 veckor
+  Signalprioritering färdig: nej; vecka 12; 10 veckor
+  Cykelstråk färdigt: nej; vecka 14; 12 veckor
+  Cykelparkering tillgänglig: nej; vecka 16; 14 veckor
+  Cykelstråk öppnat: nej; vecka 16; 14 veckor
+  Elanslutning färdig: nej; vecka ej inom horisonten; 24 veckor, kvarstår
+  Trafikökning godkänd: nej; vecka ej inom horisonten; 24 veckor, kvarstår
+  Blockerade försök: T7 vecka 12: depot_ready, charger_installed, grid; T7 vecka 20: grid
+  Elstatus vid horisonten: rejected; eventkö: tom.
+
+B_rejected: 100 platser borta vecka 14; elstatus rejected
+  Bussar levererade: ja; vecka 12; 0 veckor
+  Depå tillgänglig: ja; vecka 10; 0 veckor
+  Laddutrustning levererad: ja; vecka 6; 0 veckor
+  Laddning installerad: ja; vecka 12; 0 veckor
+  Chaufförer tillgängliga: ja; vecka 8; 0 veckor
+  Signalprioritering färdig: ja; vecka 12; 0 veckor
+  Cykelstråk färdigt: ja; vecka 8; 0 veckor
+  Cykelparkering tillgänglig: ja; vecka 10; 0 veckor
+  Cykelstråk öppnat: ja; vecka 10; 0 veckor
+  Elanslutning färdig: nej; vecka ej inom horisonten; 12 veckor, kvarstår
+  Trafikökning godkänd: nej; vecka ej inom horisonten; 12 veckor, kvarstår
+  Blockerade försök: T7 vecka 12: grid; T7 vecka 20: grid
+  Elstatus vid horisonten: rejected; eventkö: tom.
+
+A_absent: 100 platser borta vecka 2; elstatus not_ordered
+  Bussar levererade: nej; vecka 8; 6 veckor
+  Depå tillgänglig: nej; vecka 16; 14 veckor
+  Laddutrustning levererad: nej; vecka 10; 8 veckor
+  Laddning installerad: nej; vecka 18; 16 veckor
+  Chaufförer tillgängliga: nej; vecka 8; 6 veckor
+  Signalprioritering färdig: nej; vecka 12; 10 veckor
+  Cykelstråk färdigt: nej; vecka 14; 12 veckor
+  Cykelparkering tillgänglig: nej; vecka 16; 14 veckor
+  Cykelstråk öppnat: nej; vecka 16; 14 veckor
+  Elanslutning färdig: nej; vecka ej inom horisonten; 24 veckor, kvarstår
+  Trafikökning godkänd: nej; vecka ej inom horisonten; 24 veckor, kvarstår
+  Blockerade försök: T7 vecka 12: depot_ready, charger_installed, grid; T7 vecka 20: grid
+  Elstatus vid horisonten: waiting_no_further_review; eventkö: tom.
+
+B_absent: 100 platser borta vecka 14; elstatus waiting_no_further_review
+  Bussar levererade: ja; vecka 12; 0 veckor
+  Depå tillgänglig: ja; vecka 10; 0 veckor
+  Laddutrustning levererad: ja; vecka 6; 0 veckor
+  Laddning installerad: ja; vecka 12; 0 veckor
+  Chaufförer tillgängliga: ja; vecka 8; 0 veckor
+  Signalprioritering färdig: ja; vecka 12; 0 veckor
+  Cykelstråk färdigt: ja; vecka 8; 0 veckor
+  Cykelparkering tillgänglig: ja; vecka 10; 0 veckor
+  Cykelstråk öppnat: ja; vecka 10; 0 veckor
+  Elanslutning färdig: nej; vecka ej inom horisonten; 12 veckor, kvarstår
+  Trafikökning godkänd: nej; vecka ej inom horisonten; 12 veckor, kvarstår
+  Blockerade försök: T7 vecka 12: grid; T7 vecka 20: grid
+  Elstatus vid horisonten: waiting_no_further_review; eventkö: tom.
+
+JÄMFÖRELSE A/B INOM SAMMA ELUTFALL
+ready: 384 A/B-par kontrollerade. Samma start; första skillnad vecka 0 efter A:T1 respektive B:T3. Första fulla likvärdighet vid veckoslut: 20. Likvärdiga vid vecka 26: True.
+rejected: 384 A/B-par kontrollerade. Samma start; första skillnad vecka 0 efter A:T1 respektive B:T3. Första fulla likvärdighet vid veckoslut: 20. Likvärdiga vid vecka 26: True.
+absent: 384 A/B-par kontrollerade. Samma start; första skillnad vecka 0 efter A:T1 respektive B:T3. Första fulla likvärdighet vid veckoslut: 20. Likvärdiga vid vecka 26: True.
+Likvärdighet jämför verksamhetsstate inklusive budget, samma tid, mängden tagna
+beslut och aktuell eventkö. Historikerna är olika och ändras inte. Decision Space
+är också lika vid horisonten. comparisons.json redovisar veckoslut och första commitments.
+I avslag/uteblivet genomförs T12 i B trots blockerat T7; borttagning sker vecka 14.
+Vid avslag finns inget positivt besked. Vid absent består explicit vänteläge utan
+ytterligare prövning. Båda saknar trafikgodkännande vid horisonten.
+
+KONTROLLVÄRDEN OCH KOMPLETTERANDE PROBER
+expected.json och övriga frysta indata har verifierats före och efter körningen.
+Alla frysta förväntningar kontrollerades för varje huvudhistorik. Inga facit ändrades.
+PASS once_only
+PASS insufficient_budget
+PASS detect_budget_tampering: Wrong transition effects at row 3
+PASS detect_wrong_schedule: Wrong queued delay
+PASS detect_rejected_state_effect: Wrong transition effects at row 64
+PASS detect_event_from_rejection: Event without accepted origin decision
+PASS detect_false_block_reason: Wrong rejected attempt/diagnostics
+PASS detect_duplicate_taken: Repeated decision
+PASS detect_wrong_outcome: Wrong external outcome
+PASS detect_missing_empty_week: Wrong week end
+
+ARTEFAKTER
+histories/: samtliga huvudhistoriker; audits/: separat granskning och observationer.
+timelines/: läsbara referensordningar, inte ersättning för permutationskontrollen.
+probes/: sparade och återlästa separata gränsprober. comparisons.json: alla A/B-par.
+summary.json: resultat och verktygs-/indatahashar. Reproducerbarhet redovisas separat
+av reproduce.py efter två kompletta körningar och filvis SHA-256-jämförelse.
+
+REPRODUCERBARHET: PASS. Två kompletta körningar; 25 filer per körning är byteidentiska enligt SHA-256, inklusive alla komprimerade historiker.
+Fabrikscheckpointens 57 filer har oförändrade kontrollsummor.
+reproducibility.json innehåller båda filmanifesten och skyddskontrollen.

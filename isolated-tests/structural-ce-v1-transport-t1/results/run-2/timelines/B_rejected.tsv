@@ -1,0 +1,132 @@
+index	week	kind	action	outcome	budget	grid	parking_removed	traffic_authorized	cycle_open	failed_conditions	decision_space	source
+0	0	initial	INITIAL		30	not_ordered	0	False	False	[]	T1,T2,T3,T6,T8,T9,T10,T12	T1 startläge; v1 State
+1	0	week_begin	WEEK_BEGIN		30	not_ordered	0	False	False	[]	T1,T2,T3,T6,T8,T9,T10,T12	v1 Tid
+2	0	decision_point	AFTER_EVENTS		30	not_ordered	0	False	False	[]	T1,T2,T3,T6,T8,T9,T10,T12	v1 event före beslut
+3	0	decision	T3		25	not_ordered	0	False	False	[]	T1,T2,T4,T6,T8,T9,T10,T12	sources/transport-t1-user.txt: beslutstabell T3
+4	0	decision	T2		21	pending	0	False	False	[]	T1,T4,T6,T8,T9,T10,T12	sources/transport-t1-user.txt: beslutstabell T2
+5	0	decision	T9		17	pending	0	False	False	[]	T1,T4,T6,T8,T10,T12	sources/transport-t1-user.txt: beslutstabell T9
+6	0	week_end	WEEK_END		17	pending	0	False	False	[]	T1,T4,T6,T8,T10,T12	v1 Tid
+7	0	advance	ADVANCE		17	pending	0	False	False	[]	T1,T4,T6,T8,T10,T12	v1 ADVANCE
+8	1	week_begin	WEEK_BEGIN		17	pending	0	False	False	[]	T1,T4,T6,T8,T10,T12	v1 Tid
+9	1	decision_point	AFTER_EVENTS		17	pending	0	False	False	[]	T1,T4,T6,T8,T10,T12	v1 event före beslut
+10	1	week_end	WEEK_END		17	pending	0	False	False	[]	T1,T4,T6,T8,T10,T12	v1 Tid
+11	1	advance	ADVANCE		17	pending	0	False	False	[]	T1,T4,T6,T8,T10,T12	v1 ADVANCE
+12	2	week_begin	WEEK_BEGIN		17	pending	0	False	False	[]	T1,T4,T6,T8,T10,T12	v1 Tid
+13	2	decision_point	AFTER_EVENTS		17	pending	0	False	False	[]	T1,T4,T6,T8,T10,T12	v1 event före beslut
+14	2	decision	T4		15	pending	0	False	False	[]	T1,T6,T8,T10,T12	sources/transport-t1-user.txt: beslutstabell T4
+15	2	week_end	WEEK_END		15	pending	0	False	False	[]	T1,T6,T8,T10,T12	v1 Tid
+16	2	advance	ADVANCE		15	pending	0	False	False	[]	T1,T6,T8,T10,T12	v1 ADVANCE
+17	3	week_begin	WEEK_BEGIN		15	pending	0	False	False	[]	T1,T6,T8,T10,T12	v1 Tid
+18	3	decision_point	AFTER_EVENTS		15	pending	0	False	False	[]	T1,T6,T8,T10,T12	v1 event före beslut
+19	3	week_end	WEEK_END		15	pending	0	False	False	[]	T1,T6,T8,T10,T12	v1 Tid
+20	3	advance	ADVANCE		15	pending	0	False	False	[]	T1,T6,T8,T10,T12	v1 ADVANCE
+21	4	week_begin	WEEK_BEGIN		15	pending	0	False	False	[]	T1,T6,T8,T10,T12	v1 Tid
+22	4	decision_point	AFTER_EVENTS		15	pending	0	False	False	[]	T1,T6,T8,T10,T12	v1 event före beslut
+23	4	decision	T1		7	pending	0	False	False	[]	T6,T8,T10,T12	sources/transport-t1-user.txt: beslutstabell T1
+24	4	decision	T6		5	pending	0	False	False	[]	T8,T10,T12	sources/transport-t1-user.txt: beslutstabell T6
+25	4	week_end	WEEK_END		5	pending	0	False	False	[]	T8,T10,T12	v1 Tid
+26	4	advance	ADVANCE		5	pending	0	False	False	[]	T8,T10,T12	v1 ADVANCE
+27	5	week_begin	WEEK_BEGIN		5	pending	0	False	False	[]	T8,T10,T12	v1 Tid
+28	5	decision_point	AFTER_EVENTS		5	pending	0	False	False	[]	T8,T10,T12	v1 event före beslut
+29	5	week_end	WEEK_END		5	pending	0	False	False	[]	T8,T10,T12	v1 Tid
+30	5	advance	ADVANCE		5	pending	0	False	False	[]	T8,T10,T12	v1 ADVANCE
+31	6	week_begin	WEEK_BEGIN		5	pending	0	False	False	[]	T8,T10,T12	v1 Tid
+32	6	event	E_T4	timer	5	pending	0	False	False	[]	T8,T10,T12	sources/transport-t1-user.txt: beslutstabell T4
+33	6	decision_point	AFTER_EVENTS		5	pending	0	False	False	[]	T8,T10,T12	v1 event före beslut
+34	6	week_end	WEEK_END		5	pending	0	False	False	[]	T8,T10,T12	v1 Tid
+35	6	advance	ADVANCE		5	pending	0	False	False	[]	T8,T10,T12	v1 ADVANCE
+36	7	week_begin	WEEK_BEGIN		5	pending	0	False	False	[]	T8,T10,T12	v1 Tid
+37	7	decision_point	AFTER_EVENTS		5	pending	0	False	False	[]	T8,T10,T12	v1 event före beslut
+38	7	week_end	WEEK_END		5	pending	0	False	False	[]	T8,T10,T12	v1 Tid
+39	7	advance	ADVANCE		5	pending	0	False	False	[]	T8,T10,T12	v1 ADVANCE
+40	8	week_begin	WEEK_BEGIN		5	pending	0	False	False	[]	T8,T10,T12	v1 Tid
+41	8	event	E_T6	timer	5	pending	0	False	False	[]	T8,T10,T12	sources/transport-t1-user.txt: beslutstabell T6
+42	8	event	E_T9	timer	5	pending	0	False	False	[]	T8,T10,T11,T12	sources/transport-t1-user.txt: beslutstabell T9
+43	8	decision_point	AFTER_EVENTS		5	pending	0	False	False	[]	T8,T10,T11,T12	v1 event före beslut
+44	8	decision	T8		4	pending	0	False	False	[]	T10,T11,T12	sources/transport-t1-user.txt: beslutstabell T8
+45	8	decision	T10		3	pending	0	False	False	[]	T11,T12	sources/transport-t1-user.txt: beslutstabell T10
+46	8	week_end	WEEK_END		3	pending	0	False	False	[]	T11,T12	v1 Tid
+47	8	advance	ADVANCE		3	pending	0	False	False	[]	T11,T12	v1 ADVANCE
+48	9	week_begin	WEEK_BEGIN		3	pending	0	False	False	[]	T11,T12	v1 Tid
+49	9	decision_point	AFTER_EVENTS		3	pending	0	False	False	[]	T11,T12	v1 event före beslut
+50	9	week_end	WEEK_END		3	pending	0	False	False	[]	T11,T12	v1 Tid
+51	9	advance	ADVANCE		3	pending	0	False	False	[]	T11,T12	v1 ADVANCE
+52	10	week_begin	WEEK_BEGIN		3	pending	0	False	False	[]	T11,T12	v1 Tid
+53	10	event	E_T3	timer	3	pending	0	False	False	[]	T5,T11,T12	sources/transport-t1-user.txt: beslutstabell T3
+54	10	event	E_T10	timer	3	pending	0	False	False	[]	T5,T11,T12	sources/transport-t1-user.txt: beslutstabell T10
+55	10	decision_point	AFTER_EVENTS		3	pending	0	False	False	[]	T5,T11,T12	v1 event före beslut
+56	10	decision	T5		2	pending	0	False	False	[]	T11,T12	sources/transport-t1-user.txt: beslutstabell T5
+57	10	decision	T11		2	pending	0	False	True	[]	T12	sources/transport-t1-user.txt: beslutstabell T11
+58	10	week_end	WEEK_END		2	pending	0	False	True	[]	T12	v1 Tid
+59	10	advance	ADVANCE		2	pending	0	False	True	[]	T12	v1 ADVANCE
+60	11	week_begin	WEEK_BEGIN		2	pending	0	False	True	[]	T12	v1 Tid
+61	11	decision_point	AFTER_EVENTS		2	pending	0	False	True	[]	T12	v1 event före beslut
+62	11	week_end	WEEK_END		2	pending	0	False	True	[]	T12	v1 Tid
+63	11	advance	ADVANCE		2	pending	0	False	True	[]	T12	v1 ADVANCE
+64	12	week_begin	WEEK_BEGIN		2	pending	0	False	True	[]	T12	v1 Tid
+65	12	event	E_T1	timer	2	pending	0	False	True	[]	T12	sources/transport-t1-user.txt: beslutstabell T1
+66	12	event	E_T2	rejected	2	rejected	0	False	True	[]	T12	sources/transport-t1-user.txt: beslutstabell T2
+67	12	event	E_T5	timer	2	rejected	0	False	True	[]	T12	sources/transport-t1-user.txt: beslutstabell T5
+68	12	event	E_T8	timer	2	rejected	0	False	True	[]	T12	sources/transport-t1-user.txt: beslutstabell T8
+69	12	decision_point	AFTER_EVENTS		2	rejected	0	False	True	[]	T12	v1 event före beslut
+70	12	rejected_attempt	T7		2	rejected	0	False	True	"[{""actual"": ""rejected"", ""field"": ""grid"", ""operator"": ""eq"", ""required"": ""ready""}]"	T12	sources/transport-t1-user.txt: beslutstabell T7
+71	12	decision	T12		1	rejected	0	False	True	[]		sources/transport-t1-user.txt: beslutstabell T12
+72	12	week_end	WEEK_END		1	rejected	0	False	True	[]		v1 Tid
+73	12	advance	ADVANCE		1	rejected	0	False	True	[]		v1 ADVANCE
+74	13	week_begin	WEEK_BEGIN		1	rejected	0	False	True	[]		v1 Tid
+75	13	decision_point	AFTER_EVENTS		1	rejected	0	False	True	[]		v1 event före beslut
+76	13	week_end	WEEK_END		1	rejected	0	False	True	[]		v1 Tid
+77	13	advance	ADVANCE		1	rejected	0	False	True	[]		v1 ADVANCE
+78	14	week_begin	WEEK_BEGIN		1	rejected	0	False	True	[]		v1 Tid
+79	14	event	E_T12	timer	1	rejected	100	False	True	[]		sources/transport-t1-user.txt: beslutstabell T12
+80	14	decision_point	AFTER_EVENTS		1	rejected	100	False	True	[]		v1 event före beslut
+81	14	week_end	WEEK_END		1	rejected	100	False	True	[]		v1 Tid
+82	14	advance	ADVANCE		1	rejected	100	False	True	[]		v1 ADVANCE
+83	15	week_begin	WEEK_BEGIN		1	rejected	100	False	True	[]		v1 Tid
+84	15	decision_point	AFTER_EVENTS		1	rejected	100	False	True	[]		v1 event före beslut
+85	15	week_end	WEEK_END		1	rejected	100	False	True	[]		v1 Tid
+86	15	advance	ADVANCE		1	rejected	100	False	True	[]		v1 ADVANCE
+87	16	week_begin	WEEK_BEGIN		1	rejected	100	False	True	[]		v1 Tid
+88	16	decision_point	AFTER_EVENTS		1	rejected	100	False	True	[]		v1 event före beslut
+89	16	week_end	WEEK_END		1	rejected	100	False	True	[]		v1 Tid
+90	16	advance	ADVANCE		1	rejected	100	False	True	[]		v1 ADVANCE
+91	17	week_begin	WEEK_BEGIN		1	rejected	100	False	True	[]		v1 Tid
+92	17	decision_point	AFTER_EVENTS		1	rejected	100	False	True	[]		v1 event före beslut
+93	17	week_end	WEEK_END		1	rejected	100	False	True	[]		v1 Tid
+94	17	advance	ADVANCE		1	rejected	100	False	True	[]		v1 ADVANCE
+95	18	week_begin	WEEK_BEGIN		1	rejected	100	False	True	[]		v1 Tid
+96	18	decision_point	AFTER_EVENTS		1	rejected	100	False	True	[]		v1 event före beslut
+97	18	week_end	WEEK_END		1	rejected	100	False	True	[]		v1 Tid
+98	18	advance	ADVANCE		1	rejected	100	False	True	[]		v1 ADVANCE
+99	19	week_begin	WEEK_BEGIN		1	rejected	100	False	True	[]		v1 Tid
+100	19	decision_point	AFTER_EVENTS		1	rejected	100	False	True	[]		v1 event före beslut
+101	19	week_end	WEEK_END		1	rejected	100	False	True	[]		v1 Tid
+102	19	advance	ADVANCE		1	rejected	100	False	True	[]		v1 ADVANCE
+103	20	week_begin	WEEK_BEGIN		1	rejected	100	False	True	[]		v1 Tid
+104	20	decision_point	AFTER_EVENTS		1	rejected	100	False	True	[]		v1 event före beslut
+105	20	rejected_attempt	T7		1	rejected	100	False	True	"[{""actual"": ""rejected"", ""field"": ""grid"", ""operator"": ""eq"", ""required"": ""ready""}]"		sources/transport-t1-user.txt: beslutstabell T7
+106	20	week_end	WEEK_END		1	rejected	100	False	True	[]		v1 Tid
+107	20	advance	ADVANCE		1	rejected	100	False	True	[]		v1 ADVANCE
+108	21	week_begin	WEEK_BEGIN		1	rejected	100	False	True	[]		v1 Tid
+109	21	decision_point	AFTER_EVENTS		1	rejected	100	False	True	[]		v1 event före beslut
+110	21	week_end	WEEK_END		1	rejected	100	False	True	[]		v1 Tid
+111	21	advance	ADVANCE		1	rejected	100	False	True	[]		v1 ADVANCE
+112	22	week_begin	WEEK_BEGIN		1	rejected	100	False	True	[]		v1 Tid
+113	22	decision_point	AFTER_EVENTS		1	rejected	100	False	True	[]		v1 event före beslut
+114	22	week_end	WEEK_END		1	rejected	100	False	True	[]		v1 Tid
+115	22	advance	ADVANCE		1	rejected	100	False	True	[]		v1 ADVANCE
+116	23	week_begin	WEEK_BEGIN		1	rejected	100	False	True	[]		v1 Tid
+117	23	decision_point	AFTER_EVENTS		1	rejected	100	False	True	[]		v1 event före beslut
+118	23	week_end	WEEK_END		1	rejected	100	False	True	[]		v1 Tid
+119	23	advance	ADVANCE		1	rejected	100	False	True	[]		v1 ADVANCE
+120	24	week_begin	WEEK_BEGIN		1	rejected	100	False	True	[]		v1 Tid
+121	24	decision_point	AFTER_EVENTS		1	rejected	100	False	True	[]		v1 event före beslut
+122	24	week_end	WEEK_END		1	rejected	100	False	True	[]		v1 Tid
+123	24	advance	ADVANCE		1	rejected	100	False	True	[]		v1 ADVANCE
+124	25	week_begin	WEEK_BEGIN		1	rejected	100	False	True	[]		v1 Tid
+125	25	decision_point	AFTER_EVENTS		1	rejected	100	False	True	[]		v1 event före beslut
+126	25	week_end	WEEK_END		1	rejected	100	False	True	[]		v1 Tid
+127	25	advance	ADVANCE		1	rejected	100	False	True	[]		v1 ADVANCE
+128	26	week_begin	WEEK_BEGIN		1	rejected	100	False	True	[]		v1 Tid
+129	26	decision_point	AFTER_EVENTS		1	rejected	100	False	True	[]		v1 event före beslut
+130	26	week_end	WEEK_END		1	rejected	100	False	True	[]		v1 Tid
