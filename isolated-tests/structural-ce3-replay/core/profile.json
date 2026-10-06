@@ -1,0 +1,31 @@
+{
+  "profile": "fixed-replay/0.1",
+  "semantic_reference": "Structural CE v1.0 frozen 2026-09-26",
+  "conformance": "explicit_subset_not_full_v1",
+  "versions": {"run": "ce3-run/1", "model": "ce3-model/1", "script": "ce3-script/1", "history": "ce3-history/1"},
+  "validation": {"all_rules_before_replay": true, "unknown_fields": "UnsupportedFeature", "duplicate_json_keys": "reject", "type_coercion": false},
+  "supported": {
+    "domains": ["homogeneous_finite_enum_of_bool_string_or_integer", "bounded_integer"],
+    "guards": ["conjunction", "eq_typed_constant", "ge_integer_constant"],
+    "effects": ["set", "constant_integer_add"],
+    "budget": {"accounts": 1, "optional": true, "lower_bound": 0, "automatic_funding_guard": true, "one_cost_debit_per_accepted_decision": true, "event_add": true},
+    "decisions": {"once_only_on_acceptance": true, "blocked_attempt_mutates_snapshot": false, "schedules_at_most_one_event": true},
+    "script_modes": ["attempt", "if_not_taken"],
+    "event_origins": ["initial", "accepted_decision"],
+    "event_scheduling_sites_per_id_maximum": 1,
+    "events": ["guard_at_due_time", "timer_single_outcome", "fixed_external_outcome", "explicit_absent_waiting_enum", "inapplicable_without_outcome"],
+    "clock": {"integer_start_and_horizon": true, "step": 1, "horizon_inclusive": true, "events_before_decisions": true, "visit_empty_steps": true, "positive_decision_delays": true, "pending_after_horizon_retained": true},
+    "ordering": "all_simultaneous_permutations_cartesian_product_no_merging",
+    "history": "full_typed_before_after_states_taken_queue_phase_provenance"
+  },
+  "v1_allowed_but_unsupported_here": ["event_outcome_schedules_event", "external_review_without_absent_under_response_guarantee", "general_possible_closed_securable_analysis"],
+  "unsupported": ["set_add_overlap", "direct_account_set", "decision_account_add", "multiple_scheduling_sites", "zero_time_chains", "event_repetition", "cancellation", "rescheduling", "callbacks", "formulas", "conditional_effects", "state_triggered_feedback", "clock_guards", "general_script_conditions", "alternative_plan_search", "optimization", "AI_runtime", "AI_onboarding", "traffic_prediction"],
+  "resource_policy": {
+    "status_on_limit": "INCOMPLETE", "partial_pass": false,
+    "max_paths": "maximum live paths after expansion, all permutations or none",
+    "max_rows": "maximum newly emitted work rows across the branch tree, excluding copied shared prefixes",
+    "max_steps": "maximum integer steps from start through horizon",
+    "partial_diagnostics": "last committed snapshot and history; no complete paths certified"
+  },
+  "audit": {"separate_process_supported": true, "trusted_input_identity_required": true, "runtime_predicate_effect_transition_imports": false, "checks_permutation_tree_completeness": true}
+}

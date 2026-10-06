@@ -1,0 +1,8 @@
+{
+  "budget_field": "budget",
+  "time_basis": "sources/transport-t1-user.txt and run-spec.txt: integer weeks 0 through 26 inclusive, due events before ordered attempts; delays relative to accepted decisions.",
+  "deadlines": [],
+  "external_roles": {
+    "E_T2": {"outcome": "absent", "field": "grid", "value": "waiting_no_further_review", "source": "sources/transport-t1-user.txt T2; no further review within horizon"}
+  }
+}

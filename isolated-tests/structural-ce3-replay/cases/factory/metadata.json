@@ -1,0 +1,13 @@
+{
+  "budget_field": "budget",
+  "time_basis": "factory-assumed.txt: weekly decisions, start 0, inclusive horizon 26; positive delays from actual decisions. Legacy maximum scheduled due 34 equals horizon plus maximum delay 8.",
+  "deadlines": [
+    {"event": "E_PL_OFFER_EXPIRES", "last_inclusive_step": 4, "source": "sources/factory-assumed.txt D2; model.json initial_events"},
+    {"event": "E_SE_OFFER_EXPIRES", "last_inclusive_step": 6, "source": "sources/factory-assumed.txt D9; model.json initial_events"}
+  ],
+  "external_roles": {
+    "E_BANK": {"outcome": "absent", "field": "bank", "value": "waiting_no_further_review", "source": "sources/factory-assumed.txt D1; no further bank review within horizon"},
+    "E_QUALITY": {"outcome": "absent", "field": "quality", "value": "waiting_no_further_review", "source": "sources/factory-assumed.txt D6; no further quality review"},
+    "E_CUSTOMER": {"outcome": "absent", "field": "customer", "value": "waiting_no_further_review", "source": "sources/factory-assumed.txt D7; no further customer review within horizon"}
+  }
+}

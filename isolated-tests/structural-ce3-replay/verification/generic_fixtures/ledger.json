@@ -1,0 +1,38 @@
+{
+  "input": {
+    "schema_version": "ce3-run/1", "profile": "fixed-replay/0.1", "sources": {},
+    "model": {
+      "schema_version": "ce3-model/1", "source": "Hand-derived synthetic ledger, no business case",
+      "clock": {"start": 0, "horizon": 3, "step": 1, "unit": "tick", "events_before_decisions": true, "horizon_inclusive": true},
+      "domains": {"coins": {"integer": [0, 10]}, "gate": {"enum": [false, true]}, "flag": {"enum": [false, true]}, "count": {"integer": [0, 2]}},
+      "initial": {"coins": 2, "gate": false, "flag": false, "count": 0},
+      "budget": {"field": "coins"},
+      "metadata": {"assumption": "Synthetic test only", "time_basis": "Four integer ticks inclusive", "deadlines": []},
+      "decisions": {
+        "unlock": {"requires": [], "effects": {"set": {"gate": true}, "add": {}}, "cost": 0, "schedule": null, "source": "Hand fixture unlock"},
+        "buy": {"requires": [{"field": "gate", "op": "eq", "value": true}], "effects": {"set": {}, "add": {"count": 1}}, "cost": 3, "schedule": {"event": "arrival", "delay": 1}, "source": "Hand fixture buy"},
+        "finish": {"requires": [{"field": "flag", "op": "eq", "value": true}], "effects": {"set": {}, "add": {"count": 1}}, "cost": 0, "schedule": null, "source": "Hand fixture finish"}
+      },
+      "events": {
+        "grant": {"requires": [], "kind": "timer", "outcomes": {"tick": {"set": {}, "add": {"coins": 1}}}, "absent": null, "source": "Hand fixture grant"},
+        "arrival": {"requires": [], "kind": "timer", "outcomes": {"tick": {"set": {"flag": true}, "add": {}}}, "absent": null, "source": "Hand fixture arrival"}
+      },
+      "initial_events": [{"id": "grant", "due": 1, "scheduled_at": 0}],
+      "reference_event_order": ["grant", "arrival"]
+    },
+    "script": {"schema_version": "ce3-script/1", "source": "Hand fixture ordered attempts", "steps": {
+      "0": [{"decision": "buy", "mode": "attempt"}, {"decision": "unlock", "mode": "attempt"}, {"decision": "buy", "mode": "attempt"}],
+      "1": [{"decision": "buy", "mode": "attempt"}, {"decision": "buy", "mode": "attempt"}],
+      "2": [{"decision": "finish", "mode": "attempt"}],
+      "3": [{"decision": "buy", "mode": "if_not_taken"}]
+    }},
+    "outcomes": {}
+  },
+  "expected_material_sequence": [
+    [0, "attempt_blocked", "buy"], [0, "decision_executed", "unlock"], [0, "attempt_blocked", "buy"],
+    [1, "event_applied", "grant"], [1, "decision_executed", "buy"], [1, "attempt_blocked", "buy"],
+    [2, "event_applied", "arrival"], [2, "decision_executed", "finish"], [3, "script_skip", "buy"]
+  ],
+  "expected_final_state": {"coins": 0, "gate": true, "flag": true, "count": 2},
+  "derivation": "At tick 0 buy lacks gate and one coin, unlock fixes only gate. Grant adds the third coin before attempts at tick 1. Exactly-funded buy debits 3, increments count and schedules arrival at 2. Repeated buy is blocked. Arrival precedes finish at 2; finish increments count to 2. Tick 3 skips previously taken buy. No failure spends money or consumes the once-only right."
+}
