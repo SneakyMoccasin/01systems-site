@@ -1,0 +1,26 @@
+test_01_factory_full_flow_and_new_process_reopen (__main__.Workbench) ... ok
+test_02_transport_full_flow_and_budget_projection (__main__.Workbench) ... ok
+test_03_explicit_outcomes_required (__main__.Workbench) ... ok
+test_04_invalid_unused_rule_rejected (__main__.Workbench) ... ok
+test_05_negative_absent_and_later_independent_attempt (__main__.Workbench) ... ok
+test_06_order_sensitivity_includes_intermediate_state (__main__.Workbench) ... ok
+test_07_incomplete_is_not_reviewed (__main__.Workbench) ... ok
+test_08_tampered_import_and_read_fail_closed (__main__.Workbench) ... ok
+test_09_mismatched_outcomes_or_model_cannot_compare (__main__.Workbench) ... ok
+test_10_version_conflict_and_immutability (__main__.Workbench) ... ok
+test_11_no_budget_and_unknown_labels (__main__.Workbench) ... ok
+test_12_skip_instruction_and_same_step_order (__main__.Workbench) ... ok
+test_13_interrupted_run_is_visible_and_exportable (__main__.Workbench) ... ok
+test_14_import_identity_rejection_is_atomic (__main__.Workbench) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 82.876s
+
+OK
+
+PASS: all 11 complete audited path sets and operational inputs identical to 094c81e
+
+PASS: 11 audited cases / 328 complete paths; labels, dates, exact recorded transactions and balances, per-order totals, raw JSON isolation, no mutations, pending horizon witness, conditional external pending, missing dates/budget data.
+PASS: 11 audited fixtures; tabs, draft outcomes, stale provenance, hidden rows, multi-keystroke week edits, explicit movement/add/remove/duplicate, empty plan, million-step horizon, timeline order, incomplete/failed audit.
+PASS: names, typed values, units, fallbacks, comparison guidance, model isolation, DOM grouping and explicit attempts/empty steps preserved.
+PASS: all audited paths for positive/rejected/absent, horizon censoring, separate readiness/retry, factory/import fallback, reversal, payments, reopened gaps, UI hierarchy and mixed-outcome warning; inputs untouched.

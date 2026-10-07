@@ -97,3 +97,12 @@ Riktade kontroller efter `python3 -B verification/test_comparison.py` (som skapa
 node verification/plan-workspace-ui.test.cjs
 python3 -B verification/check_plan_workspace_invariance.py
 ```
+
+Resultatets utfällningar visar läsbara beslut, väntande händelser och registrerade budgetförändringar. Kontrolltabellen jämför händelseordningar inom samma plan. Fullständiga rådata finns under **Tekniska kontroller och fullständig historik → Visa tekniska rådata (JSON)**. Schemalagda händelser är inte garanterade framtida resultat. Saknade etiketter, enheter eller historikuppgifter anges uttryckligen.
+
+Riktad verifiering med samma fixturer som ovan:
+
+```sh
+node verification/readable-results-ui.test.cjs
+python3 -B verification/check_readable_results_invariance.py
+```

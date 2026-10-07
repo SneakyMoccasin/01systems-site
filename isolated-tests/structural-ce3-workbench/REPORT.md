@@ -220,3 +220,41 @@ I den levande vyn före ändringen, med sparad Plan B i Samma parkering, fanns *
 Sammanfattningen avser hela horisonten för den tydligt angivna, valda händelseordningen. Den sammanför inte olika ordningar till en ny verksamhetsbedömning. Historiken kan visa faktiska misslyckade villkor men ger inga nya garantier om framtiden. Alla veckor och tidslinjen är sidindelade; en plan med många faktiska försök kan fortfarande vara lång i standardvyn. Flikval och filter är sessionsval, medan planutkast bevaras genom det befintliga uttryckliga sparandet.
 
 Ändrade filer: `static/app.js`, `static/style.css`, `README.md`, `REPORT.md`, `verification/latest.json`. Nya filer: `verification/plan-workspace-ui.test.cjs`, `verification/check_plan_workspace_invariance.py`, `verification/plan-workspace-invariance.json`, `verification/plan-workspace-tests.log` och `verification/plan-workspace-preservation.json`.
+
+## Läsbara resultatutfällningar (2026-10-07)
+
+Startkontroll: `decision-flow-demo-v1`, HEAD `094c81e`, inga spårade ändringar. Befintliga ospårade filer och lokala data bevarade. Endast UI, dokumentation och verifiering ändras; kärna, server, modeller, körindata, körordning, exportformat och jämförelseregler är oförändrade.
+
+### Presentation
+
+- **Genomförda beslut och kvarvarande kö** visar en tabell med befintliga visningsnamn och genomförandetid från registrerade `decision_executed`-rader. Beslut utan avläsbar tid får uttrycklig upplysning om detta. Kön redovisar händelsenamn, schemalagd tid, modellens villkor och det sparade externa beskedet när sådant finns. Schemalagd prövning beskrivs aldrig som ett garanterat resultat. Tom kö har en tydlig text.
+- **Avlästa slutvärden för alla banor** visar genomförda/blockerade försök, spenderat totalt och kvarvarande budget per händelseordning. Händelseutgifter, beslutsutgifter och inflöden särredovisas när relevanta. Totala utgifter är beslutsutgifter plus händelseutgifter; inflöden dras inte av. Tabellen förklarar att ordningarna tillhör samma plan och att lika slutbudget inte bevisar identiska resultat. Den gemensamma presentationen används även i jämförelsens tekniska kontroller, där respektive plannamn anges.
+- **Samtliga betalningar och budgetförändringar** visar bara faktiskt registrerade förändringar i budgetkontot efter genomförda beslut eller inträffade händelser. Tid, visningsnamn, utgift/inflöde och saldot direkt efter raden kommer från den sparade historiken. Nollförändringar, blockerade försök och överhoppade försök listas inte som transaktioner.
+- Resultatets och jämförelsens rådata är samlade under **Visa tekniska rådata (JSON)** inom tekniska detaljer. Utfällningen är initialt stängd. Underlaget för slutstatus, betalningar, banor, villkor, indata och historik finns kvar; exporten är oförändrad. Mellanlägets JSON ligger också uttryckligen under tekniska detaljer.
+- Tabellerna har rubriker, tangentbordsfokuserbara rullningsområden och begränsad höjd. På smal skärm kan breda tabeller rullas inom sin sektion. Befintliga flikar, fast verktygsrad, kontrollvarningar och inaktuell-markering behålls.
+
+### Utförda kontroller
+
+Webbläsare: Transporten, Samma parkering, Fabriken och importerad fabriksmodell utan etiketter; bred vy 1440 × 960 och smal vy 390 × 844. Beslutslistor, transaktioner och bantabeller öppnades. JSON-sektionen öppnades separat och kontrollerades som initialt stängd. Mobilkontroll gav dokumentbredd 375 px inom 390 px viewport; tabellernas extra bredd stannar i rullningsområdet. Tangentbordsfokus och sidrullning i tabell provades. Inga JavaScriptfel observerades.
+
+Konkreta avläsningar:
+
+- Samma parkering A: trafikgodkännandet finns i genomförandelistan vecka 20, inte vid det blockerade försöket vecka 12. Tolv genomförda beslut men tio faktiska utgiftstransaktioner; 29 miljoner spenderat och 1 miljon kvar.
+- Fabriken: bankens inflöde vecka 2 är 6 Mkr och budgeten direkt efter är 9 Mkr. Tabellen visar totalt 14 Mkr i utgifter, 6 Mkr i inflöden och 0 Mkr kvar. Betalningarna följer historikens faktiska ordning.
+- Import utan etiketter: exempelvis ”Beslut (ID: D2)” och ”Händelse (ID: E_BANK)”, belopp med ”enhet saknas”. Inga betydelser gissas.
+- Tom kö kontrollerad i de ordinarie exemplen. Befintligt granskat vittne `factory_probes/effect_beyond_horizon.history.json.gz` öppnades som en ny lokal kontrollkopia: beslut vecka 26, väntande händelse **Tillgången till den svenska lokalen upphör**, schemalagd vecka 34. Kopians körindata och kompletta bana är identiska med vittnet. Originalet ändrades inte. Villkor och externa besked i kö verifierades dessutom mot en faktisk tidigare köbild ur transporthistoriken i det riktade testet.
+- Jämförelsens gemensamma utfällningar kontrollerades också: A:s åtta ordningar och B:s 96 ordningar visas i separata tabeller med plannamn; rådata finns i en separat JSON-sektion.
+
+Automatiskt:
+
+- `test_workbench.py`: **14/14 PASS**, inklusive acceptansresultat, bevarande, export/import, ordning och kontrollfel.
+- `readable-results-ui.test.cjs`: **11 granskade fall / 328 kompletta banor PASS**. Beslutsnamn/tider, alla registrerade transaktioner och efterföljande saldon, summeringar mot faktisk historik, isolering av JSON samt oförändrade indata/historiker. Dessutom väntande händelse bortom horisonten, externa villkor/besked, saknad tid/budgetinformation och riktat fall med negativ händelseförändring samt separat inflöde.
+- Befintliga `plan-workspace-ui.test.cjs`, `presentation-ui.test.cjs` och `comparison-ui.test.cjs`: PASS, inklusive flikar, inaktuella resultat och kompletta jämförelseacceptanser.
+- `check_readable_results_invariance.py`: samtliga elva kompletta banmängder och operativa indata identiska med checkpoint **094c81e**. Bevis i `verification/readable-results-invariance.json`.
+- SHA-256-kontroll mot arbetsstarten bekräftar att tidigare originalresultat, modeller, ospårade filer och lokala datafiler är oförändrade. Den nya kontrollkopian ligger i ignorerad lokal lagring.
+
+### Databegränsningar och ändrade filer
+
+Modeller utan budgetkonto får ingen fabricerad transaktionsredovisning. Om historiken saknar nödvändiga budgetvärden anges det och raden redovisas inte som en säker transaktion. Tidpunkter utan motsvarande historik anges som saknade. En köpost anger endast schemaläggning; körningen säger inget om ett faktiskt utfall efter horisonten. Beloppsenheter och namn följer befintliga modellbundna etiketter. Skärmläsare har inte manuellt testats.
+
+Ändrade: `static/app.js`, `static/style.css`, `README.md`, `REPORT.md`, `verification/latest.json`. Nya: `verification/readable-results-ui.test.cjs`, `verification/check_readable_results_invariance.py`, `verification/readable-results-invariance.json`, `verification/readable-results-tests.log`, `verification/readable-results-preservation.json`. Servern behålls på `http://127.0.0.1:8876`. Ingen publicering.
