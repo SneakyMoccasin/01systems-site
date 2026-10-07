@@ -1,0 +1,32 @@
+test_absent_inapplicable_and_selected_outcome_no_lookahead (test_generic.GenericChecks) ... ok
+test_adapter_rejects_inconsistent_legacy_budget_and_unused_effect (test_generic.GenericChecks) ... ok
+test_auditor_import_boundary (test_generic.GenericChecks) ... ok
+test_cartesian_coverage_not_just_counts (test_generic.GenericChecks) ... ok
+test_case_names_absent_from_core_and_profile_is_versioned (test_generic.GenericChecks) ... ok
+test_cli_roundtrip_and_incomplete_exit (test_generic.GenericChecks) ... ok
+test_conflicting_events_change_availability (test_generic.GenericChecks) ... ok
+test_decision_overflow_is_atomic_and_error_not_block (test_generic.GenericChecks) ... ok
+test_event_overflow_does_not_consume_queue_or_publish_effect (test_generic.GenericChecks) ... ok
+test_event_preconditions_are_rechecked_in_each_order (test_generic.GenericChecks) ... ok
+test_hand_derived_budget_retry_once_and_order (test_generic.GenericChecks) ... ok
+test_limits_never_pass (test_generic.GenericChecks) ... ok
+test_link_consistent_tampering_is_still_detected (test_generic.GenericChecks) ... ok
+test_manipulated_history_rows_and_input (test_generic.GenericChecks) ... ok
+test_name_independence_and_time_shift (test_generic.GenericChecks) ... ok
+test_no_budget_account_and_integer_ge (test_generic.GenericChecks) ... ok
+test_pending_after_horizon (test_generic.GenericChecks) ... ok
+test_same_step_dependencies_and_blocked_continuation (test_generic.GenericChecks) ... ok
+test_semantic_projection_detects_intermediate_changes (test_generic.GenericChecks) ... ok
+test_start_deadline_horizon_events_and_empty_steps (test_generic.GenericChecks) ... ok
+test_strict_json_reader (test_generic.GenericChecks) ... ok
+test_strict_types_and_unused_rules (test_generic.GenericChecks) ... ok
+test_unsupported_forms_and_references (test_generic.GenericChecks) ... ok
+test_unsupported_outcome_schedule_even_unchosen (test_generic.GenericChecks) ... ok
+test_cartesian_oracle_rejects_missing_duplicate_and_wrong_groups (test_regression.RegressionHarness) ... ok
+test_catalog_inputs_are_frozen_and_envelope_is_documentary (test_regression.RegressionHarness) ... ok
+test_unconsumed_external_binding_is_part_of_path_identity (test_regression.RegressionHarness) ... ok
+
+----------------------------------------------------------------------
+Ran 27 tests in 3.829s
+
+OK

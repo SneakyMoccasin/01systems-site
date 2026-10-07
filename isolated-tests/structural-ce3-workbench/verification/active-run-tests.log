@@ -1,0 +1,6 @@
+test_13_interrupted_run_is_visible_and_exportable (test_workbench.Workbench) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.091s
+
+OK
