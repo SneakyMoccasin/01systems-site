@@ -79,10 +79,14 @@ def signature(path, new):
 def compare(legacy, bundle):
     if bundle["status"] != "COMPLETE":
         raise Divergence({"reason": "Replay did not complete", "status": bundle["status"]})
+    external = legacy.get("external", legacy.get("script", {}).get("external_outcomes"))
+    if encode(external) != encode(bundle["input"]["outcomes"]):
+        raise Divergence({"reason": "External binding mismatch", "old": external,
+                          "new": bundle["input"]["outcomes"]})
     old, new = {}, {}
     for paths, target, is_new in [(legacy["paths"], old, False), (bundle["paths"], new, True)]:
         for path in paths:
-            key = signature(path, is_new)
+            key = (encode(external).decode(), signature(path, is_new))
             if key in target:
                 raise Divergence({"reason": "Duplicate event-order signature", "signature": key})
             target[key] = path

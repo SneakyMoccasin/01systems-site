@@ -45,7 +45,7 @@ Skriptet har exakt `schema_version`, `source`, `steps`. `steps` mappar kanoniskt
 
 `outcomes` måste binda exakt alla externa event till deklarerade utfall. En giltig bindning får förbli oanvänd. Den orsakar inte schemaläggning, påverkar inte tidigare beslut och konsumeras inte av ett ej tillämpligt event. Timers får inga externa bindningar.
 
-Ett komplett handskrivet exempel, med förväntad materiell övergångssekvens och härledning, finns i `verification/generic_fixtures/ledger.json`. De båda normaliserade verksamhetsinmatningarna sparas i varje checkpointkörning.
+Ett komplett handskrivet exempel, med förväntad materiell övergångssekvens och härledning, finns i `verification/generic_fixtures/ledger.json`. Varje normaliserad fallinmatning sparas i respektive checkpointkörning.
 
 ## Historik och fel
 
@@ -69,4 +69,6 @@ JSON skrivs med stabil nyckelordning och utan väggklocka eller absoluta utmatni
 
 De gamla modellerna går genom formatadaptrar. Adaptern kontrollerar att duplicerade budgetvillkor motsvarar kostnaden innan den ersätter dem med den automatiska kontoregeln. Den reparerar ingen regel. Externa roller och inkluderade deadlines anges i separata källförankrade metadatafiler. Kärnan importerar inga adaptrar, facit eller fallobservationer.
 
-`semantic_compare.py` matchar banor efter hela eventordningen. Den jämför varje övergångs tid, typ, ID, utfall, fel, proveniens, före/efter-state, budget, mängden genomförda beslut och full kö. Den bevarar radordningen och kontrollerar även initialt/terminalt läge och alla beslutspunkter. Tekniska fasmarkörer mappas; fabrikens saknade beslutspunkt härleds efter sista förfallna event. Endast rent teknisk markerproveniens och den äldre `script_skip`-förklaringens textformat normaliseras bort; operativa källor och källidentiteter bevaras. Första materiella avvikelse rapporteras med ordningssignatur och rad.
+`semantic_compare.py` matchar banor efter externa bindningar och hela eventordningen. Även oanvända externa bindningar måste stämma; de får inte försvinna för att eventet aldrig beställdes. Den jämför varje övergångs tid, typ, ID, utfall, fel, proveniens, före/efter-state, budget, mängden genomförda beslut och full kö. Den bevarar radordningen och kontrollerar även initialt/terminalt läge och alla beslutspunkter. Tekniska fasmarkörer mappas; fabrikens saknade beslutspunkt härleds efter sista förfallna event. Endast rent teknisk markerproveniens och den äldre `script_skip`-förklaringens textformat normaliseras bort; operativa källor och källidentiteter bevaras. Första materiella avvikelse rapporteras med ordningssignatur och rad.
+
+Checkpoint 2 lägger till en separat kartesisk täckningskontroll mot fallens deklarerade samtidighetsgrupper. Den jämför både mängden ordningar och antalet banor och avvisar dubbletter, luckor och ofullständiga körningar. Alla singleton-events ingår dessutom i den fulla eventordningssignaturen vid historikjämförelsen. Fabrikens A/B-format har källtext på dokumentnivå; adaptern kopierar denna dokumentära text till skriptets `source` utan att ändra operativa fält.

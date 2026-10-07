@@ -1,0 +1,9 @@
+{
+  "differing_files": [
+    "generic-checks.json",
+    "summary.json"
+  ],
+  "not_delivery_evidence": true,
+  "reason": "The three regression-harness tests were added while the development process was running. Run-1 ran 24 tests/62 subchecks; run-2 ran 27/66. The two differing files are test reports and their containing summary. All other persisted files, including every history, are byte-identical. The final runner now also checks code/fixture hashes before and after both runs. Delivery reruns the entire matrix twice under a stable revision.",
+  "status": "FAIL"
+}
