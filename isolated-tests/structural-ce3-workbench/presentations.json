@@ -520,6 +520,43 @@
       "values": "Originalmodellens domänvärden och effekter, lästa tillsammans med källtextens beslut och externa besked.",
       "budget_unit": "Originalkällans Budget/Startläge. Inga operativa värden ändras."
     },
-    "legacy_labels": {}
+    "legacy_labels": {},
+    "comparison": {
+      "focus": {
+        "field": "traffic_authorized",
+        "op": "eq",
+        "value": true
+      },
+      "gaps": [
+        {
+          "name": "Bussglapp",
+          "after": {
+            "field": "parking_removed",
+            "op": "ge",
+            "value": 100
+          },
+          "until": {
+            "field": "traffic_authorized",
+            "op": "eq",
+            "value": true
+          }
+        },
+        {
+          "name": "Cykelglapp",
+          "after": {
+            "field": "parking_removed",
+            "op": "ge",
+            "value": 100
+          },
+          "until": {
+            "field": "cycle_open",
+            "op": "eq",
+            "value": true
+          }
+        }
+      ],
+      "note": "Glappen gäller de planerade förbättringarna efter parkeringsborttagningen. Befintlig buss- och cykeltrafik kvarstår. Trafikgodkännande är inte faktisk trafikdrift.",
+      "source": "sources/transport-t1-user.txt: Central fråga, Kontrollfrågor 1–5 och avgränsningen för fråga 5. Fälten och markörerna kommer från originalmodellens regler."
+    }
   }
 }

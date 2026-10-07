@@ -43,8 +43,6 @@ const CE3Presentation = (() => {
       if(run.run_status!=='COMPLETE'||run.audit_status!=='PASS')
         messages.push(`${plan.name}: körning ${run.run_status}, granskning ${run.audit_status}. En fullständig, godkänd granskning behövs.`);
     }
-    const [a,b]=ids.map(id=>project.plans.find(p=>p.id===id));
-    if(a&&b&&stable(a.outcomes)!==stable(b.outcomes))messages.push('Planerna har olika externa besked. Välj samma utfall före jämförelse.');
     return messages;
   }
   function stable(v) {

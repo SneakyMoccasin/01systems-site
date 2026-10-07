@@ -60,7 +60,7 @@ class Handler(BaseHTTPRequestHandler):
             if method == 'GET' and route == '/api/path':
                 return self.send(store.path(query['project'], query['run'], int(query['index'])))
             if method == 'GET' and route == '/api/compare':
-                return self.send(store.compare(query['project'], query['left'], query['right']))
+                return self.send(store.compare(query['project'], query['left'], query['right'], query.get('allow_different_outcomes') == 'true'))
             if method == 'GET' and route == '/api/export':
                 return self.send(store.export(query['id']))
             if method == 'POST' and route == '/api/export':
@@ -73,7 +73,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(store.run(data['project'], data['revision'], data['plan'], data.get('limits')))
             if method == 'POST' and route == '/api/import':
                 return self.send(store.import_project(loads(data['text'])))
-            files = {'/': 'index.html', '/app.js': 'app.js', '/presentation.js': 'presentation.js', '/style.css': 'style.css'}
+            files = {'/': 'index.html', '/app.js': 'app.js', '/presentation.js': 'presentation.js', '/comparison.js': 'comparison.js', '/style.css': 'style.css'}
             if method == 'GET' and route in files:
                 path = HERE / 'static' / files[route]
                 return self.send(path.read_bytes(), content_type=mimetypes.guess_type(str(path))[0] + '; charset=utf-8')

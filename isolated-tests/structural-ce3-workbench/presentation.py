@@ -33,7 +33,12 @@ def decorate(project, known=None):
                 if not catalog or text != old:
                     entry['decisions'][id] = text
         project['presentation'] = {identity: entry}
-    project['presentation'].setdefault(identity, empty())
+    entry = project['presentation'].setdefault(identity, empty())
+    catalog = CATALOG.get(identity)
+    # Upgrade sourced display metadata only; never infer semantics for an import
+    # from IDs, and never put these observation definitions in operational input.
+    if catalog and entry.get('sources') == catalog['sources'] and 'comparison' in catalog:
+        entry.setdefault('comparison', deepcopy(catalog['comparison']))
     return project
 
 

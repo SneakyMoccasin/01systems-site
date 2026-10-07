@@ -1,0 +1,1 @@
+PASS: all audited paths for positive/rejected/absent, horizon censoring, separate readiness/retry, factory/import fallback, reversal, payments, reopened gaps, UI hierarchy and mixed-outcome warning; inputs untouched.

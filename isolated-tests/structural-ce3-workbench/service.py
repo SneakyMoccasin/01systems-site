@@ -296,11 +296,11 @@ class Store:
         require(type(index) is int and 0 <= index < len(history['paths']), 'Banan finns inte.')
         return history['paths'][index]
 
-    def compare(self, project_id, left, right):
+    def compare(self, project_id, left, right, allow_different_outcomes=False):
         require(left != right, 'Välj två olika körningar.')
         a, b = self.result(project_id, left), self.result(project_id, right)
         require(a['audit']['status'] == b['audit']['status'] == 'PASS', 'Båda körningarna måste vara fullständigt granskade.')
-        for field in ('model', 'outcomes', 'sources'):
+        for field in (('model', 'sources') if allow_different_outcomes else ('model', 'outcomes', 'sources')):
             require(digest(a['input'][field]) == digest(b['input'][field]),
                     'Jämförelsen kräver samma modell, startläge, källidentitet och alla externa utfallsval.')
         return dict(left=a, right=b)

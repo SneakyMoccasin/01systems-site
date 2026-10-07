@@ -1,6 +1,6 @@
 # Verifieringsrapport · lokal CE3-vy
 
-Senaste tillägget är användarvänlighetspasset nedan, utifrån UI-checkpoint `a7a5525`. De inledande avsnitten dokumenterar första leveransen; deras äldre testresultat ska inte läsas som nya körningar.
+Senaste tillägget är jämförelsepasset nedan, utifrån UI-checkpoint `4c2f745`. De inledande avsnitten dokumenterar första leveransen; deras äldre testresultat ska inte läsas som nya körningar.
 
 Datum: 2026-10-07. Utgångs-HEAD: `ede28868f4018aba2bf6da92500bce659f6badcc`. Inga spårade ändringar fanns vid start. Befintliga ospårade granskningsfiler har lämnats orörda. Inga AGENTS.md-filer fanns i projektets anvisningskedja. Kärnans README, REPORT, FORMAT, exekverbara schema, profile.json, adaptrar och historikformat lästes före implementationen.
 
@@ -114,3 +114,71 @@ Befintliga avsiktligt skadade/ofullständiga kontrollhistoriker öppnades på ny
 ### Kvarvarande begränsningar
 
 Transportunderlaget anger inte valuta. Importerade modeller saknar automatisk semantisk översättning och behöver egna visningsetiketter; ingen betydelse gissas utifrån ID. Långa namn kan kapas visuellt i en smal nativ väljare, medan hela alternativtexten finns i väljaren och på beslutskortet. Övriga begränsningar för lokal drift, resurstak, strikt modellformat och stora historiker är oförändrade.
+
+
+## Begriplig jämförelse · 2026-10-07 · efter 4c2f745
+
+Startkontroll: branch `decision-flow-demo-v1`, HEAD `4c2f745`, inga spårade arbetskatalogsändringar. Befintliga ospårade granskningsfiler har bevarats. Inga tillämpliga AGENTS.md fanns. Endast filer i denna UI-katalog har ändrats. Ingen publicering; servern fortsätter på **http://127.0.0.1:8876**.
+
+### Förändring och härledning
+
+Jämförelsen läses nu i fem numrerade avsnitt: **Huvudskillnaden → Konsekvensen → Varför → Utgifterna → Förutsättningarna**. Två planers namn och faktiska tidpunkter visas först. Därefter visas avslutade respektive kvarstående glapp, faktiska blockeringsorsaker och när kraven observeras uppfyllda, betalningar per genomfört beslut och tidssteg samt respektive plans externa besked, horisont och kontrollstatus. Detaljer om tillstånd, ordningar, källor och full historik är hopfällda. ”Avläst status” har bytts till ”Resultat i vald körning”. Ingen generell vinnare utses.
+
+Nya `static/comparison.js` är ett rent avläsningslager. Transportens originaltext definierar i kontrollfråga 5 glapp efter parkeringsborttagning tills trafikgodkännande respektive öppnat cykelstråk finns. Dessa två läsanvisningar, samt fokusmarkören från jämförelsefrågan, finns som modellbundna tillståndsvillkor i `presentations.json`, med befintliga originalkällors hashkoppling och konkret källreferens. Det finns inga transportnamn, besluts-ID:n, fasta resultatveckor eller accepterade slutsatser i härledningsalgoritmen. Alla resultat räknas från den valda granskade historiken. Metadata skrivs inte in i operativa modeller eller körindata.
+
+Glapp avläses vid tidsstegens slut. Längden är differensen mellan tidpunkterna; vecka 14–26 är tolv veckor, inte tretton. Öppna intervall saknar slutdatum och visas som minst den observerade längden. Återöppnade glapp och glapp som avslutas exakt vid horisonten hanteras. Ett glapp som redan råder vid start får en markering om okänd tidigare början. Ordningen mellan samtidiga händelser kan påverka mellanlägen; veckolängder framställs inte som en fullständig beskrivning av dessa mellanlägen.
+
+Blockeringsförklaringar börjar i `attempt_blocked.failures`. Senare uppfyllande av varje saknat villkor söks i efterföljande observerade tillstånd. Samtidiga krav och budget avläses vid beslutstillfällen medan beslutet ännu inte är taget, separat från faktiska `decision_executed`-rader. Vyn kör inte motorn på nya, hypotetiska försök. Villkor som först uppfylls behöver inte vara permanent uppfyllda, vilket anges.
+
+Betalningstabellen använder deklarerade kostnader enbart för faktiskt genomförda beslut. Blockerade och överhoppade försök kommer inte med. Kostnadsfria beslut redovisas som antal. Övriga budgetförändringar redovisas separat; kvarvarande budget kommer från observerat tillstånd. Transportens enhet är fortsatt ”miljoner”, inte Mkr.
+
+Olika externa utfall tillåts genom ett uttryckligt alternativ i UI-serverns jämförelseanrop. Modell, startläge, källidentitet, aktuella körindata och granskning måste fortfarande stämma. Både före och efter jämförelsen visas att skillnader då kan bero på både plan och besked. Varje plans besked visas separat. Serverns tidigare strikta jämförelseläge finns kvar som standard för anrop utan alternativet. Replay och audit har inte ändrats.
+
+### Verifiering i detta pass
+
+| Kontroll | Resultat |
+|---|---|
+| Befintlig UI/serverintegration | 14 tester PASS; `comparison-integration-tests.log` |
+| Befintlig presentation/regression | 5 Python-tester PASS; `comparison-presentation-regression.log`; befintligt DOM-test PASS |
+| Nya riktade server-/invarianstester | 2 tester PASS; `comparison-tests.log` |
+| Ny härledning och faktisk HTML-rendering | PASS; `comparison-ui-tests.log` |
+| JavaScript-syntax och whitespace | PASS |
+| Skyddade befintliga filer | 1 918 kontrollerade, 0 ändrade, inklusive 72 befintliga lokala projekt-/resultatfiler; `comparison-preservation.json` |
+
+Nya jämförelsetestet skapar elva färska, granskade testhistoriker: sex för Samma parkering (A/B × färdigt/avslag/uteblivet besked), en med senare uttryckligt återförsök, två fabriksplaner och två importerade planer utan presentationsmetadata. Ett ytterligare ändrat modellfall används för att verifiera att modellskillnad fortfarande avvisas även när olika externa utfall är tillåtna. För de sex acceptansfallen jämförs både operativ inmatning och **hela replaypaketet** med checkpointens indata och samma resursgränser: exakt lika. Identiteter och status finns i `comparison-invariance.json`. Den äldre kärnsviten och fulla gamla dubbelregressionen har inte körts om i detta rena UI-pass.
+
+Node-testet kontrollerar alla banor i de sex acceptansfallen, även med omvänd jämförelseordning. Kontrollerade resultat:
+
+| Elbesked | Trafikgodkännande A / B | Parkeringsborttagning | Bussglapp A / B | Cykelglapp A / B | Slutbudget |
+|---|---|---|---|---|---|
+| Färdigt | vecka 20 / 12, åtta veckors skillnad | vecka 14 / 14 | 6 veckor avslutat / inget | 2 veckor avslutat / inget | 1 miljon / 1 miljon |
+| Avslag | inget inom vecka 26 / inget inom vecka 26 | vecka 14 / 14 | minst 12 veckor kvarstår / minst 12 veckor kvarstår | 2 veckor avslutat / inget | 1 miljon / 1 miljon |
+| Uteblivet besked | inget inom vecka 26 / inget inom vecka 26 | vecka 14 / 14 | minst 12 veckor kvarstår / minst 12 veckor kvarstår | 2 veckor avslutat / inget | 1 miljon / 1 miljon |
+
+A:s blockerade försök vecka 12 har saknad depå, laddinstallation och elanslutning. Vid positivt besked observeras dessa uppfyllda vecka 16, 18 respektive 20. Den särskilda planen med nytt försök vecka 22 visar uppfyllda krav vecka 20 och faktiskt beslut vecka 22. Fabrikens jämförelse visar uppfyllda krav vecka 12 i båda planerna, men genomförande vecka 12 respektive 13. Ingen driftstart härleds från ett godkännande.
+
+Dessutom prövas avsaknad/ogiltighet av glappdefinitioner, modell utan budgetkonto, återöppnade glapp, avslut exakt vid horisonten, lika beslutstider med olika sluttillstånd, tidsavläsning före horisonten, betalningar utan blockerade försök, separata externa besked och att presentationen inte muterar sina indata.
+
+### Webbläsargranskning
+
+Granskad i en separat flik på 8876 så att den befintliga flikens arbete kunde bevaras. Bred vy **1440 × 960**, smal vy **390 × 844**. Positivt besked, avslag och uteblivet besked öppnades i jämförelsen och avlästes mot acceptansvärdena ovan. Omvänd ordning gav fortsatt B åtta veckor före A. Blandat positivt besked/avslag gav synlig varning och olika externa besked under respektive plan.
+
+Huvudavsnitt, glapp, blockeringar, utgifter och förutsättningar kontrollerades i levande DOM. Fabriken och en återimporterad modell utan namn/glappdefinitioner prövades också. Importen visar ID-fallbacks, okänd beloppsenhet och explicit begränsning för glapp. Smal betalningsvy har dokumentbredd 375 px inom 390 px viewport inklusive rullningslist. Inga JavaScriptfel observerades i konsolen. Tillfälliga kontrollprojekt har sparats som nya git-ignorerade lokala projekt; tidigare filer är orörda.
+
+### Databegränsningar
+
+Fabriksmodellen och godtyckliga importer innehåller ingen generell definition av verksamhetsglapp. Sådana beräknas därför inte utan separat, källkopplad läsanvisning. Saknad definition betyder inte noll glapp. Utan deklarerad fokusfråga kan UI visa en konkret tids-/tillståndsskillnad men inte avgöra verksamhetens viktigaste mål. Härledningen gäller modellens markörer och granskade tillstånd, inte faktisk trafikdrift eller produktionsvolym. Ett ej observerat godkännande får inget uppskattat framtida datum. Ett första uppfyllt villkor är inte ett bevis om bestående tillgänglighet. Sammanfattningen avser valda händelseordningar; kontroll av alla ordningar och begränsningar för INCOMPLETE/FAIL finns fortsatt kvar. Transportens valuta är fortsatt odeklarerad.
+
+
+### Ändrade filer i jämförelsepasset
+
+Alla sökvägar är relativa till `isolated-tests/structural-ce3-workbench/`:
+
+- `static/comparison.js` (ny): generell, ren avläsning av tidpunkter, intervall, krav och betalningar.
+- `static/app.js`, `static/style.css`, `static/index.html`: femdelad resultatvy, språk, responsiv layout och inläsning av härledningsmodulen.
+- `static/presentation.js`: jämförelseförberedelsen tillåter olika externa besked, med varning i vyn.
+- `presentation.py`, `presentations.json`: modell- och källbundna läsanvisningar för transportens jämförelsefråga och glapp; uppgradering av äldre källkopplade presentationer utan ändrade körindata.
+- `server.py`, `service.py`: servering av modulen och uttryckligt UI-alternativ för jämförelse med olika externa utfall.
+- `verification/test_comparison.py`, `verification/comparison-ui.test.cjs` (nya): riktade regressioner och härledningskontroller.
+- `verification/comparison-invariance.json`, `verification/comparison-preservation.json`, `verification/comparison-tests.log`, `verification/comparison-ui-tests.log`, `verification/comparison-integration-tests.log`, `verification/comparison-presentation-regression.log` (nya) samt uppdaterad `verification/latest.json`: verifieringsbevis.
+- `README.md`, `REPORT.md`: arbetsflöde, härledningsprinciper, kontroller och databegränsningar.

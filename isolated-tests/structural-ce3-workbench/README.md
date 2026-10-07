@@ -19,7 +19,7 @@ Standardlagring: `isolated-tests/structural-ce3-workbench/local-data/` på den l
 1. **Projekt:** öppna en JSON-modell i `ce3-model/1` eller en fullständig inmatning i `ce3-run/1`. Exempelknapparna läser fabrik och transport genom befintliga formatadaptrar. Exemplens externa besked lämnas tomma. En fullständig importerad körinmatning behåller sina uttryckliga utfall.
 2. **Beslut:** läs modellens förvillkor, kostnad, direkta effekter och fördröjda händelser. Källkopplade svenska etiketter används för exemplen. Senare effekter visas med egna villkor och möjliga externa besked; en fördröjning är inte ett löfte om färdigställande. ID:n, fulla regler och källidentiteter finns i tekniska detaljer.
 3. **Planer:** skapa, namnge eller duplicera planer. Försöken grupperas per tidssteg med rubriker för vecka, beslut och utförande. Tidssteget och radordningen anger försöksordningen. Upprepade försök bevaras, inklusive transportens T7 vecka 12 och 20. Pilar flyttar inom samma steg. Välj `Hoppa över om genomfört` för kärnans `if_not_taken`. Välj samtliga externa utfall före körning. `Kör & granska` sparar en projektversion, validerar, kör kärnan, sparar input/historik och anropar den separata granskaren i en ny process.
-4. **Jämförelse:** två olika planer väljs som standard. Med en enda plan erbjuds duplicering. Vyn visar vilka besked eller körningar som saknas, om samma plan valts på båda sidor och om en ändrad plan behöver köras om. Jämför därefter deras senaste körningar. Båda måste vara granskade och motsvara aktuella körindata; modell inklusive startläge, källidentiteter och samtliga externa val måste vara lika. Välj tidpunkt och bana separat för planerna. Referensbanan följer modellens deklarerade eventordning.
+4. **Jämförelse:** två olika planer väljs som standard. Med en enda plan erbjuds duplicering. Vyn visar vilka besked eller körningar som saknas, om samma plan valts på båda sidor och om en ändrad plan behöver köras om. Jämför därefter deras senaste körningar. Båda måste vara granskade och motsvara aktuella körindata; modell inklusive startläge och källidentiteter måste vara lika. Olika externa val tillåts med synlig varning om att både planering och besked påverkar jämförelsen. Läs huvudskillnad → konsekvens → varför → utgifter → förutsättningar. Välj vid behov tidpunkt och händelseordning i den hopfällda kontrollen under Förutsättningarna. Referensbanan följer modellens deklarerade eventordning.
 
 `Spara projekt` gör en ny version. Växling till ett annat projekt sparar först ett ändrat utkast; felaktiga utkast behöver rättas för att kunna sparas. Vid omladdning varnar webbläsaren om osparade ändringar. Tidigare projektversioner och körningar ändras aldrig. Äldre versioner kan öppnas; sparande från en gammal version avvisas för att undvika att nyare arbete ersätts.
 
@@ -40,7 +40,19 @@ Under **Projekt → Visningsetiketter** kan namn anges för beslut, händelser, 
 - Tillstånd avläses normalt vid stegets slut. Klicka på en tidslinjerad för mellanläget efter just den raden. Händelsekön visar också sådant som förfaller efter horisonten.
 - Utgifter/tillskott räknas enbart från historikens faktiska budgetförändringar. Beslutskostnader, positiva eventtillskott, negativa eventförändringar och kvarvarande budget visas separat. Saknas budgetkonto visas inga påhittade monetära värden.
 - Ändrade körindata markerar äldre resultat. Namn/etiketter ändrar inte köridentiteten. Tidigare resultat kan alltid öppnas under Planer.
-- Inga generella fabriksmål, transportglapp, färdigstatusar, poäng eller rekommendationer finns i UI-koden.
+- Ingen generell målfunktion, poäng eller rekommendation införs. Verksamhetsglapp kräver en källkopplad läsanvisning i presentationslagret; saknas den anges begränsningen.
+
+## Så läses jämförelsen
+
+`static/comparison.js` läser granskade historiker utan att ändra körindata. Transportens källkopplade `presentation[modellidentitet].comparison` anger vilken tillståndsmarkör jämförelsefrågan gäller och vilka par av villkor som definierar glapp. Definitionen kommer från originalets kontrollfrågor, inte från antagna betydelser hos ID:n. Namn, faktiska veckor, längder och slutsatser hämtas från respektive modell/presentation och historik.
+
+Glapp räknas vid tidsstegens slut som förfluten tid. De kan avslutas eller öppnas igen. Ett fortfarande öppet glapp visar ”minst” och får inget antaget slutdatum. Läget vid analysens start kan begränsa kunskapen om när ett glapp började. Ett godkännande betyder inte att faktisk drift har startat.
+
+Blockeringar kommer från historikens faktiska misslyckade försök. Vyn visar när vart och ett av de då saknade villkoren först observeras uppfyllt senare. Samtidigt uppfyllda krav, budget och ej tidigare taget beslut avläses separat vid observerade beslutstillfällen. Detta är ingen sökning efter en ny möjlig plan. Det faktiska genomförandet hämtas från historiken.
+
+Betalningstabellen innehåller endast genomförda beslut med positiv deklarerad kostnad. Kostnadsfria genomföranden räknas separat. Budgettillskott och övriga förändringar redovisas separat från beslutsbetalningar; blockerade/överhoppade försök betalas inte.
+
+Fabriken och importer utan glappdefinitioner får inga påhittade glapp. Utan prioriterad jämförelsefråga väljer vyn ett beslut som bara genomförts på ena sidan eller den största tidsskillnaden, med tydlig begränsning om att ingen generell viktning finns. Om beslutstiderna är lika men sluttillstånden skiljer sig visas tillståndsskillnaderna. Sammanfattningen gäller valda händelseordningar; befintlig full kontrollstatus hålls synlig.
 
 ## Export, import och lagringsformat
 
@@ -57,11 +69,13 @@ python3 -B isolated-tests/structural-ce3-workbench/verification/test_workbench.p
 python3 -B -m unittest discover -s isolated-tests/structural-ce3-replay/verification -p 'test_*.py' -v
 python3 -B isolated-tests/structural-ce3-workbench/verification/test_presentation.py
 node isolated-tests/structural-ce3-workbench/verification/presentation-ui.test.cjs
+python3 -B isolated-tests/structural-ce3-workbench/verification/test_comparison.py
+node isolated-tests/structural-ce3-workbench/verification/comparison-ui.test.cjs
 node --check isolated-tests/structural-ce3-workbench/static/app.js
 node --check isolated-tests/structural-ce3-workbench/static/presentation.js
 ```
 
-DOM-testet använder repositoryts befintliga utvecklingsberoende `linkedom`; servern har fortfarande inga paketberoenden. Invarianstestet jämför mot git-checkpoint `a7a5525`.
+DOM-testet använder repositoryts befintliga utvecklingsberoende `linkedom`; servern har fortfarande inga paketberoenden. Presentationstestet jämför mot git-checkpoint `a7a5525`; jämförelsetestet jämför sex fulla körpaket mot `4c2f745`. Kör Python-jämförelsetestet före dess Node-test: det skapar tillfälliga, färska och granskade testhistoriker under `/tmp`.
 
 UI-sviten använder tillfällig, separat lagring och färska kärnkörningar. `verification/latest.json` sparar senaste testsammanställningen, med köridentiteter och granskningsstatus. Den är en testlogg; tillfälliga testprojekt städas efter sviten. Manuellt verifierade browserprojekt ligger kvar i lokal lagring. Se `REPORT.md` för faktiskt genomförda kontroller.
 
