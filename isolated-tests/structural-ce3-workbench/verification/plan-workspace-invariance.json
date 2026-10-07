@@ -1,0 +1,104 @@
+{
+  "checkpoint": "d5d2da7",
+  "cases": [
+    {
+      "family": "same_parking",
+      "outcome": "ready",
+      "plan": "Plan A · positivt besked",
+      "paths": 8,
+      "input_sha256": "9039d8e263e9a8f9671e79b140b42faf99cca2cedd886250b6af9a3213307f4d",
+      "history_sha256": "6c1e596288a2b6deb9397e9928e237263607cf02aae0b2971f4067e1c7e1e517",
+      "identical_to_checkpoint": true
+    },
+    {
+      "family": "same_parking",
+      "outcome": "ready",
+      "plan": "Plan B · positivt besked",
+      "paths": 96,
+      "input_sha256": "a2e37d06afda4f6729cd489234ec8aac9901ace83df6b047e03e5834fa5bd3fa",
+      "history_sha256": "0dcd6b3ef45a37912036200a7cdb99712d8a98874f9787f5889a5dec42af9161",
+      "identical_to_checkpoint": true
+    },
+    {
+      "family": "same_parking",
+      "outcome": "rejected",
+      "plan": "Plan A · avslag",
+      "paths": 8,
+      "input_sha256": "b0351553634ca6b891365905523115f24c6ece93791fd83ca83309e1274edd75",
+      "history_sha256": "8e1a57c4992dfef15f08e8ca9ab4effe6e476b343ddf0ef5f19e343c68747fc2",
+      "identical_to_checkpoint": true
+    },
+    {
+      "family": "same_parking",
+      "outcome": "rejected",
+      "plan": "Plan B · avslag",
+      "paths": 96,
+      "input_sha256": "aadfd5d36d02defa6c9fc52b683631e78e8ea11c31fb23ea34c8340104b80a3e",
+      "history_sha256": "fd8379d85d5d7c5de608e38e8948c0992f3ee1ef5244e8080394bf1f4a876824",
+      "identical_to_checkpoint": true
+    },
+    {
+      "family": "same_parking",
+      "outcome": "absent",
+      "plan": "Plan A · uteblivet besked",
+      "paths": 8,
+      "input_sha256": "7b7ca86830439c78fd2f0d5b5daa37ccec4aaf5ac7869087bf22b0605f77490e",
+      "history_sha256": "11b602cf9887046b5ce93799df199c9cf3e28e5546a4cffb5e9f9c8ec291784d",
+      "identical_to_checkpoint": true
+    },
+    {
+      "family": "same_parking",
+      "outcome": "absent",
+      "plan": "Plan B · uteblivet besked",
+      "paths": 96,
+      "input_sha256": "b926b41c8a6dac03551870558520d900380b1e5d1f3d27b22ca78c4990a89ad5",
+      "history_sha256": "498e1ccf4e6fba9f2a369d039faa759a52ff59290af5b050297b8b0572b2fddc",
+      "identical_to_checkpoint": true
+    },
+    {
+      "family": "delayed",
+      "outcome": "ready",
+      "plan": "A · senare uttryckligt försök",
+      "paths": 8,
+      "input_sha256": "268037fdf1593a000d7c27f06dc2b6ba348762cdfd026359bc564dbad2169168",
+      "history_sha256": "70d147100d7db08af46ac96336a3eef3b4a577761351911eefd69b42e27970c1",
+      "identical_to_checkpoint": true
+    },
+    {
+      "family": "factory",
+      "outcome": "approved",
+      "plan": "Utgångsplan",
+      "paths": 2,
+      "input_sha256": "1c77604bf0e5213e089561edbcd122facfe44bef8fd3f45edac1cf27fa34c617",
+      "history_sha256": "3b50cf70e7c096d022ae0877773c247a5f9487b5f084c74299c3210e085ad12f",
+      "identical_to_checkpoint": true
+    },
+    {
+      "family": "factory",
+      "outcome": "approved",
+      "plan": "Senare produktionsstart",
+      "paths": 2,
+      "input_sha256": "fd51e6d026148ccf1babfe7748e38f6cf316c7f4be9dd4cf57597d772ae93f1f",
+      "history_sha256": "54e11ce9393f2b4a54ac71c879ddea1cf5b88ae2715e6c842b064f6347a09867",
+      "identical_to_checkpoint": true
+    },
+    {
+      "family": "imported",
+      "outcome": "approved",
+      "plan": "Utgångsplan",
+      "paths": 2,
+      "input_sha256": "81ca25cb044256a2237ba3ec4d4674774ad84b92ed199b03034647edc49046cf",
+      "history_sha256": "4956ea8603ae927b4bf6020337985bda18b897e451dcfae07913aa6c640a38c8",
+      "identical_to_checkpoint": true
+    },
+    {
+      "family": "imported",
+      "outcome": "approved",
+      "plan": "Senare produktionsstart",
+      "paths": 2,
+      "input_sha256": "a1bf7491274df0f995fc67598224a8990bc2804f1f573be96c5c486a299f94ad",
+      "history_sha256": "e69ba8d1c0bcb6014743326eadb06963566c783d1c371d992267d96f2ca292c8",
+      "identical_to_checkpoint": true
+    }
+  ]
+}

@@ -182,3 +182,41 @@ Alla sökvägar är relativa till `isolated-tests/structural-ce3-workbench/`:
 - `verification/test_comparison.py`, `verification/comparison-ui.test.cjs` (nya): riktade regressioner och härledningskontroller.
 - `verification/comparison-invariance.json`, `verification/comparison-preservation.json`, `verification/comparison-tests.log`, `verification/comparison-ui-tests.log`, `verification/comparison-integration-tests.log`, `verification/comparison-presentation-regression.log` (nya) samt uppdaterad `verification/latest.json`: verifieringsbevis.
 - `README.md`, `REPORT.md`: arbetsflöde, härledningsprinciper, kontroller och databegränsningar.
+
+## Planarbetsvy: redigering och resultat (2026-10-07)
+
+Utgångspunkt: branch `decision-flow-demo-v1`, HEAD `d5d2da7`, inga spårade ändringar vid start. Befintliga ospårade revisionsunderlag lämnades orörda. Ändringen gäller endast arbetsvyns UI, verifiering och dokumentation. Ingen ändring i kärna, server, operativa modeller, jämförelseregler, CE2 eller publik webbplats. Ingen publicering; servern behålls på `http://127.0.0.1:8876`.
+
+### Genomförda förändringar
+
+- Planer har interna flikar **Redigera plan** och **Resultat**. Planval, formulärutkast, externa besked och resursinställningar bevaras vid flikbyte. Ny körning öppnar Resultat. Fast verktygsrad erbjuder planval, flikar, sparande och körning/återgång.
+- Kompakta rader och en gemensam kolumnrubrik på bred skärm. Mobilkontroller har separata tillgängliga namn och synligt tangentbordsfokus. Pilar ändrar endast ordningen inom samma tidssteg; uttryckliga återförsök tas inte bort.
+- Standardvyn visar bara veckor med försök och förklarar att övriga veckor ingår i körningen. **Visa alla veckor** är initialt avstängt. Valet visar högst tolv tidssteg åt gången, med föregående/nästa och direkt hopp, utifrån modellens start/horizont. Tomma veckor märks **Inga beslutsförsök planerade**. Visningen skapar inga tomma operativa rader.
+- Formulärsynkronisering använder en stabil fullständig radlista under varje rendering. Dolda veckor försvinner inte när bara en sida syns; flersiffrig tidsredigering råkar inte skriva över en annan rad efter omsortering av visningen. Befintliga tomma tidssteg bevaras också vid uttryckliga radåtgärder.
+- Resultatets direkta sammanfattning visar sparat plannamn, körningens egna externa besked, hela perioden, genomförda/blockerade/överhoppade försök, totala utgifter och kvarvarande budget. Faktiska blockeringar och kontrollbegränsningar är synliga; vid många blockeringar finns sidval (åtta per sida).
+- Inaktuella resultat är uttryckligen märkta. Den sparade körningens besked ersätts aldrig av den ändrade planens nya besked. INCOMPLETE eller underkänd kontroll visas utan en missvisande fullständig budgetsammanfattning. Ordningskänslighet och vald händelseordning syns direkt.
+- Körförlopp, fullständig slutstatus samt tekniska kontroller/full historik är hopfällda från början. Tidslinjen grupperar högst åtta veckor per sida, skiljer beslutsförsök från fördröjda händelser och kan filtreras. Den sparade ordningen inom varje vecka behålls. Inga nya målstatusar eller verksamhetsglapp införs.
+
+### Undersökning av upprepade veckorubriker
+
+I den levande vyn före ändringen, med sparad Plan B i Samma parkering, fanns **en** planrubrik för vecka 12 och två planrader, T7 följt av T12. Tidslinjen hade **sex** separata tidsangivelser för vecka 12: fyra fördröjda händelser följda av två försök. Något fel med tre dubblerade planrubriker kunde alltså inte reproduceras; en specifik skärmbildseffekt kan inte fastställas utan originalbilden. Den nya tidslinjen samlar de sex raderna under en veckorubrik utan att ändra deras index eller ordning. Ingen operativ sortering eller deduplicering har införts.
+
+### Faktiskt utförd verifiering
+
+- Webbläsargranskning av Transporten, Samma parkering, Fabriken och importerad fabriksmodell utan etiketter på bred (1440 × 960; även 1266 px) och smal (390 × 844) skärm. Redigering och resultat öppnades för alla fyra. Ingen horisontell dokumentöverströmning i kontrollerade mobilvyer.
+- Osparad tidsändring och ändrat externt besked följde med över flikbyte och tillbaka. Tidigare resultat visade inaktuell-markering och sina ursprungliga besked. Veckosidbyte utan ändring behöll markeringen att resultatet matchar körindata.
+- Fabrikens duplicerade kontrollplan kördes i webbläsaren och öppnade Resultat automatiskt: 8 genomförda, 0 blockerade, 14 Mkr spenderat, 0 Mkr kvar. Återgång till redigering fungerade.
+- Samma parkering: B visade 12 genomförda, 0 blockerade, 1 överhoppat, 29 miljoner spenderat, 1 miljon kvar. Vecka 12 hade en tidslinjerubrik och de sex faktiska raderna i sparad ordning. A visade ett blockerat försök med de tre faktiska saknade förvillkoren. Import utan etiketter visade tydliga ID och ”enhet saknas”.
+- Tangentbord: Tab till radkontroll, vänster/höger samt End mellan interna flikar; vald flik och fokus verifierades i levande DOM. Native knappar, select, checkbox och details behålls. Skärmläsare har inte manuellt provats.
+- Sparande/återöppning och export gjordes i webbläsaren. Exporten återimporterades via samma lokala server-API som filimporten använder, därefter öppnades kontrollplanens återgranskade resultat i webbläsaren. Modell, etiketter, planrader, ordning och externa besked var exakt lika. Filväljarens operativsystemdialog provades inte om i detta pass.
+- `test_workbench.py`: **14/14 PASS** (inklusive fullständiga acceptansresultat, bevarande, import/export, ordning, INCOMPLETE och granskning).
+- `test_comparison.py`: **2/2 PASS**. `comparison-ui.test.cjs`: PASS för alla banor i de tre elutfallen, omvänd jämförelse, fabrik och importer. Tidigare jämförelsevillkor är oförändrade.
+- `presentation-ui.test.cjs`: PASS. Nytt `plan-workspace-ui.test.cjs`: PASS på elva granskade fixturer, dolda rader, flikbyte, besked, separata orsaker till inaktuella resultat, flersiffrig tidsändring, lägg till/flytta/ta bort/duplicera, tom ny plan, icke-noll start och miljonstegshorisont, tidslinjeordning och ofullständiga/underkända resultat.
+- `check_plan_workspace_invariance.py`: **alla elva kompletta körbanemängder och operativa indata identiska med `d5d2da7`**, inklusive samtliga sex Samma parkering-fall, extra återförsök, fabrik och importer. Bevis i `verification/plan-workspace-invariance.json`.
+- SHA-256-kontroll mot arbetsstarten: tidigare ospårade filer, originalmodeller/resultat och alla tidigare lokala datafiler oförändrade. Kontrollkörningen, exporten och importkopian tillförde enbart git-ignorerade lokala filer/versioner.
+
+### Begränsningar och filer
+
+Sammanfattningen avser hela horisonten för den tydligt angivna, valda händelseordningen. Den sammanför inte olika ordningar till en ny verksamhetsbedömning. Historiken kan visa faktiska misslyckade villkor men ger inga nya garantier om framtiden. Alla veckor och tidslinjen är sidindelade; en plan med många faktiska försök kan fortfarande vara lång i standardvyn. Flikval och filter är sessionsval, medan planutkast bevaras genom det befintliga uttryckliga sparandet.
+
+Ändrade filer: `static/app.js`, `static/style.css`, `README.md`, `REPORT.md`, `verification/latest.json`. Nya filer: `verification/plan-workspace-ui.test.cjs`, `verification/check_plan_workspace_invariance.py`, `verification/plan-workspace-invariance.json`, `verification/plan-workspace-tests.log` och `verification/plan-workspace-preservation.json`.

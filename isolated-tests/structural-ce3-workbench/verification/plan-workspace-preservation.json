@@ -1,0 +1,12 @@
+{
+  "checkpoint": "d5d2da7",
+  "baseline_files_checked": 1996,
+  "changed_existing_files": [
+    "isolated-tests/structural-ce3-workbench/README.md",
+    "isolated-tests/structural-ce3-workbench/REPORT.md",
+    "isolated-tests/structural-ce3-workbench/static/app.js",
+    "isolated-tests/structural-ce3-workbench/static/style.css",
+    "isolated-tests/structural-ce3-workbench/verification/latest.json"
+  ],
+  "all_other_baseline_files_unchanged": true
+}

@@ -84,3 +84,16 @@ UI-sviten använder tillfällig, separat lagring och färska kärnkörningar. `v
 Lokalt prototyplager, en serverprocess per datakatalog, ingen inloggning eller publicering. Inga ändringar i kärnans regler. Ingen AI-onboarding eller optimering. JSON-formatet är strikt; äldre originalformat öppnas via exempeladaptrarna, inte genom generell konvertering av godtyckliga äldre modeller. Importerade modeller utan visningsmetadata använder tydliga ID-fallbacks. Egna namn kan anges; betydelser gissas inte utifrån ID.
 
 Standardtak: 1 000 banor, 200 000 emitterade arbetsrader och 1 000 steg. Replay och audit har vardera 120 sekunders processtak. Gränser kan sänkas i UI men inte höjas över serverns tak. Stora fulla historiker kan ge långsamma vyer/exporter; import begränsas till 128 MB. Jämförelsen är parvis och gäller valda fasta utfall, ingen sökning efter bästa plan.
+
+### Planernas två arbetslägen
+
+**Redigera plan** innehåller försöken, externa besked och körning. **Resultat** visar den sparade körningens sammanfattning och valbara detaljer. Flikbyte bevarar osparade ändringar; sparande sker fortfarande med **Spara projekt** (eller inför körning). Ändrade körindata märker äldre resultat som inaktuellt och kräver omkörning före jämförelse.
+
+Veckor med planerade försök visas som standard. **Visa alla veckor** inkluderar tomma tidssteg i sidor om tolv, enligt modellens start och horisont. Visning och filtrering ändrar inte planens operativa rader eller ordning. Interna flikar kan väljas med vänster/höger och Home/End.
+
+Riktade kontroller efter `python3 -B verification/test_comparison.py` (som skapar fixturer):
+
+```sh
+node verification/plan-workspace-ui.test.cjs
+python3 -B verification/check_plan_workspace_invariance.py
+```
