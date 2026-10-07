@@ -1,0 +1,10 @@
+test_checkpoint_inputs_histories_and_attempt_order_are_identical (__main__.PresentationTests) ... ok
+test_labels_are_complete_sourced_and_model_bound (__main__.PresentationTests) ... ok
+test_labels_persist_without_changing_operational_input (__main__.PresentationTests) ... ok
+test_legacy_custom_labels_bind_once (__main__.PresentationTests) ... ok
+test_no_guess_for_import_or_changed_model (__main__.PresentationTests) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 39.825s
+
+OK

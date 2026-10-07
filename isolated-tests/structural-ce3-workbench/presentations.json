@@ -1,0 +1,525 @@
+{
+  "b2db6772571c4c3e6c198cdfd97d1a48413515cb567a7654a8817087407d7c8f": {
+    "model_sha256": "b2db6772571c4c3e6c198cdfd97d1a48413515cb567a7654a8817087407d7c8f",
+    "decisions": {
+      "D1": "Ansök om finansiering",
+      "D2": "Teckna avtal för lokalen i Polen",
+      "D3": "Rekrytera och utbilda arbetslaget i Polen",
+      "D4": "Beställ en ny maskin till Polen",
+      "D5": "Flytta den svenska maskinen till Polen",
+      "D6": "Beställ kvalitetsprövning i Polen",
+      "D7": "Begär kundens godkännande",
+      "D8": "Godkänn produktionsstart i Polen",
+      "D9": "Säkra det svenska arbetslaget",
+      "D10": "Säg upp den svenska lokalen",
+      "D11": "Beställ modernisering i Sverige"
+    },
+    "events": {
+      "E_PL_OFFER_EXPIRES": "Erbjudandet om lokalen i Polen upphör",
+      "E_SE_OFFER_EXPIRES": "Erbjudandet att säkra arbetslaget upphör",
+      "E_SE_TEAM_LEAVES": "Det osäkrade svenska arbetslaget lämnar",
+      "E_BANK": "Bankens besked",
+      "E_PL_PREMISES": "Tillgång till lokalen i Polen",
+      "E_PL_TEAM": "Arbetslaget i Polen blir redo",
+      "E_NEW_MACHINE": "Den nya maskinen installeras i Polen",
+      "E_MOVED_MACHINE": "Den flyttade maskinen blir tillgänglig i Polen",
+      "E_QUALITY": "Resultat av kvalitetsprövningen",
+      "E_CUSTOMER": "Kundens besked",
+      "E_SE_PREMISES_END": "Tillgången till den svenska lokalen upphör",
+      "E_MODERNIZATION": "Moderniseringen i Sverige blir färdig"
+    },
+    "fields": {
+      "se_premises": "Lokalen i Sverige",
+      "se_team": "Arbetslaget i Sverige",
+      "se_team_secured": "Säkring av arbetslaget i Sverige",
+      "se_securing_offer": "Erbjudande om att säkra arbetslaget",
+      "pl_offer": "Erbjudande om lokalen i Polen",
+      "pl_lease": "Lokalavtal i Polen",
+      "pl_premises": "Lokalen i Polen",
+      "pl_team": "Arbetslaget i Polen",
+      "production_authorized": "Produktionsstart i Polen",
+      "modernization_complete": "Modernisering i Sverige",
+      "budget": "Tillgänglig budget",
+      "pl_machines": "Tillgängliga maskiner i Polen",
+      "original_machine": "Den svenska maskinen",
+      "new_machine": "Ny maskin till Polen",
+      "bank": "Bankbesked",
+      "quality": "Kvalitetsprövning",
+      "customer": "Kundgodkännande"
+    },
+    "values": {
+      "se_premises": {
+        "true": "Lokalen i Sverige är tillgänglig",
+        "false": "Lokalen i Sverige är inte tillgänglig"
+      },
+      "se_team": {
+        "true": "Arbetslaget i Sverige är tillgängligt",
+        "false": "Arbetslaget i Sverige har lämnat"
+      },
+      "se_team_secured": {
+        "true": "Arbetslaget i Sverige är säkrat",
+        "false": "Arbetslaget i Sverige är inte säkrat"
+      },
+      "se_securing_offer": {
+        "true": "Erbjudandet att säkra arbetslaget gäller",
+        "false": "Erbjudandet att säkra arbetslaget gäller inte"
+      },
+      "pl_offer": {
+        "true": "Erbjudandet om lokalen i Polen gäller",
+        "false": "Erbjudandet om lokalen i Polen gäller inte"
+      },
+      "pl_lease": {
+        "true": "Avtalet för lokalen i Polen är tecknat",
+        "false": "Avtalet för lokalen i Polen är inte tecknat"
+      },
+      "pl_premises": {
+        "true": "Lokalen i Polen är tillgänglig",
+        "false": "Lokalen i Polen är inte tillgänglig"
+      },
+      "pl_team": {
+        "true": "Arbetslaget i Polen är utbildat och redo",
+        "false": "Arbetslaget i Polen är inte redo"
+      },
+      "production_authorized": {
+        "true": "Produktionsstart i Polen är godkänd",
+        "false": "Produktionsstart i Polen är inte godkänd"
+      },
+      "modernization_complete": {
+        "true": "Moderniseringen i Sverige är färdig",
+        "false": "Moderniseringen i Sverige är inte färdig"
+      },
+      "original_machine": {
+        "\"sweden_in_use\"": "Den svenska maskinen är i bruk i Sverige",
+        "\"in_transit\"": "Den svenska maskinen är under flytt",
+        "\"poland\"": "Den svenska maskinen är tillgänglig i Polen"
+      },
+      "new_machine": {
+        "\"not_ordered\"": "Ingen ny maskin är beställd",
+        "\"ordered\"": "Den nya maskinen är beställd",
+        "\"installed\"": "Den nya maskinen är installerad i Polen"
+      },
+      "bank": {
+        "\"not_requested\"": "Finansiering är inte sökt",
+        "\"pending\"": "Bankbesked inväntas",
+        "\"approved\"": "Finansieringen är beviljad",
+        "\"rejected\"": "Finansieringen har avslagits",
+        "\"waiting_no_further_review\"": "Bankbesked saknas; ingen ny prövning ingår"
+      },
+      "quality": {
+        "\"not_requested\"": "Kvalitetsprövning är inte beställd",
+        "\"pending\"": "Resultat av kvalitetsprövningen inväntas",
+        "\"approved\"": "Kvalitetsprövningen är godkänd",
+        "\"rejected\"": "Kvalitetsprövningen är underkänd",
+        "\"waiting_no_further_review\"": "Kvalitetsresultat saknas; ingen ny prövning ingår"
+      },
+      "customer": {
+        "\"not_requested\"": "Kundgodkännande är inte begärt",
+        "\"pending\"": "Kundbesked inväntas",
+        "\"approved\"": "Kunden har godkänt produktionsplatsen",
+        "\"rejected\"": "Kunden har nekat godkännande",
+        "\"waiting_no_further_review\"": "Kundbesked saknas; ingen ny prövning ingår"
+      }
+    },
+    "statements": {
+      "se_premises": {
+        "true": "Lokalen i Sverige är tillgänglig",
+        "false": "Lokalen i Sverige är inte tillgänglig"
+      },
+      "se_team": {
+        "true": "Arbetslaget i Sverige är tillgängligt",
+        "false": "Arbetslaget i Sverige har lämnat"
+      },
+      "se_team_secured": {
+        "true": "Arbetslaget i Sverige är säkrat",
+        "false": "Arbetslaget i Sverige är inte säkrat"
+      },
+      "se_securing_offer": {
+        "true": "Erbjudandet att säkra arbetslaget gäller",
+        "false": "Erbjudandet att säkra arbetslaget gäller inte"
+      },
+      "pl_offer": {
+        "true": "Erbjudandet om lokalen i Polen gäller",
+        "false": "Erbjudandet om lokalen i Polen gäller inte"
+      },
+      "pl_lease": {
+        "true": "Avtalet för lokalen i Polen är tecknat",
+        "false": "Avtalet för lokalen i Polen är inte tecknat"
+      },
+      "pl_premises": {
+        "true": "Lokalen i Polen är tillgänglig",
+        "false": "Lokalen i Polen är inte tillgänglig"
+      },
+      "pl_team": {
+        "true": "Arbetslaget i Polen är utbildat och redo",
+        "false": "Arbetslaget i Polen är inte redo"
+      },
+      "production_authorized": {
+        "true": "Produktionsstart i Polen är godkänd",
+        "false": "Produktionsstart i Polen är inte godkänd"
+      },
+      "modernization_complete": {
+        "true": "Moderniseringen i Sverige är färdig",
+        "false": "Moderniseringen i Sverige är inte färdig"
+      },
+      "original_machine": {
+        "\"sweden_in_use\"": "Den svenska maskinen är i bruk i Sverige",
+        "\"in_transit\"": "Den svenska maskinen är under flytt",
+        "\"poland\"": "Den svenska maskinen är tillgänglig i Polen"
+      },
+      "new_machine": {
+        "\"not_ordered\"": "Ingen ny maskin är beställd",
+        "\"ordered\"": "Den nya maskinen är beställd",
+        "\"installed\"": "Den nya maskinen är installerad i Polen"
+      },
+      "bank": {
+        "\"not_requested\"": "Finansiering är inte sökt",
+        "\"pending\"": "Bankbesked inväntas",
+        "\"approved\"": "Finansieringen är beviljad",
+        "\"rejected\"": "Finansieringen har avslagits",
+        "\"waiting_no_further_review\"": "Bankbesked saknas; ingen ny prövning ingår"
+      },
+      "quality": {
+        "\"not_requested\"": "Kvalitetsprövning är inte beställd",
+        "\"pending\"": "Resultat av kvalitetsprövningen inväntas",
+        "\"approved\"": "Kvalitetsprövningen är godkänd",
+        "\"rejected\"": "Kvalitetsprövningen är underkänd",
+        "\"waiting_no_further_review\"": "Kvalitetsresultat saknas; ingen ny prövning ingår"
+      },
+      "customer": {
+        "\"not_requested\"": "Kundgodkännande är inte begärt",
+        "\"pending\"": "Kundbesked inväntas",
+        "\"approved\"": "Kunden har godkänt produktionsplatsen",
+        "\"rejected\"": "Kunden har nekat godkännande",
+        "\"waiting_no_further_review\"": "Kundbesked saknas; ingen ny prövning ingår"
+      }
+    },
+    "outcomes": {
+      "E_BANK": {
+        "approved": "Finansiering beviljas",
+        "rejected": "Finansiering avslås",
+        "absent": "Bankbesked uteblir"
+      },
+      "E_QUALITY": {
+        "approved": "Prövningen godkänns",
+        "rejected": "Prövningen underkänns",
+        "absent": "Färdigt resultat uteblir"
+      },
+      "E_CUSTOMER": {
+        "approved": "Kunden godkänner",
+        "rejected": "Kunden nekar",
+        "absent": "Kundbesked uteblir"
+      },
+      "E_PL_OFFER_EXPIRES": {
+        "timer": "Deklarerad tidsstyrd effekt"
+      },
+      "E_SE_OFFER_EXPIRES": {
+        "timer": "Deklarerad tidsstyrd effekt"
+      },
+      "E_SE_TEAM_LEAVES": {
+        "timer": "Deklarerad tidsstyrd effekt"
+      },
+      "E_PL_PREMISES": {
+        "timer": "Deklarerad tidsstyrd effekt"
+      },
+      "E_PL_TEAM": {
+        "timer": "Deklarerad tidsstyrd effekt"
+      },
+      "E_NEW_MACHINE": {
+        "timer": "Deklarerad tidsstyrd effekt"
+      },
+      "E_MOVED_MACHINE": {
+        "timer": "Deklarerad tidsstyrd effekt"
+      },
+      "E_SE_PREMISES_END": {
+        "timer": "Deklarerad tidsstyrd effekt"
+      },
+      "E_MODERNIZATION": {
+        "timer": "Deklarerad tidsstyrd effekt"
+      }
+    },
+    "budget_unit": "Mkr",
+    "budget_note": "Belopp i miljoner kronor.",
+    "summary": "Etablering i Polen med möjlighet att behålla produktion i Sverige. Uppgifterna är konstruerade antaganden.",
+    "sources": {
+      "isolated-tests/structural-ce-v1-factory-witness/model.json": "be6506fd0655ad2f6ef66db710f086591d70e168cd4ce56a88b8f06b748f7ec8",
+      "isolated-tests/structural-ce-v1-factory-witness/sources/factory-assumed.txt": "85387b224f5896554a2f5562a94f7eb9fe23a3ebf02f6f5e57670c8bfca9add8"
+    },
+    "provenance": {
+      "decisions": {
+        "D1": "Berättelsen D1; v1 engångsregel",
+        "D2": "Berättelsen D2, Budget",
+        "D3": "Berättelsen D3, Budget",
+        "D4": "Berättelsen D4, Budget",
+        "D5": "Berättelsen D5, Budget",
+        "D6": "Berättelsen D6, Budget",
+        "D7": "Berättelsen D7",
+        "D8": "Berättelsen D8",
+        "D9": "Berättelsen D9, Budget",
+        "D10": "Berättelsen D10",
+        "D11": "Berättelsen D11, Budget"
+      },
+      "events": {
+        "E_PL_OFFER_EXPIRES": "D2: giltigt till och med vecka 4; v1 expiry",
+        "E_SE_OFFER_EXPIRES": "D9: beslut till och med vecka 6; v1 expiry",
+        "E_SE_TEAM_LEAVES": "D9: osäkrat arbetslag lämnar vid vecka 8",
+        "E_BANK": "D1",
+        "E_PL_PREMISES": "D2",
+        "E_PL_TEAM": "D3",
+        "E_NEW_MACHINE": "D4",
+        "E_MOVED_MACHINE": "D5",
+        "E_QUALITY": "D6",
+        "E_CUSTOMER": "D7",
+        "E_SE_PREMISES_END": "D10",
+        "E_MODERNIZATION": "D11: endast färdigmarkör, inga återställda resurser"
+      },
+      "fields": "Originalmodellens domains och initial; källtextens startläge och beslutstabell.",
+      "values": "Originalmodellens domänvärden och effekter, lästa tillsammans med källtextens beslut och externa besked.",
+      "budget_unit": "Originalkällans Budget/Startläge. Inga operativa värden ändras."
+    },
+    "legacy_labels": {
+      "D1": "Ansöka om finansiering",
+      "D2": "Teckna polskt lokalavtal",
+      "D3": "Rekrytera och utbilda polskt arbetslag",
+      "D4": "Beställa ny maskin",
+      "D5": "Flytta svensk maskin",
+      "D6": "Beställa kvalitetsprövning",
+      "D7": "Begära kundgodkännande",
+      "D8": "Godkänna produktionsstart",
+      "D9": "Säkra svenskt arbetslag",
+      "D10": "Säga upp svensk lokal",
+      "D11": "Beställa svensk modernisering"
+    }
+  },
+  "4639269d5ba9e7ee51664dacda6f11dfbea2fae3eeb084c9c2dfa2850c6c810d": {
+    "model_sha256": "4639269d5ba9e7ee51664dacda6f11dfbea2fae3eeb084c9c2dfa2850c6c810d",
+    "decisions": {
+      "T1": "Beställ elbussar",
+      "T2": "Beställ elanslutning",
+      "T3": "Starta depåutbyggnad",
+      "T4": "Beställ laddutrustning",
+      "T5": "Beställ installation av laddutrustning",
+      "T6": "Rekrytera och utbilda chaufförer",
+      "T7": "Godkänn utökad busstrafik",
+      "T8": "Beställ signalprioritering",
+      "T9": "Starta förbättring av cykelstråket",
+      "T10": "Beställ cykelparkering",
+      "T11": "Öppna cykelstråket",
+      "T12": "Besluta att ta bort 100 parkeringsplatser"
+    },
+    "events": {
+      "E_T1": "Leverans av elbussar",
+      "E_T2": "Besked om elanslutningen",
+      "E_T3": "Depådelen blir tillgänglig",
+      "E_T4": "Leverans av laddutrustning",
+      "E_T5": "Laddinstallationen blir färdig",
+      "E_T6": "Chaufförerna blir tillgängliga",
+      "E_T8": "Signalprioriteringen blir färdig",
+      "E_T9": "Cykelstråket blir färdigt",
+      "E_T10": "Cykelparkeringen blir tillgänglig",
+      "E_T12": "100 parkeringsplatser tas bort"
+    },
+    "fields": {
+      "buses_delivered": "Elbussar",
+      "depot_contract": "Depåavtal",
+      "depot_ready": "Ny depådel",
+      "charger_delivered": "Leverans av laddutrustning",
+      "charger_installed": "Installation av laddutrustning",
+      "drivers_ready": "Chaufförer",
+      "signal_ready": "Signalprioritering",
+      "cycle_ready": "Cykelstråk",
+      "cycle_parking_ready": "Cykelparkering",
+      "traffic_authorized": "Utökad busstrafik",
+      "cycle_open": "Öppning av cykelstråket",
+      "budget": "Tillgänglig budget",
+      "grid": "Elanslutning",
+      "parking_removed": "Borttagna parkeringsplatser"
+    },
+    "values": {
+      "buses_delivered": {
+        "true": "Elbussarna är levererade",
+        "false": "Elbussarna är inte levererade"
+      },
+      "depot_contract": {
+        "true": "Depåavtalet är tecknat",
+        "false": "Depåavtalet är inte tecknat"
+      },
+      "depot_ready": {
+        "true": "Den nya depådelen är tillgänglig",
+        "false": "Den nya depådelen är inte tillgänglig"
+      },
+      "charger_delivered": {
+        "true": "Laddutrustningen är levererad",
+        "false": "Laddutrustningen är inte levererad"
+      },
+      "charger_installed": {
+        "true": "Laddutrustningen är installerad",
+        "false": "Laddutrustningen är inte installerad"
+      },
+      "drivers_ready": {
+        "true": "Chaufförerna är utbildade och tillgängliga",
+        "false": "Chaufförerna är inte tillgängliga"
+      },
+      "signal_ready": {
+        "true": "Signalprioriteringen är färdig",
+        "false": "Signalprioriteringen är inte färdig"
+      },
+      "cycle_ready": {
+        "true": "Cykelstråket är färdigt",
+        "false": "Cykelstråket är inte färdigt"
+      },
+      "cycle_parking_ready": {
+        "true": "Cykelparkeringen är tillgänglig",
+        "false": "Cykelparkeringen är inte tillgänglig"
+      },
+      "traffic_authorized": {
+        "true": "Den utökade busstrafiken är godkänd",
+        "false": "Den utökade busstrafiken är inte godkänd"
+      },
+      "cycle_open": {
+        "true": "Cykelstråket är öppnat",
+        "false": "Cykelstråket är inte öppnat"
+      },
+      "grid": {
+        "\"not_ordered\"": "Elanslutningen är inte beställd",
+        "\"pending\"": "Besked om elanslutningen inväntas",
+        "\"ready\"": "Elanslutningen är färdig",
+        "\"rejected\"": "Elanslutningen har avslagits",
+        "\"waiting_no_further_review\"": "Elbesked saknas; ingen ny prövning ingår"
+      },
+      "parking_removed": {
+        "0": "Inga av de 100 platserna är borttagna",
+        "100": "De 100 parkeringsplatserna är borttagna"
+      }
+    },
+    "statements": {
+      "buses_delivered": {
+        "true": "Elbussarna är levererade",
+        "false": "Elbussarna är inte levererade"
+      },
+      "depot_contract": {
+        "true": "Depåavtalet är tecknat",
+        "false": "Depåavtalet är inte tecknat"
+      },
+      "depot_ready": {
+        "true": "Den nya depådelen är tillgänglig",
+        "false": "Den nya depådelen är inte tillgänglig"
+      },
+      "charger_delivered": {
+        "true": "Laddutrustningen är levererad",
+        "false": "Laddutrustningen är inte levererad"
+      },
+      "charger_installed": {
+        "true": "Laddutrustningen är installerad",
+        "false": "Laddutrustningen är inte installerad"
+      },
+      "drivers_ready": {
+        "true": "Chaufförerna är utbildade och tillgängliga",
+        "false": "Chaufförerna är inte tillgängliga"
+      },
+      "signal_ready": {
+        "true": "Signalprioriteringen är färdig",
+        "false": "Signalprioriteringen är inte färdig"
+      },
+      "cycle_ready": {
+        "true": "Cykelstråket är färdigt",
+        "false": "Cykelstråket är inte färdigt"
+      },
+      "cycle_parking_ready": {
+        "true": "Cykelparkeringen är tillgänglig",
+        "false": "Cykelparkeringen är inte tillgänglig"
+      },
+      "traffic_authorized": {
+        "true": "Den utökade busstrafiken är godkänd",
+        "false": "Den utökade busstrafiken är inte godkänd"
+      },
+      "cycle_open": {
+        "true": "Cykelstråket är öppnat",
+        "false": "Cykelstråket är inte öppnat"
+      },
+      "grid": {
+        "\"not_ordered\"": "Elanslutningen är inte beställd",
+        "\"pending\"": "Besked om elanslutningen inväntas",
+        "\"ready\"": "Elanslutningen är färdig",
+        "\"rejected\"": "Elanslutningen har avslagits",
+        "\"waiting_no_further_review\"": "Elbesked saknas; ingen ny prövning ingår"
+      },
+      "parking_removed": {
+        "0": "Inga av de 100 platserna är borttagna",
+        "100": "De 100 parkeringsplatserna är borttagna"
+      }
+    },
+    "outcomes": {
+      "E_T2": {
+        "ready": "Elanslutningen färdigställs",
+        "rejected": "Elanslutningen avslås",
+        "absent": "Färdigt elbesked uteblir"
+      },
+      "E_T1": {
+        "timer": "Deklarerad tidsstyrd effekt"
+      },
+      "E_T3": {
+        "timer": "Deklarerad tidsstyrd effekt"
+      },
+      "E_T4": {
+        "timer": "Deklarerad tidsstyrd effekt"
+      },
+      "E_T5": {
+        "timer": "Deklarerad tidsstyrd effekt"
+      },
+      "E_T6": {
+        "timer": "Deklarerad tidsstyrd effekt"
+      },
+      "E_T8": {
+        "timer": "Deklarerad tidsstyrd effekt"
+      },
+      "E_T9": {
+        "timer": "Deklarerad tidsstyrd effekt"
+      },
+      "E_T10": {
+        "timer": "Deklarerad tidsstyrd effekt"
+      },
+      "E_T12": {
+        "timer": "Deklarerad tidsstyrd effekt"
+      }
+    },
+    "budget_unit": "miljoner",
+    "budget_note": "Belopp i miljoner. Valutan anges inte i originalunderlaget.",
+    "summary": "Planerade buss- och cykelförbättringar samt borttagning av 100 parkeringsplatser. Befintliga transportalternativ ingår inte i förändringen.",
+    "sources": {
+      "isolated-tests/structural-ce-v1-transport-t1/model.json": "8a80e6a25d6c146b115a119ae33dedcb5ce794419c932ed159595c515e76cc4e",
+      "isolated-tests/structural-ce-v1-transport-t1/sources/transport-t1-user.txt": "0c04a766a47d2bcab5c29e55882cda1ab0f50bfc2e1f76962a36e4875c2a73d6"
+    },
+    "provenance": {
+      "decisions": {
+        "T1": "sources/transport-t1-user.txt: beslutstabell T1",
+        "T2": "sources/transport-t1-user.txt: beslutstabell T2",
+        "T3": "sources/transport-t1-user.txt: beslutstabell T3",
+        "T4": "sources/transport-t1-user.txt: beslutstabell T4",
+        "T5": "sources/transport-t1-user.txt: beslutstabell T5",
+        "T6": "sources/transport-t1-user.txt: beslutstabell T6",
+        "T7": "sources/transport-t1-user.txt: beslutstabell T7",
+        "T8": "sources/transport-t1-user.txt: beslutstabell T8",
+        "T9": "sources/transport-t1-user.txt: beslutstabell T9",
+        "T10": "sources/transport-t1-user.txt: beslutstabell T10",
+        "T11": "sources/transport-t1-user.txt: beslutstabell T11",
+        "T12": "sources/transport-t1-user.txt: beslutstabell T12"
+      },
+      "events": {
+        "E_T1": "sources/transport-t1-user.txt: beslutstabell T1",
+        "E_T2": "sources/transport-t1-user.txt: beslutstabell T2",
+        "E_T3": "sources/transport-t1-user.txt: beslutstabell T3",
+        "E_T4": "sources/transport-t1-user.txt: beslutstabell T4",
+        "E_T5": "sources/transport-t1-user.txt: beslutstabell T5",
+        "E_T6": "sources/transport-t1-user.txt: beslutstabell T6",
+        "E_T8": "sources/transport-t1-user.txt: beslutstabell T8",
+        "E_T9": "sources/transport-t1-user.txt: beslutstabell T9",
+        "E_T10": "sources/transport-t1-user.txt: beslutstabell T10",
+        "E_T12": "sources/transport-t1-user.txt: beslutstabell T12"
+      },
+      "fields": "Originalmodellens domains och initial; källtextens startläge och beslutstabell.",
+      "values": "Originalmodellens domänvärden och effekter, lästa tillsammans med källtextens beslut och externa besked.",
+      "budget_unit": "Originalkällans Budget/Startläge. Inga operativa värden ändras."
+    },
+    "legacy_labels": {}
+  }
+}

@@ -1,5 +1,7 @@
 # Verifieringsrapport · lokal CE3-vy
 
+Senaste tillägget är användarvänlighetspasset nedan, utifrån UI-checkpoint `a7a5525`. De inledande avsnitten dokumenterar första leveransen; deras äldre testresultat ska inte läsas som nya körningar.
+
 Datum: 2026-10-07. Utgångs-HEAD: `ede28868f4018aba2bf6da92500bce659f6badcc`. Inga spårade ändringar fanns vid start. Befintliga ospårade granskningsfiler har lämnats orörda. Inga AGENTS.md-filer fanns i projektets anvisningskedja. Kärnans README, REPORT, FORMAT, exekverbara schema, profile.json, adaptrar och historikformat lästes före implementationen.
 
 Leveransen ligger helt i `isolated-tests/structural-ce3-workbench/`. Ingen fil i uppspelningskärnan, granskaren, CE2, kontraktet, originalfallen, deras resultat eller transportdemon har ändrats. Ingen ny motorregel har införts.
@@ -68,3 +70,47 @@ Slutservern startades på **http://127.0.0.1:8876**. Ingen process eller fil fö
 Första lokalversion, en serverprocess per datakatalog. Endast kärnans befintliga `fixed-replay/0.1` stöds. Ingen grafisk modellredigering, AI-onboarding, optimering eller publicering. ID:n och källtexter används när visningsmetadata saknas; enumvärden översätts inte automatiskt. Jämförelsen använder de två valda planernas senaste granskade körningar som matchar aktuella indata; äldre resultat är läsbara under Planer.
 
 Resurstak: 1 000 banor, 200 000 emitterade arbetsrader, 1 000 steg, 120 sekunder per replay/auditprocess, 128 MB import. Stora fullhistoriker kan bli långsamma att visa och exportera. Slutresultatet är ett lokalt arbetsverktyg för den avgränsade profilen, inte en verifiering av modellernas verkliga verksamhetspremisser.
+
+
+## Användarvänlighetspass · 2026-10-07 · efter a7a5525
+
+Omfattning: endast denna UI-katalog. Visuell grunddesign, kärna, kontrakt, CE2, originalmodeller, originalresultat och transportdemo på 8765 är oförändrade. Servern har startats om på samma **http://127.0.0.1:8876** med befintlig lagring.
+
+### Faktiskt genomförda förbättringar
+
+- Separat presentation knuten till exakt modellidentitet och ID för beslut, händelser, tillstånd, typade kategorivärden och externa utfall. Transportens T1–T12 använder de beställda namnen och E_T2 ”Besked om elanslutningen”. Fabrikens namn är kopplade till originalunderlaget, inklusive D1 ”Ansök om finansiering” och E_BANK ”Bankens besked”. Levererat, installerat, tillgängligt och godkänt hålls isär.
+- Gemensamma etiketter i beslutskort, planväljare, externa besked, blockeringar, tidslinjer, tillstånd, utgifter och jämförelse. Äldre resultat använder sin sparade modellidentitet. Etiketter ingår inte i `run_input`, replay eller audit.
+- Beslutskorten visar namn, kostnad, förutsättningar, direkt förändring inklusive budgetavdrag samt senare möjliga effekter. Externa alternativ och eventförvillkor visas uttryckligen. Fulla regler, råa ID:n och källidentiteter finns i utfällbara tekniska detaljer.
+- ”Analys till”, kort svensk vägledning och modellbundna budgetenheter. Fabriken använder Mkr från originalets ”miljoner kronor”. Transporten använder ”miljoner”; dess original anger ingen valuta, vilket vyn förklarar. Import utan enhetsmetadata visar ”enhet saknas”.
+- Planerna grupperas per tidssteg, med rubriker Vecka/Beslut/Utförande och bibehållen intern ordning. Planens avsikt skiljs från körningens faktiska resultat. Även tomma deklarerade tidssteg bevaras vid avläsning av formuläret.
+- Jämförelse väljer två olika planer när sådana finns. En ensam plan får erbjudandet att duplicera och ändra tidpunkter. Samma plan på båda sidor, saknade externa val, saknade körningar och behov av omkörning förklaras före jämförelsen.
+- Import utan namn använder tydliga ID-fallbacks; egna namn kan anges under Projekt → Visningsetiketter och på beslutskorten. Enbart öppning av tomma etikettfält skapar inga ändringar. Äldre egna beslutsnamn bevaras vid övergång till det modellbundna lagret.
+
+### Kontroller i detta pass
+
+| Kontroll | Resultat |
+|---|---|
+| Befintliga UI/serverintegrationer, `test_workbench.py` | 14 tester PASS, ny logg `usability-integration-tests.log` |
+| Presentation, källkoppling, modellisolering, beständighet och checkpointjämförelse | 5 Python-tester PASS, `presentation-tests.log` |
+| Faktisk JS-rendering/formuläravläsning i DOM samt presentationsfunktioner och jämförelsevägledning | PASS, `presentation-ui-tests.log` |
+| JavaScript-syntax, både app.js och presentation.js | PASS |
+| Gamla och nya operativa indata och fulla replaypaket | Exakt lika för fabrikens plan, transport A/B och samma-parkering A/B; `presentation-invariance.json` |
+| Bevarande av skyddade befintliga filer | 1 908 filer kontrollerade, 0 ändrade; därav 62 befintliga lokala projekt-/resultatfiler; `usability-preservation.json` |
+
+Checkpointjämförelsen laddar UI-servicekoden från `a7a5525` och kör samma oförändrade kärna för båda versionerna. Externa utfall väljs uttryckligen till respektive modells deklarerade uteblivna besked i de fem jämförelserna. De befintliga integrationstesterna täcker även positiva och negativa utfall, granskning, blockeringar, avbrott, export/import och ordningskänslighet. Kärnans 27-testsvit och den äldre fulla dubbelregressionen har inte körts om i detta presentationspass.
+
+### Levande webbläsare och upprepade rader
+
+Fabrik och transport kontrollerades i Codex webbläsare vid **1440 × 960** och **390 × 844**: beslutskort, planredigering och jämförelse. Den smala vyn hade dokumentbredd 375 px inom 390 px viewport inklusive rullningslist. Namn, kategorimeningar, deklarerade budgetenheter och externa besked kontrollerades i den levande vyn. Inga JavaScriptfel rapporterades i webbläsarkonsolen.
+
+Transportens Plan A jämfördes före och efter ändringen mot sparad version 2 och modellens planinnehåll. Levande DOM hade **13 försök och exakt radnummer 01–13**, utan dubbla radnummer. Plan B kontrollerades också: **13 försök, 01–13**, i samma ordning som sparad plan. Plan A:s T7 vecka 12 och 20 är två uttryckliga försök. Plan B:s T7 vecka 20 har kvar `if_not_taken`. Grupperingen flyttar eller tar inte bort något av dessa försök. Den rapporterade upprepningen i helsidesskärmbilden kunde inte beläggas som ett faktiskt visningsfel; DOM och sparad plan visar ingen dubblering. Den behandlas därför som en skärmbildseffekt, utan någon automatisk rensning av rader.
+
+Fabrikens sparade planer jämfördes i webbläsaren: produktionsstart vecka 12 respektive 13 visas med svenska beslutsnamn och naturliga tillståndsmeningar. Transportens A och sparade B-kopia jämfördes: ett respektive noll blockerade försök, 29 miljoner i beslutsutgifter och 1 miljon kvar. Känslighet för händelseordningar är fortsatt synlig. Att välja samma plan på båda sidor gav det avsedda beskedet. En tillfällig ändring av A:s sista försök från vecka 20 till 21 gav både ”Resultat från en äldre version” och ”planen har ändrats och behöver köras om”. Tidpunkten återställdes till 20.
+
+Nya fabrik- och transportexempel öppnades med sina befintliga 8 respektive 13 försök. Samtliga externa väljare var tomma; körning krävde uttryckliga val. En ren normaliserad modell importerades via webbläsarens filväljare och visade tom plan, vägledning att skapa den samt ID-fallbacks och ”enhet saknas”. Egna besluts-, event-, tillstånds- och kategori-etiketter skrevs in, sparades och exporterades via vyn. Exportfilen återimporterades via samma lokala servers import-API och öppnades sedan i webbläsaren: alla fyra etiketter fanns kvar. Det separata integrationstestet täcker även egna externa utfallsnamn. Erbjudandet ”Duplicera planen och ändra tidpunkterna” provades och öppnade den nya kopian i planvyn.
+
+Befintliga avsiktligt skadade/ofullständiga kontrollhistoriker öppnades på nytt: COMPLETE/FAIL respektive INCOMPLETE/INCOMPLETE visas separat och utan granskat tillståndsresultat. Tidigare versions- och resultatfiler ändrades inte. Nya kontrollprojekt och versioner ligger som nya, git-ignorerade lokala filer.
+
+### Kvarvarande begränsningar
+
+Transportunderlaget anger inte valuta. Importerade modeller saknar automatisk semantisk översättning och behöver egna visningsetiketter; ingen betydelse gissas utifrån ID. Långa namn kan kapas visuellt i en smal nativ väljare, medan hela alternativtexten finns i väljaren och på beslutskortet. Övriga begränsningar för lokal drift, resurstak, strikt modellformat och stora historiker är oförändrade.

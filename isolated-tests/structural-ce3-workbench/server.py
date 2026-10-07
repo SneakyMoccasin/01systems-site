@@ -73,7 +73,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(store.run(data['project'], data['revision'], data['plan'], data.get('limits')))
             if method == 'POST' and route == '/api/import':
                 return self.send(store.import_project(loads(data['text'])))
-            files = {'/': 'index.html', '/app.js': 'app.js', '/style.css': 'style.css'}
+            files = {'/': 'index.html', '/app.js': 'app.js', '/presentation.js': 'presentation.js', '/style.css': 'style.css'}
             if method == 'GET' and route in files:
                 path = HERE / 'static' / files[route]
                 return self.send(path.read_bytes(), content_type=mimetypes.guess_type(str(path))[0] + '; charset=utf-8')

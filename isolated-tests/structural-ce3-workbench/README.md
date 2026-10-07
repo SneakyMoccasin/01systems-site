@@ -17,13 +17,19 @@ Standardlagring: `isolated-tests/structural-ce3-workbench/local-data/` på den l
 ## Arbetsflöde
 
 1. **Projekt:** öppna en JSON-modell i `ce3-model/1` eller en fullständig inmatning i `ce3-run/1`. Exempelknapparna läser fabrik och transport genom befintliga formatadaptrar. Exemplens externa besked lämnas tomma. En fullständig importerad körinmatning behåller sina uttryckliga utfall.
-2. **Beslut:** läs modellens förvillkor, kostnad, direkta effekter och fördröjda händelser. Ursprungliga etiketter visas där de finns; annars används ID. Separata visningsetiketter ändrar inte modellen. Senare händelser har egna villkor och deklarerade utfall i utfällbara detaljer.
-3. **Planer:** skapa, namnge eller duplicera planer. Tidssteget och radordningen anger försöksordningen. Pilar flyttar inom samma steg. Välj `Hoppa över om genomfört` för kärnans `if_not_taken`. Välj samtliga externa utfall före körning. `Kör & granska` sparar en projektversion, validerar, kör kärnan, sparar input/historik och anropar den separata granskaren i en ny process.
-4. **Jämförelse:** välj två planer och jämför deras senaste körningar. Båda måste vara granskade och motsvara aktuella körindata; modell inklusive startläge, källidentiteter och samtliga externa val måste vara lika. Välj tidpunkt och bana separat för planerna. Referensbanan följer modellens deklarerade eventordning.
+2. **Beslut:** läs modellens förvillkor, kostnad, direkta effekter och fördröjda händelser. Källkopplade svenska etiketter används för exemplen. Senare effekter visas med egna villkor och möjliga externa besked; en fördröjning är inte ett löfte om färdigställande. ID:n, fulla regler och källidentiteter finns i tekniska detaljer.
+3. **Planer:** skapa, namnge eller duplicera planer. Försöken grupperas per tidssteg med rubriker för vecka, beslut och utförande. Tidssteget och radordningen anger försöksordningen. Upprepade försök bevaras, inklusive transportens T7 vecka 12 och 20. Pilar flyttar inom samma steg. Välj `Hoppa över om genomfört` för kärnans `if_not_taken`. Välj samtliga externa utfall före körning. `Kör & granska` sparar en projektversion, validerar, kör kärnan, sparar input/historik och anropar den separata granskaren i en ny process.
+4. **Jämförelse:** två olika planer väljs som standard. Med en enda plan erbjuds duplicering. Vyn visar vilka besked eller körningar som saknas, om samma plan valts på båda sidor och om en ändrad plan behöver köras om. Jämför därefter deras senaste körningar. Båda måste vara granskade och motsvara aktuella körindata; modell inklusive startläge, källidentiteter och samtliga externa val måste vara lika. Välj tidpunkt och bana separat för planerna. Referensbanan följer modellens deklarerade eventordning.
 
 `Spara projekt` gör en ny version. Växling till ett annat projekt sparar först ett ändrat utkast; felaktiga utkast behöver rättas för att kunna sparas. Vid omladdning varnar webbläsaren om osparade ändringar. Tidigare projektversioner och körningar ändras aldrig. Äldre versioner kan öppnas; sparande från en gammal version avvisas för att undvika att nyare arbete ersätts.
 
 `Byt modell i detta projekt` läser en ny modellfil, behåller planernas försök och återställer externa val till tomma. Saknade besluts-ID:n visas uttryckligen och måste rättas. Full grafisk modellredigering ingår inte.
+
+## Visningsetiketter och enheter
+
+Under **Projekt → Visningsetiketter** kan namn anges för beslut, händelser, tillstånd, kategorivärden och externa utfall. Namnen sparas i `presentation[modellens SHA-256]`, åtskilda från modellen, planen och körinmatningen. Kategorivärden använder typbevarande JSON-nycklar. Namn följer med projektversioner och export/import; ett modellbyte återanvänder inte etiketter enbart för att ID:n är lika. Sparade resultat visas med sin egen modellidentitet.
+
+`presentations.json` innehåller fabrikens och transportens källkopplade svenska presentationer med originalfilernas hashvärden och regelreferenser. Fabrikens original deklarerar miljoner kronor (Mkr). Transportens original deklarerar miljoner men inte valuta; vyn skriver därför ”miljoner” och upplyser om den saknade valutan. En importerad modell utan presentation får tydlig ID-fallback och ”enhet saknas”, även om ID:n liknar ett exempel. Äldre sparade exempel känns igen genom exakt modellidentitet och originalmodellens källhash; egna äldre beslutsnamn bevaras.
 
 ## Tolkning av resultaten
 
@@ -49,13 +55,18 @@ På disk ligger `PROJECT_ID/versions/000001.json` och `PROJECT_ID/runs/RUN_ID/{i
 ```sh
 python3 -B isolated-tests/structural-ce3-workbench/verification/test_workbench.py
 python3 -B -m unittest discover -s isolated-tests/structural-ce3-replay/verification -p 'test_*.py' -v
+python3 -B isolated-tests/structural-ce3-workbench/verification/test_presentation.py
+node isolated-tests/structural-ce3-workbench/verification/presentation-ui.test.cjs
 node --check isolated-tests/structural-ce3-workbench/static/app.js
+node --check isolated-tests/structural-ce3-workbench/static/presentation.js
 ```
+
+DOM-testet använder repositoryts befintliga utvecklingsberoende `linkedom`; servern har fortfarande inga paketberoenden. Invarianstestet jämför mot git-checkpoint `a7a5525`.
 
 UI-sviten använder tillfällig, separat lagring och färska kärnkörningar. `verification/latest.json` sparar senaste testsammanställningen, med köridentiteter och granskningsstatus. Den är en testlogg; tillfälliga testprojekt städas efter sviten. Manuellt verifierade browserprojekt ligger kvar i lokal lagring. Se `REPORT.md` för faktiskt genomförda kontroller.
 
 ## Avgränsningar
 
-Lokalt prototyplager, en serverprocess per datakatalog, ingen inloggning eller publicering. Inga ändringar i kärnans regler. Ingen AI-onboarding eller optimering. JSON-formatet är strikt; äldre originalformat öppnas via exempeladaptrarna, inte genom generell konvertering av godtyckliga äldre modeller. ID:n används när källan saknar etiketter; källtexter och enumvärden översätts inte automatiskt.
+Lokalt prototyplager, en serverprocess per datakatalog, ingen inloggning eller publicering. Inga ändringar i kärnans regler. Ingen AI-onboarding eller optimering. JSON-formatet är strikt; äldre originalformat öppnas via exempeladaptrarna, inte genom generell konvertering av godtyckliga äldre modeller. Importerade modeller utan visningsmetadata använder tydliga ID-fallbacks. Egna namn kan anges; betydelser gissas inte utifrån ID.
 
 Standardtak: 1 000 banor, 200 000 emitterade arbetsrader och 1 000 steg. Replay och audit har vardera 120 sekunders processtak. Gränser kan sänkas i UI men inte höjas över serverns tak. Stora fulla historiker kan ge långsamma vyer/exporter; import begränsas till 128 MB. Jämförelsen är parvis och gäller valda fasta utfall, ingen sökning efter bästa plan.

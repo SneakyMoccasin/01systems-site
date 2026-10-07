@@ -18,6 +18,8 @@ from core.schema import validate, InputError, PROFILE
 from adapters.factory_v1 import adapt as factory_adapt
 from adapters.transport_t1 import adapt as transport_adapt
 
+from presentation import decorate, validate_presentation
+
 LIMITS = {'max_paths': 1000, 'max_rows': 200000, 'max_steps': 1000}
 
 
@@ -58,6 +60,7 @@ def validate_project(value):
     require(isinstance(value.get('display'), dict), 'Visningsetiketter saknas.')
     require(all(isinstance(k, str) and isinstance(v, str) for k, v in value['display'].items()), 'Etiketter måste vara text.')
     require(isinstance(value.get('plans'), list) and value['plans'], 'Projektet behöver minst en plan.')
+    validate_presentation(value)
     ids = []
     for entry in value['plans']:
         ids.append(identifier(entry['id']))
@@ -84,7 +87,7 @@ def open_model(value):
                        plans=[plan('Importerad plan', value['script'], value['outcomes'])])
     else:
         project = dict(name='Importerat projekt', model=value, sources={}, display={}, plans=[plan('Plan 1')])
-    return validate_project(project)
+    return decorate(validate_project(project), known=False)
 
 
 def example(name):
@@ -103,10 +106,10 @@ def example(name):
     else:
         absent = {k: v['outcome'] for k, v in read_bundle(metadata)['external_roles'].items()}
         runs = [(f'Plan {key}', transport_adapt(model, raw[key], absent, read_bundle(metadata), sources)) for key in ('A', 'B')]
-    return dict(name={'factory': 'Fabriken', 'transport': 'Transporten', 'same_parking': 'Transport · samma parkering'}[name],
+    return decorate(dict(name={'factory': 'Fabriken', 'transport': 'Transporten', 'same_parking': 'Transport · samma parkering'}[name],
                 model=runs[0][1]['model'], sources=sources,
                 display={key: rule['label'] for key, rule in model['decisions'].items() if rule.get('label')},
-                plans=[plan(label, run['script']) for label, run in runs])
+                plans=[plan(label, run['script']) for label, run in runs]), known=True)
 
 
 def inspect_history(history):
@@ -176,7 +179,7 @@ class Store:
         else:
             path = files[-1]
         require(path.is_file(), 'Versionen finns inte.')
-        return read_bundle(path)
+        return decorate(read_bundle(path))
 
     def list(self):
         projects = []
@@ -188,7 +191,7 @@ class Store:
 
     def save(self, value):
         with self.lock:
-            value = deepcopy(validate_project(value))
+            value = decorate(validate_project(value))
             project_id = value.get('id') or uid()
             files = self.versions(project_id)
             if files:
@@ -223,6 +226,10 @@ class Store:
                     record.update(run_status='ERROR', audit_status='FAIL',
                                   message='Körningen saknar slutbesked; den kan ha avbrutits. Kör om planen.')
                 records.append(record)
+        for record in records:
+            value = read_bundle(self.folder(project_id) / 'runs' / record['id'] / 'input.json')
+            record['input_summary'] = dict(model_identity=digest(value['model']), script=value['script'],
+                                           outcomes=value['outcomes'], sources=value['sources'])
         return sorted(records, key=lambda r: r['created_at'])
 
     def run(self, project_id, revision, plan_id, limits=None):
@@ -260,7 +267,7 @@ class Store:
             write_bundle(audit, folder / 'audit.json')
             write_bundle(record, folder / 'record.json')
             self.active.discard(run_id)
-            return record
+            return next(r for r in self.runs(project_id) if r['id'] == run_id)
 
     def result(self, project_id, run_id):
         folder = self.folder(project_id) / 'runs' / identifier(run_id)
@@ -272,7 +279,7 @@ class Store:
         if digest(trusted) != record['input_sha256']:
             audit = dict(status='FAIL', message='Den sparade inmatningen skiljer sig från körningens identitet.')
         history = read_bundle(folder / 'history.json.gz') if (folder / 'history.json.gz').exists() else None
-        result = dict(record=record, audit=audit, input=trusted, status=record['run_status'], error=None,
+        result = dict(record=record, audit=audit, input=trusted, model_identity=digest(trusted['model']), status=record['run_status'], error=None,
                       paths=[], reference=None, variations=[], order_sensitive=False, complete=False)
         if history:
             result['status'], result['error'] = history.get('status', 'ERROR'), history.get('error')
