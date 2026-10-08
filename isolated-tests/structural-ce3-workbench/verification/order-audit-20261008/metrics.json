@@ -1,0 +1,3219 @@
+{
+  "definition": {
+    "focus": {
+      "field": "traffic_authorized",
+      "op": "eq",
+      "value": true
+    },
+    "gaps": [
+      {
+        "name": "Bussglapp",
+        "after": {
+          "field": "parking_removed",
+          "op": "ge",
+          "value": 100
+        },
+        "until": {
+          "field": "traffic_authorized",
+          "op": "eq",
+          "value": true
+        }
+      },
+      {
+        "name": "Cykelglapp",
+        "after": {
+          "field": "parking_removed",
+          "op": "ge",
+          "value": 100
+        },
+        "until": {
+          "field": "cycle_open",
+          "op": "eq",
+          "value": true
+        }
+      }
+    ],
+    "note": "Glappen gäller de planerade förbättringarna efter parkeringsborttagningen. Befintlig buss- och cykeltrafik kvarstår. Trafikgodkännande är inte faktisk trafikdrift.",
+    "source": "sources/transport-t1-user.txt: Central fråga, Kontrollfrågor 1–5 och avgränsningen för fråga 5. Fälten och markörerna kommer från originalmodellens regler."
+  },
+  "plans": [
+    {
+      "name": "Plan A",
+      "values": [
+        {
+          "path": 1,
+          "approval": 20,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 6,
+              "periods": [
+                {
+                  "start": 14,
+                  "end": 20,
+                  "length": 6,
+                  "ongoing": false
+                }
+              ]
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 2,
+              "periods": [
+                {
+                  "start": 14,
+                  "end": 16,
+                  "length": 2,
+                  "ongoing": false
+                }
+              ]
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              20
+            ],
+            "ready": 20,
+            "blocked": [
+              {
+                "step": 12,
+                "index": 62,
+                "failures": [
+                  {
+                    "actual": false,
+                    "field": "depot_ready",
+                    "operator": "eq",
+                    "required": true,
+                    "met": 16,
+                    "metIndex": 82
+                  },
+                  {
+                    "actual": false,
+                    "field": "charger_installed",
+                    "operator": "eq",
+                    "required": true,
+                    "met": 18,
+                    "metIndex": 94
+                  },
+                  {
+                    "actual": "pending",
+                    "field": "grid",
+                    "operator": "eq",
+                    "required": "ready",
+                    "met": 20,
+                    "metIndex": 103
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": 2,
+          "approval": 20,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 6,
+              "periods": [
+                {
+                  "start": 14,
+                  "end": 20,
+                  "length": 6,
+                  "ongoing": false
+                }
+              ]
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 2,
+              "periods": [
+                {
+                  "start": 14,
+                  "end": 16,
+                  "length": 2,
+                  "ongoing": false
+                }
+              ]
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              20
+            ],
+            "ready": 20,
+            "blocked": [
+              {
+                "step": 12,
+                "index": 62,
+                "failures": [
+                  {
+                    "actual": false,
+                    "field": "depot_ready",
+                    "operator": "eq",
+                    "required": true,
+                    "met": 16,
+                    "metIndex": 83
+                  },
+                  {
+                    "actual": false,
+                    "field": "charger_installed",
+                    "operator": "eq",
+                    "required": true,
+                    "met": 18,
+                    "metIndex": 94
+                  },
+                  {
+                    "actual": "pending",
+                    "field": "grid",
+                    "operator": "eq",
+                    "required": "ready",
+                    "met": 20,
+                    "metIndex": 103
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": 3,
+          "approval": 20,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 6,
+              "periods": [
+                {
+                  "start": 14,
+                  "end": 20,
+                  "length": 6,
+                  "ongoing": false
+                }
+              ]
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 2,
+              "periods": [
+                {
+                  "start": 14,
+                  "end": 16,
+                  "length": 2,
+                  "ongoing": false
+                }
+              ]
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              20
+            ],
+            "ready": 20,
+            "blocked": [
+              {
+                "step": 12,
+                "index": 62,
+                "failures": [
+                  {
+                    "actual": false,
+                    "field": "depot_ready",
+                    "operator": "eq",
+                    "required": true,
+                    "met": 16,
+                    "metIndex": 82
+                  },
+                  {
+                    "actual": false,
+                    "field": "charger_installed",
+                    "operator": "eq",
+                    "required": true,
+                    "met": 18,
+                    "metIndex": 94
+                  },
+                  {
+                    "actual": "pending",
+                    "field": "grid",
+                    "operator": "eq",
+                    "required": "ready",
+                    "met": 20,
+                    "metIndex": 103
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": 4,
+          "approval": 20,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 6,
+              "periods": [
+                {
+                  "start": 14,
+                  "end": 20,
+                  "length": 6,
+                  "ongoing": false
+                }
+              ]
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 2,
+              "periods": [
+                {
+                  "start": 14,
+                  "end": 16,
+                  "length": 2,
+                  "ongoing": false
+                }
+              ]
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              20
+            ],
+            "ready": 20,
+            "blocked": [
+              {
+                "step": 12,
+                "index": 62,
+                "failures": [
+                  {
+                    "actual": false,
+                    "field": "depot_ready",
+                    "operator": "eq",
+                    "required": true,
+                    "met": 16,
+                    "metIndex": 83
+                  },
+                  {
+                    "actual": false,
+                    "field": "charger_installed",
+                    "operator": "eq",
+                    "required": true,
+                    "met": 18,
+                    "metIndex": 94
+                  },
+                  {
+                    "actual": "pending",
+                    "field": "grid",
+                    "operator": "eq",
+                    "required": "ready",
+                    "met": 20,
+                    "metIndex": 103
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": 5,
+          "approval": 20,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 6,
+              "periods": [
+                {
+                  "start": 14,
+                  "end": 20,
+                  "length": 6,
+                  "ongoing": false
+                }
+              ]
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 2,
+              "periods": [
+                {
+                  "start": 14,
+                  "end": 16,
+                  "length": 2,
+                  "ongoing": false
+                }
+              ]
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              20
+            ],
+            "ready": 20,
+            "blocked": [
+              {
+                "step": 12,
+                "index": 62,
+                "failures": [
+                  {
+                    "actual": false,
+                    "field": "depot_ready",
+                    "operator": "eq",
+                    "required": true,
+                    "met": 16,
+                    "metIndex": 82
+                  },
+                  {
+                    "actual": false,
+                    "field": "charger_installed",
+                    "operator": "eq",
+                    "required": true,
+                    "met": 18,
+                    "metIndex": 94
+                  },
+                  {
+                    "actual": "pending",
+                    "field": "grid",
+                    "operator": "eq",
+                    "required": "ready",
+                    "met": 20,
+                    "metIndex": 103
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": 6,
+          "approval": 20,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 6,
+              "periods": [
+                {
+                  "start": 14,
+                  "end": 20,
+                  "length": 6,
+                  "ongoing": false
+                }
+              ]
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 2,
+              "periods": [
+                {
+                  "start": 14,
+                  "end": 16,
+                  "length": 2,
+                  "ongoing": false
+                }
+              ]
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              20
+            ],
+            "ready": 20,
+            "blocked": [
+              {
+                "step": 12,
+                "index": 62,
+                "failures": [
+                  {
+                    "actual": false,
+                    "field": "depot_ready",
+                    "operator": "eq",
+                    "required": true,
+                    "met": 16,
+                    "metIndex": 83
+                  },
+                  {
+                    "actual": false,
+                    "field": "charger_installed",
+                    "operator": "eq",
+                    "required": true,
+                    "met": 18,
+                    "metIndex": 94
+                  },
+                  {
+                    "actual": "pending",
+                    "field": "grid",
+                    "operator": "eq",
+                    "required": "ready",
+                    "met": 20,
+                    "metIndex": 103
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": 7,
+          "approval": 20,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 6,
+              "periods": [
+                {
+                  "start": 14,
+                  "end": 20,
+                  "length": 6,
+                  "ongoing": false
+                }
+              ]
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 2,
+              "periods": [
+                {
+                  "start": 14,
+                  "end": 16,
+                  "length": 2,
+                  "ongoing": false
+                }
+              ]
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              20
+            ],
+            "ready": 20,
+            "blocked": [
+              {
+                "step": 12,
+                "index": 62,
+                "failures": [
+                  {
+                    "actual": false,
+                    "field": "depot_ready",
+                    "operator": "eq",
+                    "required": true,
+                    "met": 16,
+                    "metIndex": 82
+                  },
+                  {
+                    "actual": false,
+                    "field": "charger_installed",
+                    "operator": "eq",
+                    "required": true,
+                    "met": 18,
+                    "metIndex": 94
+                  },
+                  {
+                    "actual": "pending",
+                    "field": "grid",
+                    "operator": "eq",
+                    "required": "ready",
+                    "met": 20,
+                    "metIndex": 103
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": 8,
+          "approval": 20,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 6,
+              "periods": [
+                {
+                  "start": 14,
+                  "end": 20,
+                  "length": 6,
+                  "ongoing": false
+                }
+              ]
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 2,
+              "periods": [
+                {
+                  "start": 14,
+                  "end": 16,
+                  "length": 2,
+                  "ongoing": false
+                }
+              ]
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              20
+            ],
+            "ready": 20,
+            "blocked": [
+              {
+                "step": 12,
+                "index": 62,
+                "failures": [
+                  {
+                    "actual": false,
+                    "field": "depot_ready",
+                    "operator": "eq",
+                    "required": true,
+                    "met": 16,
+                    "metIndex": 83
+                  },
+                  {
+                    "actual": false,
+                    "field": "charger_installed",
+                    "operator": "eq",
+                    "required": true,
+                    "met": 18,
+                    "metIndex": 94
+                  },
+                  {
+                    "actual": "pending",
+                    "field": "grid",
+                    "operator": "eq",
+                    "required": "ready",
+                    "met": 20,
+                    "metIndex": 103
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Plan B",
+      "values": [
+        {
+          "path": 1,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 2,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 3,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 4,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 5,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 6,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 7,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 8,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 9,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 10,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 11,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 12,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 13,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 14,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 15,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 16,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 17,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 18,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 19,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 20,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 21,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 22,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 23,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 24,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 25,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 26,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 27,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 28,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 29,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 30,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 31,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 32,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 33,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 34,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 35,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 36,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 37,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 38,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 39,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 40,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 41,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 42,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 43,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 44,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 45,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 46,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 47,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 48,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 49,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 50,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 51,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 52,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 53,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 54,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 55,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 56,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 57,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 58,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 59,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 60,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 61,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 62,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 63,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 64,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 65,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 66,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 67,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 68,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 69,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 70,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 71,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 72,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 73,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 74,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 75,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 76,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 77,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 78,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 79,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 80,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 81,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 82,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 83,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 84,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 85,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 86,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 87,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 88,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 89,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 90,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 91,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 92,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 93,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 94,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 95,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        },
+        {
+          "path": 96,
+          "approval": 12,
+          "parking": 14,
+          "gaps": [
+            {
+              "name": "Bussglapp",
+              "total": 0,
+              "periods": []
+            },
+            {
+              "name": "Cykelglapp",
+              "total": 0,
+              "periods": []
+            }
+          ],
+          "spent": 29,
+          "remaining": 1,
+          "decision": {
+            "id": "T7",
+            "executed": [
+              12
+            ],
+            "ready": 12,
+            "blocked": []
+          }
+        }
+      ]
+    }
+  ]
+}

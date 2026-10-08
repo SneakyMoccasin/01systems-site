@@ -106,3 +106,6 @@ Riktad verifiering med samma fixturer som ovan:
 node verification/readable-results-ui.test.cjs
 python3 -B verification/check_readable_results_invariance.py
 ```
+
+
+Jämförelsens kontrollbesked härleds över alla tillgängliga, fullständigt granskade händelseordningar. Variation visas vid berörda mått; tekniska detaljer skiljer den från mellanlägesskillnader. Orsakstabellen skiljer observerade villkorsövergångar från planens försök och genomförande. Se [bevarad orderkontroll och reproduktion](verification/order-audit-20261008/REPORT.md) och [UI-verifieringen](REPORT.md).

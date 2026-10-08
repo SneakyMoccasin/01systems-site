@@ -1,0 +1,1980 @@
+{
+  "model_sha256": "4639269d5ba9e7ee51664dacda6f11dfbea2fae3eeb084c9c2dfa2850c6c810d",
+  "sources": {
+    "isolated-tests/structural-ce-v1-transport-t1/model.json": "8a80e6a25d6c146b115a119ae33dedcb5ce794419c932ed159595c515e76cc4e",
+    "isolated-tests/structural-ce-v1-transport-t1/same-parking-week14/scripts.json": "083bb0dbfb263fc00cfdafa2fba26a3098328c6a7fbad27a6d3df0d846dc3ce9",
+    "isolated-tests/structural-ce3-replay/cases/transport/metadata.json": "92f6d92445bf5b999c185ced574c6c5f3a3945be57e3be25b65854f9fa3a3175"
+  },
+  "plans": [
+    {
+      "name": "Plan A",
+      "script_sha256": "1e3e9dc5d35e92b511a1b17503c84cd89daf1ddd121e56c2836a630b036933d4",
+      "input_sha256": "9039d8e263e9a8f9671e79b140b42faf99cca2cedd886250b6af9a3213307f4d",
+      "run_id": "6596f3b627574d54ad062a3b26afc6e1",
+      "plan_id": "ef4bafcd9be74a788cf739149fdc2722",
+      "limits": {
+        "max_paths": 1000,
+        "max_rows": 200000,
+        "max_steps": 1000
+      },
+      "work_rows": 546,
+      "audit": {
+        "all_event_permutations": true,
+        "input_sha256": "9039d8e263e9a8f9671e79b140b42faf99cca2cedd886250b6af9a3213307f4d",
+        "paths": 8,
+        "rows": 1048,
+        "status": "PASS",
+        "verified": true
+      },
+      "reference": 1,
+      "history_file": "/tmp/ce3-order-audit-20261008/Plan-A-reference-history.json",
+      "metrics": {
+        "approval": {
+          "20": 8
+        },
+        "parking": {
+          "14": 8
+        },
+        "spent": {
+          "29": 8
+        },
+        "remaining": {
+          "1": 8
+        },
+        "Bussglapp": {
+          "6": 8
+        },
+        "Cykelglapp": {
+          "2": 8
+        }
+      },
+      "branch_steps": [
+        {
+          "order": [
+            "E_T1",
+            "E_T6"
+          ],
+          "step": 8
+        },
+        {
+          "order": [
+            "E_T9",
+            "E_T12"
+          ],
+          "step": 14
+        },
+        {
+          "order": [
+            "E_T3",
+            "E_T10"
+          ],
+          "step": 16
+        }
+      ],
+      "variations": [
+        {
+          "step": 8,
+          "category": "event",
+          "action": "E_T1",
+          "position": null,
+          "variants": 2,
+          "fields": {
+            "drivers_ready": [
+              false,
+              true
+            ]
+          },
+          "kinds": [
+            "event_applied"
+          ],
+          "outcomes": [
+            "timer"
+          ]
+        },
+        {
+          "step": 8,
+          "category": "event",
+          "action": "E_T6",
+          "position": null,
+          "variants": 2,
+          "fields": {
+            "buses_delivered": [
+              true,
+              false
+            ]
+          },
+          "kinds": [
+            "event_applied"
+          ],
+          "outcomes": [
+            "timer"
+          ]
+        },
+        {
+          "step": 14,
+          "category": "event",
+          "action": "E_T9",
+          "position": null,
+          "variants": 2,
+          "fields": {
+            "parking_removed": [
+              0,
+              100
+            ]
+          },
+          "kinds": [
+            "event_applied"
+          ],
+          "outcomes": [
+            "timer"
+          ]
+        },
+        {
+          "step": 14,
+          "category": "event",
+          "action": "E_T12",
+          "position": null,
+          "variants": 2,
+          "fields": {
+            "cycle_ready": [
+              true,
+              false
+            ]
+          },
+          "kinds": [
+            "event_applied"
+          ],
+          "outcomes": [
+            "timer"
+          ]
+        },
+        {
+          "step": 16,
+          "category": "event",
+          "action": "E_T3",
+          "position": null,
+          "variants": 2,
+          "fields": {
+            "cycle_parking_ready": [
+              false,
+              true
+            ]
+          },
+          "kinds": [
+            "event_applied"
+          ],
+          "outcomes": [
+            "timer"
+          ]
+        },
+        {
+          "step": 16,
+          "category": "event",
+          "action": "E_T10",
+          "position": null,
+          "variants": 2,
+          "fields": {
+            "depot_ready": [
+              true,
+              false
+            ]
+          },
+          "kinds": [
+            "event_applied"
+          ],
+          "outcomes": [
+            "timer"
+          ]
+        }
+      ],
+      "unique_final_snapshots": 1,
+      "unique_step_end_sequences": 1,
+      "unique_attempts": 1,
+      "unique_transactions": 1,
+      "unique_event_results": 1,
+      "attempt_counts": {
+        "{\"blocked\": 1, \"executed\": 12, \"skipped\": 0}": 8
+      },
+      "reference_rows": [
+        {
+          "index": 62,
+          "step": 12,
+          "action": "T7",
+          "kind": "attempt_blocked",
+          "failures": [
+            {
+              "actual": false,
+              "field": "depot_ready",
+              "operator": "eq",
+              "required": true
+            },
+            {
+              "actual": false,
+              "field": "charger_installed",
+              "operator": "eq",
+              "required": true
+            },
+            {
+              "actual": "pending",
+              "field": "grid",
+              "operator": "eq",
+              "required": "ready"
+            }
+          ],
+          "before": {
+            "pending": [
+              {
+                "due": 16,
+                "id": "E_T3",
+                "origin": {
+                  "id": "T3",
+                  "kind": "decision"
+                },
+                "scheduled_at": 6
+              },
+              {
+                "due": 14,
+                "id": "E_T9",
+                "origin": {
+                  "id": "T9",
+                  "kind": "decision"
+                },
+                "scheduled_at": 6
+              },
+              {
+                "due": 20,
+                "id": "E_T2",
+                "origin": {
+                  "id": "T2",
+                  "kind": "decision"
+                },
+                "scheduled_at": 8
+              }
+            ],
+            "phase": "decisions",
+            "state": {
+              "budget": 4,
+              "buses_delivered": true,
+              "charger_delivered": true,
+              "charger_installed": false,
+              "cycle_open": false,
+              "cycle_parking_ready": false,
+              "cycle_ready": false,
+              "depot_contract": true,
+              "depot_ready": false,
+              "drivers_ready": true,
+              "grid": "pending",
+              "parking_removed": 0,
+              "signal_ready": true,
+              "traffic_authorized": false
+            },
+            "step": 12,
+            "taken": [
+              "T1",
+              "T6",
+              "T3",
+              "T4",
+              "T9",
+              "T2",
+              "T8"
+            ]
+          },
+          "after": {
+            "pending": [
+              {
+                "due": 16,
+                "id": "E_T3",
+                "origin": {
+                  "id": "T3",
+                  "kind": "decision"
+                },
+                "scheduled_at": 6
+              },
+              {
+                "due": 14,
+                "id": "E_T9",
+                "origin": {
+                  "id": "T9",
+                  "kind": "decision"
+                },
+                "scheduled_at": 6
+              },
+              {
+                "due": 20,
+                "id": "E_T2",
+                "origin": {
+                  "id": "T2",
+                  "kind": "decision"
+                },
+                "scheduled_at": 8
+              }
+            ],
+            "phase": "decisions",
+            "state": {
+              "budget": 4,
+              "buses_delivered": true,
+              "charger_delivered": true,
+              "charger_installed": false,
+              "cycle_open": false,
+              "cycle_parking_ready": false,
+              "cycle_ready": false,
+              "depot_contract": true,
+              "depot_ready": false,
+              "drivers_ready": true,
+              "grid": "pending",
+              "parking_removed": 0,
+              "signal_ready": true,
+              "traffic_authorized": false
+            },
+            "step": 12,
+            "taken": [
+              "T1",
+              "T6",
+              "T3",
+              "T4",
+              "T9",
+              "T2",
+              "T8"
+            ]
+          }
+        },
+        {
+          "index": 72,
+          "step": 14,
+          "action": "E_T12",
+          "kind": "event_applied",
+          "failures": [],
+          "before": {
+            "pending": [
+              {
+                "due": 16,
+                "id": "E_T3",
+                "origin": {
+                  "id": "T3",
+                  "kind": "decision"
+                },
+                "scheduled_at": 6
+              },
+              {
+                "due": 20,
+                "id": "E_T2",
+                "origin": {
+                  "id": "T2",
+                  "kind": "decision"
+                },
+                "scheduled_at": 8
+              },
+              {
+                "due": 14,
+                "id": "E_T12",
+                "origin": {
+                  "id": "T12",
+                  "kind": "decision"
+                },
+                "scheduled_at": 12
+              }
+            ],
+            "phase": "events",
+            "state": {
+              "budget": 3,
+              "buses_delivered": true,
+              "charger_delivered": true,
+              "charger_installed": false,
+              "cycle_open": false,
+              "cycle_parking_ready": false,
+              "cycle_ready": true,
+              "depot_contract": true,
+              "depot_ready": false,
+              "drivers_ready": true,
+              "grid": "pending",
+              "parking_removed": 0,
+              "signal_ready": true,
+              "traffic_authorized": false
+            },
+            "step": 14,
+            "taken": [
+              "T1",
+              "T6",
+              "T3",
+              "T4",
+              "T9",
+              "T2",
+              "T8",
+              "T12"
+            ]
+          },
+          "after": {
+            "pending": [
+              {
+                "due": 16,
+                "id": "E_T3",
+                "origin": {
+                  "id": "T3",
+                  "kind": "decision"
+                },
+                "scheduled_at": 6
+              },
+              {
+                "due": 20,
+                "id": "E_T2",
+                "origin": {
+                  "id": "T2",
+                  "kind": "decision"
+                },
+                "scheduled_at": 8
+              }
+            ],
+            "phase": "events",
+            "state": {
+              "budget": 3,
+              "buses_delivered": true,
+              "charger_delivered": true,
+              "charger_installed": false,
+              "cycle_open": false,
+              "cycle_parking_ready": false,
+              "cycle_ready": true,
+              "depot_contract": true,
+              "depot_ready": false,
+              "drivers_ready": true,
+              "grid": "pending",
+              "parking_removed": 100,
+              "signal_ready": true,
+              "traffic_authorized": false
+            },
+            "step": 14,
+            "taken": [
+              "T1",
+              "T6",
+              "T3",
+              "T4",
+              "T9",
+              "T2",
+              "T8",
+              "T12"
+            ]
+          }
+        },
+        {
+          "index": 82,
+          "step": 16,
+          "action": "E_T3",
+          "kind": "event_applied",
+          "failures": [],
+          "before": {
+            "pending": [
+              {
+                "due": 16,
+                "id": "E_T3",
+                "origin": {
+                  "id": "T3",
+                  "kind": "decision"
+                },
+                "scheduled_at": 6
+              },
+              {
+                "due": 20,
+                "id": "E_T2",
+                "origin": {
+                  "id": "T2",
+                  "kind": "decision"
+                },
+                "scheduled_at": 8
+              },
+              {
+                "due": 16,
+                "id": "E_T10",
+                "origin": {
+                  "id": "T10",
+                  "kind": "decision"
+                },
+                "scheduled_at": 14
+              }
+            ],
+            "phase": "events",
+            "state": {
+              "budget": 2,
+              "buses_delivered": true,
+              "charger_delivered": true,
+              "charger_installed": false,
+              "cycle_open": false,
+              "cycle_parking_ready": false,
+              "cycle_ready": true,
+              "depot_contract": true,
+              "depot_ready": false,
+              "drivers_ready": true,
+              "grid": "pending",
+              "parking_removed": 100,
+              "signal_ready": true,
+              "traffic_authorized": false
+            },
+            "step": 16,
+            "taken": [
+              "T1",
+              "T6",
+              "T3",
+              "T4",
+              "T9",
+              "T2",
+              "T8",
+              "T12",
+              "T10"
+            ]
+          },
+          "after": {
+            "pending": [
+              {
+                "due": 20,
+                "id": "E_T2",
+                "origin": {
+                  "id": "T2",
+                  "kind": "decision"
+                },
+                "scheduled_at": 8
+              },
+              {
+                "due": 16,
+                "id": "E_T10",
+                "origin": {
+                  "id": "T10",
+                  "kind": "decision"
+                },
+                "scheduled_at": 14
+              }
+            ],
+            "phase": "events",
+            "state": {
+              "budget": 2,
+              "buses_delivered": true,
+              "charger_delivered": true,
+              "charger_installed": false,
+              "cycle_open": false,
+              "cycle_parking_ready": false,
+              "cycle_ready": true,
+              "depot_contract": true,
+              "depot_ready": true,
+              "drivers_ready": true,
+              "grid": "pending",
+              "parking_removed": 100,
+              "signal_ready": true,
+              "traffic_authorized": false
+            },
+            "step": 16,
+            "taken": [
+              "T1",
+              "T6",
+              "T3",
+              "T4",
+              "T9",
+              "T2",
+              "T8",
+              "T12",
+              "T10"
+            ]
+          }
+        },
+        {
+          "index": 86,
+          "step": 16,
+          "action": "T11",
+          "kind": "decision_executed",
+          "failures": [],
+          "before": {
+            "pending": [
+              {
+                "due": 20,
+                "id": "E_T2",
+                "origin": {
+                  "id": "T2",
+                  "kind": "decision"
+                },
+                "scheduled_at": 8
+              },
+              {
+                "due": 18,
+                "id": "E_T5",
+                "origin": {
+                  "id": "T5",
+                  "kind": "decision"
+                },
+                "scheduled_at": 16
+              }
+            ],
+            "phase": "decisions",
+            "state": {
+              "budget": 1,
+              "buses_delivered": true,
+              "charger_delivered": true,
+              "charger_installed": false,
+              "cycle_open": false,
+              "cycle_parking_ready": true,
+              "cycle_ready": true,
+              "depot_contract": true,
+              "depot_ready": true,
+              "drivers_ready": true,
+              "grid": "pending",
+              "parking_removed": 100,
+              "signal_ready": true,
+              "traffic_authorized": false
+            },
+            "step": 16,
+            "taken": [
+              "T1",
+              "T6",
+              "T3",
+              "T4",
+              "T9",
+              "T2",
+              "T8",
+              "T12",
+              "T10",
+              "T5"
+            ]
+          },
+          "after": {
+            "pending": [
+              {
+                "due": 20,
+                "id": "E_T2",
+                "origin": {
+                  "id": "T2",
+                  "kind": "decision"
+                },
+                "scheduled_at": 8
+              },
+              {
+                "due": 18,
+                "id": "E_T5",
+                "origin": {
+                  "id": "T5",
+                  "kind": "decision"
+                },
+                "scheduled_at": 16
+              }
+            ],
+            "phase": "decisions",
+            "state": {
+              "budget": 1,
+              "buses_delivered": true,
+              "charger_delivered": true,
+              "charger_installed": false,
+              "cycle_open": true,
+              "cycle_parking_ready": true,
+              "cycle_ready": true,
+              "depot_contract": true,
+              "depot_ready": true,
+              "drivers_ready": true,
+              "grid": "pending",
+              "parking_removed": 100,
+              "signal_ready": true,
+              "traffic_authorized": false
+            },
+            "step": 16,
+            "taken": [
+              "T1",
+              "T6",
+              "T3",
+              "T4",
+              "T9",
+              "T2",
+              "T8",
+              "T12",
+              "T10",
+              "T5",
+              "T11"
+            ]
+          }
+        },
+        {
+          "index": 94,
+          "step": 18,
+          "action": "E_T5",
+          "kind": "event_applied",
+          "failures": [],
+          "before": {
+            "pending": [
+              {
+                "due": 20,
+                "id": "E_T2",
+                "origin": {
+                  "id": "T2",
+                  "kind": "decision"
+                },
+                "scheduled_at": 8
+              },
+              {
+                "due": 18,
+                "id": "E_T5",
+                "origin": {
+                  "id": "T5",
+                  "kind": "decision"
+                },
+                "scheduled_at": 16
+              }
+            ],
+            "phase": "events",
+            "state": {
+              "budget": 1,
+              "buses_delivered": true,
+              "charger_delivered": true,
+              "charger_installed": false,
+              "cycle_open": true,
+              "cycle_parking_ready": true,
+              "cycle_ready": true,
+              "depot_contract": true,
+              "depot_ready": true,
+              "drivers_ready": true,
+              "grid": "pending",
+              "parking_removed": 100,
+              "signal_ready": true,
+              "traffic_authorized": false
+            },
+            "step": 18,
+            "taken": [
+              "T1",
+              "T6",
+              "T3",
+              "T4",
+              "T9",
+              "T2",
+              "T8",
+              "T12",
+              "T10",
+              "T5",
+              "T11"
+            ]
+          },
+          "after": {
+            "pending": [
+              {
+                "due": 20,
+                "id": "E_T2",
+                "origin": {
+                  "id": "T2",
+                  "kind": "decision"
+                },
+                "scheduled_at": 8
+              }
+            ],
+            "phase": "events",
+            "state": {
+              "budget": 1,
+              "buses_delivered": true,
+              "charger_delivered": true,
+              "charger_installed": true,
+              "cycle_open": true,
+              "cycle_parking_ready": true,
+              "cycle_ready": true,
+              "depot_contract": true,
+              "depot_ready": true,
+              "drivers_ready": true,
+              "grid": "pending",
+              "parking_removed": 100,
+              "signal_ready": true,
+              "traffic_authorized": false
+            },
+            "step": 18,
+            "taken": [
+              "T1",
+              "T6",
+              "T3",
+              "T4",
+              "T9",
+              "T2",
+              "T8",
+              "T12",
+              "T10",
+              "T5",
+              "T11"
+            ]
+          }
+        },
+        {
+          "index": 103,
+          "step": 20,
+          "action": "E_T2",
+          "kind": "event_applied",
+          "failures": [],
+          "before": {
+            "pending": [
+              {
+                "due": 20,
+                "id": "E_T2",
+                "origin": {
+                  "id": "T2",
+                  "kind": "decision"
+                },
+                "scheduled_at": 8
+              }
+            ],
+            "phase": "events",
+            "state": {
+              "budget": 1,
+              "buses_delivered": true,
+              "charger_delivered": true,
+              "charger_installed": true,
+              "cycle_open": true,
+              "cycle_parking_ready": true,
+              "cycle_ready": true,
+              "depot_contract": true,
+              "depot_ready": true,
+              "drivers_ready": true,
+              "grid": "pending",
+              "parking_removed": 100,
+              "signal_ready": true,
+              "traffic_authorized": false
+            },
+            "step": 20,
+            "taken": [
+              "T1",
+              "T6",
+              "T3",
+              "T4",
+              "T9",
+              "T2",
+              "T8",
+              "T12",
+              "T10",
+              "T5",
+              "T11"
+            ]
+          },
+          "after": {
+            "pending": [],
+            "phase": "events",
+            "state": {
+              "budget": 1,
+              "buses_delivered": true,
+              "charger_delivered": true,
+              "charger_installed": true,
+              "cycle_open": true,
+              "cycle_parking_ready": true,
+              "cycle_ready": true,
+              "depot_contract": true,
+              "depot_ready": true,
+              "drivers_ready": true,
+              "grid": "ready",
+              "parking_removed": 100,
+              "signal_ready": true,
+              "traffic_authorized": false
+            },
+            "step": 20,
+            "taken": [
+              "T1",
+              "T6",
+              "T3",
+              "T4",
+              "T9",
+              "T2",
+              "T8",
+              "T12",
+              "T10",
+              "T5",
+              "T11"
+            ]
+          }
+        },
+        {
+          "index": 105,
+          "step": 20,
+          "action": "T7",
+          "kind": "decision_executed",
+          "failures": [],
+          "before": {
+            "pending": [],
+            "phase": "decisions",
+            "state": {
+              "budget": 1,
+              "buses_delivered": true,
+              "charger_delivered": true,
+              "charger_installed": true,
+              "cycle_open": true,
+              "cycle_parking_ready": true,
+              "cycle_ready": true,
+              "depot_contract": true,
+              "depot_ready": true,
+              "drivers_ready": true,
+              "grid": "ready",
+              "parking_removed": 100,
+              "signal_ready": true,
+              "traffic_authorized": false
+            },
+            "step": 20,
+            "taken": [
+              "T1",
+              "T6",
+              "T3",
+              "T4",
+              "T9",
+              "T2",
+              "T8",
+              "T12",
+              "T10",
+              "T5",
+              "T11"
+            ]
+          },
+          "after": {
+            "pending": [],
+            "phase": "decisions",
+            "state": {
+              "budget": 1,
+              "buses_delivered": true,
+              "charger_delivered": true,
+              "charger_installed": true,
+              "cycle_open": true,
+              "cycle_parking_ready": true,
+              "cycle_ready": true,
+              "depot_contract": true,
+              "depot_ready": true,
+              "drivers_ready": true,
+              "grid": "ready",
+              "parking_removed": 100,
+              "signal_ready": true,
+              "traffic_authorized": true
+            },
+            "step": 20,
+            "taken": [
+              "T1",
+              "T6",
+              "T3",
+              "T4",
+              "T9",
+              "T2",
+              "T8",
+              "T12",
+              "T10",
+              "T5",
+              "T11",
+              "T7"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Plan B",
+      "script_sha256": "a3deb329f34bd89cbc9cbe7b5bb55d83804d80a12227b74bb3d1c0668555c74c",
+      "input_sha256": "a2e37d06afda4f6729cd489234ec8aac9901ace83df6b047e03e5834fa5bd3fa",
+      "run_id": "372871c7be8d40cfadc64ca991b89579",
+      "plan_id": "ad007af60714417fb2daf5d261ec49f4",
+      "limits": {
+        "max_paths": 1000,
+        "max_rows": 200000,
+        "max_steps": 1000
+      },
+      "work_rows": 6544,
+      "audit": {
+        "all_event_permutations": true,
+        "input_sha256": "a2e37d06afda4f6729cd489234ec8aac9901ace83df6b047e03e5834fa5bd3fa",
+        "paths": 96,
+        "rows": 12576,
+        "status": "PASS",
+        "verified": true
+      },
+      "reference": 1,
+      "history_file": "/tmp/ce3-order-audit-20261008/Plan-B-reference-history.json",
+      "metrics": {
+        "approval": {
+          "12": 96
+        },
+        "parking": {
+          "14": 96
+        },
+        "spent": {
+          "29": 96
+        },
+        "remaining": {
+          "1": 96
+        },
+        "Bussglapp": {
+          "0": 96
+        },
+        "Cykelglapp": {
+          "0": 96
+        }
+      },
+      "branch_steps": [
+        {
+          "order": [
+            "E_T6",
+            "E_T9"
+          ],
+          "step": 8
+        },
+        {
+          "order": [
+            "E_T3",
+            "E_T10"
+          ],
+          "step": 10
+        },
+        {
+          "order": [
+            "E_T1",
+            "E_T2",
+            "E_T5",
+            "E_T8"
+          ],
+          "step": 12
+        }
+      ],
+      "variations": [
+        {
+          "step": 8,
+          "category": "event",
+          "action": "E_T6",
+          "position": null,
+          "variants": 2,
+          "fields": {
+            "cycle_ready": [
+              false,
+              true
+            ]
+          },
+          "kinds": [
+            "event_applied"
+          ],
+          "outcomes": [
+            "timer"
+          ]
+        },
+        {
+          "step": 8,
+          "category": "event",
+          "action": "E_T9",
+          "position": null,
+          "variants": 2,
+          "fields": {
+            "drivers_ready": [
+              true,
+              false
+            ]
+          },
+          "kinds": [
+            "event_applied"
+          ],
+          "outcomes": [
+            "timer"
+          ]
+        },
+        {
+          "step": 10,
+          "category": "event",
+          "action": "E_T3",
+          "position": null,
+          "variants": 2,
+          "fields": {
+            "cycle_parking_ready": [
+              false,
+              true
+            ]
+          },
+          "kinds": [
+            "event_applied"
+          ],
+          "outcomes": [
+            "timer"
+          ]
+        },
+        {
+          "step": 10,
+          "category": "event",
+          "action": "E_T10",
+          "position": null,
+          "variants": 2,
+          "fields": {
+            "depot_ready": [
+              true,
+              false
+            ]
+          },
+          "kinds": [
+            "event_applied"
+          ],
+          "outcomes": [
+            "timer"
+          ]
+        },
+        {
+          "step": 12,
+          "category": "event",
+          "action": "E_T1",
+          "position": null,
+          "variants": 8,
+          "fields": {
+            "charger_installed": [
+              false,
+              true
+            ],
+            "grid": [
+              "pending",
+              "ready"
+            ],
+            "signal_ready": [
+              false,
+              true
+            ]
+          },
+          "kinds": [
+            "event_applied"
+          ],
+          "outcomes": [
+            "timer"
+          ]
+        },
+        {
+          "step": 12,
+          "category": "event",
+          "action": "E_T2",
+          "position": null,
+          "variants": 8,
+          "fields": {
+            "buses_delivered": [
+              true,
+              false
+            ],
+            "charger_installed": [
+              false,
+              true
+            ],
+            "signal_ready": [
+              false,
+              true
+            ]
+          },
+          "kinds": [
+            "event_applied"
+          ],
+          "outcomes": [
+            "ready"
+          ]
+        },
+        {
+          "step": 12,
+          "category": "event",
+          "action": "E_T5",
+          "position": null,
+          "variants": 8,
+          "fields": {
+            "buses_delivered": [
+              true,
+              false
+            ],
+            "grid": [
+              "ready",
+              "pending"
+            ],
+            "signal_ready": [
+              false,
+              true
+            ]
+          },
+          "kinds": [
+            "event_applied"
+          ],
+          "outcomes": [
+            "timer"
+          ]
+        },
+        {
+          "step": 12,
+          "category": "event",
+          "action": "E_T8",
+          "position": null,
+          "variants": 8,
+          "fields": {
+            "buses_delivered": [
+              true,
+              false
+            ],
+            "charger_installed": [
+              true,
+              false
+            ],
+            "grid": [
+              "ready",
+              "pending"
+            ]
+          },
+          "kinds": [
+            "event_applied"
+          ],
+          "outcomes": [
+            "timer"
+          ]
+        }
+      ],
+      "unique_final_snapshots": 1,
+      "unique_step_end_sequences": 1,
+      "unique_attempts": 1,
+      "unique_transactions": 1,
+      "unique_event_results": 1,
+      "attempt_counts": {
+        "{\"blocked\": 0, \"executed\": 12, \"skipped\": 1}": 96
+      },
+      "reference_rows": [
+        {
+          "index": 53,
+          "step": 10,
+          "action": "E_T3",
+          "kind": "event_applied",
+          "failures": [],
+          "before": {
+            "pending": [
+              {
+                "due": 10,
+                "id": "E_T3",
+                "origin": {
+                  "id": "T3",
+                  "kind": "decision"
+                },
+                "scheduled_at": 0
+              },
+              {
+                "due": 12,
+                "id": "E_T2",
+                "origin": {
+                  "id": "T2",
+                  "kind": "decision"
+                },
+                "scheduled_at": 0
+              },
+              {
+                "due": 12,
+                "id": "E_T1",
+                "origin": {
+                  "id": "T1",
+                  "kind": "decision"
+                },
+                "scheduled_at": 4
+              },
+              {
+                "due": 12,
+                "id": "E_T8",
+                "origin": {
+                  "id": "T8",
+                  "kind": "decision"
+                },
+                "scheduled_at": 8
+              },
+              {
+                "due": 10,
+                "id": "E_T10",
+                "origin": {
+                  "id": "T10",
+                  "kind": "decision"
+                },
+                "scheduled_at": 8
+              }
+            ],
+            "phase": "events",
+            "state": {
+              "budget": 3,
+              "buses_delivered": false,
+              "charger_delivered": true,
+              "charger_installed": false,
+              "cycle_open": false,
+              "cycle_parking_ready": false,
+              "cycle_ready": true,
+              "depot_contract": true,
+              "depot_ready": false,
+              "drivers_ready": true,
+              "grid": "pending",
+              "parking_removed": 0,
+              "signal_ready": false,
+              "traffic_authorized": false
+            },
+            "step": 10,
+            "taken": [
+              "T3",
+              "T2",
+              "T9",
+              "T4",
+              "T1",
+              "T6",
+              "T8",
+              "T10"
+            ]
+          },
+          "after": {
+            "pending": [
+              {
+                "due": 12,
+                "id": "E_T2",
+                "origin": {
+                  "id": "T2",
+                  "kind": "decision"
+                },
+                "scheduled_at": 0
+              },
+              {
+                "due": 12,
+                "id": "E_T1",
+                "origin": {
+                  "id": "T1",
+                  "kind": "decision"
+                },
+                "scheduled_at": 4
+              },
+              {
+                "due": 12,
+                "id": "E_T8",
+                "origin": {
+                  "id": "T8",
+                  "kind": "decision"
+                },
+                "scheduled_at": 8
+              },
+              {
+                "due": 10,
+                "id": "E_T10",
+                "origin": {
+                  "id": "T10",
+                  "kind": "decision"
+                },
+                "scheduled_at": 8
+              }
+            ],
+            "phase": "events",
+            "state": {
+              "budget": 3,
+              "buses_delivered": false,
+              "charger_delivered": true,
+              "charger_installed": false,
+              "cycle_open": false,
+              "cycle_parking_ready": false,
+              "cycle_ready": true,
+              "depot_contract": true,
+              "depot_ready": true,
+              "drivers_ready": true,
+              "grid": "pending",
+              "parking_removed": 0,
+              "signal_ready": false,
+              "traffic_authorized": false
+            },
+            "step": 10,
+            "taken": [
+              "T3",
+              "T2",
+              "T9",
+              "T4",
+              "T1",
+              "T6",
+              "T8",
+              "T10"
+            ]
+          }
+        },
+        {
+          "index": 57,
+          "step": 10,
+          "action": "T11",
+          "kind": "decision_executed",
+          "failures": [],
+          "before": {
+            "pending": [
+              {
+                "due": 12,
+                "id": "E_T2",
+                "origin": {
+                  "id": "T2",
+                  "kind": "decision"
+                },
+                "scheduled_at": 0
+              },
+              {
+                "due": 12,
+                "id": "E_T1",
+                "origin": {
+                  "id": "T1",
+                  "kind": "decision"
+                },
+                "scheduled_at": 4
+              },
+              {
+                "due": 12,
+                "id": "E_T8",
+                "origin": {
+                  "id": "T8",
+                  "kind": "decision"
+                },
+                "scheduled_at": 8
+              },
+              {
+                "due": 12,
+                "id": "E_T5",
+                "origin": {
+                  "id": "T5",
+                  "kind": "decision"
+                },
+                "scheduled_at": 10
+              }
+            ],
+            "phase": "decisions",
+            "state": {
+              "budget": 2,
+              "buses_delivered": false,
+              "charger_delivered": true,
+              "charger_installed": false,
+              "cycle_open": false,
+              "cycle_parking_ready": true,
+              "cycle_ready": true,
+              "depot_contract": true,
+              "depot_ready": true,
+              "drivers_ready": true,
+              "grid": "pending",
+              "parking_removed": 0,
+              "signal_ready": false,
+              "traffic_authorized": false
+            },
+            "step": 10,
+            "taken": [
+              "T3",
+              "T2",
+              "T9",
+              "T4",
+              "T1",
+              "T6",
+              "T8",
+              "T10",
+              "T5"
+            ]
+          },
+          "after": {
+            "pending": [
+              {
+                "due": 12,
+                "id": "E_T2",
+                "origin": {
+                  "id": "T2",
+                  "kind": "decision"
+                },
+                "scheduled_at": 0
+              },
+              {
+                "due": 12,
+                "id": "E_T1",
+                "origin": {
+                  "id": "T1",
+                  "kind": "decision"
+                },
+                "scheduled_at": 4
+              },
+              {
+                "due": 12,
+                "id": "E_T8",
+                "origin": {
+                  "id": "T8",
+                  "kind": "decision"
+                },
+                "scheduled_at": 8
+              },
+              {
+                "due": 12,
+                "id": "E_T5",
+                "origin": {
+                  "id": "T5",
+                  "kind": "decision"
+                },
+                "scheduled_at": 10
+              }
+            ],
+            "phase": "decisions",
+            "state": {
+              "budget": 2,
+              "buses_delivered": false,
+              "charger_delivered": true,
+              "charger_installed": false,
+              "cycle_open": true,
+              "cycle_parking_ready": true,
+              "cycle_ready": true,
+              "depot_contract": true,
+              "depot_ready": true,
+              "drivers_ready": true,
+              "grid": "pending",
+              "parking_removed": 0,
+              "signal_ready": false,
+              "traffic_authorized": false
+            },
+            "step": 10,
+            "taken": [
+              "T3",
+              "T2",
+              "T9",
+              "T4",
+              "T1",
+              "T6",
+              "T8",
+              "T10",
+              "T5",
+              "T11"
+            ]
+          }
+        },
+        {
+          "index": 66,
+          "step": 12,
+          "action": "E_T2",
+          "kind": "event_applied",
+          "failures": [],
+          "before": {
+            "pending": [
+              {
+                "due": 12,
+                "id": "E_T2",
+                "origin": {
+                  "id": "T2",
+                  "kind": "decision"
+                },
+                "scheduled_at": 0
+              },
+              {
+                "due": 12,
+                "id": "E_T8",
+                "origin": {
+                  "id": "T8",
+                  "kind": "decision"
+                },
+                "scheduled_at": 8
+              },
+              {
+                "due": 12,
+                "id": "E_T5",
+                "origin": {
+                  "id": "T5",
+                  "kind": "decision"
+                },
+                "scheduled_at": 10
+              }
+            ],
+            "phase": "events",
+            "state": {
+              "budget": 2,
+              "buses_delivered": true,
+              "charger_delivered": true,
+              "charger_installed": false,
+              "cycle_open": true,
+              "cycle_parking_ready": true,
+              "cycle_ready": true,
+              "depot_contract": true,
+              "depot_ready": true,
+              "drivers_ready": true,
+              "grid": "pending",
+              "parking_removed": 0,
+              "signal_ready": false,
+              "traffic_authorized": false
+            },
+            "step": 12,
+            "taken": [
+              "T3",
+              "T2",
+              "T9",
+              "T4",
+              "T1",
+              "T6",
+              "T8",
+              "T10",
+              "T5",
+              "T11"
+            ]
+          },
+          "after": {
+            "pending": [
+              {
+                "due": 12,
+                "id": "E_T8",
+                "origin": {
+                  "id": "T8",
+                  "kind": "decision"
+                },
+                "scheduled_at": 8
+              },
+              {
+                "due": 12,
+                "id": "E_T5",
+                "origin": {
+                  "id": "T5",
+                  "kind": "decision"
+                },
+                "scheduled_at": 10
+              }
+            ],
+            "phase": "events",
+            "state": {
+              "budget": 2,
+              "buses_delivered": true,
+              "charger_delivered": true,
+              "charger_installed": false,
+              "cycle_open": true,
+              "cycle_parking_ready": true,
+              "cycle_ready": true,
+              "depot_contract": true,
+              "depot_ready": true,
+              "drivers_ready": true,
+              "grid": "ready",
+              "parking_removed": 0,
+              "signal_ready": false,
+              "traffic_authorized": false
+            },
+            "step": 12,
+            "taken": [
+              "T3",
+              "T2",
+              "T9",
+              "T4",
+              "T1",
+              "T6",
+              "T8",
+              "T10",
+              "T5",
+              "T11"
+            ]
+          }
+        },
+        {
+          "index": 67,
+          "step": 12,
+          "action": "E_T5",
+          "kind": "event_applied",
+          "failures": [],
+          "before": {
+            "pending": [
+              {
+                "due": 12,
+                "id": "E_T8",
+                "origin": {
+                  "id": "T8",
+                  "kind": "decision"
+                },
+                "scheduled_at": 8
+              },
+              {
+                "due": 12,
+                "id": "E_T5",
+                "origin": {
+                  "id": "T5",
+                  "kind": "decision"
+                },
+                "scheduled_at": 10
+              }
+            ],
+            "phase": "events",
+            "state": {
+              "budget": 2,
+              "buses_delivered": true,
+              "charger_delivered": true,
+              "charger_installed": false,
+              "cycle_open": true,
+              "cycle_parking_ready": true,
+              "cycle_ready": true,
+              "depot_contract": true,
+              "depot_ready": true,
+              "drivers_ready": true,
+              "grid": "ready",
+              "parking_removed": 0,
+              "signal_ready": false,
+              "traffic_authorized": false
+            },
+            "step": 12,
+            "taken": [
+              "T3",
+              "T2",
+              "T9",
+              "T4",
+              "T1",
+              "T6",
+              "T8",
+              "T10",
+              "T5",
+              "T11"
+            ]
+          },
+          "after": {
+            "pending": [
+              {
+                "due": 12,
+                "id": "E_T8",
+                "origin": {
+                  "id": "T8",
+                  "kind": "decision"
+                },
+                "scheduled_at": 8
+              }
+            ],
+            "phase": "events",
+            "state": {
+              "budget": 2,
+              "buses_delivered": true,
+              "charger_delivered": true,
+              "charger_installed": true,
+              "cycle_open": true,
+              "cycle_parking_ready": true,
+              "cycle_ready": true,
+              "depot_contract": true,
+              "depot_ready": true,
+              "drivers_ready": true,
+              "grid": "ready",
+              "parking_removed": 0,
+              "signal_ready": false,
+              "traffic_authorized": false
+            },
+            "step": 12,
+            "taken": [
+              "T3",
+              "T2",
+              "T9",
+              "T4",
+              "T1",
+              "T6",
+              "T8",
+              "T10",
+              "T5",
+              "T11"
+            ]
+          }
+        },
+        {
+          "index": 70,
+          "step": 12,
+          "action": "T7",
+          "kind": "decision_executed",
+          "failures": [],
+          "before": {
+            "pending": [],
+            "phase": "decisions",
+            "state": {
+              "budget": 2,
+              "buses_delivered": true,
+              "charger_delivered": true,
+              "charger_installed": true,
+              "cycle_open": true,
+              "cycle_parking_ready": true,
+              "cycle_ready": true,
+              "depot_contract": true,
+              "depot_ready": true,
+              "drivers_ready": true,
+              "grid": "ready",
+              "parking_removed": 0,
+              "signal_ready": true,
+              "traffic_authorized": false
+            },
+            "step": 12,
+            "taken": [
+              "T3",
+              "T2",
+              "T9",
+              "T4",
+              "T1",
+              "T6",
+              "T8",
+              "T10",
+              "T5",
+              "T11"
+            ]
+          },
+          "after": {
+            "pending": [],
+            "phase": "decisions",
+            "state": {
+              "budget": 2,
+              "buses_delivered": true,
+              "charger_delivered": true,
+              "charger_installed": true,
+              "cycle_open": true,
+              "cycle_parking_ready": true,
+              "cycle_ready": true,
+              "depot_contract": true,
+              "depot_ready": true,
+              "drivers_ready": true,
+              "grid": "ready",
+              "parking_removed": 0,
+              "signal_ready": true,
+              "traffic_authorized": true
+            },
+            "step": 12,
+            "taken": [
+              "T3",
+              "T2",
+              "T9",
+              "T4",
+              "T1",
+              "T6",
+              "T8",
+              "T10",
+              "T5",
+              "T11",
+              "T7"
+            ]
+          }
+        },
+        {
+          "index": 79,
+          "step": 14,
+          "action": "E_T12",
+          "kind": "event_applied",
+          "failures": [],
+          "before": {
+            "pending": [
+              {
+                "due": 14,
+                "id": "E_T12",
+                "origin": {
+                  "id": "T12",
+                  "kind": "decision"
+                },
+                "scheduled_at": 12
+              }
+            ],
+            "phase": "events",
+            "state": {
+              "budget": 1,
+              "buses_delivered": true,
+              "charger_delivered": true,
+              "charger_installed": true,
+              "cycle_open": true,
+              "cycle_parking_ready": true,
+              "cycle_ready": true,
+              "depot_contract": true,
+              "depot_ready": true,
+              "drivers_ready": true,
+              "grid": "ready",
+              "parking_removed": 0,
+              "signal_ready": true,
+              "traffic_authorized": true
+            },
+            "step": 14,
+            "taken": [
+              "T3",
+              "T2",
+              "T9",
+              "T4",
+              "T1",
+              "T6",
+              "T8",
+              "T10",
+              "T5",
+              "T11",
+              "T7",
+              "T12"
+            ]
+          },
+          "after": {
+            "pending": [],
+            "phase": "events",
+            "state": {
+              "budget": 1,
+              "buses_delivered": true,
+              "charger_delivered": true,
+              "charger_installed": true,
+              "cycle_open": true,
+              "cycle_parking_ready": true,
+              "cycle_ready": true,
+              "depot_contract": true,
+              "depot_ready": true,
+              "drivers_ready": true,
+              "grid": "ready",
+              "parking_removed": 100,
+              "signal_ready": true,
+              "traffic_authorized": true
+            },
+            "step": 14,
+            "taken": [
+              "T3",
+              "T2",
+              "T9",
+              "T4",
+              "T1",
+              "T6",
+              "T8",
+              "T10",
+              "T5",
+              "T11",
+              "T7",
+              "T12"
+            ]
+          }
+        },
+        {
+          "index": 105,
+          "step": 20,
+          "action": "T7",
+          "kind": "script_skip",
+          "failures": [],
+          "before": {
+            "pending": [],
+            "phase": "decisions",
+            "state": {
+              "budget": 1,
+              "buses_delivered": true,
+              "charger_delivered": true,
+              "charger_installed": true,
+              "cycle_open": true,
+              "cycle_parking_ready": true,
+              "cycle_ready": true,
+              "depot_contract": true,
+              "depot_ready": true,
+              "drivers_ready": true,
+              "grid": "ready",
+              "parking_removed": 100,
+              "signal_ready": true,
+              "traffic_authorized": true
+            },
+            "step": 20,
+            "taken": [
+              "T3",
+              "T2",
+              "T9",
+              "T4",
+              "T1",
+              "T6",
+              "T8",
+              "T10",
+              "T5",
+              "T11",
+              "T7",
+              "T12"
+            ]
+          },
+          "after": {
+            "pending": [],
+            "phase": "decisions",
+            "state": {
+              "budget": 1,
+              "buses_delivered": true,
+              "charger_delivered": true,
+              "charger_installed": true,
+              "cycle_open": true,
+              "cycle_parking_ready": true,
+              "cycle_ready": true,
+              "depot_contract": true,
+              "depot_ready": true,
+              "drivers_ready": true,
+              "grid": "ready",
+              "parking_removed": 100,
+              "signal_ready": true,
+              "traffic_authorized": true
+            },
+            "step": 20,
+            "taken": [
+              "T3",
+              "T2",
+              "T9",
+              "T4",
+              "T1",
+              "T6",
+              "T8",
+              "T10",
+              "T5",
+              "T11",
+              "T7",
+              "T12"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "pairwise_differences": {
+    "8": 768
+  }
+}

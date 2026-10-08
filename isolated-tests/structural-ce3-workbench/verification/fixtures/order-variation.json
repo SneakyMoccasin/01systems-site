@@ -1,0 +1,122 @@
+{
+  "schema_version": "ce3-model/1",
+  "source": "Separate UI verification fixture: simultaneous prerequisite and conditional event",
+  "clock": {
+    "start": 0,
+    "horizon": 3,
+    "step": 1,
+    "unit": "week",
+    "events_before_decisions": true,
+    "horizon_inclusive": true
+  },
+  "domains": {
+    "budget": {
+      "integer": [
+        0,
+        10
+      ]
+    },
+    "ready": {
+      "enum": [
+        false,
+        true
+      ]
+    },
+    "accepted": {
+      "enum": [
+        false,
+        true
+      ]
+    },
+    "anchor": {
+      "enum": [
+        false,
+        true
+      ]
+    }
+  },
+  "initial": {
+    "budget": 10,
+    "ready": false,
+    "accepted": false,
+    "anchor": true
+  },
+  "budget": {
+    "field": "budget"
+  },
+  "decisions": {
+    "D": {
+      "requires": [
+        {
+          "field": "accepted",
+          "op": "eq",
+          "value": true
+        }
+      ],
+      "effects": {
+        "set": {},
+        "add": {}
+      },
+      "cost": 2,
+      "schedule": null,
+      "source": "Fixture"
+    }
+  },
+  "events": {
+    "READY": {
+      "requires": [],
+      "kind": "timer",
+      "outcomes": {
+        "done": {
+          "set": {
+            "ready": true
+          },
+          "add": {}
+        }
+      },
+      "absent": null,
+      "source": "Fixture"
+    },
+    "ACCEPT": {
+      "requires": [
+        {
+          "field": "ready",
+          "op": "eq",
+          "value": true
+        }
+      ],
+      "kind": "timer",
+      "outcomes": {
+        "done": {
+          "set": {
+            "accepted": true
+          },
+          "add": {}
+        }
+      },
+      "absent": null,
+      "source": "Fixture"
+    }
+  },
+  "initial_events": [
+    {
+      "id": "READY",
+      "due": 1,
+      "scheduled_at": 0
+    },
+    {
+      "id": "ACCEPT",
+      "due": 1,
+      "scheduled_at": 0
+    }
+  ],
+  "reference_event_order": [
+    "READY",
+    "ACCEPT"
+  ],
+  "metadata": {
+    "assumption": "Verification only",
+    "time_basis": "Integer fixture weeks",
+    "deadlines": []
+  }
+}

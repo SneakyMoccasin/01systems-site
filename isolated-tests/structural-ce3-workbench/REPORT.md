@@ -258,3 +258,51 @@ Automatiskt:
 Modeller utan budgetkonto får ingen fabricerad transaktionsredovisning. Om historiken saknar nödvändiga budgetvärden anges det och raden redovisas inte som en säker transaktion. Tidpunkter utan motsvarande historik anges som saknade. En köpost anger endast schemaläggning; körningen säger inget om ett faktiskt utfall efter horisonten. Beloppsenheter och namn följer befintliga modellbundna etiketter. Skärmläsare har inte manuellt testats.
 
 Ändrade: `static/app.js`, `static/style.css`, `README.md`, `REPORT.md`, `verification/latest.json`. Nya: `verification/readable-results-ui.test.cjs`, `verification/check_readable_results_invariance.py`, `verification/readable-results-invariance.json`, `verification/readable-results-tests.log`, `verification/readable-results-preservation.json`. Servern behålls på `http://127.0.0.1:8876`. Ingen publicering.
+
+
+## Jämförelsens slutsats, kontroll och orsaker · 2026-10-08
+
+Utgångspunkt: branch `decision-flow-demo-v1`, HEAD `ec4bc06`, inga befintliga ändringar i spårade filer. Tidigare ospårat arbete i `docs/audits/` bevarat. Endast UI/presentation och denna verifiering ändras.
+
+### Resultat
+
+Huvudskillnaden uttrycks direkt med körningarnas plannamn, modellbundna resultatetiketter och faktiskt observerade tidpunkter. Transportens presentationskatalog anger ”får trafikökningen godkänd”; logiken innehåller inga transport-ID, veckor eller slutsatser. Fabrik och importer ger en saklig beslutsbenämning, med ID-reserv när etikett saknas. Ett uteblivet resultat får inget senare antaget datum.
+
+En ny läsoperation hämtar de redan granskade banorna i ett anrop per körning. Presentationen kontrollerar COMPLETE, profil, granskarens PASS/verified/all_event_permutations, matchande indataidentitet, banidentiteter och full historik till modellhorisonten. Antal räcker inte. Tidpunkt/utebliven uppfyllelse, definierade glapps perioder och öppet/avslutat-läge samt spenderat/kvarvarande jämförs över alla banor. Variationens värden och antal visas vid berört mått. Saknad fullständig täckning ger uttrycklig begränsning, aldrig stabilitetsbesked. Befintlig spärr mot jämförelse av INCOMPLETE eller felgranskade körningar kvarstår.
+
+Tekniska detaljer skiljer mellan observationer efter enskilda händelser och vid tidsstegens slut. Beslutsutfall/blockeringsorsaker, transaktioner och komplett slutstatus jämförs uttryckligen innan de beskrivs som oförändrade. Orsakstabellen visar saknade förvillkor och faktisk observerad falskt→sant-övergång efter blockeringen. Krav uppfyllda i beslutsfas, verkliga försök och genomförande redovisas separat. Den gäller vald bana och övergången lovar inte fortsatt uppfyllelse.
+
+### Bevarat orderunderlag
+
+Se [kontrollrapporten](verification/order-audit-20261008/REPORT.md). Exakta kopior av tre maskinläsbara sammanställningar, ett gemensamt indataunderlag, fullhistorikhashar och reproduktionsskript ersätter behovet av dubbla stora historikfiler. Originalet i `/tmp/ce3-order-audit-20261008/` lämnades orört. Reproduktion verifierar båda fullständiga historikerna, oberoende granskning, varje banas mått, 768 jämförelsepar samt separata utfalls-/transaktions-/slutstatusinvarianser.
+
+### Utförda kontroller
+
+- Webbläsare på 1440×960 och 390×844: positivt, negativt och uteblivet elbesked, omvänd ordning, fabrik, import utan etiketter/glappdefinitioner samt separat syntetiskt variationsfall. Ingen dokumentöverbredd vid mobilkontroll. Orsakstabellen och tekniska förklaringen öppnades och avlästes. Variationsvarningens typografi korrigerades efter mobilgranskning.
+- Positivt: A godkänd vecka 20, B vecka 12; 8 respektive 96 banor med stabila huvudmått. Tekniska detaljer: 6 respektive 8 varierande observationer efter händelser, inga vid veckosluten. Försök/orsaker, transaktioner och hela slutstatusen oförändrade inom respektive plan.
+- Avslag/uteblivet: inget godkännande inom vecka 26, bussglapp minst 12 veckor och fortfarande öppet i båda planerna. Orsakstabellen anger ingen observerad övergång för elanslutningen.
+- Fabrik: produktionsgodkännande vecka 12 respektive 13. Import: ”Beslut (ID: D8)” utan gissad betydelse, uttryckligt saknade glappdefinitioner.
+- Separat fixture `verification/fixtures/order-variation.json`: två tillåtna ordningar med resultat vecka 1 respektive uteblivet, glapp avslutat respektive kvarstående, spenderat 2/0 och budget 8/10. Banbyte behåller variationsbeskedet. En riktig körning begränsad till max_paths=1 blir INCOMPLETE och jämförelseknappen spärras. Befintliga modeller ändras inte; två nya lokala kontrollkopior ligger i ignorerad lagring.
+- `test_workbench.py`: 14/14 PASS. `test_comparison.py`: 2/2 PASS. `test_presentation.py`: PASS. Ny `test_comparison_coverage.py`: PASS för batchläsning och avvisad ofullständig granskning.
+- Befintliga `comparison-ui.test.cjs`, `presentation-ui.test.cjs`, `plan-workspace-ui.test.cjs`, `readable-results-ui.test.cjs`: PASS. Det sista kontrollerar 11 fall / 328 kompletta banor. Ny `comparison-coverage-ui.test.cjs`: stabilitet, variation vid berörda mått, ändrad avläsningstid, omvänd ordning, reservbenämning, orsakstabell, sju ogiltiga/saknade täckningsfall och oförändrade indata.
+- `check_comparison_coverage_invariance.py`: 11 kompletta banmängder och operativa indata identiska med `ec4bc06`; bevis i `verification/comparison-coverage-invariance.json`. SHA-256-kontroll mot arbetsstarten bevarar övriga källor, originalresultat och tidigare lokala filer; se `verification/comparison-coverage-preservation.json`.
+
+### Reproduktion av UI-kontroller
+
+Från repots rot, kör Python med `-B`:
+
+```sh
+python3 -B isolated-tests/structural-ce3-workbench/verification/test_comparison.py
+python3 -B isolated-tests/structural-ce3-workbench/verification/test_comparison_coverage.py
+node isolated-tests/structural-ce3-workbench/verification/comparison-coverage-ui.test.cjs
+python3 -B isolated-tests/structural-ce3-workbench/verification/check_comparison_coverage_invariance.py
+python3 -B isolated-tests/structural-ce3-workbench/verification/order-audit-20261008/reproduce.py
+```
+
+De två första skapar tillfälliga testunderlag i /tmp. Node-testerna använder befintlig linkedom-installation i repot.
+
+### Filer och begränsningar
+
+Ändrade produktfiler: `static/app.js`, `static/comparison.js`, `static/style.css`, `presentation.py`, `presentations.json`, `service.py`, `server.py`. Dokumentation: `README.md`, `REPORT.md`. Verifieringsfiler: `verification/latest.json`, nya coverage-tester, fixture, invarians-/bevarandebevis, testlogg och katalogen `verification/order-audit-20261008/`.
+
+Kontrollen avser tillgängliga fullständigt granskade banor för fasta körindata enligt fixed-replay/0.1. Den omfattar inte andra strategier eller verklighetsvalidering. Saknade glappdefinitioner ersätts inte med gissningar. Orsakssektionen gäller vald bana. Alla banors historiker läses för kontrollen, vilket kan ta längre tid vid stora körningar; misslyckad hämtning ger ett begränsningsbesked. Skärmläsare har inte manuellt testats. Kärna, operativa modeller/planer och kompletta körresultat är oförändrade. Server: `http://127.0.0.1:8876`. Ingen publicering.

@@ -1,0 +1,21 @@
+{
+  "checkpoint": "ec4bc06",
+  "baseline_files": 2067,
+  "unchanged_files": 2057,
+  "changed_files": [
+    "isolated-tests/structural-ce3-workbench/README.md",
+    "isolated-tests/structural-ce3-workbench/REPORT.md",
+    "isolated-tests/structural-ce3-workbench/presentation.py",
+    "isolated-tests/structural-ce3-workbench/presentations.json",
+    "isolated-tests/structural-ce3-workbench/server.py",
+    "isolated-tests/structural-ce3-workbench/service.py",
+    "isolated-tests/structural-ce3-workbench/static/app.js",
+    "isolated-tests/structural-ce3-workbench/static/comparison.js",
+    "isolated-tests/structural-ce3-workbench/static/style.css",
+    "isolated-tests/structural-ce3-workbench/verification/latest.json"
+  ],
+  "missing_files": [],
+  "existing_local_data_unchanged": true,
+  "old_untracked_unchanged": true,
+  "evidence_copies_identical": true
+}

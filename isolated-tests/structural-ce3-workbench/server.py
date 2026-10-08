@@ -59,6 +59,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(store.result(query['project'], query['run']))
             if method == 'GET' and route == '/api/path':
                 return self.send(store.path(query['project'], query['run'], int(query['index'])))
+            if method == 'GET' and route == '/api/comparison-paths':
+                return self.send(store.comparison_paths(query['project'], query['run']))
             if method == 'GET' and route == '/api/compare':
                 return self.send(store.compare(query['project'], query['left'], query['right'], query.get('allow_different_outcomes') == 'true'))
             if method == 'GET' and route == '/api/export':

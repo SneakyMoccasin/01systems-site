@@ -556,7 +556,8 @@
         }
       ],
       "note": "Glappen gäller de planerade förbättringarna efter parkeringsborttagningen. Befintlig buss- och cykeltrafik kvarstår. Trafikgodkännande är inte faktisk trafikdrift.",
-      "source": "sources/transport-t1-user.txt: Central fråga, Kontrollfrågor 1–5 och avgränsningen för fråga 5. Fälten och markörerna kommer från originalmodellens regler."
+      "source": "sources/transport-t1-user.txt: Central fråga, Kontrollfrågor 1–5 och avgränsningen för fråga 5. Fälten och markörerna kommer från originalmodellens regler.",
+      "result_phrase": "får trafikökningen godkänd"
     }
   }
 }

@@ -39,6 +39,8 @@ def decorate(project, known=None):
     # from IDs, and never put these observation definitions in operational input.
     if catalog and entry.get('sources') == catalog['sources'] and 'comparison' in catalog:
         entry.setdefault('comparison', deepcopy(catalog['comparison']))
+        if entry['comparison'].get('focus') == catalog['comparison'].get('focus') and 'result_phrase' in catalog['comparison']:
+            entry['comparison'].setdefault('result_phrase', catalog['comparison']['result_phrase'])
     return project
 
 

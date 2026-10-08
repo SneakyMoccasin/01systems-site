@@ -296,6 +296,13 @@ class Store:
         require(type(index) is int and 0 <= index < len(history['paths']), 'Banan finns inte.')
         return history['paths'][index]
 
+    def comparison_paths(self, project_id, run_id):
+        """Read existing audited paths in one batch for UI-only observations."""
+        result = self.result(project_id, run_id)
+        require(result['audit']['status'] == 'PASS', 'Historiken är inte godkänd.')
+        history = read_bundle(self.folder(project_id) / 'runs' / identifier(run_id) / 'history.json.gz')
+        return dict(input_sha256=history['input_sha256'], audit=result['audit'], paths=history['paths'])
+
     def compare(self, project_id, left, right, allow_different_outcomes=False):
         require(left != right, 'Välj två olika körningar.')
         a, b = self.result(project_id, left), self.result(project_id, right)

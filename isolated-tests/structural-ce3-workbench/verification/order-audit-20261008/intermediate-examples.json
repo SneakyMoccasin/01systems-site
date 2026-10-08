@@ -1,0 +1,110 @@
+{
+  "Plan A": {
+    "False": {
+      "path": 1,
+      "index": 82,
+      "step": 16,
+      "action": "E_T3",
+      "state": {
+        "budget": 2,
+        "buses_delivered": true,
+        "charger_delivered": true,
+        "charger_installed": false,
+        "cycle_open": false,
+        "cycle_parking_ready": false,
+        "cycle_ready": true,
+        "depot_contract": true,
+        "depot_ready": true,
+        "drivers_ready": true,
+        "grid": "pending",
+        "parking_removed": 100,
+        "signal_ready": true,
+        "traffic_authorized": false
+      },
+      "pending": [
+        "E_T2",
+        "E_T10"
+      ]
+    },
+    "True": {
+      "path": 2,
+      "index": 83,
+      "step": 16,
+      "action": "E_T3",
+      "state": {
+        "budget": 2,
+        "buses_delivered": true,
+        "charger_delivered": true,
+        "charger_installed": false,
+        "cycle_open": false,
+        "cycle_parking_ready": true,
+        "cycle_ready": true,
+        "depot_contract": true,
+        "depot_ready": true,
+        "drivers_ready": true,
+        "grid": "pending",
+        "parking_removed": 100,
+        "signal_ready": true,
+        "traffic_authorized": false
+      },
+      "pending": [
+        "E_T2"
+      ]
+    }
+  },
+  "Plan B": {
+    "pending": {
+      "path": 1,
+      "index": 65,
+      "step": 12,
+      "action": "E_T1",
+      "state": {
+        "budget": 2,
+        "buses_delivered": true,
+        "charger_delivered": true,
+        "charger_installed": false,
+        "cycle_open": true,
+        "cycle_parking_ready": true,
+        "cycle_ready": true,
+        "depot_contract": true,
+        "depot_ready": true,
+        "drivers_ready": true,
+        "grid": "pending",
+        "parking_removed": 0,
+        "signal_ready": false,
+        "traffic_authorized": false
+      },
+      "pending": [
+        "E_T2",
+        "E_T8",
+        "E_T5"
+      ]
+    },
+    "ready": {
+      "path": 7,
+      "index": 66,
+      "step": 12,
+      "action": "E_T1",
+      "state": {
+        "budget": 2,
+        "buses_delivered": true,
+        "charger_delivered": true,
+        "charger_installed": false,
+        "cycle_open": true,
+        "cycle_parking_ready": true,
+        "cycle_ready": true,
+        "depot_contract": true,
+        "depot_ready": true,
+        "drivers_ready": true,
+        "grid": "ready",
+        "parking_removed": 0,
+        "signal_ready": false,
+        "traffic_authorized": false
+      },
+      "pending": [
+        "E_T8",
+        "E_T5"
+      ]
+    }
+  }
+}

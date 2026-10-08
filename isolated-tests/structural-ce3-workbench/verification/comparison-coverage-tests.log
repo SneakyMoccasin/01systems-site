@@ -1,0 +1,61 @@
+=== integration ===
+test_01_factory_full_flow_and_new_process_reopen (__main__.Workbench) ... ok
+test_02_transport_full_flow_and_budget_projection (__main__.Workbench) ... ok
+test_03_explicit_outcomes_required (__main__.Workbench) ... ok
+test_04_invalid_unused_rule_rejected (__main__.Workbench) ... ok
+test_05_negative_absent_and_later_independent_attempt (__main__.Workbench) ... ok
+test_06_order_sensitivity_includes_intermediate_state (__main__.Workbench) ... ok
+test_07_incomplete_is_not_reviewed (__main__.Workbench) ... ok
+test_08_tampered_import_and_read_fail_closed (__main__.Workbench) ... ok
+test_09_mismatched_outcomes_or_model_cannot_compare (__main__.Workbench) ... ok
+test_10_version_conflict_and_immutability (__main__.Workbench) ... ok
+test_11_no_budget_and_unknown_labels (__main__.Workbench) ... ok
+test_12_skip_instruction_and_same_step_order (__main__.Workbench) ... ok
+test_13_interrupted_run_is_visible_and_exportable (__main__.Workbench) ... ok
+test_14_import_identity_rejection_is_atomic (__main__.Workbench) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 87.002s
+
+OK
+
+
+=== comparison ===
+test_01_operational_identity_and_observation_definitions (__main__.Comparison) ... ok
+test_02_different_outcomes_explicit_comparison_mode (__main__.Comparison) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 94.329s
+
+OK
+
+
+=== presentation ===
+test_checkpoint_inputs_histories_and_attempt_order_are_identical (__main__.PresentationTests) ... ok
+test_labels_are_complete_sourced_and_model_bound (__main__.PresentationTests) ... ok
+test_labels_persist_without_changing_operational_input (__main__.PresentationTests) ... ok
+test_legacy_custom_labels_bind_once (__main__.PresentationTests) ... ok
+test_no_guess_for_import_or_changed_model (__main__.PresentationTests) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 42.758s
+
+OK
+
+
+=== targeted ===
+test_batch_and_certification (__main__.Coverage) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.492s
+
+OK
+PASS: stable positive/rejected/absent, reversal, factory/import fallback, 7 missing/invalid coverage cases, genuine varied timing/open-closed gaps/spending/budget, exact cause table and immutable inputs.
+
+
+=== readable ===
+PASS: 11 audited cases / 328 complete paths; labels, dates, exact recorded transactions and balances, per-order totals, raw JSON isolation, no mutations, pending horizon witness, conditional external pending, missing dates/budget data.
+
+
+=== reproduce ===
+PASS: full input/history identities, independent audit, all-path metrics and 768 pairings reproduced
