@@ -1,0 +1,267 @@
+{
+  "analysis": {
+    "kind": "choose",
+    "question": "Vilken av plan A och plan B ska väljas utifrån kostnad och godkänt resultat senast dag 7?",
+    "plan_ids": [
+      "plan_a_stationer",
+      "plan_b_stationer"
+    ],
+    "criterion_ids": [
+      "kriterium_lagst_kostnad",
+      "kriterium_godkant_senast_dag7"
+    ],
+    "changed_assumption_ids": []
+  },
+  "scope": {
+    "includes": [
+      "Jämförelse mellan plan A och plan B.",
+      "Kostnad och godkänt resultat senast dag 7.",
+      "Krav på automatisk planoptimering, ombokning efter underkänt resultat och körningsbestämt antal omprov."
+    ],
+    "excludes": []
+  },
+  "items": [
+    {
+      "id": "plan_a_stationer",
+      "kind": "plan",
+      "statement": "Plan A har en provstation.",
+      "type": "document_fact",
+      "status": "known",
+      "value": 1,
+      "unit": "provstation",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "plan A (en provstation)",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [],
+      "supersedes": [],
+      "rationale": "Planalternativet är angivet i underlaget.",
+      "scenario_choice": null
+    },
+    {
+      "id": "plan_b_stationer",
+      "kind": "plan",
+      "statement": "Plan B har två provstationer.",
+      "type": "document_fact",
+      "status": "known",
+      "value": 2,
+      "unit": "provstationer",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "plan B (två provstationer)",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [],
+      "supersedes": [],
+      "rationale": "Planalternativet är angivet i underlaget.",
+      "scenario_choice": null
+    },
+    {
+      "id": "kriterium_lagst_kostnad",
+      "kind": "criterion",
+      "statement": "Valet ska ha lägst kostnad.",
+      "type": "goal",
+      "status": "known",
+      "value": true,
+      "unit": null,
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Målet är lägst kostnad",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [],
+      "supersedes": [],
+      "rationale": "Kostnad är ett uttryckligt urvalsmål.",
+      "scenario_choice": null
+    },
+    {
+      "id": "kriterium_godkant_senast_dag7",
+      "kind": "criterion",
+      "statement": "Valet ska ha godkänt resultat senast dag 7 från dag 0.",
+      "type": "goal",
+      "status": "known",
+      "value": 7,
+      "unit": "dag",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "godkänt resultat senast dag 7 från dag 0",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [],
+      "supersedes": [],
+      "rationale": "Tidsgränsen är ett uttryckligt urvalsmål.",
+      "scenario_choice": null
+    },
+    {
+      "id": "krav_automatisk_optimering",
+      "kind": "rule",
+      "statement": "Systemet ska automatiskt söka den optimala planen.",
+      "type": "requirement",
+      "status": "known",
+      "value": true,
+      "unit": null,
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Systemet ska automatiskt söka den optimala planen",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [
+        "plan_a_stationer",
+        "plan_b_stationer",
+        "kriterium_lagst_kostnad",
+        "kriterium_godkant_senast_dag7"
+      ],
+      "supersedes": [],
+      "rationale": "Kravet är uttryckligt men profilen stöder inte optimering eller alternativplanssökning.",
+      "scenario_choice": null
+    },
+    {
+      "id": "krav_ombokning_efter_underkant",
+      "kind": "rule",
+      "statement": "Återkommande kontroller ska bokas om efter varje underkänt resultat.",
+      "type": "requirement",
+      "status": "known",
+      "value": true,
+      "unit": null,
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "boka om återkommande kontroller efter varje underkänt resultat",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [],
+      "supersedes": [],
+      "rationale": "Kravet är uttryckligt men innebär återkommande återkoppling och ombokning.",
+      "scenario_choice": null
+    },
+    {
+      "id": "krav_omprov_under_korning",
+      "kind": "rule",
+      "statement": "Antalet omprov ska bestämmas under körning.",
+      "type": "requirement",
+      "status": "known",
+      "value": true,
+      "unit": null,
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Antalet omprov ska bestämmas under körning",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [],
+      "supersedes": [],
+      "rationale": "Kravet är uttryckligt men saknar en fast, vald händelseföljd.",
+      "scenario_choice": null
+    },
+    {
+      "id": "fast_handelsefoljd",
+      "kind": "assumption",
+      "statement": "En förenklad fast händelseföljd har valts.",
+      "type": "scenario_assumption",
+      "status": "unknown",
+      "value": null,
+      "unit": null,
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Vi har ännu inte valt någon förenklad, fast händelseföljd.",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [],
+      "supersedes": [],
+      "rationale": "Underlaget anger uttryckligen att något sådant val inte har gjorts.",
+      "scenario_choice": null
+    }
+  ],
+  "gaps": [
+    {
+      "id": "gap_valunderlag_kostnad_och_resultat",
+      "item_ids": [
+        "plan_a_stationer",
+        "plan_b_stationer",
+        "kriterium_lagst_kostnad",
+        "kriterium_godkant_senast_dag7"
+      ],
+      "kind": "missing_data",
+      "impact": "blocks_handoff",
+      "status": "open",
+      "explanation": "Kostnader samt resultat- och tidutfall för planerna saknas, så inget planval kan härledas.",
+      "resolution": null
+    },
+    {
+      "id": "gap_fast_handelsefoljd",
+      "item_ids": [
+        "fast_handelsefoljd",
+        "krav_ombokning_efter_underkant",
+        "krav_omprov_under_korning"
+      ],
+      "kind": "missing_data",
+      "impact": "blocks_handoff",
+      "status": "open",
+      "explanation": "Ingen fast händelseföljd eller begränsat antal omprov har valts.",
+      "resolution": null
+    },
+    {
+      "id": "gap_unsupported_optimering_och_ombokning",
+      "item_ids": [
+        "krav_automatisk_optimering",
+        "krav_ombokning_efter_underkant",
+        "krav_omprov_under_korning"
+      ],
+      "kind": "unsupported_profile",
+      "impact": "blocks_handoff",
+      "status": "open",
+      "explanation": "Profilen stöder inte alternativplanssökning, optimering, återkommande ombokning eller körningsstyrt antal omprov.",
+      "resolution": null
+    }
+  ],
+  "questions": [
+    {
+      "id": "fraga_kostnad_och_utfall",
+      "text": "Vilken kostnad och vilket resultatutfall med tidpunkt ska anges för respektive plan?",
+      "target_ids": [
+        "plan_a_stationer",
+        "plan_b_stationer",
+        "kriterium_lagst_kostnad",
+        "kriterium_godkant_senast_dag7"
+      ],
+      "finding_ids": [],
+      "reason": "Uppgifterna behövs för att jämföra planerna mot båda urvalskriterierna.",
+      "impact": "blocks_handoff"
+    },
+    {
+      "id": "fraga_fast_handelser",
+      "text": "Vilken fast händelseföljd, inklusive högsta antal omprov och utfall för varje kontroll, ska användas?",
+      "target_ids": [
+        "fast_handelsefoljd",
+        "krav_ombokning_efter_underkant",
+        "krav_omprov_under_korning"
+      ],
+      "finding_ids": [],
+      "reason": "En explicit fast följd behövs för att ersätta den odefinierade återkommande ombokningen.",
+      "impact": "blocks_handoff"
+    }
+  ]
+}

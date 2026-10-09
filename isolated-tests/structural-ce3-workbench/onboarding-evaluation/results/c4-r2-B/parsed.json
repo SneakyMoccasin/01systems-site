@@ -1,0 +1,112 @@
+{
+  "status": "complete",
+  "assessments": [
+    {
+      "item_id": "plan_a_stationer",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "plan A (en provstation)",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Angivet som kundfakta."
+    },
+    {
+      "item_id": "plan_b_stationer",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "plan B (två provstationer)",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Angivet som kundfakta."
+    },
+    {
+      "item_id": "kriterium_lagst_kostnad",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Målet är lägst kostnad",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Korrekt märkt som mål."
+    },
+    {
+      "item_id": "kriterium_godkant_senast_dag7",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "godkänt resultat senast dag 7 från dag 0",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Korrekt märkt som mål med angiven tidsgräns."
+    },
+    {
+      "item_id": "krav_automatisk_optimering",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Systemet ska automatiskt söka den optimala planen",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Korrekt märkt som krav."
+    },
+    {
+      "item_id": "krav_ombokning_efter_underkant",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "boka om återkommande kontroller efter varje underkänt resultat",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Korrekt märkt som krav."
+    },
+    {
+      "item_id": "krav_omprov_under_korning",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Antalet omprov ska bestämmas under körning",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Korrekt märkt som krav."
+    },
+    {
+      "item_id": "fast_handelsefoljd",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Vi har ännu inte valt någon förenklad, fast händelseföljd.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Okänt värde är korrekt deklarerat; inget scenario har valts."
+    }
+  ],
+  "findings": [],
+  "limitations": [],
+  "questions": []
+}

@@ -1,0 +1,144 @@
+{
+  "status": "complete",
+  "assessments": [
+    {
+      "item_id": "plan_p",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Ett enda externt kontrollbesked kommer dag 2",
+          "occurrence": 0
+        },
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "En enda leverans får försökas dag 3",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Båda tidsatta delarna av planen anges."
+    },
+    {
+      "item_id": "criterion_delivery_ready_day3",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "kravet att vara leveransklar senast dag 3",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Kravet anges uttryckligen."
+    },
+    {
+      "item_id": "value_result_initial",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "initialt väntar",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Initialvärdet för resultat anges."
+    },
+    {
+      "item_id": "rule_result_domain",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Tillståndet resultat har värdena väntar, godkänt och underkänt",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Värdemängden anges uttryckligen."
+    },
+    {
+      "item_id": "value_delivery_ready_initial",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Leveransklar är initialt falskt",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Initialvärdet anges uttryckligen."
+    },
+    {
+      "item_id": "rule_delivery_ready_domain",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "har värdena falskt och sant",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Värdemängden för leveransklar anges."
+    },
+    {
+      "item_id": "rule_review_event",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Beskedet sätter resultat till godkänt.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Kontrollbeskedets effekt anges uttryckligen."
+    },
+    {
+      "item_id": "rule_delivery_attempt",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "En enda leverans får försökas dag 3, bara om resultat är godkänt, och sätter leveransklar till sant.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Tidpunkt, villkor och effekt anges."
+    },
+    {
+      "item_id": "rule_no_other_actions",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Inga andra händelser eller beslut ingår.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Avgränsningen anges uttryckligen."
+    },
+    {
+      "item_id": "value_clock",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Klockan startar dag 0 och slutar dag 3, med heltalsdagar.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Tidsram och heltalsdagar anges."
+    }
+  ],
+  "findings": [],
+  "limitations": [],
+  "questions": []
+}

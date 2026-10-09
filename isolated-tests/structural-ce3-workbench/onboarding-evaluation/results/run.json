@@ -1,0 +1,226 @@
+{
+  "version": "ce3-eval-run/1",
+  "started": "2026-10-09T10:47:25.069Z",
+  "freeze_digest": "b3cbd3761a84703657ca6246cee3f589b1e83efa1ccceadced5f57d37bfdf985",
+  "pairs": [
+    {
+      "id": "c1-r1",
+      "case_id": "c1",
+      "repetition": 1,
+      "steps": [
+        {
+          "stage": "draft",
+          "status": "valid",
+          "call_id": "c1-r1-draft"
+        },
+        {
+          "stage": "A",
+          "status": "valid",
+          "call_id": "c1-r1-A"
+        },
+        {
+          "stage": "B",
+          "status": "valid",
+          "call_id": "c1-r1-B"
+        }
+      ],
+      "status": "complete",
+      "proposal_digest": "ff77372251c7aaa66074e797be12875332047bf395966dd21e41a7cb1bfe10bd"
+    },
+    {
+      "id": "c1-r2",
+      "case_id": "c1",
+      "repetition": 2,
+      "steps": [
+        {
+          "stage": "draft",
+          "status": "valid",
+          "call_id": "c1-r2-draft"
+        },
+        {
+          "stage": "B",
+          "status": "valid",
+          "call_id": "c1-r2-B"
+        },
+        {
+          "stage": "A",
+          "status": "contract_invalid",
+          "call_id": "c1-r2-A"
+        }
+      ],
+      "status": "incomplete",
+      "proposal_digest": "680e920e218ecf989ccca2447db78494d385a1565b5c1d16d6aceb544ad6502e"
+    },
+    {
+      "id": "c2-r1",
+      "case_id": "c2",
+      "repetition": 1,
+      "steps": [
+        {
+          "stage": "draft",
+          "status": "valid",
+          "call_id": "c2-r1-draft"
+        },
+        {
+          "stage": "A",
+          "status": "valid",
+          "call_id": "c2-r1-A"
+        },
+        {
+          "stage": "B",
+          "status": "valid",
+          "call_id": "c2-r1-B"
+        }
+      ],
+      "status": "complete",
+      "proposal_digest": "28f272a51133386d8546a684aaf7f6ad9d2713973f23b20eb89c6013bb1e702d"
+    },
+    {
+      "id": "c2-r2",
+      "case_id": "c2",
+      "repetition": 2,
+      "steps": [
+        {
+          "stage": "draft",
+          "status": "valid",
+          "call_id": "c2-r2-draft"
+        },
+        {
+          "stage": "B",
+          "status": "valid",
+          "call_id": "c2-r2-B"
+        },
+        {
+          "stage": "A",
+          "status": "valid",
+          "call_id": "c2-r2-A"
+        }
+      ],
+      "status": "complete",
+      "proposal_digest": "6352db30b60c4f91332e4399b70ea632b75172449d2ef1a71f3dc491ac8c49a4"
+    },
+    {
+      "id": "c3-r1",
+      "case_id": "c3",
+      "repetition": 1,
+      "steps": [
+        {
+          "stage": "draft",
+          "status": "contract_invalid",
+          "call_id": "c3-r1-draft"
+        },
+        {
+          "stage": "A",
+          "status": "contract_invalid",
+          "call_id": "c3-r1-A"
+        },
+        {
+          "stage": "B",
+          "status": "contract_invalid",
+          "call_id": "c3-r1-B"
+        }
+      ],
+      "status": "incomplete",
+      "proposal_digest": "7d56c4da2cc2d973b9e2a6a23c7a6ae22113b73c5124145c1c6afbdc3426f750"
+    },
+    {
+      "id": "c3-r2",
+      "case_id": "c3",
+      "repetition": 2,
+      "steps": [
+        {
+          "stage": "draft",
+          "status": "valid",
+          "call_id": "c3-r2-draft"
+        },
+        {
+          "stage": "B",
+          "status": "contract_invalid",
+          "call_id": "c3-r2-B"
+        },
+        {
+          "stage": "A",
+          "status": "valid",
+          "call_id": "c3-r2-A"
+        }
+      ],
+      "status": "incomplete",
+      "proposal_digest": "0dd5330793cc0224a14eb40936adb072d4779f1009615cb0780b6b39e55680aa"
+    },
+    {
+      "id": "c4-r1",
+      "case_id": "c4",
+      "repetition": 1,
+      "steps": [
+        {
+          "stage": "draft",
+          "status": "valid",
+          "call_id": "c4-r1-draft"
+        },
+        {
+          "stage": "A",
+          "status": "valid",
+          "call_id": "c4-r1-A"
+        },
+        {
+          "stage": "B",
+          "status": "valid",
+          "call_id": "c4-r1-B"
+        }
+      ],
+      "status": "complete",
+      "proposal_digest": "a17a35f8cd8c1c89b7c086f06771b3714643922168c01961a7a2bd411e0c9703"
+    },
+    {
+      "id": "c4-r2",
+      "case_id": "c4",
+      "repetition": 2,
+      "steps": [
+        {
+          "stage": "draft",
+          "status": "valid",
+          "call_id": "c4-r2-draft"
+        },
+        {
+          "stage": "B",
+          "status": "valid",
+          "call_id": "c4-r2-B"
+        },
+        {
+          "stage": "A",
+          "status": "valid",
+          "call_id": "c4-r2-A"
+        }
+      ],
+      "status": "complete",
+      "proposal_digest": "11d76d2067252be53e8b512a9c297ece68d94d99f2afe36588b40eca6fa1933b"
+    },
+    {
+      "id": "c5-r1",
+      "case_id": "c5",
+      "repetition": 1,
+      "steps": [
+        {
+          "stage": "draft",
+          "status": "valid",
+          "call_id": "c5-r1-draft"
+        },
+        {
+          "stage": "A",
+          "status": "valid",
+          "call_id": "c5-r1-A"
+        },
+        {
+          "stage": "B",
+          "status": "failed",
+          "call_id": "c5-r1-B",
+          "error": "HTTP_429"
+        }
+      ],
+      "status": "incomplete",
+      "proposal_digest": "d8bedddd6c380ba671e7c427ad0e430e2d47fcd4dfb964180e7caeaf6ed9b80f"
+    }
+  ],
+  "stopped_reason": "HTTP_429",
+  "finished": "2026-10-09T10:52:36.177Z"
+}

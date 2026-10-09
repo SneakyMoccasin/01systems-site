@@ -1,0 +1,211 @@
+{
+  "analysis": {
+    "kind": "check",
+    "question": "Kan leveransvillkoret för plan P uppfyllas senast dag 3?",
+    "plan_ids": [
+      "plan_p"
+    ],
+    "criterion_ids": [
+      "criterion_delivery_day3"
+    ],
+    "changed_assumption_ids": []
+  },
+  "scope": {
+    "includes": [
+      "Plan P: bygga en provmodul.",
+      "Målet dag 2.",
+      "Kravet på ett separat godkännandebesked före leverans.",
+      "Kontroll till och med dag 3 med dag 0 som start."
+    ],
+    "excludes": []
+  },
+  "items": [
+    {
+      "id": "plan_p",
+      "kind": "plan",
+      "statement": "Bygg en provmodul.",
+      "type": "user_fact",
+      "status": "known",
+      "value": "bygg en provmodul",
+      "unit": null,
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Kontrollera plan P: bygg en provmodul.",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [],
+      "supersedes": [],
+      "rationale": "Planen är uttryckligen angiven.",
+      "scenario_choice": null
+    },
+    {
+      "id": "goal_module_day2",
+      "kind": "value",
+      "statement": "Provmodulen är förhoppningsvis klar dag 2.",
+      "type": "goal",
+      "status": "known",
+      "value": 2,
+      "unit": "dag",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Förhoppningsvis klart dag 2.",
+          "occurrence": 0
+        },
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Dag 2 är ett mål, inte en garanti.",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [
+        "plan_p"
+      ],
+      "supersedes": [],
+      "rationale": "Dag 2 anges som mål och inte som garanti.",
+      "scenario_choice": null
+    },
+    {
+      "id": "rule_approval_before_delivery",
+      "kind": "rule",
+      "statement": "Leverans får ske först efter ansvarigs separata godkännandebesked.",
+      "type": "requirement",
+      "status": "known",
+      "value": true,
+      "unit": null,
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Leverans får ske först efter ansvarigs separata godkännandebesked.",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [],
+      "supersedes": [],
+      "rationale": "Detta är ett uttryckligt leveransvillkor.",
+      "scenario_choice": null
+    },
+    {
+      "id": "rule_approval_time",
+      "kind": "rule",
+      "statement": "Tidpunkten för godkännandebeskedet är inte angiven.",
+      "type": "document_fact",
+      "status": "unknown",
+      "value": null,
+      "unit": null,
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Tidpunkten för beskedet är ännu inte angiven.",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [],
+      "supersedes": [],
+      "rationale": "Underlaget anger ingen tidpunkt för beskedet.",
+      "scenario_choice": null
+    },
+    {
+      "id": "criterion_delivery_day3",
+      "kind": "criterion",
+      "statement": "Leveransvillkoret ska kontrolleras senast dag 3.",
+      "type": "requirement",
+      "status": "known",
+      "value": 3,
+      "unit": "dag",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Analysen ska kontrollera om leveransvillkoret kan uppfyllas senast dag 3, med dag 0 som start.",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [
+        "rule_approval_before_delivery"
+      ],
+      "supersedes": [],
+      "rationale": "Kontrollhorisonten och startdagen är uttryckligen angivna.",
+      "scenario_choice": null
+    },
+    {
+      "id": "value_start_day",
+      "kind": "value",
+      "statement": "Startdagen är dag 0.",
+      "type": "document_fact",
+      "status": "known",
+      "value": 0,
+      "unit": "dag",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "med dag 0 som start",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [],
+      "supersedes": [],
+      "rationale": "Startdagen är angiven i underlaget.",
+      "scenario_choice": null
+    }
+  ],
+  "gaps": [
+    {
+      "id": "gap_delivery_model",
+      "item_ids": [
+        "plan_p",
+        "goal_module_day2",
+        "rule_approval_time",
+        "criterion_delivery_day3"
+      ],
+      "kind": "missing_data",
+      "impact": "blocks_handoff",
+      "status": "open",
+      "explanation": "Det saknas uppgifter om när eller hur provmodulen blir klar, när godkännandebeskedet kan ges och hur leverans utförs. Därför kan inget tidsförlopp för kontrollen fastställas.",
+      "resolution": null
+    }
+  ],
+  "questions": [
+    {
+      "id": "q_module_completion",
+      "text": "När blir provmodulen klar, och är dag 2 enbart ett mål eller en fast planerad tidpunkt?",
+      "target_ids": [
+        "plan_p",
+        "goal_module_day2"
+      ],
+      "finding_ids": [],
+      "reason": "En tidpunkt eller mekanism för att modellen ska bli klar behövs för att pröva leverans före dag 3.",
+      "impact": "blocks_handoff"
+    },
+    {
+      "id": "q_approval_timing",
+      "text": "När kan ansvarigs separata godkännandebesked ges före eller senast dag 3?",
+      "target_ids": [
+        "rule_approval_time",
+        "rule_approval_before_delivery"
+      ],
+      "finding_ids": [],
+      "reason": "Godkännandebeskedet är ett uttryckligt villkor före leverans men saknar tidpunkt.",
+      "impact": "blocks_handoff"
+    },
+    {
+      "id": "q_delivery_execution",
+      "text": "Hur och när kan leveransen genomföras efter att provmodulen är klar och godkännandet har getts?",
+      "target_ids": [
+        "plan_p",
+        "criterion_delivery_day3"
+      ],
+      "finding_ids": [],
+      "reason": "Leveransens genomförande och eventuella tidsåtgång saknas.",
+      "impact": "blocks_handoff"
+    }
+  ]
+}

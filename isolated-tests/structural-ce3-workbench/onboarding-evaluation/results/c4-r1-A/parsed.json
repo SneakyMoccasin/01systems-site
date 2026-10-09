@@ -1,0 +1,137 @@
+{
+  "status": "complete",
+  "assessments": [
+    {
+      "item_id": "plan_a",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "plan A (en provstation)",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Plan A och en provstation anges uttryckligen."
+    },
+    {
+      "item_id": "plan_b",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "plan B (två provstationer)",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Plan B och två provstationer anges uttryckligen."
+    },
+    {
+      "item_id": "criterion_lowest_cost",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Målet är lägst kostnad",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Lägst kostnad är ett uttryckligt mål."
+    },
+    {
+      "item_id": "criterion_approved_by_day_7",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "godkänt resultat senast dag 7 från dag 0",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Kravet på godkänt resultat senast dag 7 från dag 0 anges uttryckligen."
+    },
+    {
+      "item_id": "rule_automatic_optimal_plan_search",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Systemet ska automatiskt söka den optimala planen",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Systemkravet anges uttryckligen."
+    },
+    {
+      "item_id": "rule_rebook_after_failure",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "boka om återkommande kontroller efter varje underkänt resultat",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Kravet på återkommande ombokning efter underkänt resultat anges uttryckligen."
+    },
+    {
+      "item_id": "rule_runtime_retest_count",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Antalet omprov ska bestämmas under körning.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Kravet att antalet omprov bestäms under körning anges uttryckligen."
+    },
+    {
+      "item_id": "value_fixed_event_sequence_selected",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Vi har ännu inte valt någon förenklad, fast händelseföljd.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Underlaget stöder att något sådant val inte har gjorts; unknown med nullvärde är korrekt."
+    }
+  ],
+  "findings": [],
+  "limitations": [],
+  "questions": [
+    {
+      "id": "q_plan_cost_timing_outcomes",
+      "text": "Vilka kostnader, kontrolltidpunkter och möjliga utfall gäller för respektive plan A och plan B fram till och med dag 7?",
+      "target_ids": [
+        "plan_a",
+        "plan_b",
+        "criterion_lowest_cost",
+        "criterion_approved_by_day_7"
+      ],
+      "finding_ids": [],
+      "reason": "Uppgifterna behövs för att jämföra planerna mot kostnads- och tidskriterierna.",
+      "impact": "blocks_handoff"
+    },
+    {
+      "id": "q_fixed_event_sequence",
+      "text": "Vilken förenklad, fast händelseföljd vill ni uttryckligen välja för kontroller och omprov?",
+      "target_ids": [
+        "rule_rebook_after_failure",
+        "value_fixed_event_sequence_selected"
+      ],
+      "finding_ids": [],
+      "reason": "Ingen fast händelseföljd har ännu valts, medan underlaget kräver återkommande ombokning efter underkänt resultat.",
+      "impact": "blocks_handoff"
+    }
+  ]
+}

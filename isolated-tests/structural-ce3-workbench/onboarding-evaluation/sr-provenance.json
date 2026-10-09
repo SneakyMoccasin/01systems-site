@@ -1,0 +1,19 @@
+{
+  "head": "10d2482186e0d116506f215bdbdbd70f009ab18b",
+  "status": "",
+  "read_only": true,
+  "integration": false,
+  "configured_provider": "openai",
+  "configured_model": "gpt-5.6-terra",
+  "credential_present": true,
+  "files": {
+    "src/lib/providers/index.ts": "adedbff6ffe54aa964411be3b7352b47e4a3fe50aecdf5054c3f04e728c4175b",
+    "src/lib/providers/openai.ts": "1ccbc08934b95f13fbc333f08c3111508da39ff005b871774442eeac435c883f",
+    "src/lib/providers/types.ts": "42a8d73e484f18b250e569c195be1f705726879cfe05489df81b701ab88cc70e",
+    "src/lib/grounded/run.ts": "96041400391566cad6f43e944b7b64003bc61939e51addc1dba5ad59310efcaf",
+    "src/lib/text.ts": "54d1becb35c3263b09467fa5e1862dbd1f72af754320e884c8019f83a0eb7cb2",
+    "src/lib/prompts/grounded-shared-v0.1.ts": "ec84c3f8996f7a74df23a5b1964fa7e987943bbc0255a832c345419c36eea9db",
+    "src/lib/prompts/grounded-support-assessment-v0.4.ts": "f29492c6f44d5161b7b24607eba278ea8dbd998b117f92e29f71902fe84baecf",
+    "src/lib/prompts/grounded-claim-extraction-v0.3.ts": "b883a7bdc1363f4bd7947ae9c3b83b5fc45216227b132c7ba972cbb9b4f276aa"
+  }
+}

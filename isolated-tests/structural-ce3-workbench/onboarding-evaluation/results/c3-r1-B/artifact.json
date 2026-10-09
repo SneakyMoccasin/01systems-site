@@ -1,0 +1,277 @@
+{
+  "schema_version": "ce3-onboarding-review/1",
+  "id": "c3-r1-B",
+  "request": {
+    "proposal_digest": "7d56c4da2cc2d973b9e2a6a23c7a6ae22113b73c5124145c1c6afbdc3426f750",
+    "snapshot": {
+      "schema_version": "ce3-onboarding-proposal/1",
+      "id": "c3-r1",
+      "revision": 1,
+      "profile": "fixed-replay/0.1",
+      "analysis": {
+        "kind": "check",
+        "question": "Kan plan P uppfylla kravet på godkännande senast dag 5?",
+        "plan_ids": [
+          "plan_p"
+        ],
+        "criterion_ids": [
+          "criterion_deadline",
+          "criterion_threshold"
+        ],
+        "changed_assumption_ids": []
+      },
+      "scope": {
+        "includes": [
+          "Plan P och dess provdatum.",
+          "Tidskravet för godkännande.",
+          "Motstridiga gränser för godkänt prov."
+        ],
+        "excludes": []
+      },
+      "sources": [
+        {
+          "id": "brief",
+          "version": 1,
+          "kind": "document",
+          "original_ref": "synthetic://c3/brief",
+          "original_sha256": "dd39182c69c4b5673059d1f61060ba3c6ca8f09d180d8b77e73f9f3caacf8167",
+          "extraction": "complete",
+          "content": "Kontrollera plan P: genomför ett prov. Kravet är godkännande senast dag 5 från start dag 0. Kontrollprotokollet säger att gränsen för godkänt prov är högst 8 enheter. Projektbeslutet säger att samma gräns är högst 10 enheter. Ingen källa har fastställts som överordnad.",
+          "content_sha256": "dd39182c69c4b5673059d1f61060ba3c6ca8f09d180d8b77e73f9f3caacf8167",
+          "extraction_note": null,
+          "trust": "data_only"
+        },
+        {
+          "id": "answer-old",
+          "version": 1,
+          "kind": "answer",
+          "original_ref": "synthetic://c3/answer-old",
+          "original_sha256": "722590f14d3b7ce1b3412be9886185688241cb5138e9da258564e9dd1923edad",
+          "extraction": "complete",
+          "content": "Svar a1 på frågan om provdag: provet är bokat dag 2.",
+          "content_sha256": "722590f14d3b7ce1b3412be9886185688241cb5138e9da258564e9dd1923edad",
+          "extraction_note": null,
+          "trust": "data_only"
+        },
+        {
+          "id": "answer-new",
+          "version": 1,
+          "kind": "answer",
+          "original_ref": "synthetic://c3/answer-new",
+          "original_sha256": "cebdcd910009f6cab9f9f1f4fcfd9969743c9f96ac5f48205fc6a0b28160cb98",
+          "extraction": "complete",
+          "content": "Svar a2 ersätter a1 om provdag: jag skrev fel, provet är bokat dag 4. Detta rättar bara provdagen, inte gränsen för godkänt prov.",
+          "content_sha256": "cebdcd910009f6cab9f9f1f4fcfd9969743c9f96ac5f48205fc6a0b28160cb98",
+          "extraction_note": null,
+          "trust": "data_only"
+        }
+      ],
+      "items": [
+        {
+          "id": "plan_p",
+          "kind": "plan",
+          "statement": "Genomför ett prov.",
+          "type": "document_fact",
+          "status": "known",
+          "value": true,
+          "unit": null,
+          "refs": [
+            {
+              "source_id": "brief",
+              "source_version": 1,
+              "quote": "Kontrollera plan P: genomför ett prov.",
+              "start": 0,
+              "end": 38,
+              "location": null
+            }
+          ],
+          "depends_on": [],
+          "supersedes": [],
+          "rationale": "Planen anges i underlaget.",
+          "scenario_choice": null
+        },
+        {
+          "id": "criterion_deadline",
+          "kind": "criterion",
+          "statement": "Godkännande ska ske senast dag 5 från start dag 0.",
+          "type": "requirement",
+          "status": "known",
+          "value": 5,
+          "unit": "dag",
+          "refs": [
+            {
+              "source_id": "brief",
+              "source_version": 1,
+              "quote": "Kravet är godkännande senast dag 5 från start dag 0.",
+              "start": 39,
+              "end": 91,
+              "location": null
+            }
+          ],
+          "depends_on": [],
+          "supersedes": [],
+          "rationale": "Uttryckligt krav.",
+          "scenario_choice": null
+        },
+        {
+          "id": "criterion_threshold",
+          "kind": "criterion",
+          "statement": "Gränsen för godkänt prov är högst 8 enheter eller högst 10 enheter, utan fastställd överordnad källa.",
+          "type": "requirement",
+          "status": "conflict",
+          "value": null,
+          "unit": "enheter",
+          "refs": [
+            {
+              "source_id": "brief",
+              "source_version": 1,
+              "quote": "Kontrollprotokollet säger att gränsen för godkänt prov är högst 8 enheter.",
+              "start": 92,
+              "end": 166,
+              "location": null
+            },
+            {
+              "source_id": "brief",
+              "source_version": 1,
+              "quote": "Projektbeslutet säger att samma gräns är högst 10 enheter.",
+              "start": 167,
+              "end": 225,
+              "location": null
+            },
+            {
+              "source_id": "brief",
+              "source_version": 1,
+              "quote": "Ingen källa har fastställts som överordnad.",
+              "start": 226,
+              "end": 269,
+              "location": null
+            }
+          ],
+          "depends_on": [],
+          "supersedes": [],
+          "rationale": "Två angivna gränser saknar prioritet.",
+          "scenario_choice": null
+        },
+        {
+          "id": "assumption_test_day_old",
+          "kind": "assumption",
+          "statement": "Provet är bokat dag 2.",
+          "type": "scenario_assumption",
+          "status": "superseded",
+          "value": 2,
+          "unit": "dag",
+          "refs": [
+            {
+              "source_id": "answer-old",
+              "source_version": 1,
+              "quote": "Svar a1 på frågan om provdag: provet är bokat dag 2.",
+              "start": 0,
+              "end": 52,
+              "location": null
+            }
+          ],
+          "depends_on": [],
+          "supersedes": [],
+          "rationale": "Ersatt av senare svar.",
+          "scenario_choice": {
+            "source_id": "answer-old",
+            "source_version": 1,
+            "quote": "Svar a1 på frågan om provdag: provet är bokat dag 2.",
+            "start": 0,
+            "end": 52,
+            "location": null
+          }
+        },
+        {
+          "id": "assumption_test_day",
+          "kind": "assumption",
+          "statement": "Provet är bokat dag 4.",
+          "type": "scenario_assumption",
+          "status": "known",
+          "value": 4,
+          "unit": "dag",
+          "refs": [
+            {
+              "source_id": "answer-new",
+              "source_version": 1,
+              "quote": "Svar a2 ersätter a1 om provdag: jag skrev fel, provet är bokat dag 4.",
+              "start": 0,
+              "end": 69,
+              "location": null
+            }
+          ],
+          "depends_on": [],
+          "supersedes": [
+            "assumption_test_day_old"
+          ],
+          "rationale": "Det senare svaret rättar provdagen.",
+          "scenario_choice": {
+            "source_id": "answer-new",
+            "source_version": 1,
+            "quote": "Svar a2 ersätter a1 om provdag: jag skrev fel, provet är bokat dag 4.",
+            "start": 0,
+            "end": 69,
+            "location": null
+          }
+        }
+      ],
+      "gaps": [
+        {
+          "id": "gap_threshold_conflict",
+          "item_ids": [
+            "criterion_threshold"
+          ],
+          "kind": "conflict",
+          "impact": "blocks_handoff",
+          "status": "open",
+          "explanation": "Godkännandegränsen är motstridig och ingen källa är överordnad.",
+          "resolution": null
+        },
+        {
+          "id": "gap_test_outcome",
+          "item_ids": [
+            "plan_p",
+            "criterion_deadline",
+            "criterion_threshold",
+            "assumption_test_day"
+          ],
+          "kind": "missing_data",
+          "impact": "limits_conclusion",
+          "status": "open",
+          "explanation": "Provets utfall och tidpunkten för ett eventuellt godkännande anges inte.",
+          "resolution": null
+        }
+      ],
+      "change": {
+        "parent_digest": null,
+        "changed_item_ids": [],
+        "affected_finding_ids": [],
+        "reason": "First live draft; immutable evaluation snapshot."
+      }
+    },
+    "trigger": "first_draft",
+    "changed_item_ids": [],
+    "prior_finding_ids": [],
+    "trust": "data_only"
+  },
+  "result": {
+    "status": "complete",
+    "assessed_item_ids": [
+      "plan_p",
+      "criterion_deadline",
+      "criterion_threshold",
+      "assumption_test_day"
+    ],
+    "findings": [],
+    "limitations": [
+      "Underlaget anger varken provutfall eller när ett eventuellt godkännande sker.",
+      "Godkännandegränsen är olöst mellan 8 och 10 enheter."
+    ],
+    "producer": {
+      "mode": "live",
+      "adapter": "ce3-eval-B/1",
+      "model": "gpt-5.6-terra",
+      "prompt_version": "ce3-eval-prompts/1"
+    }
+  }
+}

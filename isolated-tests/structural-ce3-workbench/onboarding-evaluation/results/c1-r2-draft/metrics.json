@@ -1,0 +1,27 @@
+{
+  "id": "c1-r2-draft",
+  "started": "2026-10-09T10:48:04.981Z",
+  "elapsed_ms": 10451,
+  "http_status": 200,
+  "request_id": "req_12dd74b474974f489a422904f4357153",
+  "requested_model": "gpt-5.6-terra",
+  "returned_model": "gpt-5.6-terra",
+  "usage": {
+    "input_tokens": 1758,
+    "input_tokens_details": {
+      "cache_write_tokens": 0,
+      "cached_tokens": 1755
+    },
+    "output_tokens": 1185,
+    "output_tokens_details": {
+      "reasoning_tokens": 236
+    },
+    "total_tokens": 2943
+  },
+  "cost": {
+    "list_price_usd": 0.014577,
+    "cache_write_upper_usd": 0.0145785
+  },
+  "reserved_usd": 0.152,
+  "error": null
+}

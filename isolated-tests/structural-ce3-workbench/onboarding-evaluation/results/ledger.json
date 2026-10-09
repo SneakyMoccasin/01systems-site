@@ -1,0 +1,167 @@
+{
+  "version": "ce3-eval-budget/1",
+  "reservations": [
+    {
+      "id": "c1-r1-draft",
+      "started": "2026-10-09T10:47:25.085Z",
+      "reserved_usd": 0.152,
+      "input_token_upper_bound": 12501
+    },
+    {
+      "id": "c1-r1-A",
+      "started": "2026-10-09T10:47:43.617Z",
+      "reserved_usd": 0.152,
+      "input_token_upper_bound": 16208
+    },
+    {
+      "id": "c1-r1-B",
+      "started": "2026-10-09T10:47:59.558Z",
+      "reserved_usd": 0.152,
+      "input_token_upper_bound": 17032
+    },
+    {
+      "id": "c1-r2-draft",
+      "started": "2026-10-09T10:48:04.981Z",
+      "reserved_usd": 0.152,
+      "input_token_upper_bound": 12501
+    },
+    {
+      "id": "c1-r2-B",
+      "started": "2026-10-09T10:48:15.469Z",
+      "reserved_usd": 0.152,
+      "input_token_upper_bound": 16865
+    },
+    {
+      "id": "c1-r2-A",
+      "started": "2026-10-09T10:48:19.659Z",
+      "reserved_usd": 0.152,
+      "input_token_upper_bound": 16041
+    },
+    {
+      "id": "c2-r1-draft",
+      "started": "2026-10-09T10:48:32.819Z",
+      "reserved_usd": 0.152,
+      "input_token_upper_bound": 12533
+    },
+    {
+      "id": "c2-r1-A",
+      "started": "2026-10-09T10:48:44.207Z",
+      "reserved_usd": 0.152,
+      "input_token_upper_bound": 18298
+    },
+    {
+      "id": "c2-r1-B",
+      "started": "2026-10-09T10:49:01.774Z",
+      "reserved_usd": 0.152,
+      "input_token_upper_bound": 19122
+    },
+    {
+      "id": "c2-r2-draft",
+      "started": "2026-10-09T10:49:07.281Z",
+      "reserved_usd": 0.152,
+      "input_token_upper_bound": 12533
+    },
+    {
+      "id": "c2-r2-B",
+      "started": "2026-10-09T10:49:19.632Z",
+      "reserved_usd": 0.152,
+      "input_token_upper_bound": 19790
+    },
+    {
+      "id": "c2-r2-A",
+      "started": "2026-10-09T10:49:40.712Z",
+      "reserved_usd": 0.152,
+      "input_token_upper_bound": 18966
+    },
+    {
+      "id": "c3-r1-draft",
+      "started": "2026-10-09T10:49:56.358Z",
+      "reserved_usd": 0.152,
+      "input_token_upper_bound": 13410
+    },
+    {
+      "id": "c3-r1-A",
+      "started": "2026-10-09T10:50:05.151Z",
+      "reserved_usd": 0.152,
+      "input_token_upper_bound": 18184
+    },
+    {
+      "id": "c3-r1-B",
+      "started": "2026-10-09T10:50:17.115Z",
+      "reserved_usd": 0.152,
+      "input_token_upper_bound": 19008
+    },
+    {
+      "id": "c3-r2-draft",
+      "started": "2026-10-09T10:50:27.538Z",
+      "reserved_usd": 0.152,
+      "input_token_upper_bound": 13410
+    },
+    {
+      "id": "c3-r2-B",
+      "started": "2026-10-09T10:50:35.948Z",
+      "reserved_usd": 0.152,
+      "input_token_upper_bound": 19024
+    },
+    {
+      "id": "c3-r2-A",
+      "started": "2026-10-09T10:50:49.575Z",
+      "reserved_usd": 0.152,
+      "input_token_upper_bound": 18200
+    },
+    {
+      "id": "c4-r1-draft",
+      "started": "2026-10-09T10:51:03.206Z",
+      "reserved_usd": 0.152,
+      "input_token_upper_bound": 12552
+    },
+    {
+      "id": "c4-r1-A",
+      "started": "2026-10-09T10:51:15.191Z",
+      "reserved_usd": 0.152,
+      "input_token_upper_bound": 18347
+    },
+    {
+      "id": "c4-r1-B",
+      "started": "2026-10-09T10:51:28.326Z",
+      "reserved_usd": 0.152,
+      "input_token_upper_bound": 19171
+    },
+    {
+      "id": "c4-r2-draft",
+      "started": "2026-10-09T10:51:36.164Z",
+      "reserved_usd": 0.152,
+      "input_token_upper_bound": 12552
+    },
+    {
+      "id": "c4-r2-B",
+      "started": "2026-10-09T10:51:56.116Z",
+      "reserved_usd": 0.152,
+      "input_token_upper_bound": 18951
+    },
+    {
+      "id": "c4-r2-A",
+      "started": "2026-10-09T10:52:02.434Z",
+      "reserved_usd": 0.152,
+      "input_token_upper_bound": 18127
+    },
+    {
+      "id": "c5-r1-draft",
+      "started": "2026-10-09T10:52:17.262Z",
+      "reserved_usd": 0.152,
+      "input_token_upper_bound": 13002
+    },
+    {
+      "id": "c5-r1-A",
+      "started": "2026-10-09T10:52:27.186Z",
+      "reserved_usd": 0.152,
+      "input_token_upper_bound": 18927
+    },
+    {
+      "id": "c5-r1-B",
+      "started": "2026-10-09T10:52:35.362Z",
+      "reserved_usd": 0.152,
+      "input_token_upper_bound": 19751
+    }
+  ]
+}

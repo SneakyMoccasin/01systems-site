@@ -1,0 +1,200 @@
+{
+  "status": "complete",
+  "assessments": [
+    {
+      "item_id": "plan_a",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "plan A (test i egen lokal)",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Plan A:s beskrivning är angiven."
+    },
+    {
+      "item_id": "plan_b",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "plan B (test i hyrd lokal)",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Plan B:s beskrivning är angiven."
+    },
+    {
+      "item_id": "criterion_approval_by_day_5",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "blir godkända senast dag 5, räknat från start dag 0",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Godkännandedatumet är ett angivet urvalskrav."
+    },
+    {
+      "item_id": "criterion_lowest_total_cost",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Välj efter lägst total kostnad bland planer som blir godkända",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Lägst total kostnad är det angivna urvalsmålet bland godkända planer."
+    },
+    {
+      "item_id": "rule_separate_control_notice",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Båda kräver ett separat kontrollbesked.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Ett separat kontrollbesked krävs för båda planerna."
+    },
+    {
+      "item_id": "cost_plan_a",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Kostnaden för vardera plan",
+          "occurrence": 0
+        },
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "är okända.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Kostnaden för vardera plan anges som okänd."
+    },
+    {
+      "item_id": "cost_plan_b",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Kostnaden för vardera plan",
+          "occurrence": 0
+        },
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "är okända.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Kostnaden för vardera plan anges som okänd."
+    },
+    {
+      "item_id": "control_notice_time_plan_a",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "tidpunkterna för kontrollbeskeden är okända.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Tidpunkterna för kontrollbeskeden anges som okända."
+    },
+    {
+      "item_id": "control_notice_time_plan_b",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "tidpunkterna för kontrollbeskeden är okända.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Tidpunkterna för kontrollbeskeden anges som okända."
+    },
+    {
+      "item_id": "rule_no_default_values",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Inga schablonvärden eller hypotetiska tider har valts.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Underlaget utesluter valda schablonvärden och hypotetiska tider."
+    }
+  ],
+  "findings": [
+    {
+      "id": "finding_approval_time_missing",
+      "target_ids": [
+        "criterion_approval_by_day_5"
+      ],
+      "category": "meaning_shift",
+      "basis": "evidence",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "blir godkända senast dag 5, räknat från start dag 0",
+          "occurrence": 0
+        },
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Båda kräver ett separat kontrollbesked.",
+          "occurrence": 0
+        },
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "tidpunkterna för kontrollbeskeden är okända.",
+          "occurrence": 0
+        }
+      ],
+      "searched_source_ids": [
+        "brief"
+      ],
+      "explanation": "Utkastet saknar tidpunkt för när respektive plan blir godkänd. Underlaget anger att kontrollbesked krävs och att dess tidpunkt är okänd, men anger inte att kontrollbeskedets tidpunkt är samma som godkännandetidpunkten. Gapet om kontrollbesked drar därför en ej angiven koppling till godkännande senast dag 5.",
+      "suggested_question": "När blir plan A respektive plan B godkänd, och är datumet för kontrollbeskedet samma datum som godkännandet?",
+      "impact": "blocks_handoff"
+    }
+  ],
+  "limitations": [],
+  "questions": [
+    {
+      "id": "question_approval_times",
+      "text": "När blir plan A respektive plan B godkänd, och är datumet för kontrollbeskedet samma datum som godkännandet?",
+      "target_ids": [
+        "criterion_approval_by_day_5",
+        "control_notice_time_plan_a",
+        "control_notice_time_plan_b"
+      ],
+      "finding_ids": [
+        "finding_approval_time_missing"
+      ],
+      "reason": "Godkännandetidpunkt krävs för att pröva urvalskravet senast dag 5, medan sambandet till kontrollbeskedets tidpunkt inte är angivet.",
+      "impact": "blocks_handoff"
+    }
+  ]
+}

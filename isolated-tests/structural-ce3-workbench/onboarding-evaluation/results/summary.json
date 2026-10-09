@@ -1,0 +1,1546 @@
+{
+  "version": "ce3-eval-metrics/1",
+  "stages": {
+    "draft": {
+      "calls": 9,
+      "input_tokens": 16538,
+      "cached_tokens": 11869,
+      "output_tokens": 13070,
+      "elapsed_ms": 111368,
+      "list_price_usd": 0.1685518,
+      "cache_write_upper_usd": 0.1708863,
+      "unknown_cost_calls": 0,
+      "findings": 0,
+      "questions": 16,
+      "wire_or_adapter_failures": 0,
+      "contract_failures": 1
+    },
+    "A": {
+      "calls": 9,
+      "input_tokens": 29024,
+      "cached_tokens": 0,
+      "output_tokens": 12112,
+      "elapsed_ms": 123431,
+      "list_price_usd": 0.20339200000000002,
+      "cache_write_upper_usd": 0.217904,
+      "unknown_cost_calls": 0,
+      "findings": 5,
+      "questions": 14,
+      "wire_or_adapter_failures": 0,
+      "contract_failures": 2
+    },
+    "B": {
+      "calls": 9,
+      "input_tokens": 27309,
+      "cached_tokens": 7763,
+      "output_tokens": 7479,
+      "elapsed_ms": 74765,
+      "list_price_usd": 0.1303926,
+      "cache_write_upper_usd": 0.14016559999999997,
+      "unknown_cost_calls": 1,
+      "findings": 2,
+      "questions": 5,
+      "wire_or_adapter_failures": 0,
+      "contract_failures": 2
+    }
+  },
+  "matchedStages": {
+    "A": {
+      "calls": 8,
+      "elapsed_ms": 115439,
+      "list_price_usd": 0.185866,
+      "input_tokens": 25589,
+      "output_tokens": 11224
+    },
+    "B": {
+      "calls": 8,
+      "elapsed_ms": 73997,
+      "list_price_usd": 0.1303926,
+      "input_tokens": 27309,
+      "output_tokens": 7479
+    }
+  },
+  "matched_pairs": 8,
+  "totals": {
+    "calls": 27,
+    "input_tokens": 72871,
+    "cached_tokens": 19632,
+    "output_tokens": 32661,
+    "elapsed_ms": 309564,
+    "list_price_usd": 0.5023364,
+    "cache_write_upper_usd": 0.5289558999999999,
+    "unknown_cost_calls": 1,
+    "findings": 7,
+    "questions": 35,
+    "wire_or_adapter_failures": 0,
+    "contract_failures": 5,
+    "reserved_upper_usd": 4.104,
+    "completed_pairs": 5,
+    "planned_pairs": 10,
+    "missing_pairs": 1
+  },
+  "pairs": [
+    {
+      "id": "c1-r1",
+      "case_id": "c1",
+      "repetition": 1,
+      "steps": [
+        {
+          "stage": "draft",
+          "status": "valid",
+          "call_id": "c1-r1-draft"
+        },
+        {
+          "stage": "A",
+          "status": "valid",
+          "call_id": "c1-r1-A"
+        },
+        {
+          "stage": "B",
+          "status": "valid",
+          "call_id": "c1-r1-B"
+        }
+      ],
+      "status": "complete",
+      "proposal_digest": "ff77372251c7aaa66074e797be12875332047bf395966dd21e41a7cb1bfe10bd",
+      "paired_input_identical": true,
+      "B_minus_A_ms": -10505,
+      "B_minus_A_list_price_usd": -0.009134000000000001
+    },
+    {
+      "id": "c1-r2",
+      "case_id": "c1",
+      "repetition": 2,
+      "steps": [
+        {
+          "stage": "draft",
+          "status": "valid",
+          "call_id": "c1-r2-draft"
+        },
+        {
+          "stage": "B",
+          "status": "valid",
+          "call_id": "c1-r2-B"
+        },
+        {
+          "stage": "A",
+          "status": "contract_invalid",
+          "call_id": "c1-r2-A"
+        }
+      ],
+      "status": "incomplete",
+      "proposal_digest": "680e920e218ecf989ccca2447db78494d385a1565b5c1d16d6aceb544ad6502e",
+      "paired_input_identical": true,
+      "B_minus_A_ms": -8961,
+      "B_minus_A_list_price_usd": -0.012222200000000003
+    },
+    {
+      "id": "c2-r1",
+      "case_id": "c2",
+      "repetition": 1,
+      "steps": [
+        {
+          "stage": "draft",
+          "status": "valid",
+          "call_id": "c2-r1-draft"
+        },
+        {
+          "stage": "A",
+          "status": "valid",
+          "call_id": "c2-r1-A"
+        },
+        {
+          "stage": "B",
+          "status": "valid",
+          "call_id": "c2-r1-B"
+        }
+      ],
+      "status": "complete",
+      "proposal_digest": "28f272a51133386d8546a684aaf7f6ad9d2713973f23b20eb89c6013bb1e702d",
+      "paired_input_identical": true,
+      "B_minus_A_ms": -12039,
+      "B_minus_A_list_price_usd": -0.0157502
+    },
+    {
+      "id": "c2-r2",
+      "case_id": "c2",
+      "repetition": 2,
+      "steps": [
+        {
+          "stage": "draft",
+          "status": "valid",
+          "call_id": "c2-r2-draft"
+        },
+        {
+          "stage": "B",
+          "status": "valid",
+          "call_id": "c2-r2-B"
+        },
+        {
+          "stage": "A",
+          "status": "valid",
+          "call_id": "c2-r2-A"
+        }
+      ],
+      "status": "complete",
+      "proposal_digest": "6352db30b60c4f91332e4399b70ea632b75172449d2ef1a71f3dc491ac8c49a4",
+      "paired_input_identical": true,
+      "B_minus_A_ms": 5446,
+      "B_minus_A_list_price_usd": 0.0030898
+    },
+    {
+      "id": "c3-r1",
+      "case_id": "c3",
+      "repetition": 1,
+      "steps": [
+        {
+          "stage": "draft",
+          "status": "contract_invalid",
+          "call_id": "c3-r1-draft"
+        },
+        {
+          "stage": "A",
+          "status": "contract_invalid",
+          "call_id": "c3-r1-A"
+        },
+        {
+          "stage": "B",
+          "status": "contract_invalid",
+          "call_id": "c3-r1-B"
+        }
+      ],
+      "status": "incomplete",
+      "proposal_digest": "7d56c4da2cc2d973b9e2a6a23c7a6ae22113b73c5124145c1c6afbdc3426f750",
+      "paired_input_identical": true,
+      "B_minus_A_ms": -1544,
+      "B_minus_A_list_price_usd": -0.003078200000000003
+    },
+    {
+      "id": "c3-r2",
+      "case_id": "c3",
+      "repetition": 2,
+      "steps": [
+        {
+          "stage": "draft",
+          "status": "valid",
+          "call_id": "c3-r2-draft"
+        },
+        {
+          "stage": "B",
+          "status": "contract_invalid",
+          "call_id": "c3-r2-B"
+        },
+        {
+          "stage": "A",
+          "status": "valid",
+          "call_id": "c3-r2-A"
+        }
+      ],
+      "status": "incomplete",
+      "proposal_digest": "0dd5330793cc0224a14eb40936adb072d4779f1009615cb0780b6b39e55680aa",
+      "paired_input_identical": true,
+      "B_minus_A_ms": 24,
+      "B_minus_A_list_price_usd": -0.0020222000000000018
+    },
+    {
+      "id": "c4-r1",
+      "case_id": "c4",
+      "repetition": 1,
+      "steps": [
+        {
+          "stage": "draft",
+          "status": "valid",
+          "call_id": "c4-r1-draft"
+        },
+        {
+          "stage": "A",
+          "status": "valid",
+          "call_id": "c4-r1-A"
+        },
+        {
+          "stage": "B",
+          "status": "valid",
+          "call_id": "c4-r1-B"
+        }
+      ],
+      "status": "complete",
+      "proposal_digest": "a17a35f8cd8c1c89b7c086f06771b3714643922168c01961a7a2bd411e0c9703",
+      "paired_input_identical": true,
+      "B_minus_A_ms": -5308,
+      "B_minus_A_list_price_usd": -0.0070262000000000015
+    },
+    {
+      "id": "c4-r2",
+      "case_id": "c4",
+      "repetition": 2,
+      "steps": [
+        {
+          "stage": "draft",
+          "status": "valid",
+          "call_id": "c4-r2-draft"
+        },
+        {
+          "stage": "B",
+          "status": "valid",
+          "call_id": "c4-r2-B"
+        },
+        {
+          "stage": "A",
+          "status": "valid",
+          "call_id": "c4-r2-A"
+        }
+      ],
+      "status": "complete",
+      "proposal_digest": "11d76d2067252be53e8b512a9c297ece68d94d99f2afe36588b40eca6fa1933b",
+      "paired_input_identical": true,
+      "B_minus_A_ms": -8555,
+      "B_minus_A_list_price_usd": -0.009330200000000002
+    },
+    {
+      "id": "c5-r1",
+      "case_id": "c5",
+      "repetition": 1,
+      "steps": [
+        {
+          "stage": "draft",
+          "status": "valid",
+          "call_id": "c5-r1-draft"
+        },
+        {
+          "stage": "A",
+          "status": "valid",
+          "call_id": "c5-r1-A"
+        },
+        {
+          "stage": "B",
+          "status": "failed",
+          "call_id": "c5-r1-B",
+          "error": "HTTP_429"
+        }
+      ],
+      "status": "incomplete",
+      "proposal_digest": "d8bedddd6c380ba671e7c427ad0e430e2d47fcd4dfb964180e7caeaf6ed9b80f",
+      "paired_input_identical": true,
+      "B_minus_A_ms": null,
+      "B_minus_A_list_price_usd": null
+    }
+  ],
+  "calls": [
+    {
+      "id": "c1-r1-draft",
+      "started": "2026-10-09T10:47:25.085Z",
+      "elapsed_ms": 18367,
+      "http_status": 200,
+      "request_id": "req_0b0a44ae687249949e15a492734e00da",
+      "requested_model": "gpt-5.6-terra",
+      "returned_model": "gpt-5.6-terra",
+      "usage": {
+        "input_tokens": 1758,
+        "input_tokens_details": {
+          "cache_write_tokens": 1755,
+          "cached_tokens": 0
+        },
+        "output_tokens": 1563,
+        "output_tokens_details": {
+          "reasoning_tokens": 404
+        },
+        "total_tokens": 3321
+      },
+      "cost": {
+        "list_price_usd": 0.022272,
+        "cache_write_upper_usd": 0.023151
+      },
+      "reserved_usd": 0.152,
+      "error": null,
+      "validation": {
+        "wire": {
+          "valid": true
+        },
+        "schema": {
+          "valid": true
+        },
+        "contract": {
+          "valid": true
+        },
+        "questions": {
+          "valid": true
+        }
+      },
+      "findings": null,
+      "questions": 3,
+      "active_items_assessed": null,
+      "exact_citation_references": 7
+    },
+    {
+      "id": "c1-r1-A",
+      "started": "2026-10-09T10:47:43.617Z",
+      "elapsed_ms": 15879,
+      "http_status": 200,
+      "request_id": "req_a3843116d82447db9baa92a38b9a529f",
+      "requested_model": "gpt-5.6-terra",
+      "returned_model": "gpt-5.6-terra",
+      "usage": {
+        "input_tokens": 2790,
+        "input_tokens_details": {
+          "cache_write_tokens": 2787,
+          "cached_tokens": 0
+        },
+        "output_tokens": 1398,
+        "output_tokens_details": {
+          "reasoning_tokens": 796
+        },
+        "total_tokens": 4188
+      },
+      "cost": {
+        "list_price_usd": 0.022356,
+        "cache_write_upper_usd": 0.023751
+      },
+      "reserved_usd": 0.152,
+      "error": null,
+      "validation": {
+        "wire": {
+          "valid": true
+        },
+        "schema": {
+          "valid": true
+        },
+        "contract": {
+          "valid": true
+        },
+        "questions": {
+          "valid": true
+        }
+      },
+      "findings": 0,
+      "questions": 1,
+      "active_items_assessed": 6,
+      "exact_citation_references": 7
+    },
+    {
+      "id": "c1-r1-B",
+      "started": "2026-10-09T10:47:59.558Z",
+      "elapsed_ms": 5374,
+      "http_status": 200,
+      "request_id": "req_03f2a673b1514f5dafb61b8ac754242f",
+      "requested_model": "gpt-5.6-terra",
+      "returned_model": "gpt-5.6-terra",
+      "usage": {
+        "input_tokens": 3005,
+        "input_tokens_details": {
+          "cache_write_tokens": 3002,
+          "cached_tokens": 0
+        },
+        "output_tokens": 601,
+        "output_tokens_details": {
+          "reasoning_tokens": 152
+        },
+        "total_tokens": 3606
+      },
+      "cost": {
+        "list_price_usd": 0.013222,
+        "cache_write_upper_usd": 0.0147245
+      },
+      "reserved_usd": 0.152,
+      "error": null,
+      "validation": {
+        "wire": {
+          "valid": true
+        },
+        "schema": {
+          "valid": true
+        },
+        "contract": {
+          "valid": true
+        },
+        "questions": {
+          "valid": true
+        }
+      },
+      "findings": 0,
+      "questions": 0,
+      "active_items_assessed": 6,
+      "exact_citation_references": 7
+    },
+    {
+      "id": "c1-r2-draft",
+      "started": "2026-10-09T10:48:04.981Z",
+      "elapsed_ms": 10451,
+      "http_status": 200,
+      "request_id": "req_12dd74b474974f489a422904f4357153",
+      "requested_model": "gpt-5.6-terra",
+      "returned_model": "gpt-5.6-terra",
+      "usage": {
+        "input_tokens": 1758,
+        "input_tokens_details": {
+          "cache_write_tokens": 0,
+          "cached_tokens": 1755
+        },
+        "output_tokens": 1185,
+        "output_tokens_details": {
+          "reasoning_tokens": 236
+        },
+        "total_tokens": 2943
+      },
+      "cost": {
+        "list_price_usd": 0.014577,
+        "cache_write_upper_usd": 0.0145785
+      },
+      "reserved_usd": 0.152,
+      "error": null,
+      "validation": {
+        "wire": {
+          "valid": true
+        },
+        "schema": {
+          "valid": true
+        },
+        "contract": {
+          "valid": true
+        },
+        "questions": {
+          "valid": true
+        }
+      },
+      "findings": null,
+      "questions": 1,
+      "active_items_assessed": null,
+      "exact_citation_references": 6
+    },
+    {
+      "id": "c1-r2-B",
+      "started": "2026-10-09T10:48:15.469Z",
+      "elapsed_ms": 4156,
+      "http_status": 200,
+      "request_id": "req_3970c316a2e548b09fae7c893d9f2a86",
+      "requested_model": "gpt-5.6-terra",
+      "returned_model": "gpt-5.6-terra",
+      "usage": {
+        "input_tokens": 2968,
+        "input_tokens_details": {
+          "cache_write_tokens": 1856,
+          "cached_tokens": 1109
+        },
+        "output_tokens": 435,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 3403
+      },
+      "cost": {
+        "list_price_usd": 0.0091598,
+        "cache_write_upper_usd": 0.010089299999999999
+      },
+      "reserved_usd": 0.152,
+      "error": null,
+      "validation": {
+        "wire": {
+          "valid": true
+        },
+        "schema": {
+          "valid": true
+        },
+        "contract": {
+          "valid": true
+        },
+        "questions": {
+          "valid": true
+        }
+      },
+      "findings": 0,
+      "questions": 0,
+      "active_items_assessed": 6,
+      "exact_citation_references": 6
+    },
+    {
+      "id": "c1-r2-A",
+      "started": "2026-10-09T10:48:19.659Z",
+      "elapsed_ms": 13117,
+      "http_status": 200,
+      "request_id": "req_2e002fb31bc34967b72ec80c8ad2a00f",
+      "requested_model": "gpt-5.6-terra",
+      "returned_model": "gpt-5.6-terra",
+      "usage": {
+        "input_tokens": 2753,
+        "input_tokens_details": {
+          "cache_write_tokens": 2750,
+          "cached_tokens": 0
+        },
+        "output_tokens": 1323,
+        "output_tokens_details": {
+          "reasoning_tokens": 387
+        },
+        "total_tokens": 4076
+      },
+      "cost": {
+        "list_price_usd": 0.021382,
+        "cache_write_upper_usd": 0.0227585
+      },
+      "reserved_usd": 0.152,
+      "error": null,
+      "validation": {
+        "wire": {
+          "valid": true
+        },
+        "schema": {
+          "valid": true
+        },
+        "contract": {
+          "valid": false,
+          "error": "ABSENCE_SCOPE: finding_approval_timing_not_scenario_choice"
+        },
+        "questions": {
+          "valid": true
+        }
+      },
+      "findings": 2,
+      "questions": 2,
+      "active_items_assessed": 6,
+      "exact_citation_references": 6
+    },
+    {
+      "id": "c2-r1-draft",
+      "started": "2026-10-09T10:48:32.819Z",
+      "elapsed_ms": 11357,
+      "http_status": 200,
+      "request_id": "req_feaaa36c8be24c2aac7af28465219956",
+      "requested_model": "gpt-5.6-terra",
+      "returned_model": "gpt-5.6-terra",
+      "usage": {
+        "input_tokens": 1756,
+        "input_tokens_details": {
+          "cache_write_tokens": 616,
+          "cached_tokens": 1137
+        },
+        "output_tokens": 1500,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 3256
+      },
+      "cost": {
+        "list_price_usd": 0.0194654,
+        "cache_write_upper_usd": 0.0197749
+      },
+      "reserved_usd": 0.152,
+      "error": null,
+      "validation": {
+        "wire": {
+          "valid": true
+        },
+        "schema": {
+          "valid": true
+        },
+        "contract": {
+          "valid": true
+        },
+        "questions": {
+          "valid": true
+        }
+      },
+      "findings": null,
+      "questions": 2,
+      "active_items_assessed": null,
+      "exact_citation_references": 9
+    },
+    {
+      "id": "c2-r1-A",
+      "started": "2026-10-09T10:48:44.207Z",
+      "elapsed_ms": 17486,
+      "http_status": 200,
+      "request_id": "req_0493aff1043c41a895903ecbc11557d3",
+      "requested_model": "gpt-5.6-terra",
+      "returned_model": "gpt-5.6-terra",
+      "usage": {
+        "input_tokens": 3240,
+        "input_tokens_details": {
+          "cache_write_tokens": 3237,
+          "cached_tokens": 0
+        },
+        "output_tokens": 1839,
+        "output_tokens_details": {
+          "reasoning_tokens": 688
+        },
+        "total_tokens": 5079
+      },
+      "cost": {
+        "list_price_usd": 0.028548,
+        "cache_write_upper_usd": 0.030168
+      },
+      "reserved_usd": 0.152,
+      "error": null,
+      "validation": {
+        "wire": {
+          "valid": true
+        },
+        "schema": {
+          "valid": true
+        },
+        "contract": {
+          "valid": true
+        },
+        "questions": {
+          "valid": true
+        }
+      },
+      "findings": 1,
+      "questions": 2,
+      "active_items_assessed": 9,
+      "exact_citation_references": 9
+    },
+    {
+      "id": "c2-r1-B",
+      "started": "2026-10-09T10:49:01.774Z",
+      "elapsed_ms": 5447,
+      "http_status": 200,
+      "request_id": "req_38cb34bf91204879877d9d7457a09a4d",
+      "requested_model": "gpt-5.6-terra",
+      "returned_model": "gpt-5.6-terra",
+      "usage": {
+        "input_tokens": 3455,
+        "input_tokens_details": {
+          "cache_write_tokens": 2343,
+          "cached_tokens": 1109
+        },
+        "output_tokens": 657,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 4112
+      },
+      "cost": {
+        "list_price_usd": 0.0127978,
+        "cache_write_upper_usd": 0.013970799999999998
+      },
+      "reserved_usd": 0.152,
+      "error": null,
+      "validation": {
+        "wire": {
+          "valid": true
+        },
+        "schema": {
+          "valid": true
+        },
+        "contract": {
+          "valid": true
+        },
+        "questions": {
+          "valid": true
+        }
+      },
+      "findings": 0,
+      "questions": 0,
+      "active_items_assessed": 9,
+      "exact_citation_references": 9
+    },
+    {
+      "id": "c2-r2-draft",
+      "started": "2026-10-09T10:49:07.281Z",
+      "elapsed_ms": 12319,
+      "http_status": 200,
+      "request_id": "req_559d54caf5f847caaabb9aae28b65913",
+      "requested_model": "gpt-5.6-terra",
+      "returned_model": "gpt-5.6-terra",
+      "usage": {
+        "input_tokens": 1756,
+        "input_tokens_details": {
+          "cache_write_tokens": 0,
+          "cached_tokens": 1753
+        },
+        "output_tokens": 1659,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 3415
+      },
+      "cost": {
+        "list_price_usd": 0.020264599999999997,
+        "cache_write_upper_usd": 0.0202661
+      },
+      "reserved_usd": 0.152,
+      "error": null,
+      "validation": {
+        "wire": {
+          "valid": true
+        },
+        "schema": {
+          "valid": true
+        },
+        "contract": {
+          "valid": true
+        },
+        "questions": {
+          "valid": true
+        }
+      },
+      "findings": null,
+      "questions": 2,
+      "active_items_assessed": null,
+      "exact_citation_references": 12
+    },
+    {
+      "id": "c2-r2-B",
+      "started": "2026-10-09T10:49:19.632Z",
+      "elapsed_ms": 21042,
+      "http_status": 200,
+      "request_id": "req_529530e838144dc99accc5b3756bf851",
+      "requested_model": "gpt-5.6-terra",
+      "returned_model": "gpt-5.6-terra",
+      "usage": {
+        "input_tokens": 3624,
+        "input_tokens_details": {
+          "cache_write_tokens": 2512,
+          "cached_tokens": 1109
+        },
+        "output_tokens": 2005,
+        "output_tokens_details": {
+          "reasoning_tokens": 919
+        },
+        "total_tokens": 5629
+      },
+      "cost": {
+        "list_price_usd": 0.0293118,
+        "cache_write_upper_usd": 0.0305693
+      },
+      "reserved_usd": 0.152,
+      "error": null,
+      "validation": {
+        "wire": {
+          "valid": true
+        },
+        "schema": {
+          "valid": true
+        },
+        "contract": {
+          "valid": true
+        },
+        "questions": {
+          "valid": true
+        }
+      },
+      "findings": 1,
+      "questions": 2,
+      "active_items_assessed": 10,
+      "exact_citation_references": 10
+    },
+    {
+      "id": "c2-r2-A",
+      "started": "2026-10-09T10:49:40.712Z",
+      "elapsed_ms": 15596,
+      "http_status": 200,
+      "request_id": "req_7e6e590569a74b25ad3d4582b918916f",
+      "requested_model": "gpt-5.6-terra",
+      "returned_model": "gpt-5.6-terra",
+      "usage": {
+        "input_tokens": 3409,
+        "input_tokens_details": {
+          "cache_write_tokens": 3406,
+          "cached_tokens": 0
+        },
+        "output_tokens": 1617,
+        "output_tokens_details": {
+          "reasoning_tokens": 516
+        },
+        "total_tokens": 5026
+      },
+      "cost": {
+        "list_price_usd": 0.026222,
+        "cache_write_upper_usd": 0.0279265
+      },
+      "reserved_usd": 0.152,
+      "error": null,
+      "validation": {
+        "wire": {
+          "valid": true
+        },
+        "schema": {
+          "valid": true
+        },
+        "contract": {
+          "valid": true
+        },
+        "questions": {
+          "valid": true
+        }
+      },
+      "findings": 1,
+      "questions": 1,
+      "active_items_assessed": 10,
+      "exact_citation_references": 12
+    },
+    {
+      "id": "c3-r1-draft",
+      "started": "2026-10-09T10:49:56.358Z",
+      "elapsed_ms": 8750,
+      "http_status": 200,
+      "request_id": "req_82ac8c771d9441fc8f447642b8dae464",
+      "requested_model": "gpt-5.6-terra",
+      "returned_model": "gpt-5.6-terra",
+      "usage": {
+        "input_tokens": 2054,
+        "input_tokens_details": {
+          "cache_write_tokens": 914,
+          "cached_tokens": 1137
+        },
+        "output_tokens": 1103,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 3157
+      },
+      "cost": {
+        "list_price_usd": 0.0152974,
+        "cache_write_upper_usd": 0.0157559
+      },
+      "reserved_usd": 0.152,
+      "error": null,
+      "validation": {
+        "wire": {
+          "valid": true
+        },
+        "schema": {
+          "valid": true
+        },
+        "contract": {
+          "valid": false,
+          "error": "SCENARIO_LABEL: assumption_test_day_old"
+        },
+        "questions": {
+          "valid": true
+        }
+      },
+      "findings": null,
+      "questions": 2,
+      "active_items_assessed": null,
+      "exact_citation_references": 7
+    },
+    {
+      "id": "c3-r1-A",
+      "started": "2026-10-09T10:50:05.151Z",
+      "elapsed_ms": 11920,
+      "http_status": 200,
+      "request_id": "req_f271fc2969464565bacf06a01f65f899",
+      "requested_model": "gpt-5.6-terra",
+      "returned_model": "gpt-5.6-terra",
+      "usage": {
+        "input_tokens": 3435,
+        "input_tokens_details": {
+          "cache_write_tokens": 3432,
+          "cached_tokens": 0
+        },
+        "output_tokens": 1059,
+        "output_tokens_details": {
+          "reasoning_tokens": 471
+        },
+        "total_tokens": 4494
+      },
+      "cost": {
+        "list_price_usd": 0.019578,
+        "cache_write_upper_usd": 0.0212955
+      },
+      "reserved_usd": 0.152,
+      "error": null,
+      "validation": {
+        "wire": {
+          "valid": true
+        },
+        "schema": {
+          "valid": true
+        },
+        "contract": {
+          "valid": false,
+          "error": "SCENARIO_LABEL: assumption_test_day_old"
+        },
+        "questions": {
+          "valid": true
+        }
+      },
+      "findings": 0,
+      "questions": 2,
+      "active_items_assessed": 4,
+      "exact_citation_references": 6
+    },
+    {
+      "id": "c3-r1-B",
+      "started": "2026-10-09T10:50:17.115Z",
+      "elapsed_ms": 10376,
+      "http_status": 200,
+      "request_id": "req_d3ae8d914d52453cb4cb322e84dc5f33",
+      "requested_model": "gpt-5.6-terra",
+      "returned_model": "gpt-5.6-terra",
+      "usage": {
+        "input_tokens": 3650,
+        "input_tokens_details": {
+          "cache_write_tokens": 2538,
+          "cached_tokens": 1109
+        },
+        "output_tokens": 933,
+        "output_tokens_details": {
+          "reasoning_tokens": 346
+        },
+        "total_tokens": 4583
+      },
+      "cost": {
+        "list_price_usd": 0.0164998,
+        "cache_write_upper_usd": 0.0177703
+      },
+      "reserved_usd": 0.152,
+      "error": null,
+      "validation": {
+        "wire": {
+          "valid": true
+        },
+        "schema": {
+          "valid": true
+        },
+        "contract": {
+          "valid": false,
+          "error": "SCENARIO_LABEL: assumption_test_day_old"
+        },
+        "questions": {
+          "valid": true
+        }
+      },
+      "findings": 0,
+      "questions": 2,
+      "active_items_assessed": 4,
+      "exact_citation_references": 6
+    },
+    {
+      "id": "c3-r2-draft",
+      "started": "2026-10-09T10:50:27.538Z",
+      "elapsed_ms": 8382,
+      "http_status": 200,
+      "request_id": "req_9116a4896c634702897e6e61fdd0db90",
+      "requested_model": "gpt-5.6-terra",
+      "returned_model": "gpt-5.6-terra",
+      "usage": {
+        "input_tokens": 2054,
+        "input_tokens_details": {
+          "cache_write_tokens": 0,
+          "cached_tokens": 2051
+        },
+        "output_tokens": 1108,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 3162
+      },
+      "cost": {
+        "list_price_usd": 0.0137122,
+        "cache_write_upper_usd": 0.0137137
+      },
+      "reserved_usd": 0.152,
+      "error": null,
+      "validation": {
+        "wire": {
+          "valid": true
+        },
+        "schema": {
+          "valid": true
+        },
+        "contract": {
+          "valid": true
+        },
+        "questions": {
+          "valid": true
+        }
+      },
+      "findings": null,
+      "questions": 2,
+      "active_items_assessed": null,
+      "exact_citation_references": 6
+    },
+    {
+      "id": "c3-r2-B",
+      "started": "2026-10-09T10:50:35.948Z",
+      "elapsed_ms": 13598,
+      "http_status": 200,
+      "request_id": "req_7456731976db4648b9400aefe0daf296",
+      "requested_model": "gpt-5.6-terra",
+      "returned_model": "gpt-5.6-terra",
+      "usage": {
+        "input_tokens": 3641,
+        "input_tokens_details": {
+          "cache_write_tokens": 2529,
+          "cached_tokens": 1109
+        },
+        "output_tokens": 1322,
+        "output_tokens_details": {
+          "reasoning_tokens": 516
+        },
+        "total_tokens": 4963
+      },
+      "cost": {
+        "list_price_usd": 0.0211498,
+        "cache_write_upper_usd": 0.0224158
+      },
+      "reserved_usd": 0.152,
+      "error": null,
+      "validation": {
+        "wire": {
+          "valid": true
+        },
+        "schema": {
+          "valid": true
+        },
+        "contract": {
+          "valid": false,
+          "error": "REVIEW_TARGET: value_test_day_a1"
+        },
+        "questions": {
+          "valid": true
+        }
+      },
+      "findings": 1,
+      "questions": 1,
+      "active_items_assessed": 6,
+      "exact_citation_references": 9
+    },
+    {
+      "id": "c3-r2-A",
+      "started": "2026-10-09T10:50:49.575Z",
+      "elapsed_ms": 13574,
+      "http_status": 200,
+      "request_id": "req_61e7ddc44fc94d16bfba8a124696b522",
+      "requested_model": "gpt-5.6-terra",
+      "returned_model": "gpt-5.6-terra",
+      "usage": {
+        "input_tokens": 3426,
+        "input_tokens_details": {
+          "cache_write_tokens": 3423,
+          "cached_tokens": 0
+        },
+        "output_tokens": 1360,
+        "output_tokens_details": {
+          "reasoning_tokens": 516
+        },
+        "total_tokens": 4786
+      },
+      "cost": {
+        "list_price_usd": 0.023172,
+        "cache_write_upper_usd": 0.024885
+      },
+      "reserved_usd": 0.152,
+      "error": null,
+      "validation": {
+        "wire": {
+          "valid": true
+        },
+        "schema": {
+          "valid": true
+        },
+        "contract": {
+          "valid": true
+        },
+        "questions": {
+          "valid": true
+        }
+      },
+      "findings": 1,
+      "questions": 2,
+      "active_items_assessed": 5,
+      "exact_citation_references": 7
+    },
+    {
+      "id": "c4-r1-draft",
+      "started": "2026-10-09T10:51:03.206Z",
+      "elapsed_ms": 11946,
+      "http_status": 200,
+      "request_id": "req_18462c5092cf47c5bcedf2523bb555a2",
+      "requested_model": "gpt-5.6-terra",
+      "returned_model": "gpt-5.6-terra",
+      "usage": {
+        "input_tokens": 1765,
+        "input_tokens_details": {
+          "cache_write_tokens": 625,
+          "cached_tokens": 1137
+        },
+        "output_tokens": 1541,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 3306
+      },
+      "cost": {
+        "list_price_usd": 0.0199754,
+        "cache_write_upper_usd": 0.020289400000000003
+      },
+      "reserved_usd": 0.152,
+      "error": null,
+      "validation": {
+        "wire": {
+          "valid": true
+        },
+        "schema": {
+          "valid": true
+        },
+        "contract": {
+          "valid": true
+        },
+        "questions": {
+          "valid": true
+        }
+      },
+      "findings": null,
+      "questions": 2,
+      "active_items_assessed": null,
+      "exact_citation_references": 8
+    },
+    {
+      "id": "c4-r1-A",
+      "started": "2026-10-09T10:51:15.191Z",
+      "elapsed_ms": 13097,
+      "http_status": 200,
+      "request_id": "req_89541d7e7933414085fce53926ec292b",
+      "requested_model": "gpt-5.6-terra",
+      "returned_model": "gpt-5.6-terra",
+      "usage": {
+        "input_tokens": 3249,
+        "input_tokens_details": {
+          "cache_write_tokens": 3246,
+          "cached_tokens": 0
+        },
+        "output_tokens": 1281,
+        "output_tokens_details": {
+          "reasoning_tokens": 516
+        },
+        "total_tokens": 4530
+      },
+      "cost": {
+        "list_price_usd": 0.02187,
+        "cache_write_upper_usd": 0.0234945
+      },
+      "reserved_usd": 0.152,
+      "error": null,
+      "validation": {
+        "wire": {
+          "valid": true
+        },
+        "schema": {
+          "valid": true
+        },
+        "contract": {
+          "valid": true
+        },
+        "questions": {
+          "valid": true
+        }
+      },
+      "findings": 0,
+      "questions": 2,
+      "active_items_assessed": 8,
+      "exact_citation_references": 8
+    },
+    {
+      "id": "c4-r1-B",
+      "started": "2026-10-09T10:51:28.326Z",
+      "elapsed_ms": 7789,
+      "http_status": 200,
+      "request_id": "req_d52c376e75e942eab33d3670eec99541",
+      "requested_model": "gpt-5.6-terra",
+      "returned_model": "gpt-5.6-terra",
+      "usage": {
+        "input_tokens": 3464,
+        "input_tokens_details": {
+          "cache_write_tokens": 2352,
+          "cached_tokens": 1109
+        },
+        "output_tokens": 826,
+        "output_tokens_details": {
+          "reasoning_tokens": 295
+        },
+        "total_tokens": 4290
+      },
+      "cost": {
+        "list_price_usd": 0.014843799999999999,
+        "cache_write_upper_usd": 0.0160213
+      },
+      "reserved_usd": 0.152,
+      "error": null,
+      "validation": {
+        "wire": {
+          "valid": true
+        },
+        "schema": {
+          "valid": true
+        },
+        "contract": {
+          "valid": true
+        },
+        "questions": {
+          "valid": true
+        }
+      },
+      "findings": 0,
+      "questions": 0,
+      "active_items_assessed": 8,
+      "exact_citation_references": 8
+    },
+    {
+      "id": "c4-r2-draft",
+      "started": "2026-10-09T10:51:36.164Z",
+      "elapsed_ms": 19908,
+      "http_status": 200,
+      "request_id": "req_3c34f13cb3c2488cbcb78bb567297225",
+      "requested_model": "gpt-5.6-terra",
+      "returned_model": "gpt-5.6-terra",
+      "usage": {
+        "input_tokens": 1765,
+        "input_tokens_details": {
+          "cache_write_tokens": 0,
+          "cached_tokens": 1762
+        },
+        "output_tokens": 2115,
+        "output_tokens_details": {
+          "reasoning_tokens": 516
+        },
+        "total_tokens": 3880
+      },
+      "cost": {
+        "list_price_usd": 0.0257384,
+        "cache_write_upper_usd": 0.025739900000000003
+      },
+      "reserved_usd": 0.152,
+      "error": null,
+      "validation": {
+        "wire": {
+          "valid": true
+        },
+        "schema": {
+          "valid": true
+        },
+        "contract": {
+          "valid": true
+        },
+        "questions": {
+          "valid": true
+        }
+      },
+      "findings": null,
+      "questions": 2,
+      "active_items_assessed": null,
+      "exact_citation_references": 8
+    },
+    {
+      "id": "c4-r2-B",
+      "started": "2026-10-09T10:51:56.116Z",
+      "elapsed_ms": 6215,
+      "http_status": 200,
+      "request_id": "req_c13cc0d090224a56bb1e92beafd3a32b",
+      "requested_model": "gpt-5.6-terra",
+      "returned_model": "gpt-5.6-terra",
+      "usage": {
+        "input_tokens": 3502,
+        "input_tokens_details": {
+          "cache_write_tokens": 2390,
+          "cached_tokens": 1109
+        },
+        "output_tokens": 700,
+        "output_tokens_details": {
+          "reasoning_tokens": 158
+        },
+        "total_tokens": 4202
+      },
+      "cost": {
+        "list_price_usd": 0.0134078,
+        "cache_write_upper_usd": 0.014604299999999999
+      },
+      "reserved_usd": 0.152,
+      "error": null,
+      "validation": {
+        "wire": {
+          "valid": true
+        },
+        "schema": {
+          "valid": true
+        },
+        "contract": {
+          "valid": true
+        },
+        "questions": {
+          "valid": true
+        }
+      },
+      "findings": 0,
+      "questions": 0,
+      "active_items_assessed": 8,
+      "exact_citation_references": 8
+    },
+    {
+      "id": "c4-r2-A",
+      "started": "2026-10-09T10:52:02.434Z",
+      "elapsed_ms": 14770,
+      "http_status": 200,
+      "request_id": "req_9a00ee35601f4ac1bb579071c1145c3b",
+      "requested_model": "gpt-5.6-terra",
+      "returned_model": "gpt-5.6-terra",
+      "usage": {
+        "input_tokens": 3287,
+        "input_tokens_details": {
+          "cache_write_tokens": 3284,
+          "cached_tokens": 0
+        },
+        "output_tokens": 1347,
+        "output_tokens_details": {
+          "reasoning_tokens": 516
+        },
+        "total_tokens": 4634
+      },
+      "cost": {
+        "list_price_usd": 0.022738,
+        "cache_write_upper_usd": 0.0243815
+      },
+      "reserved_usd": 0.152,
+      "error": null,
+      "validation": {
+        "wire": {
+          "valid": true
+        },
+        "schema": {
+          "valid": true
+        },
+        "contract": {
+          "valid": true
+        },
+        "questions": {
+          "valid": true
+        }
+      },
+      "findings": 0,
+      "questions": 2,
+      "active_items_assessed": 8,
+      "exact_citation_references": 8
+    },
+    {
+      "id": "c5-r1-draft",
+      "started": "2026-10-09T10:52:17.262Z",
+      "elapsed_ms": 9888,
+      "http_status": 200,
+      "request_id": "req_1b475f6b84ee4ee48819cd93d6929e21",
+      "requested_model": "gpt-5.6-terra",
+      "returned_model": "gpt-5.6-terra",
+      "usage": {
+        "input_tokens": 1872,
+        "input_tokens_details": {
+          "cache_write_tokens": 732,
+          "cached_tokens": 1137
+        },
+        "output_tokens": 1296,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 3168
+      },
+      "cost": {
+        "list_price_usd": 0.0172494,
+        "cache_write_upper_usd": 0.0176169
+      },
+      "reserved_usd": 0.152,
+      "error": null,
+      "validation": {
+        "wire": {
+          "valid": true
+        },
+        "schema": {
+          "valid": true
+        },
+        "contract": {
+          "valid": true
+        },
+        "questions": {
+          "valid": true
+        }
+      },
+      "findings": null,
+      "questions": 0,
+      "active_items_assessed": null,
+      "exact_citation_references": 11
+    },
+    {
+      "id": "c5-r1-A",
+      "started": "2026-10-09T10:52:27.186Z",
+      "elapsed_ms": 7992,
+      "http_status": 200,
+      "request_id": "req_e1d9382b48a34768a39ade0060ef5419",
+      "requested_model": "gpt-5.6-terra",
+      "returned_model": "gpt-5.6-terra",
+      "usage": {
+        "input_tokens": 3435,
+        "input_tokens_details": {
+          "cache_write_tokens": 3432,
+          "cached_tokens": 0
+        },
+        "output_tokens": 888,
+        "output_tokens_details": {
+          "reasoning_tokens": 214
+        },
+        "total_tokens": 4323
+      },
+      "cost": {
+        "list_price_usd": 0.017526,
+        "cache_write_upper_usd": 0.0192435
+      },
+      "reserved_usd": 0.152,
+      "error": null,
+      "validation": {
+        "wire": {
+          "valid": true
+        },
+        "schema": {
+          "valid": true
+        },
+        "contract": {
+          "valid": true
+        },
+        "questions": {
+          "valid": true
+        }
+      },
+      "findings": 0,
+      "questions": 0,
+      "active_items_assessed": 10,
+      "exact_citation_references": 11
+    },
+    {
+      "id": "c5-r1-B",
+      "started": "2026-10-09T10:52:35.362Z",
+      "elapsed_ms": 768,
+      "http_status": 429,
+      "request_id": "req_9d702a76779546419c7aeecf999a5dde",
+      "requested_model": "gpt-5.6-terra",
+      "returned_model": null,
+      "usage": null,
+      "cost": null,
+      "reserved_usd": 0.152,
+      "error": "HTTP_429",
+      "validation": null,
+      "findings": null,
+      "questions": null,
+      "active_items_assessed": null,
+      "exact_citation_references": null
+    }
+  ],
+  "semantic": {
+    "initial_errors": 5,
+    "A": {
+      "detected": 3,
+      "missed": 2,
+      "false_findings": 1,
+      "known_limitations": 0,
+      "uncertain": 1,
+      "questions": 14,
+      "relevance_sum": 57,
+      "clarity_sum": 57
+    },
+    "B": {
+      "detected": 2,
+      "missed": 3,
+      "false_findings": 0,
+      "known_limitations": 0,
+      "uncertain": 0,
+      "questions": 5,
+      "relevance_sum": 23,
+      "clarity_sum": 22
+    }
+  }
+}

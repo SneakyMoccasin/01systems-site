@@ -1,0 +1,15 @@
+{
+  "wire": {
+    "valid": true
+  },
+  "schema": {
+    "valid": true
+  },
+  "contract": {
+    "valid": false,
+    "error": "ABSENCE_SCOPE: finding_approval_timing_not_scenario_choice"
+  },
+  "questions": {
+    "valid": true
+  }
+}

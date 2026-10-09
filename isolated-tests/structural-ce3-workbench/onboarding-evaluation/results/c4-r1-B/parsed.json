@@ -1,0 +1,112 @@
+{
+  "status": "complete",
+  "assessments": [
+    {
+      "item_id": "plan_a",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "plan A (en provstation)",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Planbeskrivningen återger underlaget."
+    },
+    {
+      "item_id": "plan_b",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "plan B (två provstationer)",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Planbeskrivningen återger underlaget."
+    },
+    {
+      "item_id": "criterion_lowest_cost",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Målet är lägst kostnad",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Kriteriet är korrekt märkt som mål."
+    },
+    {
+      "item_id": "criterion_approved_by_day_7",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "godkänt resultat senast dag 7 från dag 0",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Kriteriet återger tidskravet."
+    },
+    {
+      "item_id": "rule_automatic_optimal_plan_search",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Systemet ska automatiskt söka den optimala planen",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Regeln återger ett uttryckligt systemkrav."
+    },
+    {
+      "item_id": "rule_rebook_after_failure",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "boka om återkommande kontroller efter varje underkänt resultat",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Regeln återger ett uttryckligt systemkrav."
+    },
+    {
+      "item_id": "rule_runtime_retest_count",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Antalet omprov ska bestämmas under körning.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Regeln återger ett uttryckligt systemkrav."
+    },
+    {
+      "item_id": "value_fixed_event_sequence_selected",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Vi har ännu inte valt någon förenklad, fast händelseföljd.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Det okända värdet är korrekt bevarat; inget scenario har valts."
+    }
+  ],
+  "findings": [],
+  "limitations": [],
+  "questions": []
+}

@@ -1,0 +1,14 @@
+{
+  "wire": {
+    "valid": true
+  },
+  "schema": {
+    "valid": true
+  },
+  "contract": {
+    "valid": true
+  },
+  "questions": {
+    "valid": true
+  }
+}

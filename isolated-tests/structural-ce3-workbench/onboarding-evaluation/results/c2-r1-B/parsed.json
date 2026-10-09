@@ -1,0 +1,125 @@
+{
+  "status": "complete",
+  "assessments": [
+    {
+      "item_id": "plan_a",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "plan A (test i egen lokal)",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Planbeskrivningen överensstämmer med källan."
+    },
+    {
+      "item_id": "plan_b",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "plan B (test i hyrd lokal)",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Planbeskrivningen överensstämmer med källan."
+    },
+    {
+      "item_id": "criterion_approval_by_day_5",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "blir godkända senast dag 5, räknat från start dag 0",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Kravet och tidsräkningen stöds av källan."
+    },
+    {
+      "item_id": "criterion_lowest_total_cost",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Välj efter lägst total kostnad bland planer som blir godkända senast dag 5",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Urvalsmålet och dess beroende av godkännandekravet stöds av källan."
+    },
+    {
+      "item_id": "requirement_separate_control_notice",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Båda kräver ett separat kontrollbesked.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Kravet gäller båda planerna enligt källan."
+    },
+    {
+      "item_id": "value_plan_a_total_cost",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Kostnaden för vardera plan och tidpunkterna för kontrollbeskeden är okända.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Okänt värde är korrekt deklarerat med null."
+    },
+    {
+      "item_id": "value_plan_b_total_cost",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Kostnaden för vardera plan och tidpunkterna för kontrollbeskeden är okända.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Okänt värde är korrekt deklarerat med null."
+    },
+    {
+      "item_id": "value_plan_a_control_notice_time",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Kostnaden för vardera plan och tidpunkterna för kontrollbeskeden är okända.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Okänd tidpunkt är korrekt deklarerad med null."
+    },
+    {
+      "item_id": "value_plan_b_control_notice_time",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Kostnaden för vardera plan och tidpunkterna för kontrollbeskeden är okända.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Okänd tidpunkt är korrekt deklarerad med null."
+    }
+  ],
+  "findings": [],
+  "limitations": [],
+  "questions": []
+}

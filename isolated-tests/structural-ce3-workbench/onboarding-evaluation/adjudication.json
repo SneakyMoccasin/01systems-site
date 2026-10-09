@@ -1,0 +1,666 @@
+{
+  "version": "ce3-semantic-adjudication/1",
+  "assessor": "Coding agent, source-bound provisional judgment; not an independent human assessor or a separate live LLM judge.",
+  "gold_sha256": "8a34d251acae3bd2341e512b9bcf18b0c76ed30e42ea500602790b219a99cdcf",
+  "blind": false,
+  "limitations": [
+    "One non-blind coding-agent assessment. Gold and literal source evidence, exact-reference checks and contract tests are the basis; model reviewers are never treated as ground truth.",
+    "Human adjudication has not been performed. Counts, especially omissions and relevance scores, remain provisional.",
+    "Low-impact provenance label errors and material omissions are included but explicitly distinguished.",
+    "A correctly declared unknown scenario placeholder is not automatically an error.",
+    "No model was revised; no final correctness improvement is measured."
+  ],
+  "pairs": [
+    {
+      "id": "c1-r1",
+      "initial_errors": [
+        {
+          "id": "source-type",
+          "category": "provenance_label",
+          "severity": "minor",
+          "target_ids": [
+            "plan_p"
+          ],
+          "model_excerpt": "type=user_fact; Bygg en provmodul.",
+          "source_id": "brief",
+          "source_excerpt": "Kontrollera plan P: bygg en provmodul.",
+          "reason": "Källkuvertet klassar brief som document, men uppgiften märks user_fact. Det är en felaktig proveniensetikett, inte en felaktig planbeskrivning. Särredovisas som mindre etikettfel."
+        }
+      ],
+      "source_support_note": "Exakta citat valideras deterministiskt; semantiskt stöd har bedömts mot hela det låsta källpaketet. Se konkreta fel och frågetäckning nedan.",
+      "question_coverage": {
+        "draft": "Godkännandetid efterfrågas; frågan om dag 2 återfrågar redan angivet mål.",
+        "A": "Efterfrågar godkännandetid tillsammans med färdig-/leveranstid. Flera deluppgifter i samma fråga.",
+        "B": "Ingen fråga trots öppet blockerande behov av godkännandebeskedets tid."
+      },
+      "draft": {
+        "questions": [
+          {
+            "id": "q_module_completion",
+            "text": "När blir provmodulen klar, och är dag 2 enbart ett mål eller en fast planerad tidpunkt?",
+            "relevance": 3,
+            "clarity": 4,
+            "reason": "Godkännandetid efterfrågas; frågan om dag 2 återfrågar redan angivet mål."
+          },
+          {
+            "id": "q_approval_timing",
+            "text": "När kan ansvarigs separata godkännandebesked ges före eller senast dag 3?",
+            "relevance": 5,
+            "clarity": 5,
+            "reason": "Godkännandetid efterfrågas; frågan om dag 2 återfrågar redan angivet mål."
+          },
+          {
+            "id": "q_delivery_execution",
+            "text": "Hur och när kan leveransen genomföras efter att provmodulen är klar och godkännandet har getts?",
+            "relevance": 4,
+            "clarity": 4,
+            "reason": "Godkännandetid efterfrågas; frågan om dag 2 återfrågar redan angivet mål."
+          }
+        ]
+      },
+      "A": {
+        "questions": [
+          {
+            "id": "q_timing_for_delivery",
+            "text": "När kan provmodulen bli klar, när kan godkännandebeskedet ges och kan leverans ske samma dag som båda villkoren är uppfyllda?",
+            "relevance": 4,
+            "clarity": 3,
+            "reason": "Efterfrågar godkännandetid tillsammans med färdig-/leveranstid. Flera deluppgifter i samma fråga."
+          }
+        ],
+        "findings": []
+      },
+      "B": {
+        "questions": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "c1-r2",
+      "initial_errors": [],
+      "source_support_note": "Exakta citat valideras deterministiskt; semantiskt stöd har bedömts mot hela det låsta källpaketet. Se konkreta fel och frågetäckning nedan.",
+      "question_coverage": {
+        "draft": "Efterfrågar godkännandetid.",
+        "A": "Efterfrågar godkännandetid; fråga om garanti riskerar att styra bort från explicit mål.",
+        "B": "Ingen fråga trots öppet blockerande behov av godkännandebeskedets tid."
+      },
+      "draft": {
+        "questions": [
+          {
+            "id": "question_approval_timing",
+            "text": "När ges ansvarigs separata godkännandebesked?",
+            "relevance": 5,
+            "clarity": 5,
+            "reason": "Efterfrågar godkännandetid."
+          }
+        ]
+      },
+      "A": {
+        "questions": [
+          {
+            "id": "question_approval_timing",
+            "text": "När lämnas ansvarigs separata godkännandebesked?",
+            "relevance": 5,
+            "clarity": 5,
+            "reason": "Efterfrågar godkännandetid; fråga om garanti riskerar att styra bort från explicit mål."
+          },
+          {
+            "id": "question_module_completion_timing",
+            "text": "När kan provmodulen vara klar för leverans, och finns det en senast garanterad tidpunkt?",
+            "relevance": 3,
+            "clarity": 4,
+            "reason": "Efterfrågar godkännandetid; fråga om garanti riskerar att styra bort från explicit mål."
+          }
+        ],
+        "findings": [
+          {
+            "id": "finding_approval_timing_not_scenario_choice",
+            "label": "false_finding",
+            "error_ids": [],
+            "reason": "Kontraktet kräver scenario_choice för ett känt scenarioantagande. Denna uppgift är unknown med nullvärde och null scenario_choice; inget kundvalt värde påstås. Etiketten kan förbättras, men fyndet överdriver detta till ett blockerande fel. Dess basis/category-kombination underkänns dessutom deterministiskt.",
+            "source_quotes": [
+              "Tidpunkten för beskedet är ännu inte angiven."
+            ],
+            "target_ids": [
+              "approval_timing"
+            ]
+          },
+          {
+            "id": "finding_completion_timing_missing",
+            "label": "uncertain",
+            "error_ids": [],
+            "reason": "Det kan behövas en explicit färdigtid i en utvidgad plan, men det låsta fallet efterfrågar kontroll av leveransvillkoret med separat godkännande. Utkastet påstår ingen garanterad färdigtid. Detta är en rimlig avgränsningsfråga, inte en säker träff på ett fel enligt låst facit.",
+            "source_quotes": [
+              "Förhoppningsvis klart dag 2. Dag 2 är ett mål, inte en garanti."
+            ],
+            "target_ids": [
+              "plan_p",
+              "criterion_delivery_by_day3"
+            ]
+          }
+        ]
+      },
+      "B": {
+        "questions": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "c2-r1",
+      "initial_errors": [
+        {
+          "id": "missing-control-outcome",
+          "category": "missing_execution_question",
+          "severity": "material_omission",
+          "target_ids": [
+            "criterion_approval_by_day_5",
+            "value_plan_a_control_notice_time",
+            "value_plan_b_control_notice_time"
+          ],
+          "model_excerpt": "Tidpunkterna för kontrollbeskeden behövs för att avgöra om respektive plan blir godkänd senast dag 5.",
+          "source_id": "brief",
+          "source_excerpt": "Båda kräver ett separat kontrollbesked.",
+          "reason": "Utkastets luckor och frågor efterfrågar endast kostnad och beskedstid. Ett beskeds utfall eller dess relation till godkännande saknas för den fasta analysen. Detta är en utelämnad nödvändig komplettering enligt låst facit, inte ett explicit påstående om att godkännande redan skett."
+        }
+      ],
+      "source_support_note": "Exakta citat valideras deterministiskt; semantiskt stöd har bedömts mot hela det låsta källpaketet. Se konkreta fel och frågetäckning nedan.",
+      "question_coverage": {
+        "draft": "Kostnader och beskedstider täcks; fast utfall/relation till godkännande utelämnas.",
+        "A": "Kostnad samt kontrollutfall/godkännandetid täcks.",
+        "B": "Inga frågor; kostnader, tider och deklarerat utfall förblir obesvarade."
+      },
+      "draft": {
+        "questions": [
+          {
+            "id": "question_plan_costs",
+            "text": "Vilken total kostnad har plan A respektive plan B?",
+            "relevance": 5,
+            "clarity": 5,
+            "reason": "Kostnader och beskedstider täcks; fast utfall/relation till godkännande utelämnas."
+          },
+          {
+            "id": "question_control_notice_times",
+            "text": "Vilken dag infaller det separata kontrollbeskedet för plan A respektive plan B?",
+            "relevance": 4,
+            "clarity": 5,
+            "reason": "Kostnader och beskedstider täcks; fast utfall/relation till godkännande utelämnas."
+          }
+        ]
+      },
+      "A": {
+        "questions": [
+          {
+            "id": "question_plan_costs",
+            "text": "Vilken total kostnad har plan A respektive plan B?",
+            "relevance": 5,
+            "clarity": 5,
+            "reason": "Kostnad samt kontrollutfall/godkännandetid täcks."
+          },
+          {
+            "id": "question_approval_and_notice",
+            "text": "För varje plan: vilket utfall har kontrollbeskedet, och när blir planen godkänd? Är godkännandet samtidigt med kontrollbeskedet?",
+            "relevance": 5,
+            "clarity": 4,
+            "reason": "Kostnad samt kontrollutfall/godkännandetid täcks."
+          }
+        ],
+        "findings": [
+          {
+            "id": "finding_notice_time_not_approval",
+            "label": "true_error",
+            "error_ids": [
+              "missing-control-outcome"
+            ],
+            "reason": "Fyndet identifierar saknat utfall/relation till godkännande och ställer en direkt användbar fråga. Formuleringen att utkastet anser tidpunkten tillräcklig är starkare än dess text; träffen avser den konkreta utelämnade kompletteringen, inte ett påhittat positivt utfall.",
+            "source_quotes": [
+              "blir godkända senast dag 5, räknat från start dag 0",
+              "Båda kräver ett separat kontrollbesked.",
+              "Kostnaden för vardera plan och tidpunkterna för kontrollbeskeden är okända."
+            ],
+            "target_ids": [
+              "criterion_approval_by_day_5",
+              "value_plan_a_control_notice_time",
+              "value_plan_b_control_notice_time"
+            ]
+          }
+        ]
+      },
+      "B": {
+        "questions": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "c2-r2",
+      "initial_errors": [
+        {
+          "id": "approval-to-notice",
+          "category": "meaning_shift",
+          "severity": "material",
+          "target_ids": [
+            "criterion_approval_by_day_5"
+          ],
+          "model_excerpt": "bland planer med separat kontrollbesked senast dag 5",
+          "source_id": "brief",
+          "source_excerpt": "bland planer som blir godkända senast dag 5",
+          "reason": "analysis.question byter godkännandekrav mot förekomst av besked. Kriterie-item och följdfråga är mer korrekta, men analysfrågan är internt inkonsekvent."
+        }
+      ],
+      "source_support_note": "Exakta citat valideras deterministiskt; semantiskt stöd har bedömts mot hela det låsta källpaketet. Se konkreta fel och frågetäckning nedan.",
+      "question_coverage": {
+        "draft": "Kostnad, beskedstid och relation till godkännande täcks.",
+        "A": "Godkännandetid täcks; kostnadsfrågan saknas i denna gren.",
+        "B": "Kostnader och godkännandetid täcks, men frågan kan tydligare erbjuda ett uttryckligt fast scenario."
+      },
+      "draft": {
+        "questions": [
+          {
+            "id": "question_costs",
+            "text": "Vilken total kostnad har plan A respektive plan B?",
+            "relevance": 5,
+            "clarity": 5,
+            "reason": "Kostnad, beskedstid och relation till godkännande täcks."
+          },
+          {
+            "id": "question_control_notices",
+            "text": "Vilken dag från start dag 0 ges det separata kontrollbeskedet för plan A respektive plan B, och innebär beskedet godkännande?",
+            "relevance": 5,
+            "clarity": 4,
+            "reason": "Kostnad, beskedstid och relation till godkännande täcks."
+          }
+        ]
+      },
+      "A": {
+        "questions": [
+          {
+            "id": "question_approval_times",
+            "text": "När blir plan A respektive plan B godkänd, och är datumet för kontrollbeskedet samma datum som godkännandet?",
+            "relevance": 5,
+            "clarity": 4,
+            "reason": "Godkännandetid täcks; kostnadsfrågan saknas i denna gren."
+          }
+        ],
+        "findings": [
+          {
+            "id": "finding_approval_time_missing",
+            "label": "true_error",
+            "error_ids": [
+              "approval-to-notice"
+            ],
+            "reason": "Pekar på sammanblandningen mellan beskedstid och godkännande, med rätt kriterium som mål. Kriteriet i sig är korrekt; felet finns i analysfrågan.",
+            "source_quotes": [
+              "blir godkända senast dag 5, räknat från start dag 0",
+              "Båda kräver ett separat kontrollbesked.",
+              "tidpunkterna för kontrollbeskeden är okända."
+            ],
+            "target_ids": [
+              "criterion_approval_by_day_5"
+            ]
+          }
+        ]
+      },
+      "B": {
+        "questions": [
+          {
+            "id": "question_total_costs",
+            "text": "Vilken total kostnad har plan A respektive plan B?",
+            "relevance": 5,
+            "clarity": 5,
+            "reason": "Kostnader och godkännandetid täcks, men frågan kan tydligare erbjuda ett uttryckligt fast scenario."
+          },
+          {
+            "id": "question_approval_dates",
+            "text": "För varje plan: vilket datum blir planen godkänd, och är kontrollbeskedets datum samma som godkännandedatumet?",
+            "relevance": 5,
+            "clarity": 4,
+            "reason": "Kostnader och godkännandetid täcks, men frågan kan tydligare erbjuda ett uttryckligt fast scenario."
+          }
+        ],
+        "findings": [
+          {
+            "id": "finding_approval_notice_conflation",
+            "label": "true_error",
+            "error_ids": [
+              "approval-to-notice"
+            ],
+            "reason": "Pekar uttryckligen på analysfrågans byte från godkännande till kontrollbesked.",
+            "source_quotes": [
+              "blir godkända senast dag 5, räknat från start dag 0",
+              "Båda kräver ett separat kontrollbesked."
+            ],
+            "target_ids": [
+              "criterion_approval_by_day_5",
+              "control_notice_time_plan_a",
+              "control_notice_time_plan_b"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "c3-r1",
+      "initial_errors": [
+        {
+          "id": "fact-as-scenario",
+          "category": "provenance_label",
+          "severity": "material",
+          "target_ids": [
+            "assumption_test_day"
+          ],
+          "model_excerpt": "type=scenario_assumption; status=known; value=4; scenario_choice pekar på answer-new",
+          "source_id": "answer-new",
+          "source_excerpt": "Svar a2 ersätter a1 om provdag: jag skrev fel, provet är bokat dag 4.",
+          "reason": "Svaret rättar en bokad dag; det väljer inget hypotetiskt scenario. Dag 4 är korrekt men ska bevaras som user_fact. Båda grenar godtar den materiella uppgiften utan att rätta etiketten. Det separata SCENARIO_LABEL-felet för den superseded gamla uppgiften räknas som kontraktsfel, inte ytterligare semantiskt fel."
+        }
+      ],
+      "source_support_note": "Exakta citat valideras deterministiskt; semantiskt stöd har bedömts mot hela det låsta källpaketet. Se konkreta fel och frågetäckning nedan.",
+      "question_coverage": {
+        "draft": "Gräns och utfall/tid täcks. Utfall/tid felaktigt enbart limits_conclusion för den avsedda fasta analysen.",
+        "A": "Gräns och utfall/tid täcks; samma svaga impact.",
+        "B": "Gräns och utfall/tid täcks; samma svaga impact. Alla granskningskuvert ärvs som kontraktsogiltiga från utkastet."
+      },
+      "draft": {
+        "questions": [
+          {
+            "id": "question_threshold_authority",
+            "text": "Vilken gräns ska gälla för godkänt prov: högst 8 eller högst 10 enheter?",
+            "relevance": 5,
+            "clarity": 5,
+            "reason": "Gräns och utfall/tid täcks. Utfall/tid felaktigt enbart limits_conclusion för den avsedda fasta analysen."
+          },
+          {
+            "id": "question_test_outcome",
+            "text": "Vilket provutfall förväntas, och när sker godkännandet efter provet?",
+            "relevance": 4,
+            "clarity": 4,
+            "reason": "Gräns och utfall/tid täcks. Utfall/tid felaktigt enbart limits_conclusion för den avsedda fasta analysen."
+          }
+        ]
+      },
+      "A": {
+        "questions": [
+          {
+            "id": "q_threshold_priority",
+            "text": "Vilken gräns ska gälla för godkänt prov: högst 8 eller högst 10 enheter?",
+            "relevance": 5,
+            "clarity": 5,
+            "reason": "Gräns och utfall/tid täcks; samma svaga impact."
+          },
+          {
+            "id": "q_test_outcome_and_approval",
+            "text": "Vilket provutfall förväntas, och när kan ett godkännande ges efter provet?",
+            "relevance": 4,
+            "clarity": 4,
+            "reason": "Gräns och utfall/tid täcks; samma svaga impact."
+          }
+        ],
+        "findings": []
+      },
+      "B": {
+        "questions": [
+          {
+            "id": "q_threshold_authority",
+            "text": "Vilken gräns ska användas för godkänt prov: högst 8 eller högst 10 enheter?",
+            "relevance": 5,
+            "clarity": 5,
+            "reason": "Gräns och utfall/tid täcks; samma svaga impact. Alla granskningskuvert ärvs som kontraktsogiltiga från utkastet."
+          },
+          {
+            "id": "q_outcome_and_approval",
+            "text": "Vilket blir provutfallet, och när sker godkännandet om provet godkänns?",
+            "relevance": 4,
+            "clarity": 4,
+            "reason": "Gräns och utfall/tid täcks; samma svaga impact. Alla granskningskuvert ärvs som kontraktsogiltiga från utkastet."
+          }
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "c3-r2",
+      "initial_errors": [
+        {
+          "id": "missing-approval-time",
+          "category": "missing_execution_question",
+          "severity": "material_omission",
+          "target_ids": [
+            "criterion_approval_deadline"
+          ],
+          "model_excerpt": "gaps: gap_pass_limit_conflict, gap_test_result; frågor: gräns och provresultat",
+          "source_id": "answer-new",
+          "source_excerpt": "provet är bokat dag 4",
+          "reason": "Utkastet frågar efter gräns och resultat men saknar godkännandets tidpunkt för dag-5-kriteriet. Bokningsdagen anger inte när godkännande lämnas. Låst facit anger just detta kompletteringsbehov."
+        }
+      ],
+      "source_support_note": "Exakta citat valideras deterministiskt; semantiskt stöd har bedömts mot hela det låsta källpaketet. Se konkreta fel och frågetäckning nedan.",
+      "question_coverage": {
+        "draft": "Gräns och resultat täcks; godkännandetid saknas. Frågan förutsätter genomfört prov trots enbart bokning.",
+        "A": "Gräns och godkännandetid täcks men förutsätter genomfört prov; limits_conclusion för tidsfrågan är för svagt.",
+        "B": "Godkännandetid täcks som blockerande. Gränskonfliktens fråga saknas i denna gren; dessutom ogiltig assessment-täckning."
+      },
+      "draft": {
+        "questions": [
+          {
+            "id": "question_pass_limit_authority",
+            "text": "Vilken gräns ska gälla för godkänt prov: högst 8 eller högst 10 enheter?",
+            "relevance": 5,
+            "clarity": 5,
+            "reason": "Gräns och resultat täcks; godkännandetid saknas. Frågan förutsätter genomfört prov trots enbart bokning."
+          },
+          {
+            "id": "question_test_result",
+            "text": "Vilket resultat i enheter fick provet?",
+            "relevance": 3,
+            "clarity": 5,
+            "reason": "Gräns och resultat täcks; godkännandetid saknas. Frågan förutsätter genomfört prov trots enbart bokning."
+          }
+        ]
+      },
+      "A": {
+        "questions": [
+          {
+            "id": "question_approval_outcome_date",
+            "text": "Blev provet godkänt, och vilken dag registrerades godkännandet?",
+            "relevance": 3,
+            "clarity": 4,
+            "reason": "Gräns och godkännandetid täcks men förutsätter genomfört prov; limits_conclusion för tidsfrågan är för svagt."
+          },
+          {
+            "id": "question_pass_limit_authority",
+            "text": "Vilken källa ska styra gränsen för godkänt prov: kontrollprotokollets högst 8 enheter eller projektbeslutets högst 10 enheter?",
+            "relevance": 5,
+            "clarity": 5,
+            "reason": "Gräns och godkännandetid täcks men förutsätter genomfört prov; limits_conclusion för tidsfrågan är för svagt."
+          }
+        ],
+        "findings": [
+          {
+            "id": "finding_approval_date_missing",
+            "label": "true_error",
+            "error_ids": [
+              "missing-approval-time"
+            ],
+            "reason": "Identifierar rätt utelämnat tidsbehov. Impact limits_conclusion är för svagt för en fråga som krävs för denna fasta dag-5-analys; detta minskar användbarheten men inte rå detektion.",
+            "source_quotes": [
+              "Kravet är godkännande senast dag 5 från start dag 0.",
+              "Svar a2 ersätter a1 om provdag: jag skrev fel, provet är bokat dag 4."
+            ],
+            "target_ids": [
+              "criterion_approval_deadline"
+            ]
+          }
+        ]
+      },
+      "B": {
+        "questions": [
+          {
+            "id": "question_approval_timing",
+            "text": "När sker godkännandet av provet, eller finns ett besked om att det är godkänt senast dag 5?",
+            "relevance": 4,
+            "clarity": 4,
+            "reason": "Godkännandetid täcks som blockerande. Gränskonfliktens fråga saknas i denna gren; dessutom ogiltig assessment-täckning."
+          }
+        ],
+        "findings": [
+          {
+            "id": "finding_approval_timing_missing",
+            "label": "true_error",
+            "error_ids": [
+              "missing-approval-time"
+            ],
+            "reason": "Identifierar utelämnat godkännandebesked/tid och markerar blockerande. Granskningskuvertet är dock ogiltigt eftersom assessments även innehåller en superseded uppgift; fyndet kan inte importeras som godkänd granskning.",
+            "source_quotes": [],
+            "target_ids": [
+              "criterion_approval_deadline"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "c4-r1",
+      "initial_errors": [],
+      "source_support_note": "Exakta citat valideras deterministiskt; semantiskt stöd har bedömts mot hela det låsta källpaketet. Se konkreta fel och frågetäckning nedan.",
+      "question_coverage": {
+        "draft": "Fasta sekvenser och kördata efterfrågas direkt; kunden bör först få välja avgränsning eller annan analysfunktion.",
+        "A": "Samma svaghet: dataarbete efterfrågas innan profilval avgjorts.",
+        "B": "Ingen fråga om huruvida kunden accepterar fast avgränsning, trots blockerande profilgap."
+      },
+      "draft": {
+        "questions": [
+          {
+            "id": "question_plan_data",
+            "text": "Vilka kostnader, kontrolltidpunkter och möjliga resultat gäller för plan A respektive plan B fram till och med dag 7?",
+            "relevance": 3,
+            "clarity": 4,
+            "reason": "Fasta sekvenser och kördata efterfrågas direkt; kunden bör först få välja avgränsning eller annan analysfunktion."
+          },
+          {
+            "id": "question_fixed_sequence",
+            "text": "Vilken förenklad, fast händelseföljd väljer ni för kontroller och möjliga omprov?",
+            "relevance": 3,
+            "clarity": 3,
+            "reason": "Fasta sekvenser och kördata efterfrågas direkt; kunden bör först få välja avgränsning eller annan analysfunktion."
+          }
+        ]
+      },
+      "A": {
+        "questions": [
+          {
+            "id": "q_plan_cost_timing_outcomes",
+            "text": "Vilka kostnader, kontrolltidpunkter och möjliga utfall gäller för respektive plan A och plan B fram till och med dag 7?",
+            "relevance": 3,
+            "clarity": 4,
+            "reason": "Samma svaghet: dataarbete efterfrågas innan profilval avgjorts."
+          },
+          {
+            "id": "q_fixed_event_sequence",
+            "text": "Vilken förenklad, fast händelseföljd vill ni uttryckligen välja för kontroller och omprov?",
+            "relevance": 3,
+            "clarity": 3,
+            "reason": "Samma svaghet: dataarbete efterfrågas innan profilval avgjorts."
+          }
+        ],
+        "findings": []
+      },
+      "B": {
+        "questions": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "c4-r2",
+      "initial_errors": [],
+      "source_support_note": "Exakta citat valideras deterministiskt; semantiskt stöd har bedömts mot hela det låsta källpaketet. Se konkreta fel och frågetäckning nedan.",
+      "question_coverage": {
+        "draft": "Ber om fast följd och data före beslut om avgränsning.",
+        "A": "Frågar om kunden kan välja fast följd, vilket är bättre, men erbjuder inte tydligt annan analysfunktion och blandar in datakomplettering.",
+        "B": "Ingen fråga om avgränsning/annan funktion trots blockerande profilgap."
+      },
+      "draft": {
+        "questions": [
+          {
+            "id": "fraga_kostnad_och_utfall",
+            "text": "Vilken kostnad och vilket resultatutfall med tidpunkt ska anges för respektive plan?",
+            "relevance": 3,
+            "clarity": 4,
+            "reason": "Ber om fast följd och data före beslut om avgränsning."
+          },
+          {
+            "id": "fraga_fast_handelser",
+            "text": "Vilken fast händelseföljd, inklusive högsta antal omprov och utfall för varje kontroll, ska användas?",
+            "relevance": 3,
+            "clarity": 3,
+            "reason": "Ber om fast följd och data före beslut om avgränsning."
+          }
+        ]
+      },
+      "A": {
+        "questions": [
+          {
+            "id": "fraga_kostnad_och_utfall",
+            "text": "Vilka kostnader samt resultat- och tidutfall gäller för plan A respektive plan B, så att planerna kan jämföras mot kostnadsmålet och dag-7-målet?",
+            "relevance": 3,
+            "clarity": 3,
+            "reason": "Frågar om kunden kan välja fast följd, vilket är bättre, men erbjuder inte tydligt annan analysfunktion och blandar in datakomplettering."
+          },
+          {
+            "id": "fraga_fast_forenklad_sekvens",
+            "text": "Kan ni välja en förenklad, fast händelseföljd med ett fast begränsat antal omprov för den avsedda analysen?",
+            "relevance": 4,
+            "clarity": 4,
+            "reason": "Frågar om kunden kan välja fast följd, vilket är bättre, men erbjuder inte tydligt annan analysfunktion och blandar in datakomplettering."
+          }
+        ],
+        "findings": []
+      },
+      "B": {
+        "questions": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "c5-r1",
+      "initial_errors": [],
+      "source_support_note": "Exakta citat valideras deterministiskt; semantiskt stöd har bedömts mot hela det låsta källpaketet. Se konkreta fel och frågetäckning nedan.",
+      "question_coverage": {
+        "draft": "Inga kompletteringar behövs för det deklarerade fasta underlaget.",
+        "A": "Inga onödiga frågor eller fynd.",
+        "B": "Ej observerat: svaret saknas efter stopp för slut på API-krediter."
+      },
+      "draft": {
+        "questions": []
+      },
+      "A": {
+        "questions": [],
+        "findings": []
+      },
+      "B": {
+        "status": "unavailable",
+        "reason": "Provider credits exhausted; no inference about quality."
+      }
+    },
+    {
+      "id": "c5-r2",
+      "initial_errors": null,
+      "source_support_note": "Exakta citat valideras deterministiskt; semantiskt stöd har bedömts mot hela det låsta källpaketet. Se konkreta fel och frågetäckning nedan.",
+      "question_coverage": {
+        "draft": "Ej observerat: svaret saknas efter stopp för slut på API-krediter.",
+        "A": "Ej observerat: svaret saknas efter stopp för slut på API-krediter.",
+        "B": "Ej observerat: svaret saknas efter stopp för slut på API-krediter."
+      },
+      "draft": {
+        "status": "unavailable",
+        "reason": "Provider credits exhausted; no inference about quality."
+      },
+      "A": {
+        "status": "unavailable",
+        "reason": "Provider credits exhausted; no inference about quality."
+      },
+      "B": {
+        "status": "unavailable",
+        "reason": "Provider credits exhausted; no inference about quality."
+      }
+    }
+  ]
+}

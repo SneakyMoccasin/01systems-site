@@ -1,0 +1,282 @@
+{
+  "analysis": {
+    "kind": "choose",
+    "question": "Vilken av plan A och plan B ska väljas utifrån lägst total kostnad, förutsatt godkännande senast dag 5?",
+    "plan_ids": [
+      "plan_a",
+      "plan_b"
+    ],
+    "criterion_ids": [
+      "criterion_approval_by_day_5",
+      "criterion_lowest_total_cost"
+    ],
+    "changed_assumption_ids": []
+  },
+  "scope": {
+    "includes": [
+      "Jämförelse mellan plan A och plan B.",
+      "Krav på separat kontrollbesked för båda planerna.",
+      "Godkännande senast dag 5 från start dag 0.",
+      "Total kostnad som urvalskriterium."
+    ],
+    "excludes": []
+  },
+  "items": [
+    {
+      "id": "plan_a",
+      "kind": "plan",
+      "statement": "Plan A är test i egen lokal.",
+      "type": "document_fact",
+      "status": "known",
+      "value": "test i egen lokal",
+      "unit": null,
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "plan A (test i egen lokal)",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [],
+      "supersedes": [],
+      "rationale": "Angiven plan.",
+      "scenario_choice": null
+    },
+    {
+      "id": "plan_b",
+      "kind": "plan",
+      "statement": "Plan B är test i hyrd lokal.",
+      "type": "document_fact",
+      "status": "known",
+      "value": "test i hyrd lokal",
+      "unit": null,
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "plan B (test i hyrd lokal)",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [],
+      "supersedes": [],
+      "rationale": "Angiven plan.",
+      "scenario_choice": null
+    },
+    {
+      "id": "criterion_approval_by_day_5",
+      "kind": "criterion",
+      "statement": "En plan måste bli godkänd senast dag 5 räknat från start dag 0 för att ingå i valet.",
+      "type": "requirement",
+      "status": "known",
+      "value": "senast dag 5 från start dag 0",
+      "unit": "dag",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "blir godkända senast dag 5, räknat från start dag 0",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [],
+      "supersedes": [],
+      "rationale": "Behörighetsvillkor för urvalet.",
+      "scenario_choice": null
+    },
+    {
+      "id": "criterion_lowest_total_cost",
+      "kind": "criterion",
+      "statement": "Bland planer som uppfyller godkännandekravet ska planen med lägst total kostnad väljas.",
+      "type": "goal",
+      "status": "known",
+      "value": "lägst total kostnad",
+      "unit": null,
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Välj efter lägst total kostnad bland planer som blir godkända senast dag 5",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [
+        "criterion_approval_by_day_5"
+      ],
+      "supersedes": [],
+      "rationale": "Angivet urvalsmål.",
+      "scenario_choice": null
+    },
+    {
+      "id": "requirement_separate_control_notice",
+      "kind": "rule",
+      "statement": "Varje plan kräver ett separat kontrollbesked.",
+      "type": "requirement",
+      "status": "known",
+      "value": true,
+      "unit": null,
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Båda kräver ett separat kontrollbesked.",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [
+        "plan_a",
+        "plan_b"
+      ],
+      "supersedes": [],
+      "rationale": "Gemensamt krav för planerna.",
+      "scenario_choice": null
+    },
+    {
+      "id": "value_plan_a_total_cost",
+      "kind": "value",
+      "statement": "Plan A:s totala kostnad är inte angiven.",
+      "type": "document_fact",
+      "status": "unknown",
+      "value": null,
+      "unit": null,
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Kostnaden för vardera plan och tidpunkterna för kontrollbeskeden är okända.",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [
+        "plan_a"
+      ],
+      "supersedes": [],
+      "rationale": "Underlaget anger att kostnaden är okänd.",
+      "scenario_choice": null
+    },
+    {
+      "id": "value_plan_b_total_cost",
+      "kind": "value",
+      "statement": "Plan B:s totala kostnad är inte angiven.",
+      "type": "document_fact",
+      "status": "unknown",
+      "value": null,
+      "unit": null,
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Kostnaden för vardera plan och tidpunkterna för kontrollbeskeden är okända.",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [
+        "plan_b"
+      ],
+      "supersedes": [],
+      "rationale": "Underlaget anger att kostnaden är okänd.",
+      "scenario_choice": null
+    },
+    {
+      "id": "value_plan_a_control_notice_time",
+      "kind": "value",
+      "statement": "Tidpunkten för plan A:s kontrollbesked är inte angiven.",
+      "type": "document_fact",
+      "status": "unknown",
+      "value": null,
+      "unit": "dag",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Kostnaden för vardera plan och tidpunkterna för kontrollbeskeden är okända.",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [
+        "plan_a",
+        "requirement_separate_control_notice"
+      ],
+      "supersedes": [],
+      "rationale": "Underlaget anger att tidpunkten är okänd.",
+      "scenario_choice": null
+    },
+    {
+      "id": "value_plan_b_control_notice_time",
+      "kind": "value",
+      "statement": "Tidpunkten för plan B:s kontrollbesked är inte angiven.",
+      "type": "document_fact",
+      "status": "unknown",
+      "value": null,
+      "unit": "dag",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Kostnaden för vardera plan och tidpunkterna för kontrollbeskeden är okända.",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [
+        "plan_b",
+        "requirement_separate_control_notice"
+      ],
+      "supersedes": [],
+      "rationale": "Underlaget anger att tidpunkten är okänd.",
+      "scenario_choice": null
+    }
+  ],
+  "gaps": [
+    {
+      "id": "gap_costs",
+      "item_ids": [
+        "value_plan_a_total_cost",
+        "value_plan_b_total_cost",
+        "criterion_lowest_total_cost"
+      ],
+      "kind": "missing_data",
+      "impact": "blocks_handoff",
+      "status": "open",
+      "explanation": "Totalkostnaderna behövs för att rangordna godkända planer.",
+      "resolution": null
+    },
+    {
+      "id": "gap_control_notice_times",
+      "item_ids": [
+        "value_plan_a_control_notice_time",
+        "value_plan_b_control_notice_time",
+        "criterion_approval_by_day_5"
+      ],
+      "kind": "missing_data",
+      "impact": "blocks_handoff",
+      "status": "open",
+      "explanation": "Tidpunkterna för kontrollbeskeden behövs för att avgöra om respektive plan blir godkänd senast dag 5.",
+      "resolution": null
+    }
+  ],
+  "questions": [
+    {
+      "id": "question_plan_costs",
+      "text": "Vilken total kostnad har plan A respektive plan B?",
+      "target_ids": [
+        "value_plan_a_total_cost",
+        "value_plan_b_total_cost"
+      ],
+      "finding_ids": [],
+      "reason": "Kostnaderna krävs för att välja lägst kostnad bland godkända planer.",
+      "impact": "blocks_handoff"
+    },
+    {
+      "id": "question_control_notice_times",
+      "text": "Vilken dag infaller det separata kontrollbeskedet för plan A respektive plan B?",
+      "target_ids": [
+        "value_plan_a_control_notice_time",
+        "value_plan_b_control_notice_time"
+      ],
+      "finding_ids": [],
+      "reason": "Tidpunkterna krävs för att bedöma godkännande senast dag 5.",
+      "impact": "blocks_handoff"
+    }
+  ]
+}

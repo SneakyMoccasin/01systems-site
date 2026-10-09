@@ -1,0 +1,317 @@
+{
+  "analysis": {
+    "kind": "choose",
+    "question": "Vilken av plan A och plan B ska väljas utifrån lägst total kostnad, bland planer med separat kontrollbesked senast dag 5?",
+    "plan_ids": [
+      "plan_a",
+      "plan_b"
+    ],
+    "criterion_ids": [
+      "criterion_approval_by_day_5",
+      "criterion_lowest_total_cost"
+    ],
+    "changed_assumption_ids": []
+  },
+  "scope": {
+    "includes": [
+      "Jämförelse av plan A och plan B.",
+      "Krav på separat kontrollbesked.",
+      "Godkännande senast dag 5 från start dag 0.",
+      "Total kostnad som urvalskriterium."
+    ],
+    "excludes": []
+  },
+  "items": [
+    {
+      "id": "plan_a",
+      "kind": "plan",
+      "statement": "Plan A är test i egen lokal.",
+      "type": "document_fact",
+      "status": "known",
+      "value": "test i egen lokal",
+      "unit": null,
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "plan A (test i egen lokal)",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [],
+      "supersedes": [],
+      "rationale": "En av de två angivna planerna.",
+      "scenario_choice": null
+    },
+    {
+      "id": "plan_b",
+      "kind": "plan",
+      "statement": "Plan B är test i hyrd lokal.",
+      "type": "document_fact",
+      "status": "known",
+      "value": "test i hyrd lokal",
+      "unit": null,
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "plan B (test i hyrd lokal)",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [],
+      "supersedes": [],
+      "rationale": "En av de två angivna planerna.",
+      "scenario_choice": null
+    },
+    {
+      "id": "criterion_approval_by_day_5",
+      "kind": "criterion",
+      "statement": "En plan måste bli godkänd senast dag 5, räknat från start dag 0, för att ingå i urvalet.",
+      "type": "requirement",
+      "status": "known",
+      "value": "senast dag 5 från start dag 0",
+      "unit": null,
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "blir godkända senast dag 5, räknat från start dag 0",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [],
+      "supersedes": [],
+      "rationale": "Angivet behörighetskrav för urvalet.",
+      "scenario_choice": null
+    },
+    {
+      "id": "criterion_lowest_total_cost",
+      "kind": "criterion",
+      "statement": "Bland godkända planer ska planen med lägst total kostnad väljas.",
+      "type": "goal",
+      "status": "known",
+      "value": "lägst total kostnad",
+      "unit": null,
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Välj efter lägst total kostnad bland planer som blir godkända",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [
+        "criterion_approval_by_day_5",
+        "cost_plan_a",
+        "cost_plan_b"
+      ],
+      "supersedes": [],
+      "rationale": "Angivet urvalsmål.",
+      "scenario_choice": null
+    },
+    {
+      "id": "rule_separate_control_notice",
+      "kind": "rule",
+      "statement": "Varje plan kräver ett separat kontrollbesked.",
+      "type": "requirement",
+      "status": "known",
+      "value": true,
+      "unit": null,
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Båda kräver ett separat kontrollbesked.",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [
+        "plan_a",
+        "plan_b"
+      ],
+      "supersedes": [],
+      "rationale": "Gemensamt krav för båda planerna.",
+      "scenario_choice": null
+    },
+    {
+      "id": "cost_plan_a",
+      "kind": "value",
+      "statement": "Den totala kostnaden för plan A är okänd.",
+      "type": "document_fact",
+      "status": "unknown",
+      "value": null,
+      "unit": null,
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Kostnaden för vardera plan",
+          "occurrence": 0
+        },
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "är okända.",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [
+        "plan_a"
+      ],
+      "supersedes": [],
+      "rationale": "Underlaget anger att kostnaden för vardera plan är okänd.",
+      "scenario_choice": null
+    },
+    {
+      "id": "cost_plan_b",
+      "kind": "value",
+      "statement": "Den totala kostnaden för plan B är okänd.",
+      "type": "document_fact",
+      "status": "unknown",
+      "value": null,
+      "unit": null,
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Kostnaden för vardera plan",
+          "occurrence": 0
+        },
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "är okända.",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [
+        "plan_b"
+      ],
+      "supersedes": [],
+      "rationale": "Underlaget anger att kostnaden för vardera plan är okänd.",
+      "scenario_choice": null
+    },
+    {
+      "id": "control_notice_time_plan_a",
+      "kind": "value",
+      "statement": "Tidpunkten för plan A:s kontrollbesked är okänd.",
+      "type": "document_fact",
+      "status": "unknown",
+      "value": null,
+      "unit": "dag från start",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "tidpunkterna för kontrollbeskeden är okända.",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [
+        "plan_a",
+        "rule_separate_control_notice"
+      ],
+      "supersedes": [],
+      "rationale": "Underlaget anger att tidpunkterna för kontrollbeskeden är okända.",
+      "scenario_choice": null
+    },
+    {
+      "id": "control_notice_time_plan_b",
+      "kind": "value",
+      "statement": "Tidpunkten för plan B:s kontrollbesked är okänd.",
+      "type": "document_fact",
+      "status": "unknown",
+      "value": null,
+      "unit": "dag från start",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "tidpunkterna för kontrollbeskeden är okända.",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [
+        "plan_b",
+        "rule_separate_control_notice"
+      ],
+      "supersedes": [],
+      "rationale": "Underlaget anger att tidpunkterna för kontrollbeskeden är okända.",
+      "scenario_choice": null
+    },
+    {
+      "id": "rule_no_default_values",
+      "kind": "rule",
+      "statement": "Inga schablonvärden eller hypotetiska tider har valts.",
+      "type": "document_fact",
+      "status": "known",
+      "value": true,
+      "unit": null,
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Inga schablonvärden eller hypotetiska tider har valts.",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [],
+      "supersedes": [],
+      "rationale": "Förhindrar att saknade kostnader eller tider ersätts med antaganden.",
+      "scenario_choice": null
+    }
+  ],
+  "gaps": [
+    {
+      "id": "gap_costs",
+      "item_ids": [
+        "cost_plan_a",
+        "cost_plan_b",
+        "criterion_lowest_total_cost"
+      ],
+      "kind": "missing_data",
+      "impact": "blocks_handoff",
+      "status": "open",
+      "explanation": "Båda planernas totala kostnader saknas, så lägsta kostnad kan inte fastställas.",
+      "resolution": null
+    },
+    {
+      "id": "gap_control_notices",
+      "item_ids": [
+        "control_notice_time_plan_a",
+        "control_notice_time_plan_b",
+        "criterion_approval_by_day_5"
+      ],
+      "kind": "missing_data",
+      "impact": "blocks_handoff",
+      "status": "open",
+      "explanation": "Tidpunkterna för kontrollbeskeden saknas, så det kan inte avgöras om respektive plan blir godkänd senast dag 5.",
+      "resolution": null
+    }
+  ],
+  "questions": [
+    {
+      "id": "question_costs",
+      "text": "Vilken total kostnad har plan A respektive plan B?",
+      "target_ids": [
+        "cost_plan_a",
+        "cost_plan_b"
+      ],
+      "finding_ids": [],
+      "reason": "Kostnaderna behövs för att välja lägsta kostnad bland godkända planer.",
+      "impact": "blocks_handoff"
+    },
+    {
+      "id": "question_control_notices",
+      "text": "Vilken dag från start dag 0 ges det separata kontrollbeskedet för plan A respektive plan B, och innebär beskedet godkännande?",
+      "target_ids": [
+        "control_notice_time_plan_a",
+        "control_notice_time_plan_b"
+      ],
+      "finding_ids": [],
+      "reason": "Tidpunkt och godkännande behövs för att bedöma kravet på godkännande senast dag 5.",
+      "impact": "blocks_handoff"
+    }
+  ]
+}

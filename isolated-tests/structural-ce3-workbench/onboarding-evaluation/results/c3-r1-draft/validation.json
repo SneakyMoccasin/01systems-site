@@ -1,0 +1,15 @@
+{
+  "wire": {
+    "valid": true
+  },
+  "schema": {
+    "valid": true
+  },
+  "contract": {
+    "valid": false,
+    "error": "SCENARIO_LABEL: assumption_test_day_old"
+  },
+  "questions": {
+    "valid": true
+  }
+}

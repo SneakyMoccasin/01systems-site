@@ -1,0 +1,211 @@
+{
+  "analysis": {
+    "kind": "check",
+    "question": "Kan plan P kontrolleras mot kravet på godkännande senast dag 5?",
+    "plan_ids": [
+      "plan_p"
+    ],
+    "criterion_ids": [
+      "criterion_approval_deadline"
+    ],
+    "changed_assumption_ids": []
+  },
+  "scope": {
+    "includes": [
+      "Plan P och provets bokade dag.",
+      "Tidskravet för godkännande.",
+      "Motstridiga gränser för godkänt prov."
+    ],
+    "excludes": []
+  },
+  "items": [
+    {
+      "id": "plan_p",
+      "kind": "plan",
+      "statement": "Genomför ett prov.",
+      "type": "goal",
+      "status": "known",
+      "value": "genomför ett prov",
+      "unit": null,
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Kontrollera plan P: genomför ett prov.",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [],
+      "supersedes": [],
+      "rationale": "Planen anges i underlaget.",
+      "scenario_choice": null
+    },
+    {
+      "id": "criterion_approval_deadline",
+      "kind": "criterion",
+      "statement": "Provet ska vara godkänt senast dag 5 från start dag 0.",
+      "type": "requirement",
+      "status": "known",
+      "value": 5,
+      "unit": "dag",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Kravet är godkännande senast dag 5 från start dag 0.",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [
+        "plan_p"
+      ],
+      "supersedes": [],
+      "rationale": "Uttryckligt tidskrav.",
+      "scenario_choice": null
+    },
+    {
+      "id": "value_test_day_a1",
+      "kind": "value",
+      "statement": "Provet är bokat dag 2.",
+      "type": "user_fact",
+      "status": "superseded",
+      "value": 2,
+      "unit": "dag",
+      "refs": [
+        {
+          "source_id": "answer-old",
+          "source_version": 1,
+          "quote": "Svar a1 på frågan om provdag: provet är bokat dag 2.",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [
+        "plan_p"
+      ],
+      "supersedes": [],
+      "rationale": "Rättas uttryckligen av a2.",
+      "scenario_choice": null
+    },
+    {
+      "id": "value_test_day_a2",
+      "kind": "value",
+      "statement": "Provet är bokat dag 4.",
+      "type": "user_fact",
+      "status": "known",
+      "value": 4,
+      "unit": "dag",
+      "refs": [
+        {
+          "source_id": "answer-new",
+          "source_version": 1,
+          "quote": "Svar a2 ersätter a1 om provdag: jag skrev fel, provet är bokat dag 4.",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [
+        "plan_p"
+      ],
+      "supersedes": [
+        "value_test_day_a1"
+      ],
+      "rationale": "Senare svar rättar enbart provdagen.",
+      "scenario_choice": null
+    },
+    {
+      "id": "criterion_pass_limit_protocol",
+      "kind": "criterion",
+      "statement": "Godkänt prov kräver högst 8 enheter enligt kontrollprotokollet.",
+      "type": "requirement",
+      "status": "conflict",
+      "value": null,
+      "unit": "enheter",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Kontrollprotokollet säger att gränsen för godkänt prov är högst 8 enheter.",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [
+        "plan_p"
+      ],
+      "supersedes": [],
+      "rationale": "Gränsen motsägs av projektbeslutet och ingen källa är överordnad.",
+      "scenario_choice": null
+    },
+    {
+      "id": "criterion_pass_limit_project",
+      "kind": "criterion",
+      "statement": "Godkänt prov kräver högst 10 enheter enligt projektbeslutet.",
+      "type": "requirement",
+      "status": "conflict",
+      "value": null,
+      "unit": "enheter",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Projektbeslutet säger att samma gräns är högst 10 enheter.",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [
+        "plan_p"
+      ],
+      "supersedes": [],
+      "rationale": "Gränsen motsägs av kontrollprotokollet och ingen källa är överordnad.",
+      "scenario_choice": null
+    }
+  ],
+  "gaps": [
+    {
+      "id": "gap_pass_limit_conflict",
+      "item_ids": [
+        "criterion_pass_limit_protocol",
+        "criterion_pass_limit_project"
+      ],
+      "kind": "conflict",
+      "impact": "blocks_handoff",
+      "status": "open",
+      "explanation": "Underlaget anger två olika gränser för godkänt prov utan fastställd överordnad källa.",
+      "resolution": null
+    },
+    {
+      "id": "gap_test_result",
+      "item_ids": [
+        "criterion_pass_limit_protocol",
+        "criterion_pass_limit_project"
+      ],
+      "kind": "missing_data",
+      "impact": "limits_conclusion",
+      "status": "open",
+      "explanation": "Inget provresultat i enheter anges, så godkännande kan inte bedömas mot någon vald gräns.",
+      "resolution": null
+    }
+  ],
+  "questions": [
+    {
+      "id": "question_pass_limit_authority",
+      "text": "Vilken gräns ska gälla för godkänt prov: högst 8 eller högst 10 enheter?",
+      "target_ids": [
+        "criterion_pass_limit_protocol",
+        "criterion_pass_limit_project"
+      ],
+      "finding_ids": [],
+      "reason": "Gränserna är motstridiga och ingen källa är överordnad.",
+      "impact": "blocks_handoff"
+    },
+    {
+      "id": "question_test_result",
+      "text": "Vilket resultat i enheter fick provet?",
+      "target_ids": [
+        "criterion_pass_limit_protocol",
+        "criterion_pass_limit_project"
+      ],
+      "finding_ids": [],
+      "reason": "Resultatet behövs för att bedöma om provet är godkänt.",
+      "impact": "limits_conclusion"
+    }
+  ]
+}

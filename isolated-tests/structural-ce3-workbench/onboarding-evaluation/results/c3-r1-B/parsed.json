@@ -1,0 +1,99 @@
+{
+  "status": "complete",
+  "assessments": [
+    {
+      "item_id": "plan_p",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Kontrollera plan P: genomför ett prov.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Planen återges korrekt."
+    },
+    {
+      "item_id": "criterion_deadline",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Kravet är godkännande senast dag 5 från start dag 0.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Kravet och tidräkningen återges korrekt."
+    },
+    {
+      "item_id": "criterion_threshold",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Kontrollprotokollet säger att gränsen för godkänt prov är högst 8 enheter.",
+          "occurrence": 0
+        },
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Projektbeslutet säger att samma gräns är högst 10 enheter.",
+          "occurrence": 0
+        },
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Ingen källa har fastställts som överordnad.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Motstridigheten och avsaknaden av prioritet återges korrekt som konflikt."
+    },
+    {
+      "item_id": "assumption_test_day",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "answer-new",
+          "source_version": 1,
+          "quote": "Svar a2 ersätter a1 om provdag: jag skrev fel, provet är bokat dag 4.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Dag 4 stöds av det rättande svaret, som uttryckligen ersätter det tidigare svaret om provdagen."
+    }
+  ],
+  "findings": [],
+  "limitations": [
+    "Underlaget anger varken provutfall eller när ett eventuellt godkännande sker.",
+    "Godkännandegränsen är olöst mellan 8 och 10 enheter."
+  ],
+  "questions": [
+    {
+      "id": "q_threshold_authority",
+      "text": "Vilken gräns ska användas för godkänt prov: högst 8 eller högst 10 enheter?",
+      "target_ids": [
+        "criterion_threshold"
+      ],
+      "finding_ids": [],
+      "reason": "En överordnad källa är inte fastställd och konflikten blockerar överlämning.",
+      "impact": "blocks_handoff"
+    },
+    {
+      "id": "q_outcome_and_approval",
+      "text": "Vilket blir provutfallet, och när sker godkännandet om provet godkänns?",
+      "target_ids": [
+        "plan_p",
+        "criterion_deadline",
+        "criterion_threshold",
+        "assumption_test_day"
+      ],
+      "finding_ids": [],
+      "reason": "Uppgifterna behövs för att bedöma om godkännande kan ske senast dag 5.",
+      "impact": "limits_conclusion"
+    }
+  ]
+}

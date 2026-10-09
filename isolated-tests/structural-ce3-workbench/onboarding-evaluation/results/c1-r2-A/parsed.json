@@ -1,0 +1,159 @@
+{
+  "status": "complete",
+  "assessments": [
+    {
+      "item_id": "plan_p",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Kontrollera plan P: bygg en provmodul.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Planen är uttryckligen angiven."
+    },
+    {
+      "item_id": "goal_module_day2",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Förhoppningsvis klart dag 2. Dag 2 är ett mål, inte en garanti.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Dag 2 anges som mål, inte garanti."
+    },
+    {
+      "item_id": "rule_approval_before_delivery",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Leverans får ske först efter ansvarigs separata godkännandebesked.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Kravet på separat godkännande före leverans är uttryckligt."
+    },
+    {
+      "item_id": "value_start_day",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "med dag 0 som start.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Startdagen är uttryckligen angiven."
+    },
+    {
+      "item_id": "criterion_delivery_by_day3",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Analysen ska kontrollera om leveransvillkoret kan uppfyllas senast dag 3, med dag 0 som start.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Kontrollkriteriet och tidsgränsen är uttryckligen angivna."
+    },
+    {
+      "item_id": "approval_timing",
+      "outcome": "partially_supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Tidpunkten för beskedet är ännu inte angiven.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Den okända tidpunkten stöds, men den kan inte vara en scenario_assumption utan ett uttryckligt scenariosvar och scenario_choice."
+    }
+  ],
+  "findings": [
+    {
+      "id": "finding_approval_timing_not_scenario_choice",
+      "target_ids": [
+        "approval_timing"
+      ],
+      "category": "profile_gap",
+      "basis": "absence_in_supplied_material",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Tidpunkten för beskedet är ännu inte angiven.",
+          "occurrence": 0
+        }
+      ],
+      "searched_source_ids": [
+        "brief"
+      ],
+      "explanation": "Objektet är märkt scenario_assumption trots att inget svar med ett uttryckligt scenarioval och ingen scenario_choice finns. Uppgiften är en öppen kunskapslucka.",
+      "suggested_question": "När lämnas ansvarigs separata godkännandebesked?",
+      "impact": "blocks_handoff"
+    },
+    {
+      "id": "finding_completion_timing_missing",
+      "target_ids": [
+        "plan_p",
+        "criterion_delivery_by_day3"
+      ],
+      "category": "unsupported",
+      "basis": "absence_in_supplied_material",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Förhoppningsvis klart dag 2. Dag 2 är ett mål, inte en garanti.",
+          "occurrence": 0
+        }
+      ],
+      "searched_source_ids": [
+        "brief"
+      ],
+      "explanation": "Underlaget saknar en angiven eller garanterad tidpunkt då provmodulen är klar. Måldatum dag 2 räcker inte för att bedöma leveransvillkoret senast dag 3.",
+      "suggested_question": "När kan provmodulen vara klar för leverans, och finns det en senast garanterad tidpunkt?",
+      "impact": "blocks_handoff"
+    }
+  ],
+  "limitations": [],
+  "questions": [
+    {
+      "id": "question_approval_timing",
+      "text": "När lämnas ansvarigs separata godkännandebesked?",
+      "target_ids": [
+        "approval_timing",
+        "criterion_delivery_by_day3"
+      ],
+      "finding_ids": [
+        "finding_approval_timing_not_scenario_choice"
+      ],
+      "reason": "Godkännandet är ett obligatoriskt villkor före leverans och tidpunkten saknas.",
+      "impact": "blocks_handoff"
+    },
+    {
+      "id": "question_module_completion_timing",
+      "text": "När kan provmodulen vara klar för leverans, och finns det en senast garanterad tidpunkt?",
+      "target_ids": [
+        "plan_p",
+        "criterion_delivery_by_day3"
+      ],
+      "finding_ids": [
+        "finding_completion_timing_missing"
+      ],
+      "reason": "Dag 2 är endast ett mål och ger ingen fast tidpunkt för att pröva leverans senast dag 3.",
+      "impact": "blocks_handoff"
+    }
+  ]
+}

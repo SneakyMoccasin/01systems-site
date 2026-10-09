@@ -1,0 +1,183 @@
+{
+  "analysis": {
+    "kind": "check",
+    "question": "Kan leveransvillkoret för plan P uppfyllas senast dag 3?",
+    "plan_ids": [
+      "plan_p"
+    ],
+    "criterion_ids": [
+      "criterion_delivery_by_day3"
+    ],
+    "changed_assumption_ids": []
+  },
+  "scope": {
+    "includes": [
+      "Plan P: bygga en provmodul",
+      "Målet dag 2",
+      "Kravet på separat godkännande före leverans",
+      "Bedömning senast dag 3 med dag 0 som start"
+    ],
+    "excludes": []
+  },
+  "items": [
+    {
+      "id": "plan_p",
+      "kind": "plan",
+      "statement": "Bygg en provmodul.",
+      "type": "document_fact",
+      "status": "known",
+      "value": "bygg en provmodul",
+      "unit": null,
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Kontrollera plan P: bygg en provmodul.",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [],
+      "supersedes": [],
+      "rationale": "Planen är uttryckligen angiven.",
+      "scenario_choice": null
+    },
+    {
+      "id": "goal_module_day2",
+      "kind": "value",
+      "statement": "Provmodulen har måldatum dag 2.",
+      "type": "goal",
+      "status": "known",
+      "value": 2,
+      "unit": "dag",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Förhoppningsvis klart dag 2. Dag 2 är ett mål, inte en garanti.",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [
+        "plan_p"
+      ],
+      "supersedes": [],
+      "rationale": "Dag 2 anges uttryckligen som mål, inte garanti.",
+      "scenario_choice": null
+    },
+    {
+      "id": "rule_approval_before_delivery",
+      "kind": "rule",
+      "statement": "Leverans får ske först efter ansvarigs separata godkännandebesked.",
+      "type": "requirement",
+      "status": "known",
+      "value": true,
+      "unit": null,
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Leverans får ske först efter ansvarigs separata godkännandebesked.",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [],
+      "supersedes": [],
+      "rationale": "Detta är ett uttryckligt leveranskrav.",
+      "scenario_choice": null
+    },
+    {
+      "id": "value_start_day",
+      "kind": "value",
+      "statement": "Startdagen är dag 0.",
+      "type": "document_fact",
+      "status": "known",
+      "value": 0,
+      "unit": "dag",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "med dag 0 som start.",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [],
+      "supersedes": [],
+      "rationale": "Startdagen är angiven.",
+      "scenario_choice": null
+    },
+    {
+      "id": "criterion_delivery_by_day3",
+      "kind": "criterion",
+      "statement": "Kontrollera om leveransvillkoret kan uppfyllas senast dag 3.",
+      "type": "requirement",
+      "status": "known",
+      "value": 3,
+      "unit": "dag",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Analysen ska kontrollera om leveransvillkoret kan uppfyllas senast dag 3, med dag 0 som start.",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [
+        "rule_approval_before_delivery",
+        "value_start_day"
+      ],
+      "supersedes": [],
+      "rationale": "Detta är analysens uttryckliga kontrollkriterium.",
+      "scenario_choice": null
+    },
+    {
+      "id": "approval_timing",
+      "kind": "assumption",
+      "statement": "Tidpunkten för ansvarigs godkännandebesked.",
+      "type": "scenario_assumption",
+      "status": "unknown",
+      "value": null,
+      "unit": "dag",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Tidpunkten för beskedet är ännu inte angiven.",
+          "occurrence": 0
+        }
+      ],
+      "depends_on": [
+        "rule_approval_before_delivery"
+      ],
+      "supersedes": [],
+      "rationale": "Ingen tidpunkt eller uttryckligt scenariosvar har lämnats.",
+      "scenario_choice": null
+    }
+  ],
+  "gaps": [
+    {
+      "id": "gap_approval_timing",
+      "item_ids": [
+        "approval_timing",
+        "criterion_delivery_by_day3"
+      ],
+      "kind": "missing_data",
+      "impact": "blocks_handoff",
+      "status": "open",
+      "explanation": "Tidpunkten för det obligatoriska godkännandebeskedet saknas, så leverans senast dag 3 kan inte bedömas.",
+      "resolution": null
+    }
+  ],
+  "questions": [
+    {
+      "id": "question_approval_timing",
+      "text": "När ges ansvarigs separata godkännandebesked?",
+      "target_ids": [
+        "approval_timing"
+      ],
+      "finding_ids": [],
+      "reason": "Tidpunkten behövs för att kontrollera om leverans kan ske senast dag 3.",
+      "impact": "blocks_handoff"
+    }
+  ]
+}

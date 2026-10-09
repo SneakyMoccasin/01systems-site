@@ -1,0 +1,135 @@
+{
+  "status": "complete",
+  "assessments": [
+    {
+      "item_id": "plan_p",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Kontrollera plan P: genomför ett prov.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Planmålet anges uttryckligen."
+    },
+    {
+      "item_id": "criterion_approval_deadline",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Kravet är godkännande senast dag 5 från start dag 0.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Tidskravet och startdagen stöds uttryckligen."
+    },
+    {
+      "item_id": "value_test_day_a1",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "answer-old",
+          "source_version": 1,
+          "quote": "Svar a1 på frågan om provdag: provet är bokat dag 2.",
+          "occurrence": 0
+        },
+        {
+          "source_id": "answer-new",
+          "source_version": 1,
+          "quote": "Svar a2 ersätter a1 om provdag: jag skrev fel, provet är bokat dag 4.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Det ursprungliga svaret anger dag 2 och rättas uttryckligen av a2."
+    },
+    {
+      "item_id": "value_test_day_a2",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "answer-new",
+          "source_version": 1,
+          "quote": "Svar a2 ersätter a1 om provdag: jag skrev fel, provet är bokat dag 4.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Det rättade svaret anger bokning dag 4."
+    },
+    {
+      "item_id": "criterion_pass_limit_protocol",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Kontrollprotokollet säger att gränsen för godkänt prov är högst 8 enheter.",
+          "occurrence": 0
+        },
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Ingen källa har fastställts som överordnad.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Protokollets gräns anges, medan överordning saknas; conflict med null-värde är korrekt deklarerat."
+    },
+    {
+      "item_id": "criterion_pass_limit_project",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Projektbeslutet säger att samma gräns är högst 10 enheter.",
+          "occurrence": 0
+        },
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Ingen källa har fastställts som överordnad.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Projektbeslutets gräns anges, medan överordning saknas; conflict med null-värde är korrekt deklarerat."
+    }
+  ],
+  "findings": [
+    {
+      "id": "finding_approval_timing_missing",
+      "target_ids": [
+        "criterion_approval_deadline"
+      ],
+      "category": "unsupported",
+      "basis": "absence_in_supplied_material",
+      "refs": [],
+      "searched_source_ids": [
+        "brief",
+        "answer-old",
+        "answer-new"
+      ],
+      "explanation": "Underlaget anger provets bokade dag men inte när eller om godkännande sker. En bokning dag 4 fastställer inte godkännande senast dag 5.",
+      "suggested_question": "När sker godkännandet av provet, eller finns ett besked om att det är godkänt senast dag 5?",
+      "impact": "blocks_handoff"
+    }
+  ],
+  "limitations": [],
+  "questions": [
+    {
+      "id": "question_approval_timing",
+      "text": "När sker godkännandet av provet, eller finns ett besked om att det är godkänt senast dag 5?",
+      "target_ids": [
+        "criterion_approval_deadline"
+      ],
+      "finding_ids": [
+        "finding_approval_timing_missing"
+      ],
+      "reason": "Tidpunkten för provbokningen räcker inte för att bedöma tidskravet på godkännande.",
+      "impact": "blocks_handoff"
+    }
+  ]
+}

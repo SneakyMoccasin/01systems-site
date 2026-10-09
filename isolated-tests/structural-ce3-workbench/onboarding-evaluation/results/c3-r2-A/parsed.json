@@ -1,0 +1,140 @@
+{
+  "status": "complete",
+  "assessments": [
+    {
+      "item_id": "plan_p",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Kontrollera plan P: genomför ett prov.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Planens mål anges uttryckligen."
+    },
+    {
+      "item_id": "criterion_approval_deadline",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Kravet är godkännande senast dag 5 från start dag 0.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Tidskravet och startdagen anges uttryckligen."
+    },
+    {
+      "item_id": "value_test_day_a2",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "answer-new",
+          "source_version": 1,
+          "quote": "Svar a2 ersätter a1 om provdag: jag skrev fel, provet är bokat dag 4.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Det senare svaret anger dag 4 och ersätter a1 för provdagen."
+    },
+    {
+      "item_id": "criterion_pass_limit_protocol",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Kontrollprotokollet säger att gränsen för godkänt prov är högst 8 enheter.",
+          "occurrence": 0
+        },
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Ingen källa har fastställts som överordnad.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Gränsen 8 anges, men dess konfliktstatus är korrekt eftersom ingen överordnad källa är fastställd."
+    },
+    {
+      "item_id": "criterion_pass_limit_project",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Projektbeslutet säger att samma gräns är högst 10 enheter.",
+          "occurrence": 0
+        },
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Ingen källa har fastställts som överordnad.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Gränsen 10 anges, men dess konfliktstatus är korrekt eftersom ingen överordnad källa är fastställd."
+    }
+  ],
+  "findings": [
+    {
+      "id": "finding_approval_date_missing",
+      "target_ids": [
+        "criterion_approval_deadline"
+      ],
+      "category": "unsupported",
+      "basis": "absence_in_supplied_material",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Kravet är godkännande senast dag 5 från start dag 0.",
+          "occurrence": 0
+        },
+        {
+          "source_id": "answer-new",
+          "source_version": 1,
+          "quote": "Svar a2 ersätter a1 om provdag: jag skrev fel, provet är bokat dag 4.",
+          "occurrence": 0
+        }
+      ],
+      "searched_source_ids": [
+        "brief",
+        "answer-old",
+        "answer-new"
+      ],
+      "explanation": "Det finns en bokad provdag men ingen uppgift om provet godkändes eller vilken dag godkännandet inträffade. Därför kan tidskravet inte bedömas enbart från dag 4.",
+      "suggested_question": "Blev provet godkänt, och vilken dag registrerades godkännandet?",
+      "impact": "limits_conclusion"
+    }
+  ],
+  "limitations": [],
+  "questions": [
+    {
+      "id": "question_approval_outcome_date",
+      "text": "Blev provet godkänt, och vilken dag registrerades godkännandet?",
+      "target_ids": [
+        "criterion_approval_deadline"
+      ],
+      "finding_ids": [
+        "finding_approval_date_missing"
+      ],
+      "reason": "Uppgiften behövs för att bedöma godkännande senast dag 5.",
+      "impact": "limits_conclusion"
+    },
+    {
+      "id": "question_pass_limit_authority",
+      "text": "Vilken källa ska styra gränsen för godkänt prov: kontrollprotokollets högst 8 enheter eller projektbeslutets högst 10 enheter?",
+      "target_ids": [
+        "criterion_pass_limit_protocol",
+        "criterion_pass_limit_project"
+      ],
+      "finding_ids": [],
+      "reason": "Underlaget anger motstridiga gränser utan överordnad källa.",
+      "impact": "blocks_handoff"
+    }
+  ]
+}

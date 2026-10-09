@@ -1,0 +1,107 @@
+{
+  "status": "complete",
+  "assessments": [
+    {
+      "item_id": "plan_p",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Kontrollera plan P: bygg en provmodul.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Planen och åtgärden är uttryckligen angivna."
+    },
+    {
+      "item_id": "goal_module_day2",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Förhoppningsvis klart dag 2.",
+          "occurrence": 0
+        },
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Dag 2 är ett mål, inte en garanti.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Dag 2 anges uttryckligen som mål, inte garanti."
+    },
+    {
+      "item_id": "rule_approval_before_delivery",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Leverans får ske först efter ansvarigs separata godkännandebesked.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Godkännandebesked före leverans är ett uttryckligt krav."
+    },
+    {
+      "item_id": "rule_approval_time",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Tidpunkten för beskedet är ännu inte angiven.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Underlaget anger uttryckligen att tidpunkten saknas."
+    },
+    {
+      "item_id": "criterion_delivery_day3",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Analysen ska kontrollera om leveransvillkoret kan uppfyllas senast dag 3, med dag 0 som start.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Kontrollfrågan och gränsen dag 3 är uttryckligen angivna."
+    },
+    {
+      "item_id": "value_start_day",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "med dag 0 som start",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Startdagen är uttryckligen angiven."
+    }
+  ],
+  "findings": [],
+  "limitations": [
+    "Det registrerade öppna gapet innebär att något tidsförlopp för byggande, godkännande och leverans ännu inte kan fastställas."
+  ],
+  "questions": [
+    {
+      "id": "q_timing_for_delivery",
+      "text": "När kan provmodulen bli klar, när kan godkännandebeskedet ges och kan leverans ske samma dag som båda villkoren är uppfyllda?",
+      "target_ids": [
+        "plan_p",
+        "rule_approval_time",
+        "criterion_delivery_day3"
+      ],
+      "finding_ids": [],
+      "reason": "Tiderna behövs för att kunna analysera om leveransvillkoret kan uppfyllas senast dag 3.",
+      "impact": "blocks_handoff"
+    }
+  ]
+}

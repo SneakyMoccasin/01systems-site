@@ -1,0 +1,138 @@
+{
+  "status": "complete",
+  "assessments": [
+    {
+      "item_id": "plan_a_stationer",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "plan A (en provstation)",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Antalet en provstation för plan A är angivet."
+    },
+    {
+      "item_id": "plan_b_stationer",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "plan B (två provstationer)",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Antalet två provstationer för plan B är angivet."
+    },
+    {
+      "item_id": "kriterium_lagst_kostnad",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Målet är lägst kostnad",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Lägst kostnad är ett uttryckligt mål."
+    },
+    {
+      "item_id": "kriterium_godkant_senast_dag7",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "godkänt resultat senast dag 7 från dag 0",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Godkänt resultat senast dag 7 från dag 0 är ett uttryckligt mål."
+    },
+    {
+      "item_id": "krav_automatisk_optimering",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Systemet ska automatiskt söka den optimala planen",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Kravet är uttryckligen angivet."
+    },
+    {
+      "item_id": "krav_ombokning_efter_underkant",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "boka om återkommande kontroller efter varje underkänt resultat",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Kravet på ombokning efter underkänt resultat är uttryckligen angivet."
+    },
+    {
+      "item_id": "krav_omprov_under_korning",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Antalet omprov ska bestämmas under körning",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Kravet på körningsbestämt antal omprov är uttryckligen angivet."
+    },
+    {
+      "item_id": "fast_handelsefoljd",
+      "outcome": "supported",
+      "refs": [
+        {
+          "source_id": "brief",
+          "source_version": 1,
+          "quote": "Vi har ännu inte valt någon förenklad, fast händelseföljd.",
+          "occurrence": 0
+        }
+      ],
+      "explanation": "Itemet återger korrekt att antagandet är unknown och saknar värde."
+    }
+  ],
+  "findings": [],
+  "limitations": [],
+  "questions": [
+    {
+      "id": "fraga_kostnad_och_utfall",
+      "text": "Vilka kostnader samt resultat- och tidutfall gäller för plan A respektive plan B, så att planerna kan jämföras mot kostnadsmålet och dag-7-målet?",
+      "target_ids": [
+        "plan_a_stationer",
+        "plan_b_stationer",
+        "kriterium_lagst_kostnad",
+        "kriterium_godkant_senast_dag7"
+      ],
+      "finding_ids": [],
+      "reason": "Dessa uppgifter saknas och krävs för att kunna välja mellan planerna.",
+      "impact": "blocks_handoff"
+    },
+    {
+      "id": "fraga_fast_forenklad_sekvens",
+      "text": "Kan ni välja en förenklad, fast händelseföljd med ett fast begränsat antal omprov för den avsedda analysen?",
+      "target_ids": [
+        "fast_handelsefoljd",
+        "krav_ombokning_efter_underkant",
+        "krav_omprov_under_korning"
+      ],
+      "finding_ids": [],
+      "reason": "Underlaget anger att ingen sådan händelseföljd ännu har valts, medan kraven gäller återkommande och körningsstyrda omprov.",
+      "impact": "blocks_handoff"
+    }
+  ]
+}

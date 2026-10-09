@@ -1,0 +1,13 @@
+{
+  "id": "c5-r1-B",
+  "started": "2026-10-09T10:52:35.362Z",
+  "elapsed_ms": 768,
+  "http_status": 429,
+  "request_id": "req_9d702a76779546419c7aeecf999a5dde",
+  "requested_model": "gpt-5.6-terra",
+  "returned_model": null,
+  "usage": null,
+  "cost": null,
+  "reserved_usd": 0.152,
+  "error": "HTTP_429"
+}
