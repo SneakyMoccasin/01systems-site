@@ -1,0 +1,80 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:ce3:review-archive:1",
+  "title": "ce3-review-archive/1",
+  "description": "CE3 envelope only. Native SR semantics are validated by recorded-response replay, not duplicated here.",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "receipt", "producer", "verification", "digest"],
+  "properties": {
+    "schema_version": {"const": "ce3-review-archive/1"},
+    "receipt": {"$ref": "#/definitions/receipt"},
+    "producer": {"$ref": "#/definitions/producer"},
+    "verification": {
+      "type": "object", "additionalProperties": false,
+      "required": ["method", "receipt_digest", "sr_semantics_digest", "translation_digest"],
+      "properties": {
+        "method": {"const": "recorded_response_replay/1"},
+        "receipt_digest": {"$ref": "#/definitions/hash"},
+        "sr_semantics_digest": {"$ref": "#/definitions/hash"},
+        "translation_digest": {"$ref": "#/definitions/hash"}
+      }
+    },
+    "digest": {"$ref": "#/definitions/hash"}
+  },
+  "definitions": {
+    "hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "text": {"type": "string", "minLength": 1},
+    "producer": {
+      "type": "object", "additionalProperties": false,
+      "required": ["schema_version", "mode", "response_origin", "provider", "location", "requested_model", "returned_models", "run_id", "completed_at"],
+      "properties": {
+        "schema_version": {"const": "ce3-review-producer/1"},
+        "mode": {"enum": ["synthetic", "live"]},
+        "response_origin": {"enum": ["scripted_responses", "model_responses"]},
+        "provider": {"$ref": "#/definitions/text"},
+        "location": {"enum": ["none", "local", "remote"]},
+        "requested_model": {"$ref": "#/definitions/text"},
+        "returned_models": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/definitions/text"}},
+        "run_id": {"$ref": "#/definitions/text"},
+        "completed_at": {"type": ["string", "null"], "minLength": 1}
+      },
+      "allOf": [{
+        "if": {"properties": {"mode": {"const": "synthetic"}}},
+        "then": {"properties": {"response_origin": {"const": "scripted_responses"}, "location": {"const": "none"}}},
+        "else": {"properties": {"response_origin": {"const": "model_responses"}, "location": {"enum": ["local", "remote"]}}}
+      }]
+    },
+    "code": {
+      "type": "object", "additionalProperties": false, "required": ["commit", "pin_digest", "contract"],
+      "properties": {"commit": {"type": "string", "pattern": "^[a-f0-9]{40}$"}, "pin_digest": {"$ref": "#/definitions/hash"}, "contract": {"const": "structured-grounded/1"}}
+    },
+    "versioned_text": {
+      "type": "object", "additionalProperties": false, "required": ["id", "version", "sha256"],
+      "properties": {"id": {"$ref": "#/definitions/text"}, "version": {"$ref": "#/definitions/text"}, "sha256": {"$ref": "#/definitions/hash"}}
+    },
+    "binding": {
+      "type": "object", "additionalProperties": false,
+      "required": ["archive_digest", "receipt_digest", "proposal_digest", "evidence_digest", "source", "draft", "registry_digest", "sr_code", "adapter", "producer"],
+      "properties": {
+        "archive_digest": {"$ref": "#/definitions/hash"}, "receipt_digest": {"$ref": "#/definitions/hash"},
+        "proposal_digest": {"$ref": "#/definitions/hash"}, "evidence_digest": {"$ref": "#/definitions/hash"},
+        "source": {"$ref": "#/definitions/versioned_text"}, "draft": {"$ref": "#/definitions/versioned_text"},
+        "registry_digest": {"$ref": "#/definitions/hash"}, "sr_code": {"$ref": "#/definitions/code"},
+        "adapter": {"enum": ["ce3-structured-sr-offline/1", "ce3-structured-sr/2"]}, "producer": {"$ref": "#/definitions/producer"}
+      }
+    },
+    "receipt": {
+      "type": "object", "additionalProperties": false,
+      "required": ["schema_version", "prepared", "sr_code", "original_sr_result", "test_tape", "result", "mappings", "unmapped", "field_coverage", "finding_reporting", "digest"],
+      "properties": {
+        "schema_version": {"enum": ["ce3-structured-sr-receipt/1", "ce3-structured-sr-receipt/2"]},
+        "prepared": {"type": "object"}, "sr_code": {"$ref": "#/definitions/code"},
+        "original_sr_result": {"type": "object", "required": ["contractVersion", "status", "binding", "request", "promptVersions", "producer", "fieldCoverage", "findingReporting", "claims", "assessments", "grounded", "stages", "diagnostics"]},
+        "test_tape": {"type": ["object", "null"]}, "result": {"type": "object"},
+        "mappings": {"type": "array"}, "unmapped": {"type": "array"},
+        "field_coverage": {"type": "object"}, "finding_reporting": {"type": "object"},
+        "digest": {"$ref": "#/definitions/hash"}
+      }
+    }
+  }
+}

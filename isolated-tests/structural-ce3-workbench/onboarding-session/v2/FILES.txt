@@ -1,0 +1,15 @@
+isolated-tests/structural-ce3-workbench/onboarding-session/README.md
+isolated-tests/structural-ce3-workbench/onboarding-session/session.cjs
+isolated-tests/structural-ce3-workbench/onboarding-session/v2/README.md
+isolated-tests/structural-ce3-workbench/onboarding-session/v2/CHECKPOINT.md
+isolated-tests/structural-ce3-workbench/onboarding-session/v2/FILES.txt
+isolated-tests/structural-ce3-workbench/onboarding-session/v2/archive.cjs
+isolated-tests/structural-ce3-workbench/onboarding-session/v2/archive.schema.json
+isolated-tests/structural-ce3-workbench/onboarding-session/v2/session.cjs
+isolated-tests/structural-ce3-workbench/onboarding-session/v2/session.schema.json
+isolated-tests/structural-ce3-workbench/onboarding-session/v2/transfer.schema.json
+isolated-tests/structural-ce3-workbench/onboarding-session/v2/demo.cjs
+isolated-tests/structural-ce3-workbench/onboarding-session/v2/migrate.cjs
+isolated-tests/structural-ce3-workbench/onboarding-session/v2/session.test.cjs
+isolated-tests/structural-ce3-workbench/onboarding-sr/structured/README.md
+isolated-tests/structural-ce3-workbench/onboarding-sr/structured/adapter.cjs

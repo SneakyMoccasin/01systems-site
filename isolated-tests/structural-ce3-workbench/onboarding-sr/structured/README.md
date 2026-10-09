@@ -1,5 +1,7 @@
 # CE3 → SR structured-grounded/1, offlinekoppling
 
+Efterföljande sessionsstöd finns i [onboarding-session/v2](../../onboarding-session/v2/README.md): inbäddade granskningsarkiv, register-/receiptbundna händelser och uttrycklig historikmigration. Den här katalogens befintliga receipt/1- och bundle/1-format behåller sin offlinegräns. Avsnittet om kommande sessionsmigration nedan beskriver denna integrations tidigare checkpoint.
+
 Aktuell isolerad adapter till `runStructuredGroundedReview` i SR **e7308010ecbea1ebe46c3298aa6a96f06381ad0a**, branch `codex/structured-grounded-v1`. CE3-bas: `8695110081097fb5bf9a3a0eea863baecea0a98e`. Förra adaptern/receipts i överordnad katalog är historisk grounded-0.1-verifiering och lämnas intakta. Den aktiva nya kodpinnen är [sr-code-pin.json](sr-code-pin.json); den historiska pinnen skrivs inte över.
 
 **Offlineintegrationskontroll: riktig SR-kod, uttryckligen förskrivna modellsvar. Inga externa AI-anrop, kostnader eller upptäcktsmått.** SR-repot, CE3-motorn, UI, onboardingkontrakten och `ce3-onboarding-session/1` ändras inte.

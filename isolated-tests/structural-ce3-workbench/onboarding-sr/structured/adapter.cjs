@@ -38,9 +38,14 @@ function assertPrepared(prepared, options) {
 }
 function translate(prepared, srResult, options = {}) {
   assertPrepared(prepared, options);
-  const sr = loadSR(options.srRoot), proposal = prepared.request.snapshot;
+  const sr = loadSR(options.srRoot);
   need(srResult.contractVersion === 'structured-grounded/1' && same(srResult.binding, prepared.binding) && same(srResult.request, prepared.input), 'SR_RESULT_BINDING');
   need(srResult.producer.mode === 'mock' && srResult.producer.name === 'ce3-structured-sr-test-double', 'LIVE_SESSION_NOT_ENABLED');
+  return translateFields(prepared, srResult, sr, { mode: 'synthetic', adapter: ADAPTER, model: null, prompt_version: 'SR-structured-grounded/1;CE3-registry/1' });
+}
+// Shared deterministic projection. Callers must validate their versioned envelope first.
+function translateFields(prepared, srResult, sr, producer) {
+  const proposal = prepared.request.snapshot;
   const activeIds = new Set(C.active(proposal).map(i => i.id)), findings = [], mappings = [], unmapped = [], limitations = [];
   if (srResult.status !== 'complete') limitations.push(`SR-status: ${srResult.status}; fälttäckning ${srResult.fieldCoverage.status}; fyndredovisning ${srResult.findingReporting.status}.`);
   if (!prepared.contract.valid) limitations.push(`Kontraktsogiltigt utkast bevarat för diagnostik: ${prepared.contract.error}`);
@@ -77,7 +82,7 @@ function translate(prepared, srResult, options = {}) {
   if (unmapped.length) limitations.push(`${unmapped.length} relevanta fältbedömningar saknar förlustfri CE3-koppling; se unmapped i granskningsunderlaget.`);
   if (assessed.length !== activeIds.size) limitations.push('Alla aktiva uppgifter har inte sju uttryckligt bedömda registerfält.');
   const status = srResult.status === 'failed' ? 'failed' : srResult.status === 'partial' || limitations.length ? 'partial' : 'complete';
-  const result = { status, assessed_item_ids: assessed, findings, limitations, producer: { mode: 'synthetic', adapter: ADAPTER, model: null, prompt_version: 'SR-structured-grounded/1;CE3-registry/1' } };
+  const result = { status, assessed_item_ids: assessed, findings, limitations, producer };
   C.schema('review', { schema_version: 'ce3-onboarding-review/1', id: 'adapter-check', request: prepared.request, result });
   return { result, mappings, unmapped, field_coverage: structuredClone(srResult.fieldCoverage), finding_reporting: structuredClone(srResult.findingReporting) };
 }
@@ -121,4 +126,4 @@ function customerQuestion(receipt, jobId, findingId, text, id) {
   return { id, equivalence_key: `${jobId}-${findingId}`, text, reasons: [finding.explanation], target_ids: structuredClone(finding.target_ids),
     origins: [{ actor: 'sr', ref_id: `${jobId}/${findingId}` }], impact: finding.impact, priority: 1, status: 'open', answer_ids: [], merged_from: [], resolution: null };
 }
-module.exports = { ADAPTER, ITEM_FIELDS, registry, prepare, translate, reviewRecorded, verifyReceipt, saveReceipt, loadReceipt, attachOffline, customerQuestion };
+module.exports = { ADAPTER, ITEM_FIELDS, registry, prepare, translate, translateFields, reviewRecorded, verifyReceipt, saveReceipt, loadReceipt, attachOffline, customerQuestion };

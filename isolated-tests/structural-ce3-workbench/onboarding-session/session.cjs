@@ -129,15 +129,7 @@ function apply(s, op, a) {
     }
     case "complete_review": {
       keys(a, ["id", "result"]);
-      const job = s.requests.find(j => j.id === a.id);
-      need(job && !s.reviews.some(r => r.id === a.id), "Okänd eller redan besvarad granskning.");
-      const review = { schema_version: "ce3-onboarding-review/1", id: a.id, request: copy(job.request), result: copy(a.result) };
-      C.schema("review", review);
-      need(review.result.producer.mode === "synthetic" && review.result.producer.model === null, "Endast tydligt syntetiska mockbesked tillåts.");
-      review.result.findings.forEach(f => id(f.id));
-      s.reviews.push(review);
-      // Validate semantics against the job's exact snapshot, even for a late reply.
-      C.validatePacket(packet(s, job.request.snapshot, true));
+      applyReview(s, a, true);
       break;
     }
     case "add_questions": {
@@ -207,11 +199,28 @@ function apply(s, op, a) {
   checkState(s);
 }
 
+// Shared state transitions, not a public session/1 bypass. Session/2 validates its
+// archive/producer before calling this helper; session/1 retains its mock guard.
+function applyReview(s, a, syntheticOnly = false) {
+  keys(a, ["id", "result"]);
+  const job = s.requests.find(j => j.id === a.id);
+  need(job && !s.reviews.some(r => r.id === a.id), "Okänd eller redan besvarad granskning.");
+  const review = { schema_version: "ce3-onboarding-review/1", id: a.id, request: copy(job.request), result: copy(a.result) };
+  C.schema("review", review);
+  if (syntheticOnly) need(review.result.producer.mode === "synthetic" && review.result.producer.model === null, "Endast tydligt syntetiska mockbesked tillåts.");
+  review.result.findings.forEach(f => id(f.id)); s.reviews.push(review);
+  C.validatePacket(packet(s, job.request.snapshot, true));
+}
+function initialState(sessionId) {
+  id(sessionId);
+  return { id: sessionId, lifecycle: "active", summary: "Manuell onboarding; ingen CE3-körning.", sources: [], proposals: [], requests: [], reviews: [], questions: [], answers: [], dispositions: [], confirmations: [], transfers: [] };
+}
+
 class Session {
   #state; #events = []; #binding = null;
   constructor(sessionId) {
     id(sessionId);
-    this.#state = { id: sessionId, lifecycle: "active", summary: "Manuell onboarding; ingen CE3-körning.", sources: [], proposals: [], requests: [], reviews: [], questions: [], answers: [], dispositions: [], confirmations: [], transfers: [] };
+    this.#state = initialState(sessionId);
   }
   #commit(op, args) {
     // No externally held reference is adopted; invalid operations publish nothing.
@@ -283,4 +292,4 @@ class Session {
     return file;
   }
 }
-module.exports = { Session };
+module.exports = { Session, sessionCore: { initialState, apply, applyReview, packet, contextDigest, manualSource, checkState, effectiveDispositions, aligned, current } };

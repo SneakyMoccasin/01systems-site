@@ -1,0 +1,108 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:ce3:onboarding:session:2",
+  "title": "ce3-onboarding-session/2",
+  "description": "Embedded review archives; semantic event/archive validation in session.cjs. No automatic session/1 upgrade.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "session_id",
+    "origin",
+    "events",
+    "archives",
+    "checksum"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "ce3-onboarding-session/2"
+    },
+    "session_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$"
+    },
+    "origin": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object"
+        }
+      ]
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sequence",
+          "op",
+          "args",
+          "previous_digest",
+          "state_digest",
+          "digest"
+        ],
+        "properties": {
+          "sequence": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "op": {
+            "enum": [
+              "register_source",
+              "submit_proposal",
+              "select_register",
+              "request_structured_review",
+              "receive_structured_review",
+              "add_questions",
+              "answer",
+              "question_status",
+              "disposition",
+              "confirm_structured",
+              "handoff_structured",
+              "lifecycle"
+            ]
+          },
+          "args": {
+            "type": "object"
+          },
+          "previous_digest": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "state_digest": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "digest": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        }
+      }
+    },
+    "archives": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{64}$"
+      },
+      "additionalProperties": {
+        "$ref": "urn:ce3:review-archive:1"
+      }
+    },
+    "checksum": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  }
+}

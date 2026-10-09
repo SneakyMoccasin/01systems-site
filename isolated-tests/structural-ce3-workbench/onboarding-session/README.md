@@ -1,5 +1,7 @@
 # Isolerad sessionshållare för CE3-onboarding
 
+Ny separat version: [session/2 med inbäddade strukturerade SR-arkiv och uttrycklig migration](v2/README.md). Nedanstående dokument beskriver fortsatt **session/1** och dess mockgräns; format och standardbeteende bevaras.
+
 Lokal modul för manuellt underlag, uttryckliga modellförslag och mockad granskning. Den använder oförändrade [onboarding-v1-kontrakt från 0a4d0b7](../contracts/onboarding-v1/README.md). Ingen fritext tolkas till modellregler. Ingen live-LLM, SR-integration, uppladdning, OCR, UI, modellkompilering eller CE-körning finns här.
 
 ## Kör demonstrationen

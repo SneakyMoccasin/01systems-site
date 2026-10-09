@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:ce3:onboarding:transfer:2",
+  "title": "ce3-onboarding-transfer/2",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "id", "session_id", "status", "context_digest", "model_digest", "evidence_digest", "review_binding", "confirmation", "packet", "ce3_validation_status", "ce3_run_status"],
+  "properties": {
+    "schema_version": {"const": "ce3-onboarding-transfer/2"},
+    "id": {"type": "string", "minLength": 1}, "session_id": {"type": "string", "minLength": 1},
+    "status": {"const": "ready_for_separate_compilation_and_validation"},
+    "context_digest": {"$ref": "urn:ce3:review-archive:1#/definitions/hash"},
+    "model_digest": {"$ref": "urn:ce3:review-archive:1#/definitions/hash"},
+    "evidence_digest": {"$ref": "urn:ce3:review-archive:1#/definitions/hash"},
+    "review_binding": {"$ref": "urn:ce3:review-archive:1#/definitions/binding"},
+    "confirmation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "proposal_digest", "evidence_digest", "context_digest", "review_binding", "by", "text", "scope_acknowledged", "confirmation"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "proposal_digest": {"$ref": "urn:ce3:review-archive:1#/definitions/hash"},
+        "evidence_digest": {"$ref": "urn:ce3:review-archive:1#/definitions/hash"},
+        "context_digest": {"$ref": "urn:ce3:review-archive:1#/definitions/hash"},
+        "review_binding": {"$ref": "urn:ce3:review-archive:1#/definitions/binding"},
+        "by": {"type": "string", "minLength": 1}, "text": {"type": "string", "minLength": 1},
+        "scope_acknowledged": {"const": true},
+        "confirmation": {"$ref": "urn:ce3:onboarding:handoff:1#/properties/confirmation"}
+      }
+    },
+    "packet": {
+      "type": "object", "additionalProperties": false, "required": ["proposal", "reviews", "dialogue", "handoff"],
+      "properties": {
+        "proposal": {"$ref": "urn:ce3:onboarding:proposal:1"},
+        "reviews": {"type": "array", "items": {"$ref": "urn:ce3:onboarding:review:1"}},
+        "dialogue": {"$ref": "urn:ce3:onboarding:dialogue:1"},
+        "handoff": {"$ref": "urn:ce3:onboarding:handoff:1"}
+      }
+    },
+    "ce3_validation_status": {"const": "not_run"}, "ce3_run_status": {"const": "not_run"}
+  }
+}
