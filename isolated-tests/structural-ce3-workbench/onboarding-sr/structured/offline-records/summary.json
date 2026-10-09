@@ -1,0 +1,25 @@
+{
+  "mode": "OFFLINE INTEGRATION TEST DOUBLES; NOT DETECTION EVIDENCE",
+  "external_ai_calls": 0,
+  "cost_usd": 0,
+  "cases": [
+    {
+      "case": "c3-r1",
+      "sr_status": "complete",
+      "ce3_status": "partial",
+      "fields": 54,
+      "findings": 1,
+      "unmapped": 0,
+      "contract_valid": false
+    },
+    {
+      "case": "clear",
+      "sr_status": "complete",
+      "ce3_status": "complete",
+      "fields": 77,
+      "findings": 0,
+      "unmapped": 0,
+      "contract_valid": true
+    }
+  ]
+}

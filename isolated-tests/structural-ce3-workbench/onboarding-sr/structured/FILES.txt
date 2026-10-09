@@ -1,0 +1,17 @@
+isolated-tests/structural-ce3-workbench/onboarding-sr/DEPENDENCIES.md
+isolated-tests/structural-ce3-workbench/onboarding-sr/PIPELINE.md
+isolated-tests/structural-ce3-workbench/onboarding-sr/README.md
+isolated-tests/structural-ce3-workbench/onboarding-sr/structured/CHECKPOINT.md
+isolated-tests/structural-ce3-workbench/onboarding-sr/structured/FILES.txt
+isolated-tests/structural-ce3-workbench/onboarding-sr/structured/README.md
+isolated-tests/structural-ce3-workbench/onboarding-sr/structured/adapter.cjs
+isolated-tests/structural-ce3-workbench/onboarding-sr/structured/adapter.test.cjs
+isolated-tests/structural-ce3-workbench/onboarding-sr/structured/bundle.cjs
+isolated-tests/structural-ce3-workbench/onboarding-sr/structured/demo.cjs
+isolated-tests/structural-ce3-workbench/onboarding-sr/structured/diagnostic.cjs
+isolated-tests/structural-ce3-workbench/onboarding-sr/structured/offline-records/c3-r1.receipt.json
+isolated-tests/structural-ce3-workbench/onboarding-sr/structured/offline-records/clear.receipt.json
+isolated-tests/structural-ce3-workbench/onboarding-sr/structured/offline-records/summary.json
+isolated-tests/structural-ce3-workbench/onboarding-sr/structured/runtime.cjs
+isolated-tests/structural-ce3-workbench/onboarding-sr/structured/sr-code-pin.json
+isolated-tests/structural-ce3-workbench/onboarding-sr/structured/test-tape.cjs

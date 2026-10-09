@@ -1,5 +1,7 @@
 # Vad återstår före ett komplett liveflöde?
 
+**Uppdatering efter SR `e730801`:** det separata strukturerade läget och dess explicit spårbara fälttäckning finns nu i SR. CE3:s [nya isolerade offlinekoppling](structured/README.md) anropar den ingången direkt och verifierar full commit, relevanta filhashar, versionsbindningar, sparade stegresultat och översättning. Den generella partial-spärren är ersatt med kontroller av begärda fält, SR:s fyndredovisning, kontraktsfel och omappade problem. Detta ändrar inte session/1 eller ger liveberedskap. Minsta kvarvarande sessionsmigration beskrivs sist i den nya README:n. Texten nedan är den ursprungliga beroendebedömningen från `8695110`; avsnittet om en föreslagen SR-ingång är nu genomfört.
+
 **Ingen SR-ändring behövs för att anropa den befintliga lokala grounded-pipelinen med separata källor och utkast.** Dess exporterade funktion och providergräns används redan i offlineprovet. Följande krävs däremot för att låta resultaten slutföra en verklig onboarding, och har inte genomförts i detta pass.
 
 ## SR: uttryckligt register och täckningsresultat

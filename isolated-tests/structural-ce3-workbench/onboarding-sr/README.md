@@ -1,5 +1,7 @@
 # Tunn adapter till faktisk lokal Skeptical Reader
 
+**Aktuell koppling:** [structured/README.md](structured/README.md) beskriver den nya versionsmärkta offlineadaptern till `runStructuredGroundedReview`, kontrakt `structured-grounded/1`, med exakt SR-commit `e7308010ecbea1ebe46c3298aa6a96f06381ad0a` och [ny aktiv kodpin](structured/sr-code-pin.json). Den verifierar explicit fälttäckning, separat fyndredovisning och återöppningsbara receipts. Kommandon och begränsningar nedan avser den bevarade historiska grounded-0.1-adaptern från CE3 `8695110`; dess kodpin och råresultat är oförändrade.
+
 CE3 laddar och kör SR:s befintliga `runGroundedReview` och dess tre steg, prompts, Zod-scheman, citatkontroller och slutbedömning. Testerna ersätter **modellleverantören** med förskrivna JSON-svar. Det är offlineverifiering av riktig pipelinekod, inte ett liveprov eller kvalitetsbevis.
 
 [Pipelinekartläggning](PIPELINE.md) skiljer förvalt fyrastegs-textläge från valbart trestegs-groundedläge. Lokal SR-commit är `10d2482186e0d116506f215bdbdbd70f009ab18b`; den driftsatta betans version är **inte verifierad**. Tidigare `d795534` körde endast en ny enanropsprompt med SR-principer och utvärderade inte dessa riktiga pipelines.

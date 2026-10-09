@@ -1,5 +1,7 @@
 # Vad den lokala betakoden faktiskt kör
 
+**Senare tillägg:** SR `e7308010ecbea1ebe46c3298aa6a96f06381ad0a` har även den separata biblioteksingången `runStructuredGroundedReview` (`structured-grounded/1`). Den återanvänder de tre grounded-stegen genom versionsmärkta fältscheman och prompts; befintliga UI/API-standardlägen är oförändrade. CE3:s aktuella [strukturerade adapter](structured/README.md) kör den offline med testdubblar. Nedanstående kartläggning beskriver den historiska basversionen och dess två UI-lägen. Driftsatt beta är fortfarande inte verifierad.
+
 Läst och offlineverifierat 2026-10-09. SR: `main`, commit **10d2482186e0d116506f215bdbdbd70f009ab18b**, ren arbetskopia. [sr-code-pin.json](sr-code-pin.json) låser källfilerna som adaptern laddar och de UI/API-filer som kartläggningen bygger på. SR-repot är oförändrat.
 
 **Driftsatt version är inte verifierad.** Lokal HEAD, lokal konfiguration och `docs/vercel-closed-beta.md` bevisar inte vilken commit, modell eller vilka miljövariabler en Vercel-deployment använder. Ingen betaserver, deployment-API eller extern AI har anropats i detta pass. Före ett test som kallas ”driftsatta betans pipeline” behövs deployment-ID, byggd commit och säker modell-/konfigurationsmetadata från ansvarig driftmiljö. Ingen sådan koppling antas här.
