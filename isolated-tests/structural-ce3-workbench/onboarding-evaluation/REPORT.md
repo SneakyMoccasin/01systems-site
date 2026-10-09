@@ -1,5 +1,7 @@
 # Resultat: liten parad liveutvärdering
 
+> Förtydligande efter `d795534`: B-grenen körde en ny enanropsprompt med SR-principer. Den anropade varken SR-koden, betans fyrastegs-textpipeline eller dess trestegs-groundedpipeline. Slutsatserna gäller endast den testade prompten. [Senare kartläggning och offlinekoppling till riktig SR-kod](../onboarding-sr/PIPELINE.md) är ett separat arbete; råsvar och historiskt facit här är oförändrade.
+
 **Ingen unik detektionsnytta från SR-principgrenen observerades i de åtta jämförbara paren.** Egenkontrollen identifierade tre av fem bedömda utkastfel; SR-grenen identifierade två, båda även upptäckta av egenkontrollen. SR-grenen gav färre invändningar och frågor, men utelämnade också flera nödvändiga kompletteringar. Detta är en preliminär, källbunden kodagentsbedömning mot fryst facit, inte oberoende mänsklig kvalitetsvalidering.
 
 Körningen stoppades av leverantörens **slut på befintliga API-krediter**, inte av studiens 5 USD-tak. Ingen påfyllning, kontoändring eller återförsök gjordes. Kontrollfallet utan avsedda problem saknar därmed fullständig parad jämförelse. Ingen modell ändrades efter granskning; resultatet säger inget om förbättrad slutmodellskorrekthet eller faktiskt kundarbete.

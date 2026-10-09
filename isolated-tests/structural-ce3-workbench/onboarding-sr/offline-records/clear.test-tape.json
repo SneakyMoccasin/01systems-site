@@ -1,0 +1,365 @@
+[
+  {
+    "stage": "grounded_claim_extraction",
+    "data": {
+      "claims": [
+        {
+          "id": "claim-0",
+          "statement": "TEST DATA: analysis",
+          "quote": {
+            "exactText": "{\n  \"kind\": \"check\",\n  \"question\": \"Bevarar den deklarerade fasta följden villkoret att vara leveransklar senast dag 3?\",\n  \"plan_ids\": [\n    \"plan_p\"\n  ],\n  \"criterion_ids\": [\n    \"criterion_delivery_ready_day3\"\n  ],\n  \"changed_assumption_ids\": []\n}",
+            "occurrenceIndex": 0
+          }
+        },
+        {
+          "id": "claim-1",
+          "statement": "TEST DATA: scope",
+          "quote": {
+            "exactText": "{\n  \"includes\": [\n    \"Den fasta planen P från dag 0 till och med dag 3.\",\n    \"Kontroll av om leveransklar blir sant senast dag 3.\"\n  ],\n  \"excludes\": [\n    \"Ekonomi.\",\n    \"Faktisk leverans.\",\n    \"Prognos av verkligt kontrollutfall.\"\n  ]\n}",
+            "occurrenceIndex": 0
+          }
+        },
+        {
+          "id": "claim-2",
+          "statement": "TEST DATA: gaps",
+          "quote": {
+            "exactText": "[]",
+            "occurrenceIndex": 1
+          }
+        },
+        {
+          "id": "claim-3",
+          "statement": "TEST DATA: item:plan_p",
+          "quote": {
+            "exactText": "{\n  \"id\": \"plan_p\",\n  \"kind\": \"plan\",\n  \"statement\": \"Plan P har ett externt kontrollbesked dag 2 och ett leveransförsök dag 3.\",\n  \"type\": \"document_fact\",\n  \"status\": \"known\",\n  \"value\": \"Kontrollbesked dag 2; leveransförsök dag 3\",\n  \"unit\": null,\n  \"refs\": [\n    {\n      \"source_id\": \"brief\",\n      \"source_version\": 1,\n      \"quote\": \"Ett enda externt kontrollbesked kommer dag 2\",\n      \"start\": 235,\n      \"end\": 279,\n      \"location\": null\n    },\n    {\n      \"source_id\": \"brief\",\n      \"source_version\": 1,\n      \"quote\": \"En enda leverans får försökas dag 3\",\n      \"start\": 381,\n      \"end\": 416,\n      \"location\": null\n    }\n  ],\n  \"depends_on\": [],\n  \"supersedes\": [],\n  \"rationale\": \"Den deklarerade fasta följden som ska granskas.\",\n  \"scenario_choice\": null\n}",
+            "occurrenceIndex": 0
+          }
+        },
+        {
+          "id": "claim-4",
+          "statement": "TEST DATA: item:criterion_delivery_ready_day3",
+          "quote": {
+            "exactText": "{\n  \"id\": \"criterion_delivery_ready_day3\",\n  \"kind\": \"criterion\",\n  \"statement\": \"Leveransklar ska vara sant senast dag 3.\",\n  \"type\": \"requirement\",\n  \"status\": \"known\",\n  \"value\": true,\n  \"unit\": null,\n  \"refs\": [\n    {\n      \"source_id\": \"brief\",\n      \"source_version\": 1,\n      \"quote\": \"kravet att vara leveransklar senast dag 3\",\n      \"start\": 53,\n      \"end\": 94,\n      \"location\": null\n    }\n  ],\n  \"depends_on\": [],\n  \"supersedes\": [],\n  \"rationale\": \"Uttryckligt granskningskrav.\",\n  \"scenario_choice\": null\n}",
+            "occurrenceIndex": 0
+          }
+        },
+        {
+          "id": "claim-5",
+          "statement": "TEST DATA: item:value_result_initial",
+          "quote": {
+            "exactText": "{\n  \"id\": \"value_result_initial\",\n  \"kind\": \"value\",\n  \"statement\": \"Resultat är initialt väntar.\",\n  \"type\": \"document_fact\",\n  \"status\": \"known\",\n  \"value\": \"väntar\",\n  \"unit\": null,\n  \"refs\": [\n    {\n      \"source_id\": \"brief\",\n      \"source_version\": 1,\n      \"quote\": \"initialt väntar\",\n      \"start\": 218,\n      \"end\": 233,\n      \"location\": null\n    }\n  ],\n  \"depends_on\": [],\n  \"supersedes\": [],\n  \"rationale\": \"Initialvärde för resultat.\",\n  \"scenario_choice\": null\n}",
+            "occurrenceIndex": 0
+          }
+        },
+        {
+          "id": "claim-6",
+          "statement": "TEST DATA: item:rule_result_domain",
+          "quote": {
+            "exactText": "{\n  \"id\": \"rule_result_domain\",\n  \"kind\": \"rule\",\n  \"statement\": \"Resultat har värdena väntar, godkänt och underkänt.\",\n  \"type\": \"document_fact\",\n  \"status\": \"known\",\n  \"value\": \"väntar, godkänt, underkänt\",\n  \"unit\": null,\n  \"refs\": [\n    {\n      \"source_id\": \"brief\",\n      \"source_version\": 1,\n      \"quote\": \"Tillståndet resultat har värdena väntar, godkänt och underkänt\",\n      \"start\": 154,\n      \"end\": 216,\n      \"location\": null\n    }\n  ],\n  \"depends_on\": [],\n  \"supersedes\": [],\n  \"rationale\": \"Deklarerad värdemängd.\",\n  \"scenario_choice\": null\n}",
+            "occurrenceIndex": 0
+          }
+        },
+        {
+          "id": "claim-7",
+          "statement": "TEST DATA: item:value_delivery_ready_initial",
+          "quote": {
+            "exactText": "{\n  \"id\": \"value_delivery_ready_initial\",\n  \"kind\": \"value\",\n  \"statement\": \"Leveransklar är initialt falskt.\",\n  \"type\": \"document_fact\",\n  \"status\": \"known\",\n  \"value\": false,\n  \"unit\": null,\n  \"refs\": [\n    {\n      \"source_id\": \"brief\",\n      \"source_version\": 1,\n      \"quote\": \"Leveransklar är initialt falskt\",\n      \"start\": 482,\n      \"end\": 513,\n      \"location\": null\n    }\n  ],\n  \"depends_on\": [],\n  \"supersedes\": [],\n  \"rationale\": \"Initialvärde för leveransklar.\",\n  \"scenario_choice\": null\n}",
+            "occurrenceIndex": 0
+          }
+        },
+        {
+          "id": "claim-8",
+          "statement": "TEST DATA: item:rule_delivery_ready_domain",
+          "quote": {
+            "exactText": "{\n  \"id\": \"rule_delivery_ready_domain\",\n  \"kind\": \"rule\",\n  \"statement\": \"Leveransklar har värdena falskt och sant.\",\n  \"type\": \"document_fact\",\n  \"status\": \"known\",\n  \"value\": \"falskt, sant\",\n  \"unit\": null,\n  \"refs\": [\n    {\n      \"source_id\": \"brief\",\n      \"source_version\": 1,\n      \"quote\": \"har värdena falskt och sant\",\n      \"start\": 518,\n      \"end\": 545,\n      \"location\": null\n    }\n  ],\n  \"depends_on\": [],\n  \"supersedes\": [],\n  \"rationale\": \"Deklarerad värdemängd.\",\n  \"scenario_choice\": null\n}",
+            "occurrenceIndex": 0
+          }
+        },
+        {
+          "id": "claim-9",
+          "statement": "TEST DATA: item:rule_review_event",
+          "quote": {
+            "exactText": "{\n  \"id\": \"rule_review_event\",\n  \"kind\": \"rule\",\n  \"statement\": \"Det externa kontrollbeskedet dag 2 sätter resultat till godkänt.\",\n  \"type\": \"document_fact\",\n  \"status\": \"known\",\n  \"value\": \"resultat=godkänt\",\n  \"unit\": null,\n  \"refs\": [\n    {\n      \"source_id\": \"brief\",\n      \"source_version\": 1,\n      \"quote\": \"Beskedet sätter resultat till godkänt.\",\n      \"start\": 342,\n      \"end\": 380,\n      \"location\": null\n    }\n  ],\n  \"depends_on\": [\n    \"plan_p\"\n  ],\n  \"supersedes\": [],\n  \"rationale\": \"Fast externt utfall och effekt i planen.\",\n  \"scenario_choice\": null\n}",
+            "occurrenceIndex": 0
+          }
+        },
+        {
+          "id": "claim-10",
+          "statement": "TEST DATA: item:rule_delivery_attempt",
+          "quote": {
+            "exactText": "{\n  \"id\": \"rule_delivery_attempt\",\n  \"kind\": \"rule\",\n  \"statement\": \"Leveransförsöket dag 3 är tillåtet bara om resultat är godkänt och sätter leveransklar till sant.\",\n  \"type\": \"document_fact\",\n  \"status\": \"known\",\n  \"value\": \"om resultat=godkänt, leveransklar=sant\",\n  \"unit\": null,\n  \"refs\": [\n    {\n      \"source_id\": \"brief\",\n      \"source_version\": 1,\n      \"quote\": \"En enda leverans får försökas dag 3, bara om resultat är godkänt, och sätter leveransklar till sant.\",\n      \"start\": 381,\n      \"end\": 481,\n      \"location\": null\n    }\n  ],\n  \"depends_on\": [\n    \"plan_p\",\n    \"rule_review_event\"\n  ],\n  \"supersedes\": [],\n  \"rationale\": \"Villkor och effekt för leveransförsöket.\",\n  \"scenario_choice\": null\n}",
+            "occurrenceIndex": 0
+          }
+        },
+        {
+          "id": "claim-11",
+          "statement": "TEST DATA: item:rule_no_other_actions",
+          "quote": {
+            "exactText": "{\n  \"id\": \"rule_no_other_actions\",\n  \"kind\": \"rule\",\n  \"statement\": \"Inga andra händelser eller beslut ingår.\",\n  \"type\": \"document_fact\",\n  \"status\": \"known\",\n  \"value\": true,\n  \"unit\": null,\n  \"refs\": [\n    {\n      \"source_id\": \"brief\",\n      \"source_version\": 1,\n      \"quote\": \"Inga andra händelser eller beslut ingår.\",\n      \"start\": 547,\n      \"end\": 587,\n      \"location\": null\n    }\n  ],\n  \"depends_on\": [\n    \"plan_p\"\n  ],\n  \"supersedes\": [],\n  \"rationale\": \"Avgränsar den fasta följden.\",\n  \"scenario_choice\": null\n}",
+            "occurrenceIndex": 0
+          }
+        },
+        {
+          "id": "claim-12",
+          "statement": "TEST DATA: item:value_clock",
+          "quote": {
+            "exactText": "{\n  \"id\": \"value_clock\",\n  \"kind\": \"value\",\n  \"statement\": \"Klockan går från dag 0 till och med dag 3 med heltalsdagar.\",\n  \"type\": \"document_fact\",\n  \"status\": \"known\",\n  \"value\": \"0..3\",\n  \"unit\": \"dag\",\n  \"refs\": [\n    {\n      \"source_id\": \"brief\",\n      \"source_version\": 1,\n      \"quote\": \"Klockan startar dag 0 och slutar dag 3, med heltalsdagar.\",\n      \"start\": 96,\n      \"end\": 153,\n      \"location\": null\n    }\n  ],\n  \"depends_on\": [],\n  \"supersedes\": [],\n  \"rationale\": \"Tidsram för granskningen.\",\n  \"scenario_choice\": null\n}",
+            "occurrenceIndex": 0
+          }
+        }
+      ]
+    }
+  },
+  {
+    "stage": "grounded_support_assessment",
+    "data": {
+      "assessments": [
+        {
+          "id": "assessment-0",
+          "claimId": "claim-0",
+          "claimQuote": {
+            "exactText": "{\n  \"kind\": \"check\",\n  \"question\": \"Bevarar den deklarerade fasta följden villkoret att vara leveransklar senast dag 3?\",\n  \"plan_ids\": [\n    \"plan_p\"\n  ],\n  \"criterion_ids\": [\n    \"criterion_delivery_ready_day3\"\n  ],\n  \"changed_assumption_ids\": []\n}",
+            "occurrenceIndex": 0
+          },
+          "outcome": "supported",
+          "explanation": "TEST DATA: Förskrivet stöd, ingen AI-bedömning.",
+          "sourceQuotes": [
+            {
+              "exactText": "Kontrollera enbart denna fasta syntetiska plan P mot kravet att vara leveransklar senast dag 3. Klockan startar dag 0 och slutar dag 3, med heltalsdagar. Tillståndet resultat har värdena väntar, godkänt och underkänt; initialt väntar. Ett enda externt kontrollbesked kommer dag 2 och har för denna uttryckligen fasta analys utfallet godkänt. Beskedet sätter resultat till godkänt. En enda leverans får försökas dag 3, bara om resultat är godkänt, och sätter leveransklar till sant. Leveransklar är initialt falskt och har värdena falskt och sant. Inga andra händelser eller beslut ingår. Ekonomi, faktisk leverans och prognos av verkligt kontrollutfall ligger utanför frågan. Granska bara om denna deklarerade fasta följd bevarar villkoret; begär inte verksamhetsdetaljer utanför avgränsningen.",
+              "occurrenceIndex": 0
+            }
+          ],
+          "recommendedAction": "TEST DATA: Be kunden förtydliga innebörden.",
+          "confidence": 0.8
+        },
+        {
+          "id": "assessment-1",
+          "claimId": "claim-1",
+          "claimQuote": {
+            "exactText": "{\n  \"includes\": [\n    \"Den fasta planen P från dag 0 till och med dag 3.\",\n    \"Kontroll av om leveransklar blir sant senast dag 3.\"\n  ],\n  \"excludes\": [\n    \"Ekonomi.\",\n    \"Faktisk leverans.\",\n    \"Prognos av verkligt kontrollutfall.\"\n  ]\n}",
+            "occurrenceIndex": 0
+          },
+          "outcome": "supported",
+          "explanation": "TEST DATA: Förskrivet stöd, ingen AI-bedömning.",
+          "sourceQuotes": [
+            {
+              "exactText": "Kontrollera enbart denna fasta syntetiska plan P mot kravet att vara leveransklar senast dag 3. Klockan startar dag 0 och slutar dag 3, med heltalsdagar. Tillståndet resultat har värdena väntar, godkänt och underkänt; initialt väntar. Ett enda externt kontrollbesked kommer dag 2 och har för denna uttryckligen fasta analys utfallet godkänt. Beskedet sätter resultat till godkänt. En enda leverans får försökas dag 3, bara om resultat är godkänt, och sätter leveransklar till sant. Leveransklar är initialt falskt och har värdena falskt och sant. Inga andra händelser eller beslut ingår. Ekonomi, faktisk leverans och prognos av verkligt kontrollutfall ligger utanför frågan. Granska bara om denna deklarerade fasta följd bevarar villkoret; begär inte verksamhetsdetaljer utanför avgränsningen.",
+              "occurrenceIndex": 0
+            }
+          ],
+          "recommendedAction": "TEST DATA: Be kunden förtydliga innebörden.",
+          "confidence": 0.8
+        },
+        {
+          "id": "assessment-2",
+          "claimId": "claim-2",
+          "claimQuote": {
+            "exactText": "[]",
+            "occurrenceIndex": 1
+          },
+          "outcome": "supported",
+          "explanation": "TEST DATA: Förskrivet stöd, ingen AI-bedömning.",
+          "sourceQuotes": [
+            {
+              "exactText": "Kontrollera enbart denna fasta syntetiska plan P mot kravet att vara leveransklar senast dag 3. Klockan startar dag 0 och slutar dag 3, med heltalsdagar. Tillståndet resultat har värdena väntar, godkänt och underkänt; initialt väntar. Ett enda externt kontrollbesked kommer dag 2 och har för denna uttryckligen fasta analys utfallet godkänt. Beskedet sätter resultat till godkänt. En enda leverans får försökas dag 3, bara om resultat är godkänt, och sätter leveransklar till sant. Leveransklar är initialt falskt och har värdena falskt och sant. Inga andra händelser eller beslut ingår. Ekonomi, faktisk leverans och prognos av verkligt kontrollutfall ligger utanför frågan. Granska bara om denna deklarerade fasta följd bevarar villkoret; begär inte verksamhetsdetaljer utanför avgränsningen.",
+              "occurrenceIndex": 0
+            }
+          ],
+          "recommendedAction": "TEST DATA: Be kunden förtydliga innebörden.",
+          "confidence": 0.8
+        },
+        {
+          "id": "assessment-3",
+          "claimId": "claim-3",
+          "claimQuote": {
+            "exactText": "{\n  \"id\": \"plan_p\",\n  \"kind\": \"plan\",\n  \"statement\": \"Plan P har ett externt kontrollbesked dag 2 och ett leveransförsök dag 3.\",\n  \"type\": \"document_fact\",\n  \"status\": \"known\",\n  \"value\": \"Kontrollbesked dag 2; leveransförsök dag 3\",\n  \"unit\": null,\n  \"refs\": [\n    {\n      \"source_id\": \"brief\",\n      \"source_version\": 1,\n      \"quote\": \"Ett enda externt kontrollbesked kommer dag 2\",\n      \"start\": 235,\n      \"end\": 279,\n      \"location\": null\n    },\n    {\n      \"source_id\": \"brief\",\n      \"source_version\": 1,\n      \"quote\": \"En enda leverans får försökas dag 3\",\n      \"start\": 381,\n      \"end\": 416,\n      \"location\": null\n    }\n  ],\n  \"depends_on\": [],\n  \"supersedes\": [],\n  \"rationale\": \"Den deklarerade fasta följden som ska granskas.\",\n  \"scenario_choice\": null\n}",
+            "occurrenceIndex": 0
+          },
+          "outcome": "supported",
+          "explanation": "TEST DATA: Förskrivet stöd, ingen AI-bedömning.",
+          "sourceQuotes": [
+            {
+              "exactText": "Kontrollera enbart denna fasta syntetiska plan P mot kravet att vara leveransklar senast dag 3. Klockan startar dag 0 och slutar dag 3, med heltalsdagar. Tillståndet resultat har värdena väntar, godkänt och underkänt; initialt väntar. Ett enda externt kontrollbesked kommer dag 2 och har för denna uttryckligen fasta analys utfallet godkänt. Beskedet sätter resultat till godkänt. En enda leverans får försökas dag 3, bara om resultat är godkänt, och sätter leveransklar till sant. Leveransklar är initialt falskt och har värdena falskt och sant. Inga andra händelser eller beslut ingår. Ekonomi, faktisk leverans och prognos av verkligt kontrollutfall ligger utanför frågan. Granska bara om denna deklarerade fasta följd bevarar villkoret; begär inte verksamhetsdetaljer utanför avgränsningen.",
+              "occurrenceIndex": 0
+            }
+          ],
+          "recommendedAction": "TEST DATA: Be kunden förtydliga innebörden.",
+          "confidence": 0.8
+        },
+        {
+          "id": "assessment-4",
+          "claimId": "claim-4",
+          "claimQuote": {
+            "exactText": "{\n  \"id\": \"criterion_delivery_ready_day3\",\n  \"kind\": \"criterion\",\n  \"statement\": \"Leveransklar ska vara sant senast dag 3.\",\n  \"type\": \"requirement\",\n  \"status\": \"known\",\n  \"value\": true,\n  \"unit\": null,\n  \"refs\": [\n    {\n      \"source_id\": \"brief\",\n      \"source_version\": 1,\n      \"quote\": \"kravet att vara leveransklar senast dag 3\",\n      \"start\": 53,\n      \"end\": 94,\n      \"location\": null\n    }\n  ],\n  \"depends_on\": [],\n  \"supersedes\": [],\n  \"rationale\": \"Uttryckligt granskningskrav.\",\n  \"scenario_choice\": null\n}",
+            "occurrenceIndex": 0
+          },
+          "outcome": "supported",
+          "explanation": "TEST DATA: Förskrivet stöd, ingen AI-bedömning.",
+          "sourceQuotes": [
+            {
+              "exactText": "Kontrollera enbart denna fasta syntetiska plan P mot kravet att vara leveransklar senast dag 3. Klockan startar dag 0 och slutar dag 3, med heltalsdagar. Tillståndet resultat har värdena väntar, godkänt och underkänt; initialt väntar. Ett enda externt kontrollbesked kommer dag 2 och har för denna uttryckligen fasta analys utfallet godkänt. Beskedet sätter resultat till godkänt. En enda leverans får försökas dag 3, bara om resultat är godkänt, och sätter leveransklar till sant. Leveransklar är initialt falskt och har värdena falskt och sant. Inga andra händelser eller beslut ingår. Ekonomi, faktisk leverans och prognos av verkligt kontrollutfall ligger utanför frågan. Granska bara om denna deklarerade fasta följd bevarar villkoret; begär inte verksamhetsdetaljer utanför avgränsningen.",
+              "occurrenceIndex": 0
+            }
+          ],
+          "recommendedAction": "TEST DATA: Be kunden förtydliga innebörden.",
+          "confidence": 0.8
+        },
+        {
+          "id": "assessment-5",
+          "claimId": "claim-5",
+          "claimQuote": {
+            "exactText": "{\n  \"id\": \"value_result_initial\",\n  \"kind\": \"value\",\n  \"statement\": \"Resultat är initialt väntar.\",\n  \"type\": \"document_fact\",\n  \"status\": \"known\",\n  \"value\": \"väntar\",\n  \"unit\": null,\n  \"refs\": [\n    {\n      \"source_id\": \"brief\",\n      \"source_version\": 1,\n      \"quote\": \"initialt väntar\",\n      \"start\": 218,\n      \"end\": 233,\n      \"location\": null\n    }\n  ],\n  \"depends_on\": [],\n  \"supersedes\": [],\n  \"rationale\": \"Initialvärde för resultat.\",\n  \"scenario_choice\": null\n}",
+            "occurrenceIndex": 0
+          },
+          "outcome": "supported",
+          "explanation": "TEST DATA: Förskrivet stöd, ingen AI-bedömning.",
+          "sourceQuotes": [
+            {
+              "exactText": "Kontrollera enbart denna fasta syntetiska plan P mot kravet att vara leveransklar senast dag 3. Klockan startar dag 0 och slutar dag 3, med heltalsdagar. Tillståndet resultat har värdena väntar, godkänt och underkänt; initialt väntar. Ett enda externt kontrollbesked kommer dag 2 och har för denna uttryckligen fasta analys utfallet godkänt. Beskedet sätter resultat till godkänt. En enda leverans får försökas dag 3, bara om resultat är godkänt, och sätter leveransklar till sant. Leveransklar är initialt falskt och har värdena falskt och sant. Inga andra händelser eller beslut ingår. Ekonomi, faktisk leverans och prognos av verkligt kontrollutfall ligger utanför frågan. Granska bara om denna deklarerade fasta följd bevarar villkoret; begär inte verksamhetsdetaljer utanför avgränsningen.",
+              "occurrenceIndex": 0
+            }
+          ],
+          "recommendedAction": "TEST DATA: Be kunden förtydliga innebörden.",
+          "confidence": 0.8
+        },
+        {
+          "id": "assessment-6",
+          "claimId": "claim-6",
+          "claimQuote": {
+            "exactText": "{\n  \"id\": \"rule_result_domain\",\n  \"kind\": \"rule\",\n  \"statement\": \"Resultat har värdena väntar, godkänt och underkänt.\",\n  \"type\": \"document_fact\",\n  \"status\": \"known\",\n  \"value\": \"väntar, godkänt, underkänt\",\n  \"unit\": null,\n  \"refs\": [\n    {\n      \"source_id\": \"brief\",\n      \"source_version\": 1,\n      \"quote\": \"Tillståndet resultat har värdena väntar, godkänt och underkänt\",\n      \"start\": 154,\n      \"end\": 216,\n      \"location\": null\n    }\n  ],\n  \"depends_on\": [],\n  \"supersedes\": [],\n  \"rationale\": \"Deklarerad värdemängd.\",\n  \"scenario_choice\": null\n}",
+            "occurrenceIndex": 0
+          },
+          "outcome": "supported",
+          "explanation": "TEST DATA: Förskrivet stöd, ingen AI-bedömning.",
+          "sourceQuotes": [
+            {
+              "exactText": "Kontrollera enbart denna fasta syntetiska plan P mot kravet att vara leveransklar senast dag 3. Klockan startar dag 0 och slutar dag 3, med heltalsdagar. Tillståndet resultat har värdena väntar, godkänt och underkänt; initialt väntar. Ett enda externt kontrollbesked kommer dag 2 och har för denna uttryckligen fasta analys utfallet godkänt. Beskedet sätter resultat till godkänt. En enda leverans får försökas dag 3, bara om resultat är godkänt, och sätter leveransklar till sant. Leveransklar är initialt falskt och har värdena falskt och sant. Inga andra händelser eller beslut ingår. Ekonomi, faktisk leverans och prognos av verkligt kontrollutfall ligger utanför frågan. Granska bara om denna deklarerade fasta följd bevarar villkoret; begär inte verksamhetsdetaljer utanför avgränsningen.",
+              "occurrenceIndex": 0
+            }
+          ],
+          "recommendedAction": "TEST DATA: Be kunden förtydliga innebörden.",
+          "confidence": 0.8
+        },
+        {
+          "id": "assessment-7",
+          "claimId": "claim-7",
+          "claimQuote": {
+            "exactText": "{\n  \"id\": \"value_delivery_ready_initial\",\n  \"kind\": \"value\",\n  \"statement\": \"Leveransklar är initialt falskt.\",\n  \"type\": \"document_fact\",\n  \"status\": \"known\",\n  \"value\": false,\n  \"unit\": null,\n  \"refs\": [\n    {\n      \"source_id\": \"brief\",\n      \"source_version\": 1,\n      \"quote\": \"Leveransklar är initialt falskt\",\n      \"start\": 482,\n      \"end\": 513,\n      \"location\": null\n    }\n  ],\n  \"depends_on\": [],\n  \"supersedes\": [],\n  \"rationale\": \"Initialvärde för leveransklar.\",\n  \"scenario_choice\": null\n}",
+            "occurrenceIndex": 0
+          },
+          "outcome": "supported",
+          "explanation": "TEST DATA: Förskrivet stöd, ingen AI-bedömning.",
+          "sourceQuotes": [
+            {
+              "exactText": "Kontrollera enbart denna fasta syntetiska plan P mot kravet att vara leveransklar senast dag 3. Klockan startar dag 0 och slutar dag 3, med heltalsdagar. Tillståndet resultat har värdena väntar, godkänt och underkänt; initialt väntar. Ett enda externt kontrollbesked kommer dag 2 och har för denna uttryckligen fasta analys utfallet godkänt. Beskedet sätter resultat till godkänt. En enda leverans får försökas dag 3, bara om resultat är godkänt, och sätter leveransklar till sant. Leveransklar är initialt falskt och har värdena falskt och sant. Inga andra händelser eller beslut ingår. Ekonomi, faktisk leverans och prognos av verkligt kontrollutfall ligger utanför frågan. Granska bara om denna deklarerade fasta följd bevarar villkoret; begär inte verksamhetsdetaljer utanför avgränsningen.",
+              "occurrenceIndex": 0
+            }
+          ],
+          "recommendedAction": "TEST DATA: Be kunden förtydliga innebörden.",
+          "confidence": 0.8
+        },
+        {
+          "id": "assessment-8",
+          "claimId": "claim-8",
+          "claimQuote": {
+            "exactText": "{\n  \"id\": \"rule_delivery_ready_domain\",\n  \"kind\": \"rule\",\n  \"statement\": \"Leveransklar har värdena falskt och sant.\",\n  \"type\": \"document_fact\",\n  \"status\": \"known\",\n  \"value\": \"falskt, sant\",\n  \"unit\": null,\n  \"refs\": [\n    {\n      \"source_id\": \"brief\",\n      \"source_version\": 1,\n      \"quote\": \"har värdena falskt och sant\",\n      \"start\": 518,\n      \"end\": 545,\n      \"location\": null\n    }\n  ],\n  \"depends_on\": [],\n  \"supersedes\": [],\n  \"rationale\": \"Deklarerad värdemängd.\",\n  \"scenario_choice\": null\n}",
+            "occurrenceIndex": 0
+          },
+          "outcome": "supported",
+          "explanation": "TEST DATA: Förskrivet stöd, ingen AI-bedömning.",
+          "sourceQuotes": [
+            {
+              "exactText": "Kontrollera enbart denna fasta syntetiska plan P mot kravet att vara leveransklar senast dag 3. Klockan startar dag 0 och slutar dag 3, med heltalsdagar. Tillståndet resultat har värdena väntar, godkänt och underkänt; initialt väntar. Ett enda externt kontrollbesked kommer dag 2 och har för denna uttryckligen fasta analys utfallet godkänt. Beskedet sätter resultat till godkänt. En enda leverans får försökas dag 3, bara om resultat är godkänt, och sätter leveransklar till sant. Leveransklar är initialt falskt och har värdena falskt och sant. Inga andra händelser eller beslut ingår. Ekonomi, faktisk leverans och prognos av verkligt kontrollutfall ligger utanför frågan. Granska bara om denna deklarerade fasta följd bevarar villkoret; begär inte verksamhetsdetaljer utanför avgränsningen.",
+              "occurrenceIndex": 0
+            }
+          ],
+          "recommendedAction": "TEST DATA: Be kunden förtydliga innebörden.",
+          "confidence": 0.8
+        },
+        {
+          "id": "assessment-9",
+          "claimId": "claim-9",
+          "claimQuote": {
+            "exactText": "{\n  \"id\": \"rule_review_event\",\n  \"kind\": \"rule\",\n  \"statement\": \"Det externa kontrollbeskedet dag 2 sätter resultat till godkänt.\",\n  \"type\": \"document_fact\",\n  \"status\": \"known\",\n  \"value\": \"resultat=godkänt\",\n  \"unit\": null,\n  \"refs\": [\n    {\n      \"source_id\": \"brief\",\n      \"source_version\": 1,\n      \"quote\": \"Beskedet sätter resultat till godkänt.\",\n      \"start\": 342,\n      \"end\": 380,\n      \"location\": null\n    }\n  ],\n  \"depends_on\": [\n    \"plan_p\"\n  ],\n  \"supersedes\": [],\n  \"rationale\": \"Fast externt utfall och effekt i planen.\",\n  \"scenario_choice\": null\n}",
+            "occurrenceIndex": 0
+          },
+          "outcome": "supported",
+          "explanation": "TEST DATA: Förskrivet stöd, ingen AI-bedömning.",
+          "sourceQuotes": [
+            {
+              "exactText": "Kontrollera enbart denna fasta syntetiska plan P mot kravet att vara leveransklar senast dag 3. Klockan startar dag 0 och slutar dag 3, med heltalsdagar. Tillståndet resultat har värdena väntar, godkänt och underkänt; initialt väntar. Ett enda externt kontrollbesked kommer dag 2 och har för denna uttryckligen fasta analys utfallet godkänt. Beskedet sätter resultat till godkänt. En enda leverans får försökas dag 3, bara om resultat är godkänt, och sätter leveransklar till sant. Leveransklar är initialt falskt och har värdena falskt och sant. Inga andra händelser eller beslut ingår. Ekonomi, faktisk leverans och prognos av verkligt kontrollutfall ligger utanför frågan. Granska bara om denna deklarerade fasta följd bevarar villkoret; begär inte verksamhetsdetaljer utanför avgränsningen.",
+              "occurrenceIndex": 0
+            }
+          ],
+          "recommendedAction": "TEST DATA: Be kunden förtydliga innebörden.",
+          "confidence": 0.8
+        },
+        {
+          "id": "assessment-10",
+          "claimId": "claim-10",
+          "claimQuote": {
+            "exactText": "{\n  \"id\": \"rule_delivery_attempt\",\n  \"kind\": \"rule\",\n  \"statement\": \"Leveransförsöket dag 3 är tillåtet bara om resultat är godkänt och sätter leveransklar till sant.\",\n  \"type\": \"document_fact\",\n  \"status\": \"known\",\n  \"value\": \"om resultat=godkänt, leveransklar=sant\",\n  \"unit\": null,\n  \"refs\": [\n    {\n      \"source_id\": \"brief\",\n      \"source_version\": 1,\n      \"quote\": \"En enda leverans får försökas dag 3, bara om resultat är godkänt, och sätter leveransklar till sant.\",\n      \"start\": 381,\n      \"end\": 481,\n      \"location\": null\n    }\n  ],\n  \"depends_on\": [\n    \"plan_p\",\n    \"rule_review_event\"\n  ],\n  \"supersedes\": [],\n  \"rationale\": \"Villkor och effekt för leveransförsöket.\",\n  \"scenario_choice\": null\n}",
+            "occurrenceIndex": 0
+          },
+          "outcome": "supported",
+          "explanation": "TEST DATA: Förskrivet stöd, ingen AI-bedömning.",
+          "sourceQuotes": [
+            {
+              "exactText": "Kontrollera enbart denna fasta syntetiska plan P mot kravet att vara leveransklar senast dag 3. Klockan startar dag 0 och slutar dag 3, med heltalsdagar. Tillståndet resultat har värdena väntar, godkänt och underkänt; initialt väntar. Ett enda externt kontrollbesked kommer dag 2 och har för denna uttryckligen fasta analys utfallet godkänt. Beskedet sätter resultat till godkänt. En enda leverans får försökas dag 3, bara om resultat är godkänt, och sätter leveransklar till sant. Leveransklar är initialt falskt och har värdena falskt och sant. Inga andra händelser eller beslut ingår. Ekonomi, faktisk leverans och prognos av verkligt kontrollutfall ligger utanför frågan. Granska bara om denna deklarerade fasta följd bevarar villkoret; begär inte verksamhetsdetaljer utanför avgränsningen.",
+              "occurrenceIndex": 0
+            }
+          ],
+          "recommendedAction": "TEST DATA: Be kunden förtydliga innebörden.",
+          "confidence": 0.8
+        },
+        {
+          "id": "assessment-11",
+          "claimId": "claim-11",
+          "claimQuote": {
+            "exactText": "{\n  \"id\": \"rule_no_other_actions\",\n  \"kind\": \"rule\",\n  \"statement\": \"Inga andra händelser eller beslut ingår.\",\n  \"type\": \"document_fact\",\n  \"status\": \"known\",\n  \"value\": true,\n  \"unit\": null,\n  \"refs\": [\n    {\n      \"source_id\": \"brief\",\n      \"source_version\": 1,\n      \"quote\": \"Inga andra händelser eller beslut ingår.\",\n      \"start\": 547,\n      \"end\": 587,\n      \"location\": null\n    }\n  ],\n  \"depends_on\": [\n    \"plan_p\"\n  ],\n  \"supersedes\": [],\n  \"rationale\": \"Avgränsar den fasta följden.\",\n  \"scenario_choice\": null\n}",
+            "occurrenceIndex": 0
+          },
+          "outcome": "supported",
+          "explanation": "TEST DATA: Förskrivet stöd, ingen AI-bedömning.",
+          "sourceQuotes": [
+            {
+              "exactText": "Kontrollera enbart denna fasta syntetiska plan P mot kravet att vara leveransklar senast dag 3. Klockan startar dag 0 och slutar dag 3, med heltalsdagar. Tillståndet resultat har värdena väntar, godkänt och underkänt; initialt väntar. Ett enda externt kontrollbesked kommer dag 2 och har för denna uttryckligen fasta analys utfallet godkänt. Beskedet sätter resultat till godkänt. En enda leverans får försökas dag 3, bara om resultat är godkänt, och sätter leveransklar till sant. Leveransklar är initialt falskt och har värdena falskt och sant. Inga andra händelser eller beslut ingår. Ekonomi, faktisk leverans och prognos av verkligt kontrollutfall ligger utanför frågan. Granska bara om denna deklarerade fasta följd bevarar villkoret; begär inte verksamhetsdetaljer utanför avgränsningen.",
+              "occurrenceIndex": 0
+            }
+          ],
+          "recommendedAction": "TEST DATA: Be kunden förtydliga innebörden.",
+          "confidence": 0.8
+        },
+        {
+          "id": "assessment-12",
+          "claimId": "claim-12",
+          "claimQuote": {
+            "exactText": "{\n  \"id\": \"value_clock\",\n  \"kind\": \"value\",\n  \"statement\": \"Klockan går från dag 0 till och med dag 3 med heltalsdagar.\",\n  \"type\": \"document_fact\",\n  \"status\": \"known\",\n  \"value\": \"0..3\",\n  \"unit\": \"dag\",\n  \"refs\": [\n    {\n      \"source_id\": \"brief\",\n      \"source_version\": 1,\n      \"quote\": \"Klockan startar dag 0 och slutar dag 3, med heltalsdagar.\",\n      \"start\": 96,\n      \"end\": 153,\n      \"location\": null\n    }\n  ],\n  \"depends_on\": [],\n  \"supersedes\": [],\n  \"rationale\": \"Tidsram för granskningen.\",\n  \"scenario_choice\": null\n}",
+            "occurrenceIndex": 0
+          },
+          "outcome": "supported",
+          "explanation": "TEST DATA: Förskrivet stöd, ingen AI-bedömning.",
+          "sourceQuotes": [
+            {
+              "exactText": "Kontrollera enbart denna fasta syntetiska plan P mot kravet att vara leveransklar senast dag 3. Klockan startar dag 0 och slutar dag 3, med heltalsdagar. Tillståndet resultat har värdena väntar, godkänt och underkänt; initialt väntar. Ett enda externt kontrollbesked kommer dag 2 och har för denna uttryckligen fasta analys utfallet godkänt. Beskedet sätter resultat till godkänt. En enda leverans får försökas dag 3, bara om resultat är godkänt, och sätter leveransklar till sant. Leveransklar är initialt falskt och har värdena falskt och sant. Inga andra händelser eller beslut ingår. Ekonomi, faktisk leverans och prognos av verkligt kontrollutfall ligger utanför frågan. Granska bara om denna deklarerade fasta följd bevarar villkoret; begär inte verksamhetsdetaljer utanför avgränsningen.",
+              "occurrenceIndex": 0
+            }
+          ],
+          "recommendedAction": "TEST DATA: Be kunden förtydliga innebörden.",
+          "confidence": 0.8
+        }
+      ]
+    }
+  },
+  {
+    "stage": "grounded_adjudication",
+    "data": {
+      "findings": [],
+      "summary": {
+        "overview": "TEST DATA; verklig SR-kod med testdubbel, inte kvalitetsbevis.",
+        "supported": "Stöd är förskrivet i testdata.",
+        "nextStep": "Offlinekontroll av överföring och versionshantering."
+      }
+    }
+  }
+]

@@ -1,5 +1,7 @@
 # Isolerad parad liveutvärdering
 
+> Förtydligande efter `d795534`: B-grenen körde en ny enanropsprompt med SR-principer. Den anropade varken SR-koden, betans fyrastegs-textpipeline eller dess trestegs-groundedpipeline. Slutsatserna gäller endast den testade prompten. [Senare kartläggning och offlinekoppling till riktig SR-kod](../onboarding-sr/PIPELINE.md) är ett separat arbete; råsvar och historiskt facit här är oförändrade.
+
 Detta verktyg jämför ett AI-utkasts egenkontroll (A) med en separat, strukturerad granskning enligt SR-grounded-principer (B). Det återanvänder **principer**, inte SR:s kod eller körkedja. Samma modell används i båda grenarna; felriskerna är därför inte oberoende. Resultaten och den källbundna bedömningen finns i [REPORT.md](REPORT.md).
 
 Fem korta svenska syntetiska fall, två nya utkast per fall, ett anrop per steg: högst 30 anrop. Båda grenarna får exakt samma fullständiga källpaket och oförändrade modellförslag. A/B har samma schema, modell, tokenram och reasoning-inställning. Ordningen växlas i andra upprepningen; varje anrop är stateless. Det enda avsedda metodiska skillnaden är granskningsinstruktionen. Inget facit skickas. Utkasten korrigeras aldrig och inga fel injiceras.

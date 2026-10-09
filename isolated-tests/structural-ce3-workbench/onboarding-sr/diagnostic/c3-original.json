@@ -1,0 +1,20 @@
+{
+  "id": "c3",
+  "sources": [
+    {
+      "id": "brief",
+      "kind": "document",
+      "text": "Kontrollera plan P: genomför ett prov. Kravet är godkännande senast dag 5 från start dag 0. Kontrollprotokollet säger att gränsen för godkänt prov är högst 8 enheter. Projektbeslutet säger att samma gräns är högst 10 enheter. Ingen källa har fastställts som överordnad."
+    },
+    {
+      "id": "answer-old",
+      "kind": "answer",
+      "text": "Svar a1 på frågan om provdag: provet är bokat dag 2."
+    },
+    {
+      "id": "answer-new",
+      "kind": "answer",
+      "text": "Svar a2 ersätter a1 om provdag: jag skrev fel, provet är bokat dag 4. Detta rättar bara provdagen, inte gränsen för godkänt prov."
+    }
+  ]
+}

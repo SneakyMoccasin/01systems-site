@@ -1,0 +1,21 @@
+{
+  "schema_version": "ce3-sr-diagnostic-freeze/1",
+  "created": "2026-10-09T11:29:57.739898+00:00",
+  "live_run_performed": false,
+  "external_ai_calls": 0,
+  "source_evaluation_commit": "d7955345003c163124e99b7c76136e729942b2a1",
+  "sr_commit": "10d2482186e0d116506f215bdbdbd70f009ab18b",
+  "deployment_verified": false,
+  "files": {
+    "diagnostic/c3-original.json": "ce10bdb0ec1534348912f6d0c24b7572ea41fa36fcc9155668225602c773dda0",
+    "diagnostic/c3-r1-proposal.json": "77a38ad8fe560789c8163f8dfd0646e14fd1c3ee09698562f437d12984512fa7",
+    "diagnostic/clear-proposal.json": "ab7bf8d737ebefda328f09f92e402dc9a7f069469cc7b69befb0fc30316cca52",
+    "diagnostic/gold.json": "394b181930e344cdcf96f3e57eb3fc670f349738e20160b28e2a17376637b55a",
+    "adapter.cjs": "e65b2f897b60d4ae213116f11fb2ddda3d86f9725b1f1544b8b3d941138a7565",
+    "sr-runtime.cjs": "107bfc4df2b9e871e07f771874938d60838ef540e959efd534ac709d93c85b41",
+    "diagnostic.cjs": "0073788ec107235193e74cabe1781743d6a2f7c7200a9de815fd55cf93cd1bf1",
+    "sr-code-pin.json": "d67254335af0806de8663c8ca7d4fcaaa48f4a55e978aa26da25bfac22455e00"
+  },
+  "gold_excluded_from_inputs": true,
+  "future_live_budget": "Must be explicitly approved and bounded before a separate run."
+}

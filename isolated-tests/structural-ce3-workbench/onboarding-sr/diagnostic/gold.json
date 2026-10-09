@@ -1,0 +1,19 @@
+{
+  "schema_version": "ce3-real-sr-diagnostic-gold/1",
+  "never_send_to_sr": true,
+  "c3-r1": {
+    "target_id": "assumption_test_day",
+    "source": "answer-new",
+    "quote": "jag skrev fel, provet är bokat dag 4",
+    "expected_issue": "En faktisk rättad bokning klassificeras som känt scenario_assumption. Svaret uttrycker inget scenarioval.",
+    "expected_question": "Är dag 4 en faktisk bokning eller ett hypotetiskt scenario som du uttryckligen vill använda?",
+    "expected_correction": "user_fact; bevara dag 4, rättelsen, källan och historiken.",
+    "separate_contract_error": "assumption_test_day_old är superseded men behåller scenario_choice. Originalet ändras inte; deterministiskt kontraktsfel får inte räknas som SR-detektion.",
+    "quality_rule": "Fyndet måste identifiera etikettens innebörd, inte bara återge att dag 4 stöds eller fråga om gränsen 8/10."
+  },
+  "clear": {
+    "source": "c5-r1 original first draft",
+    "expected": "Bevara deklarerat fast kontrollutfall och avgränsning. Inget motsvarande scenariotypfel, inga påhittade blockerande frågor.",
+    "scope": "Riktad kontrast, inte matchad jämförelse eller generell kvalitet."
+  }
+}
