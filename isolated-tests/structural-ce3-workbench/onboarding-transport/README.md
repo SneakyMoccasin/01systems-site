@@ -4,6 +4,46 @@ Isolerad transport från CE3-checkpoint `2cab759197e46af7007006c66b8a5446adada51
 
 SR:s riktiga `runStructuredGroundedReview`, grounded-pipeline och `OpenAIProvider` används oförändrade. En separat workerprocess ersätter processens `fetch` med en budgeterad HTTP-gräns. Den får både ursprungliga anrop och providerns interna formatreparationer. Ingen SR-prompt eller granskningspipeline kopieras till CE3. SR:s exakta commit och 49 filhashar verifieras före laddning.
 
+## Kontrollerad inputram (transport-plan/2)
+
+Livevägen kräver nu `--input-token-limit`, `--count-price` och
+`--count-price-digest`. Det tidigare kommandot med 132 USD saknar dessa
+argument och kan inte köras. `ce3-price-profile/1` behåller modellens fulla
+kontextgräns; provets separata `ce3-input-policy/1` anger ett lägre, hårt tak.
+Sessionsformat och onboardingkontrakt ändras inte. Äldre offlinekörningar
+med `ce3-transport-plan/1` kan fortfarande läsas och regressionstestas.
+
+Före varje **modell-anrop**, även senare steg och formatreparationer, skickas
+exakt `model`, `instructions`, `input` och `text` till OpenAI:s
+`POST /v1/responses/input_tokens`. Därmed ingår prompts, originalunderlag,
+utkast, register, fullständigt JSON-schema, tidigare stegresultat och
+reparationens ogiltiga svar. Den pinnade providern har inga andra
+modellinputfält; okända fält avvisas. `store` och `max_output_tokens` är
+lagrings-/outputinställningar och skickas inte till räkningsendpointen.
+
+OpenAI dokumenterar att denna räknare omfattar även dold meddelandeinramning.
+Lokal strängtokenisering eller byteantal har ingen verifierad motsvarande
+övre gräns för denna modell och detta schemaformat. Byteantal sparas endast
+som diagnostik, **aldrig som garanterat antal debiterbara token**.
+Källa kontrollerad 2026-10-09:
+[Counting tokens](https://developers.openai.com/api/docs/guides/token-counting),
+[API-kontrakt](https://developers.openai.com/api/reference/resources/responses/subresources/input_tokens/methods/count).
+
+Svaret binds till exakt modell, rå modellrequest-hash och räkningspayloadens
+digest. Ett giltigt räkningsresultat inom ramen krävs också av journalens
+`dispatch`. För stort värde ger `INPUT_LIMIT_EXCEEDED`; fel, timeout, saknat
+eller ogiltigt räkningsvärde ger `INPUT_COUNT_UNAVAILABLE`. Körningen stoppas,
+ingenting trunkeras och inget modell-anrop skickas för det nekade försöket.
+Tidigare requests, responses, usage och ursprungliga SR-stegresultat bevaras.
+Transportstatus blir `not_completed`; resultatet kan inte ersätta en aktuell
+sessionsgranskning eller undanröja blockerare. SR:s ursprungliga status skrivs
+inte om till en påhittad complete-status.
+
+Räkningsanrop har ingen automatisk retry och delar SR-försökets befintliga
+AbortSignal/deadline med modell-anropet. Högst sex räkningsanrop och sex
+modell-anrop per fall, alltså **24 HTTP-anrop för båda fallen**, varav högst
+12 kan generera modellsvar. Ingen ytterligare granskningsprompt införs.
+
 ## Faktisk anropsomfattning
 
 Inventeringen bygger på pinnad `src/lib/grounded/structured-v1/run.ts`, `grounded/run.ts`, `providers/openai.ts` och `pipeline/execution.ts`:
@@ -23,17 +63,41 @@ SR:s deadline är 120 s för pipelinen och högst 90 s per providerförsök, beg
 
 `ce3-price-profile/1` har exakt modellidentitet, valuta USD, inputtak, heltalspriser i **nano-USD per token**, officiell pris- och modellkälla, datum och verifieringsuppgift. `1 USD = 1 000 000 000 nano-USD`; `1 USD per miljon token = 1 000 nano-USD per token`. Heltalsräkning undviker avrundning nedåt. Endast USD stöds; ingen valutakonvertering görs.
 
-Input reserveras till den verifierade modellens **maximala möjliga debiterbara inputmängd per anrop**, inklusive meddelande-/schemainramning. Textens längd används inte som tokenestimat. Detta är avsiktligt konservativt även för korta fall. Output reserveras till SR:s faktiska tak ovan. En reparations utökade input omfattas av samma absoluta inputgräns. Profilens priser måste vara en övre gräns för samtliga tillämpliga input-/outputpriser och kontext-/service-/cachepristier för den valda modellen. Cached input räknas till samma konservativa inputpris; inga rabatter antas.
+I plan/2 reserveras input till provets **kontrollerade tokentak per modell-anrop**, inklusive inramning. Alla senare och reparerade requests räknas när de faktiskt finns. Output reserveras till SR:s oförändrade tak ovan. Äldre plan/1 reserverar fortfarande modellens hela inputgräns. Profilens priser måste vara en övre gräns för samtliga tillämpliga input-/outputpriser och kontext-/service-/cachepristier för den valda modellen. Cached input räknas till samma konservativa inputpris; inga rabatter antas.
 
 För inputgräns `I`, inputpris `Pi` och outputpris `Po` blir maximal reservation för en granskning:
 
-`6 × I × Pi + 66 000 × Po` nano-USD.
+`6 × I × Pi + 66 000 × Po + 6 × F` nano-USD, där `F` är en separat verifierad maximal avgift per räkningsanrop.
 
-`max_output_tokens` begränsar all genererad output, även osynliga token. Usage omfattar mer än bara den synliga svarstexten. Se [officiell OpenAI-dokumentation om tokenräkning](https://developers.openai.com/api/docs/guides/token-counting), kontrollerad 2026-10-09. Inga aktuella modellpriser har valts i detta pass.
+`max_output_tokens` begränsar all genererad output, även osynliga token. Usage omfattar mer än bara den synliga svarstexten. Se [officiell OpenAI-dokumentation om tokenräkning](https://developers.openai.com/api/docs/guides/token-counting), kontrollerad 2026-10-09. Den tidigare verifierade modellprisprofilen används i [inputberedningen](prepared-input-2026-10-09/REPORT.txt).
 
 [synthetic-price.json](synthetic-price.json) är en **påhittad testprofil** och avvisas av livevägen. [live-price.template.json](live-price.template.json) är avsiktligt ofullständig och kan inte köras. Före live krävs att någon faktiskt verifierar modell, strukturerade svar, token-/prisgränser och officiella källor, fyller i namn/tid och högst sju dagars giltighet, samt väljer filens exakta kanoniska SHA-256 via `--price-digest`. Programmet kontrollerar format, konsekvens, officiella källdomäner, datum och digest; det kan **inte autentisera en människas attest eller automatiskt bevisa källornas sakuppgifter**. Felaktigt intygade prisgränser kan inte göras säkra av transporten. Vid avvikande returnerad modell eller usage över tokenramen fryses journalen och inga fortsatta anrop tillåts. Eventuellt redan överskriden förbrukning döljs inte.
 
 Ingen profil eller prislista från tidigare eval läses automatiskt. Inga credentials läses vid planering/offlinetest.
+
+## Separat prisgräns för tokenräkning
+
+`ce3-input-count-price/1` anger valuta USD, räkningsmetod, maximal avgift per
+request i nano-USD, officiell källa och tidsbegränsad verifiering. Noll är
+endast tillåtet som ett uttryckligen verifierat pris; frånvaro av pris är
+inte noll. Profilens digest väljs uttryckligen. Den nya livetransporten
+validerar profilen före journal, credentials eller nätverk.
+
+**Blockerare i denna checkpoint:** dokumentationen beskriver exakt räkning,
+men ett uttryckligt aktuellt avgiftsfrihetsbesked eller högsta pris för denna
+endpoint har inte kunnat beläggas. Beredningens `count-price.template.json`
+är därför avsiktligt ogiltig. Inga liveanrop får startas med denna mall.
+Modellreservationer anges separat från den ännu overifierade räkningsavgiften.
+Detta är inte en färdig verifierad totalram för live.
+
+Alla möjliga räkningsavgifter reserveras samtidigt som hela stegsekvensen.
+Räkningsintent, rå request/response, mätning, fel och modellrequest-hash
+sparas separat från generationens usage. Räkningsendpointen lämnar inget
+usage-kvitto; dess verifierade maxavgift kvarstår därför konservativt även
+vid fel eller lyckat svar. Ett oskickat modell-anrop frigör inte en redan
+möjlig räkningsavgift. Processavbrott behåller reservationerna och samma
+körnings-ID kan inte skickas automatiskt igen. Credentials, headers och
+råa felobjekt sparas inte heller för räkningsanropen.
 
 ## Beständig budgetjournal
 
@@ -81,7 +145,7 @@ Budgetstopp/transportfel kan inte bli complete. Partial/failed, blockerande fynd
 ## Kör offline och förbered senare liveprov
 
 ```sh
-node --test isolated-tests/structural-ce3-workbench/onboarding-transport/transport.test.cjs
+node --test isolated-tests/structural-ce3-workbench/onboarding-transport/transport.test.cjs isolated-tests/structural-ce3-workbench/onboarding-transport/input.test.cjs
 node isolated-tests/structural-ce3-workbench/onboarding-transport/demo.cjs /tmp/ce3-budget-demo-new
 ```
 
@@ -101,12 +165,15 @@ node .../onboarding-transport/live.cjs
   --per-run-usd EXPLICIT_RUN_LIMIT
   --cases c3-r1,clear
   --run-prefix UNIQUE_EXPERIMENT_ID
+  --input-token-limit EXPLICIT_INPUT_LIMIT
+  --count-price VERIFIED_COUNT_PRICE_JSON
+  --count-price-digest EXACT_CANONICAL_COUNT_PRICE_SHA256
 ```
 
-Credential hämtas då från `OPENAI_API_KEY`, aldrig CLI-argument eller arkiv. Kommandot kräver att den konservativa maxkostnaden för valda fall ryms i budgeten och journalens återstående utrymme. Varje körning reserverar därefter atomiskt sin fulla gräns. Prisprofilen och planens maxomfattning sparas före första anropet. Ett fel avbryter resterande fall utan retry. Officiell verifiering av prisprofilen och nytt uttryckligt körbeslut återstår.
+Credential hämtas då från `OPENAI_API_KEY`, aldrig CLI-argument eller arkiv. Kommandot kräver att den konservativa maxkostnaden för valda fall ryms i budgeten och journalens återstående utrymme. Varje körning reserverar därefter atomiskt sin fulla gräns. Prisprofilen och planens maxomfattning sparas före första anropet. Ett fel avbryter resterande fall utan retry. Verifiering av räkningsavgiften, giltiga prisprofiler och nytt uttryckligt körbeslut återstår.
 
 CLI läser endast de hashfrysta, oförändrade `c3-r1` och `clear` via befintlig inputs-funktion; **facit läses inte**. Dessa blir fristående granskningsarkiv. C3 har sedan tidigare ett CE3-kontraktsfel, och båda frysta filerna har andra källursprung än sessionens manuella inmatningsväg. De normaliseras därför inte till giltiga sessioner. Sessionkopplingen verifieras separat med giltigt manuellt syntetiskt underlag. Detta är en uttrycklig integrationsgräns, inte en tyst ändring av fallen.
 
-Två valda fall, en granskning vardera: **högst 12 HTTP-anrop, 132 000 outputtoken och 12 × profilens inputgräns**. En ytterligare granskning efter kundkomplettering/uttryckligt nytt förslag kräver en separat reserverad körning: ytterligare högst sex anrop, totalt 18. Modellförslag, kundfrågetext och modelländringar genereras inte av denna transport och ingår inte i dessa gränser.
+Två valda fall, en granskning vardera: **högst 12 modell-anrop plus 12 räkningsanrop, 132 000 outputtoken och 12 × provets inputtak för modell-anropen**. En ytterligare granskning efter kundkomplettering/uttryckligt nytt förslag kräver en separat reserverad körning: ytterligare högst sex modell-anrop och sex räkningsanrop, totalt 36 HTTP-anrop. Modellförslag, kundfrågetext och modelländringar genereras inte av denna transport och ingår inte i dessa gränser.
 
 Nästa lilla liveprov bör först mäta om SR upptäcker c3-felet och undviker falska fynd i kontrollfallet, med facit separat. Bedöm sedan en uttryckligt formulerad kundfrågas begriplighet och koppling till fyndet. Ett giltigt session/2-fall med kundkomplettering och nytt granskningsvarv kan därefter prövas inom en ny explicit budget. Tid och usage kan tas ur journalen; kundarbete och faktisk upptäcktsförmåga behöver separat mänsklig bedömning. **Driftsatt beta, livekvalitet och kundnytta är fortfarande inte verifierade.**

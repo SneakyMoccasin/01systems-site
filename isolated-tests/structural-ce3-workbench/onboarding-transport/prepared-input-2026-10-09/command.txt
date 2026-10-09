@@ -1,0 +1,16 @@
+# PREPARED ONLY. Deliberately blocked: the count-price template is NOT verified.
+# Reverify counting tariff, both profile digests and validity before any future execution.
+cd /Users/christian/Projects/pulse_engine_clean
+ce3_trial="/Users/christian/Projects/pulse_engine_clean/isolated-tests/structural-ce3-workbench/onboarding-transport/prepared-input-2026-10-09"
+node --env-file=/Users/christian/Projects/skeptical-reader/.env.local \
+  isolated-tests/structural-ce3-workbench/onboarding-transport/live.cjs \
+  --execute-live \
+  --journal "$ce3_trial/budget.sqlite" \
+  --output "$ce3_trial/results" \
+  --profile "$ce3_trial/price.json" \
+  --price-digest 0aea80ff6b6c240e67b9236e5abfae6cd687645099818971f71dbeaa4a461165 \
+  --input-token-limit 2066 \
+  --count-price "$ce3_trial/count-price.template.json" \
+  --count-price-digest d3fdc59f6ac300ed77ce7bf825839031f287074de2f41cf5375f2c41b39282ca \
+  --currency USD --total-usd 5 --per-run-usd 2.5 \
+  --cases c3-r1,clear --run-prefix ce3-sr-input-20261009

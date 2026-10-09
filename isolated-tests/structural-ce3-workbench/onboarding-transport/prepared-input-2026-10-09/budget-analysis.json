@@ -1,0 +1,54 @@
+{
+  "status": "BLOCKED_PENDING_VERIFIED_COUNT_TARIFF_AND_ACTUAL_COUNTS",
+  "ce3_base": "4efc81dc7fe4f987a59629fd74d6d261a386b9a0",
+  "model": "gpt-5.6-terra",
+  "price_digest": "0aea80ff6b6c240e67b9236e5abfae6cd687645099818971f71dbeaa4a461165",
+  "count_price_digest": "d3fdc59f6ac300ed77ce7bf825839031f287074de2f41cf5375f2c41b39282ca",
+  "selected_cases": [
+    "c3-r1",
+    "clear"
+  ],
+  "model_calls_maximum": 12,
+  "count_calls_maximum": 12,
+  "http_calls_maximum": 24,
+  "output_tokens_maximum": 132000,
+  "output_reservation_nusd": 4752000000,
+  "input_limit_for_5_usd_if_count_free": 2066,
+  "per_case_model_reservation_nusd": 2499960000,
+  "combined_model_reservation_nusd": 4999920000,
+  "maximum_count_fee_nusd_per_request_with_2066_limit": 6666,
+  "count_fee_verified": false,
+  "completion_within_5_usd_verified": false,
+  "cost_forecast": null,
+  "actual_cost_usd": 0,
+  "external_ai_calls": 0,
+  "external_count_api_calls": 0,
+  "scenarios": [
+    {
+      "input_token_limit_per_model_call": 2066,
+      "model_reservation_nusd": 4999920000,
+      "count_fee_excluded": true
+    },
+    {
+      "input_token_limit_per_model_call": 8192,
+      "model_reservation_nusd": 5735040000,
+      "count_fee_excluded": true
+    },
+    {
+      "input_token_limit_per_model_call": 16384,
+      "model_reservation_nusd": 6718080000,
+      "count_fee_excluded": true
+    },
+    {
+      "input_token_limit_per_model_call": 32768,
+      "model_reservation_nusd": 8684160000,
+      "count_fee_excluded": true
+    },
+    {
+      "input_token_limit_per_model_call": 65536,
+      "model_reservation_nusd": 12616320000,
+      "count_fee_excluded": true
+    }
+  ],
+  "price_valid_until": "2026-10-10T14:15:38.275Z"
+}

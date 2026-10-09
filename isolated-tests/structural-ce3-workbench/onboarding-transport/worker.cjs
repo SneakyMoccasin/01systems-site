@@ -1,6 +1,6 @@
 'use strict';
 // Each run owns a process: fetch interception cannot affect another run/app.
-const {Journal}=require('./journal.cjs'), Price=require('./price.cjs'), {fetchBoundary,httpsSend,redact}=require('./transport.cjs');
+const {Journal}=require('./journal.cjs'), Price=require('./price.cjs'), {fetchBoundary,httpsSend,httpsCount,redact}=require('./transport.cjs');
 const C=require('../contracts/onboarding-v1/contract.cjs');
 const Archive=require('../onboarding-session/v2/archive.cjs');
 const finishMessage=message=>new Promise(resolve=>process.send(message,resolve));
@@ -18,16 +18,29 @@ process.once('message',async job=>{
     const sr=require('./sr.cjs').load(job.srRoot);
     const prepared=Archive.prepare(job.prepared.request,job.prepared.input.targets,{srRoot:job.srRoot,draftText:job.prepared.input.draft.text});
     Price.need(C.digest(prepared)===C.digest(job.prepared),'PREPARED_CHANGED');
-    const plan=Price.plan(profile,sr.AUDIT_EXECUTION_CONFIG);
+    if(job.inputPolicy) require('./input.cjs').validatePolicy(job.inputPolicy,profile,mode);
+    Price.need(mode!=='live' || job.inputPolicy,'LIVE_INPUT_POLICY_REQUIRED');
+    const plan=Price.plan(profile,sr.AUDIT_EXECUTION_CONFIG,job.inputPolicy??null);
     journal=new Journal(job.journal);Price.need(journal.read().budget.mode===mode,'JOURNAL_MODE');
     journal.begin(job.runId,profile,plan,prepared.digest,prepared); reserved=true;
-    let send=httpsSend;
+    let send=httpsSend,countSend=httpsCount;
     if(mode==='offline') {
       Price.need(job.fixture?.label==='SYNTHETIC HTTP RESPONSES — NO NETWORK','EXPLICIT_FIXTURE');
       // Even accidental fallback to a native socket fails in this worker.
       for(const name of ['node:http','node:https']){const m=require(name);m.request=m.get=()=>{throw new Error('OFFLINE_NETWORK_FORBIDDEN');};}
       const net=require('node:net');net.connect=net.createConnection=()=>{throw new Error('OFFLINE_NETWORK_FORBIDDEN');};
-      let i=0;
+      let i=0, countIndex=0;
+      countSend=async({body})=>{
+        const scripted=job.fixture.counts?.[countIndex++];
+        if(scripted?.crash) process.kill(process.pid,'SIGKILL');
+        if(scripted?.timeout) return {status:null,body:'',error_code:'ABORTED_OR_TIMEOUT'};
+        if(scripted?.throw) throw new Error('SYNTHETIC_COUNT_ERROR');
+        if(scripted?.body!==undefined) return {status:scripted.status??200,body:scripted.body.replaceAll('{{FAKE_CREDENTIAL}}',secret),error_code:null};
+        // Explicit TEST DOUBLE. Byte counts deliberately exercise the gate;
+        // they are NOT tokenization or a bound on actual OpenAI billable input.
+        const tokens=scripted?.input_tokens??Buffer.byteLength(body);
+        return {status:200,body:JSON.stringify({object:'response.input_tokens',input_tokens:tokens}),error_code:null};
+      };
       send=async()=>{
         const step=job.fixture.responses[i++]; Price.need(step,'FIXTURE_EXHAUSTED');
         if(step.crash) process.kill(process.pid,'SIGKILL');
@@ -36,13 +49,14 @@ process.once('message',async job=>{
         return {status:step.status??200,body:step.body.replaceAll('{{FAKE_CREDENTIAL}}',secret),error_code:null};
       };
     }
-    global.fetch=fetchBoundary({journal,runId:job.runId,profile,plan,apiKey:secret,send});
+    global.fetch=fetchBoundary({journal,runId:job.runId,profile,plan,apiKey:secret,send,countSend,mode});
     // SR's own console diagnostics are not a credential/logging boundary.
     console.log=console.warn=console.error=()=>{};
     const original=JSON.parse(JSON.stringify(await sr.runStructuredGroundedReview(prepared.input,new sr.OpenAIProvider(secret,profile.model),'sv',{fingerprintKey:'ce3-budget-transport-fingerprint-key-v1'})));
     Price.need(redact(JSON.stringify(original),secret)===JSON.stringify(original),'CREDENTIAL_IN_SR_RESULT');
-    journal.finish(job.runId,{schema_version:'ce3-transport-result/1',mode,label:mode==='offline'?'SYNTHETIC HTTP FIXTURE THROUGH REAL SR PROVIDER — NOT LIVE':'LIVE',prepared,original_sr_result:original});
-    await finishMessage({ok:true,runId:job.runId});
+    const inputStop=journal.read().runs.find(r=>r.id===job.runId).attempts.find(a=>a.input_count?.error)?.input_count.error??null;
+    journal.finish(job.runId,{schema_version:'ce3-transport-result/1',mode,...(inputStop?{error:inputStop}:{}),label:mode==='offline'?'SYNTHETIC HTTP FIXTURE THROUGH REAL SR PROVIDER — NOT LIVE':'LIVE',prepared,original_sr_result:original});
+    await finishMessage({ok:!inputStop,runId:job.runId,...(inputStop?{error:inputStop}:{})});
   } catch(error) {
     // Only enumerated local codes escape. No exception text/headers/stack.
     const prefix=typeof error?.message==='string'?error.message.split(':')[0]:'';

@@ -32,10 +32,14 @@ function cost(p, input, output) {
 function limits(config) {
   return ['grounded_claim_extraction', 'grounded_support_assessment', 'grounded_adjudication'].flatMap(stage => ['initial', 'repair'].map(attempt => ({ stage, attempt, output_tokens: config.maxOutputTokens[stage][attempt] })));
 }
-function plan(p, config) {
-  const slots = limits(config).map(x => ({ ...x, input_tokens: p.input_token_bound, reservation_nusd: cost(p, p.input_token_bound, x.output_tokens) }));
+function plan(p, config, inputPolicy = null) {
+  if(inputPolicy) require('./input.cjs').validatePolicy(inputPolicy,p);
+  const input = inputPolicy?.token_limit ?? p.input_token_bound;
+  const fee = inputPolicy?.count_price.max_request_nusd ?? 0;
+  const slots = limits(config).map(x => ({ ...x, input_tokens: input,
+    ...(inputPolicy ? {count_reservation_nusd:fee} : {}), reservation_nusd: cost(p, input, x.output_tokens)+fee }));
   const maximum_nusd = slots.reduce((n, x) => n + x.reservation_nusd, 0); need(integer(maximum_nusd), 'COST_OVERFLOW');
-  return { schema_version: 'ce3-transport-plan/1', currency: 'USD', slots, maximum_calls: slots.length, maximum_input_tokens: slots.reduce((n,x) => n+x.input_tokens,0), maximum_output_tokens: slots.reduce((n,x) => n+x.output_tokens,0), maximum_nusd };
+  return { schema_version: inputPolicy ? 'ce3-transport-plan/2' : 'ce3-transport-plan/1', ...(inputPolicy ? {input_policy:structuredClone(inputPolicy),maximum_count_calls:slots.length,maximum_http_calls:slots.length*2} : {}), currency: 'USD', slots, maximum_calls: slots.length, maximum_input_tokens: slots.reduce((n,x) => n+x.input_tokens,0), maximum_output_tokens: slots.reduce((n,x) => n+x.output_tokens,0), maximum_nusd };
 }
 function usd(value) { need(typeof value === 'string' && /^\d+(\.\d{1,9})?$/.test(value), 'EXPLICIT_USD_AMOUNT_REQUIRED'); const [a,b=''] = value.split('.'); const n = Number(BigInt(a) * 1000000000n + BigInt(b.padEnd(9,'0'))); need(integer(n) && n > 0, 'BUDGET_AMOUNT'); return n; }
 module.exports = { validate, cost, plan, usd, integer, need };

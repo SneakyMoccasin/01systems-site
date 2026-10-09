@@ -1,0 +1,22 @@
+{
+  "schema_version": "ce3-price-profile/1",
+  "kind": "verified-live",
+  "currency": "USD",
+  "provider": "openai",
+  "model": "gpt-5.6-terra",
+  "input_token_bound": 1050000,
+  "input_nusd_per_token": 10000,
+  "output_nusd_per_token": 36000,
+  "source": "https://developers.openai.com/api/docs/pricing",
+  "model_source": "https://developers.openai.com/api/docs/models/gpt-5.6-terra",
+  "dated": "2026-10-09",
+  "verification": {
+    "by": "Codex: official model documentation and expanded Standard/Fast pricing tables checked; no API call",
+    "verified_at": "2026-10-09T14:15:38.275Z",
+    "valid_until": "2026-10-10T14:15:38.275Z",
+    "rate_basis": "upper_bound_all_input_and_output_tiers",
+    "input_bound_basis": "documented_maximum_billable_input_tokens",
+    "model_identity": "gpt-5.6-terra",
+    "structured_output_supported": true
+  }
+}

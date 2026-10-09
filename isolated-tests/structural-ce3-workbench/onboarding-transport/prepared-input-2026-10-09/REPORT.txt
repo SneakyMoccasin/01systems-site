@@ -1,0 +1,122 @@
+Kontrollerad inputram för c3-r1 och clear — endast offline, 2026-10-09
+
+STATUS: Transportens inputkontroll är implementerad och verifierad offline.
+En garanterad totalram för ett genomfört liveprov är ännu INTE verifierad.
+Två uppgifter saknas: dokumenterat pris/avgiftsfrihet för tokenräknings-API:t
+och faktiska tokenantal för fallen. Senare steg beror dessutom på ännu okända
+modellsvar. Inga API-anrop, inklusive tokenräkning, har gjorts i detta pass.
+
+UTGÅNGSPUNKT
+CE3 4efc81dc7fe4f987a59629fd74d6d261a386b9a0.
+SR e7308010ecbea1ebe46c3298aa6a96f06381ad0a, structured-grounded/1.
+Riktig SR-pipeline/provider används oförändrade. Fall och facit är oförändrade.
+SR-pinnen och samtliga 49 filhashar kontrolleras fortsatt före körning.
+Den tidigare 132-USD-beredningen har inte körts eller committats. Dess gamla
+kommando saknar obligatoriska nya input-/räkningsprisargument och avvisas.
+
+INPUTKONTROLL
+ce3-input-policy/1 anger separat token_limit, räkningsmetod och vald prisgräns
+för räkningsanropen. ce3-transport-plan/2 reserverar denna inputram och alla
+befintliga outputtak, alla möjliga formatreparationer och räkningsavgifter.
+Prisprofilens input_token_bound är fortfarande modellens fulla kontextgräns;
+den skrivs inte om för att ge en skenbart verifierad lägre modellgräns.
+
+Inför varje modell-dispatch skickas den faktiska modellinputen, inklusive
+instructions, input och text.format.schema, oförändrad till
+POST https://api.openai.com/v1/responses/input_tokens.
+Input innefattar källor, utkast, register, tidigare steg och eventuell
+formatreparation. Modellidentitet, rå request-hash och räkningspayload-digest
+knyter räkningssvaret till det exakta kommande modell-anropet.
+
+Officiell källa läst 2026-10-09:
+https://developers.openai.com/api/docs/guides/token-counting
+https://developers.openai.com/api/reference/resources/responses/subresources/input_tokens/methods/count
+Den dokumenterade API-räkningen omfattar meddelandeinramning. Lokal
+strängtokenisering/byteantal räcker inte som garanterad total gräns för
+denna Responses-/schemaindata. Testernas bytesomräkning är uttryckligen en
+syntetisk räknartestdubbel, inte en tokenizer eller en budgetbevisning.
+
+Överskriden ram eller utebliven säker räkning stoppar före modell-dispatch.
+Inget trunkeras. SR:s tidigare stegresultat, råsvar och tidigare usage finns
+kvar; transporten blir not_completed och får inte ersätta sessionsgranskning.
+Saknad usage behåller möjlig kostnad. Nätverksfel ger inga automatiska retries.
+Ett processavbrott under räkningsanrop bevarar reservationerna och får inte
+leda till automatisk omsändning efter återöppning.
+
+TOKENRAMAR OCH MATEMATIK
+Samma modell och verifierade prisprofil som tidigare: gpt-5.6-terra.
+Prisprofilens konservativa priser: 10 USD/M input och 36 USD/M output.
+Källor (verifierade i föregående förberedelse denna dag):
+https://developers.openai.com/api/docs/pricing
+https://developers.openai.com/api/docs/models/gpt-5.6-terra
+Profilen gäller till 2026-10-10T14:15:38.275Z och måste därefter verifieras om.
+
+Per fall, oförändrade outputtak: 8 000 + 20 000 + 5 000 token, med en möjlig
+formatreparation med samma tak för varje steg. Högst 66 000 outputtoken,
+sex modell-anrop och sex räkningsanrop per fall.
+Båda fall: högst 132 000 outputtoken, 12 modell-anrop + 12 räkningsanrop.
+
+Om I är ett gemensamt inputtak per modell-anrop och F är verifierad maximal
+avgift i USD per räkningsrequest blir minsta reservation för DEN VALDA RAMEN:
+  båda fall: 4.752 + 0.00012 * I + 12 * F USD
+  per fall:  2.376 + 0.00006 * I +  6 * F USD
+Detta säger inte vilket I som räcker för att slutföra faktiska granskningar.
+
+Ram per modell-anrop     Modellreservation, två fall (räkningsavgift tillkommer)
+  2 066 token            4.99992 USD
+  8 192 token            5.73504 USD
+ 16 384 token            6.71808 USD
+ 32 768 token            8.68416 USD
+ 65 536 token           12.61632 USD
+
+5-USD-alternativet i command.txt anger 2 066 token för alla initiala anrop
+och alla reparationer, totalbudget 5 USD och körbudget 2.5 USD.
+Modellreservationen blir 2.49996 USD per fall, 4.99992 USD tillsammans.
+Det återstår 0.00008 USD totalt till räkningsavgifter: högst 6 666 nano-USD
+per räkningsrequest, avrundat nedåt. Om det verifierade räkningspriset är
+större stoppas planen före ALLA externa anrop. Noll pris har inte antagits.
+
+Kan båda fallen slutföras inom 5 USD? INTE VERIFIERAT. En påtvingad 2 066-
+tokengräns är en säker stoppregel, inte ett bevis på att fallen får plats.
+Faktiska första requests har lokalt uppmätts till 27 848 bytes (c3-r1) och
+35 612 bytes (clear) genom oförändrad SR-provider med syntetiskt modell-ID.
+Dessa byteantal är inte tokenantal. Senare requests beror på svaren.
+Det vore därför fel att ange ett exakt minsta nödvändigt I eller lova ett
+genomfört tvåfallsprov utan verklig räkning. Tabellen visar endast minsta
+reservation för respektive vald hård ram, utan ändrade granskningsvillkor.
+
+KOSTNADSPROGNOS
+Ingen numerisk förbrukningsprognos lämnas. Testdubblarnas usage är påhittad
+och får inte användas som prognos. Reservation och verklig debitering är
+olika saker. Maxprisprofilen används även vid konservativ usage-avstämning.
+
+KOMMANDO OCH LAGRING
+command.txt visar det uppdaterade befintliga livekommandot för exakt ett
+försök vardera på c3-r1 och clear. Det har INTE körts. Kommandot är avsiktligt
+blockerat av count-price.template.json med null i pris/verifiering.
+Efter belagd räkningsavgift behövs giltig ce3-input-count-price/1, dess nya
+kanoniska digest och fortsatt giltig modellprisprofil. En tom mall eller
+testprisprofil kan inte passera livevalideringen. Ingen nyckel finns i filer.
+
+Vid en senare uttryckligen beslutad körning sparas budget.sqlite samt dess
+SQLite WAL/SHM och en NY results/-katalog under denna katalog. De finns inte
+ännu. Resultaten innehåller både räkning och generering i transportjournalen.
+Ett stopp i första fallet avbryter resterande fall; inga dolda omkörningar.
+Session/2:s befintliga begränsning för de frysta fallen kvarstår: dessa är
+fristående granskningsarkiv, inte normaliserade körbara CE3-modeller.
+
+VERIFIERING
+172/172 tester godkända: onboardingkontrakt, session/1, session/2, tidigare
+SR-adapter, strukturerad SR-adapter, transport och 16 nya inputkontroller.
+Testkommandot är:
+node --test isolated-tests/structural-ce3-workbench/contracts/onboarding-v1/contract.test.cjs isolated-tests/structural-ce3-workbench/onboarding-session/session.test.cjs isolated-tests/structural-ce3-workbench/onboarding-session/v2/session.test.cjs isolated-tests/structural-ce3-workbench/onboarding-sr/adapter.test.cjs isolated-tests/structural-ce3-workbench/onboarding-sr/structured/adapter.test.cjs isolated-tests/structural-ce3-workbench/onboarding-transport/transport.test.cjs isolated-tests/structural-ce3-workbench/onboarding-transport/input.test.cjs
+
+Nya tester täcker första och senare inputstopp, varje intern reparation,
+hela count-payloaden och dess bindning, räkningsfel, timeout, bevarad usage,
+räkningsavgift, credentials, avbrott/återöppning, ingen automatisk retry,
+sessionsblockerare och båda frysta fall genom riktig SR-kod med märkta
+testdubblar. De verifierar kontrollflöde och kontrakt, inte tokenräknarens
+verkliga API-svar eller SR:s upptäcktsförmåga.
+
+Externa AI-anrop: 0. Externa tokenräkningsanrop: 0. Faktisk API-kostnad: 0 USD.
+Ingen kreditpåfyllning, publicering eller ändring i SR-repot eller CE3-motorn.

@@ -1,7 +1,9 @@
 'use strict';
 const C = require('../contracts/onboarding-v1/contract.cjs');
 const { cost, integer, need } = require('./price.cjs');
+const Input=require('./input.cjs');
 const ENDPOINT = 'https://api.openai.com/v1/responses';
+const COUNT_ENDPOINT=ENDPOINT+'/input_tokens';
 const MAX_BYTES = 8 * 1024 * 1024;
 function redact(raw, secret) {
   let value=String(raw);
@@ -10,12 +12,12 @@ function redact(raw, secret) {
 }
 // One native HTTPS request, fresh connection, no SDK, redirect, retry, or proxy.
 // Credentials exist only in memory and the outgoing Authorization header.
-function httpsSend({body, signal, apiKey}) {
+function httpsRequest(endpoint,{body, signal, apiKey}) {
   const https=require('node:https');
   return new Promise(resolve=>{
     let text='', status=null, finished=false;
     const finish=error_code=>{if(!finished){finished=true; resolve({status,body:text,error_code});}};
-    const req=https.request(ENDPOINT,{method:'POST',agent:false,signal,headers:{Authorization:`Bearer ${apiKey}`,'Content-Type':'application/json','Content-Length':Buffer.byteLength(body)}},res=>{
+    const req=https.request(endpoint,{method:'POST',agent:false,signal,headers:{Authorization:`Bearer ${apiKey}`,'Content-Type':'application/json','Content-Length':Buffer.byteLength(body)}},res=>{
       status=res.statusCode; res.setEncoding('utf8');
       res.on('data',chunk=>{text+=chunk; if(Buffer.byteLength(text)>MAX_BYTES){text=text.slice(0,MAX_BYTES); finish('RESPONSE_TOO_LARGE');req.destroy();}});
       res.on('end',()=>finish(null)); res.on('error',()=>finish('NETWORK_ERROR'));
@@ -23,6 +25,8 @@ function httpsSend({body, signal, apiKey}) {
     req.on('error',()=>finish(signal?.aborted?'ABORTED_OR_TIMEOUT':'NETWORK_ERROR')); req.end(body);
   });
 }
+function httpsSend(options) {return httpsRequest(ENDPOINT,options);}
+function httpsCount(options) {return httpsRequest(COUNT_ENDPOINT,options);}
 function withAbort(promise,signal) {
   return new Promise(resolve=>{
     const abort=()=>done({status:null,body:'',error_code:'ABORTED_OR_TIMEOUT'});
@@ -39,9 +43,11 @@ function usageOf(body,profile,slot) {
   let priced;try{priced=cost(profile,u.input_tokens,u.output_tokens);}catch{return {usage:{input_tokens:u.input_tokens,output_tokens:u.output_tokens,total_tokens:u.total_tokens},usage_cost_upper_nusd:null,error:'BOUND_VIOLATION'};}
   return {usage:{input_tokens:u.input_tokens,output_tokens:u.output_tokens,total_tokens:u.total_tokens},usage_cost_upper_nusd:priced,error:u.input_tokens>slot.input_tokens || u.output_tokens>slot.output_tokens?'BOUND_VIOLATION':null};
 }
-function fetchBoundary({journal,runId,profile,plan,apiKey,send}) {
+function fetchBoundary({journal,runId,profile,plan,apiKey,send,countSend,mode='offline'}) {
   const counts=new Map();
+  let inputStopped=false;
   return async (url,options)=>{
+    need(!inputStopped,'INPUT_RUN_STOPPED');
     need(url===ENDPOINT && options?.method==='POST','HTTP_BOUNDARY');
     need(options.headers?.Authorization===`Bearer ${apiKey}` && Object.keys(options.headers).sort().join(',')==='Authorization,Content-Type','HEADER_BOUNDARY');
     need(typeof options.body==='string' && Buffer.byteLength(options.body)<=MAX_BYTES,'REQUEST_SIZE');
@@ -54,6 +60,28 @@ function fetchBoundary({journal,runId,profile,plan,apiKey,send}) {
     const attempt=index===0?'initial':'repair', slot=plan.slots.find(x=>x.stage===stage && x.attempt===attempt);
     need(body.max_output_tokens===slot.output_tokens,'OUTPUT_BOUND_CHANGED');
     need(!options.signal?.aborted,'ABORTED_BEFORE_DISPATCH');
+    if(plan.input_policy) {
+      Input.validatePolicy(plan.input_policy,profile,mode);
+      need(typeof countSend==='function','INPUT_COUNTER_REQUIRED');
+      // Snapshot all relevant fields. The unchanged original raw body below
+      // is the only generation request that this count may authorize.
+      const raw=options.body,countBody=JSON.stringify(Input.payload(raw)),measured=Input.measurement(raw);
+      journal.countDispatch(runId,stage,attempt,{endpoint:COUNT_ENDPOINT,body:countBody,body_sha256:C.hash(countBody),...measured,automatic_retries:0});
+      const countStart=performance.now();
+      const response=await withAbort(Promise.resolve().then(()=>{
+        need(!options.signal?.aborted,'ABORTED_BEFORE_COUNT_SEND');
+        return countSend({body:countBody,signal:options.signal,apiKey});
+      }),options.signal);
+      const rawResponse=typeof response.body==='string'?response.body.slice(0,MAX_BYTES):'',safe=redact(rawResponse,apiKey);
+      let data=null;try{data=JSON.parse(rawResponse);}catch{}
+      const valid=!response.error_code && response.status>=200 && response.status<300 && safe===rawResponse && data?.object==='response.input_tokens' && integer(data.input_tokens);
+      const count=valid?Input.validateCount({method:mode==='offline'?'synthetic-input-counter/1':Input.METHOD,model:body.model,request_sha256:measured.request_sha256,count_payload_digest:measured.count_payload_digest,input_tokens:data.input_tokens},raw,mode):null;
+      const error=!valid?'INPUT_COUNT_UNAVAILABLE':count.input_tokens>slot.input_tokens?'INPUT_LIMIT_EXCEEDED':null;
+      journal.countSettle(runId,stage,attempt,{state:valid?'observed':'uncertain',count,error,response:{status:Number.isInteger(response.status)?response.status:null,body:safe,body_sha256:C.hash(safe),redacted:safe!==rawResponse,duration_ms:Math.round(performance.now()-countStart)}});
+      if(error){inputStopped=true;throw new Error(error);}
+      need(options.body===raw,'INPUT_CHANGED_AFTER_COUNT');
+      need(!options.signal?.aborted,'ABORTED_BEFORE_DISPATCH');
+    }
     journal.dispatch(runId,stage,attempt,{endpoint:ENDPOINT,body:options.body,body_sha256:C.hash(options.body),automatic_retries:0}); counts.set(stage,index+1);
     const start=performance.now();
     let response;
@@ -72,4 +100,4 @@ function fetchBoundary({journal,runId,profile,plan,apiKey,send}) {
     return {ok:status>=200 && status<300,status,json:async()=>JSON.parse(raw),text:async()=>raw};
   };
 }
-module.exports={ENDPOINT,MAX_BYTES,redact,httpsSend,fetchBoundary};
+module.exports={ENDPOINT,COUNT_ENDPOINT,MAX_BYTES,redact,httpsSend,httpsCount,fetchBoundary};

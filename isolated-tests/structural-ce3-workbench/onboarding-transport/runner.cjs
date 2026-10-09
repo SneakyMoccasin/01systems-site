@@ -4,11 +4,13 @@ const {Journal,liabilities}=require('./journal.cjs'),Price=require('./price.cjs'
 const C=require('../contracts/onboarding-v1/contract.cjs');
 const Archive=require('../onboarding-session/v2/archive.cjs');
 const {Session}=require('../onboarding-session/v2/session.cjs');
-function plan(profile,mode='offline',options={}) { Price.validate(profile,mode,options.priceDigest); return Price.plan(profile,require('./sr.cjs').load(options.srRoot).AUDIT_EXECUTION_CONFIG); }
+function plan(profile,mode='offline',options={}) { Price.validate(profile,mode,options.priceDigest); return Price.plan(profile,require('./sr.cjs').load(options.srRoot).AUDIT_EXECUTION_CONFIG,options.inputPolicy??null); }
 async function run(options) {
   const {apiKey,...job}=options;
   Price.validate(job.profile,job.mode,job.priceDigest);
   Price.need(job.mode!=='live' || typeof job.priceDigest==='string','EXPLICIT_LIVE_PRICE_DIGEST');
+  if(job.inputPolicy) require('./input.cjs').validatePolicy(job.inputPolicy,job.profile,job.mode);
+  Price.need(job.mode!=='live' || job.inputPolicy,'LIVE_INPUT_POLICY_REQUIRED');
   Price.need(job.mode!=='live' || (typeof apiKey==='string' && apiKey.length>=12 && !job.fixture),'LIVE_CREDENTIAL_AND_NO_FIXTURE');
   const child=fork(path.join(__dirname,'worker.cjs'),[],{stdio:['ignore','ignore','ignore','ipc'],execArgv:[],env:{PATH:process.env.PATH,...(job.mode==='live'?{CE3_TRANSPORT_API_KEY:apiKey}:{})}});
   let message=null;
