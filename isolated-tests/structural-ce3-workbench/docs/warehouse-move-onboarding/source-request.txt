@@ -1,0 +1,145 @@
+Vi arbetar med CE3.0 (Cascade Engine). Nästa uppgift är att dokumentera ett nytt lagerflyttfall och kontrollera hur väl nuvarande profil kan representera det.
+
+Detta är ett konstruerat onboardingtest baserat på Christians svar. Det är inte ett verifierat kundfall. Gör dokumentationen och stödgranskningen nu; bygg ingen motorutökning eller ny UI-funktion i detta pass.
+
+## Utgångspunkt och gränser
+
+Repo: `/Users/christian/Projects/pulse_engine_clean`
+
+Arbetsvy: `isolated-tests/structural-ce3-workbench/`
+Kärna: `isolated-tests/structural-ce3-replay/`
+
+Senaste rapporterade UI-checkpoint: `3866717`.
+Kärnans checkpoint: `ede2886`.
+Profil: `fixed-replay/0.1`.
+
+Verifiera aktuell branch, HEAD och arbetsstatus innan ändringar. Bevara befintligt arbete.
+
+Profilen spelar upp angivna planer med uttryckliga förvillkor, effekter, kostnader och fördröjda händelser. Den söker inte automatiskt efter bästa strategi. Löpande resursbeläggning, faktisk orderhantering och lagerförbrukning ska inte antas vara stödda utan kontroll.
+
+Lämna CE2, den publika webbplatsen, kärnan, fabrikens checkpoint och befintliga transportmodeller/resultat orörda. Ingen publicering.
+
+## Beslutssituationen
+
+En webbutik flyttar sitt eget lager till en lokal 6 km bort.
+
+Mål:
+- Större lager.
+- Bättre planlösning.
+- Närmare motorvägen.
+
+Krav och önskemål:
+- Utskicken ska fortsätta under flytten, men enskilda order får vänta.
+- Varor får inte blandas ihop eller hamna fel.
+- Grossistleveranser ska tas emot på rätt adress.
+- Kunden ska ha fått hela beställningen inom högst 7 arbetsdagar från beställning.
+- Delade försändelser accepteras, men ska begränsas.
+
+Målen innebär inte några fastställda tids- eller kostnadsbesparingar.
+
+## Tidsram och startläge
+
+- Båda lokalerna är tillgängliga i 4 veckor.
+- Själva flytten ska vara klar inom 3 veckor.
+- Sista veckan finns för tömning, städning och överlämning.
+- Exakt tillträdesdatum är okänt. Kalenderveckor och arbetsdagar får inte blandas utan uttrycklig kalenderdefinition.
+- Dag 1 avser första arbetsdagen med tillgång till nya lagret.
+- Lokalen är målad och nya hyllor samt ny utrustning finns på plats vid tillträdet.
+- En del gamla hyllor ska flyttas och monteras senare.
+- Tillfällig förvaring medger registrering, plockning och utskick även innan dessa hyllor är monterade.
+- PostNords upphämtning från båda adresserna är ordnad.
+- Inventering ska göras före flytten; det är inte bekräftat att den redan är genomförd.
+
+## Flytt och kontroll
+
+- Cirka 80 % av varje artikel flyttas först. Cirka 20 % lämnas som reserv i gamla lagret, även för foder.
+- Reserven kan förbrukas genom utskick; den är inte garanterat kvar på 20 %.
+- Huvudflyttens planeringsram är 10 arbetsdagar.
+- Slutflyttens planeringsram är 5 arbetsdagar för återstående varor och kvarvarande hyllor.
+- Tiderna är uppskattningar med marginal och önskade maxramar, inte verifierade varaktigheter.
+- Varje flyttomgång uppskattas göra berörda varor otillgängliga i 1–2 arbetsdagar, med 1 som mål, tills de är mottagna och avbockade.
+- Testkörning av datasystem och packstationer börjar parallellt med varuflytten vid tillträdet.
+- Testmål: 1 arbetsdag. Planeringsram: 2 arbetsdagar. Förfluten tid innebär inte automatiskt godkänt test.
+- Första riktiga utskick från nya lagret är ett mål senast arbetsdag 2. Det kräver godkända tester samt mottagna och registrerade varor.
+- Innan sista reserven får börja flyttas ska 20 riktiga kundorder vara korrekt packade i nya lagret och överlämnade till PostNord.
+- Kunden behöver inte ha mottagit dessa kontrollorder.
+- Inget separat prov eller kundorder krävs per artikelgrupp.
+- Tidpunkten för att nå 20 godkända order är uttryckligen okänd.
+- Därefter får reserven flyttas successivt för redan överflyttade och kontrollerade grupper medan huvudflytten fortsätter för andra.
+- Extra personal tas in. Antal, arbetstid, arbetsfördelning och kostnad är okända.
+- Avståndet 6 km och förhoppningen om många lass per dag ger ingen fastställd flyttkapacitet.
+
+## Ungefärlig ordning
+
+Tidigt:
+- Hundburar för bil.
+- Friseringsverktyg.
+- Säsongsartiklar utanför aktuell säsong.
+- Akvarier och akvarietillbehör.
+- Fågelburar och kaninburar.
+- Foder.
+
+De första grupperna prioriteras för att de säljer mindre och är otympliga. Foder är ett uttryckligt undantag med hög försäljning.
+
+Ungefär i mitten:
+- Hundgodis.
+- Ett populärt koppel.
+- En populär hundbädd.
+
+Sist:
+- Kläder.
+
+Exakta tider per fas och ordningen inom faserna ska lämnas öppna. Listan ska inte antas täcka hela sortimentet.
+
+## System, order och påfyllning
+
+- Gamla och nya lagret har separata lagersystem.
+- Varuflyttar registreras och bockas av manuellt.
+- Kundorder fördelas manuellt mellan lagren.
+- När allt är flyttat används bara nya systemet.
+- Gamla lagret kan skicka från reserven om nya lagret inte är redo, så länge berörd vara finns kvar.
+- Saknas tillgänglig vara väntar ordern tills varan är mottagen och avbockad.
+- Reserven för de tre nämnda bästsäljarna uppskattas räcka ungefär en vecka. Detta är ingen garanti eller generell förbrukningsregel.
+- Grossistleveranser ska normalt gå till nya adressen men kan styras om vid behov.
+- Grossisten önskar besked helst 3 arbetsdagar före leverans. Detta är inte en bekräftad hård tidsgräns.
+- Hantering av redan skickade leveranser är okänd.
+
+## Kundinformation och ekonomi
+
+- Hemsidan informerar under 3 veckor om möjliga längre leveranstider och delade paket.
+- 10 % rabatt på hela sortimentet under samma period.
+- Kunden betalar ingen extra avgift för delade paket.
+- Fri frakt över 799 kr gäller hela beställningen.
+- Webbutiken står för merkostnaden för extra försändelser.
+- Normal leveranstid anges som 1–3 arbetsdagar.
+- PostNords transporttid anges som genomsnitt 2 dagar. Det är inte ett garanterat tak; arbetsdagar kontra kalenderdagar är inte uttryckligen bekräftat för detta genomsnitt.
+- Budget, flyttkostnader, personal, frakt, försäljning och rabattens ekonomiska effekt är okända. Okänt får inte bli noll.
+
+## Två föreslagna jämförelseplaner
+
+A: Behåll återstående reserv för hela sortimentet tills huvudflytten och kontrollvillkoret är klara. Genomför sedan slutflytten.
+
+B: Efter att kontrollvillkoret är uppfyllt, börja slutflytta färdiga grupper medan huvudflytten fortsätter för andra.
+
+Detta är analysförslag, inte kundbekräftade kompletta scheman. Ge inte B kortare tider för att skapa en vinnare. Tillgängliga resurser och fördelningen av slutflyttens fem dagar är okända.
+
+## Leverera
+
+1. Ett underlagsregister med referenser till svaren ovan. Skilj användaruppgifter, mål, krav, uppskattningar, analysförslag och okända uppgifter. Bevara osäkerhet och ersatta uppgifter.
+2. Ett konceptuellt modellutkast med starttillstånd, beslut, förvillkor, effekter och möjliga fördröjda händelser.
+3. En stödmatris grundad i faktisk kod och profilkontrakt: direkt stöd, uttrycklig förenkling, saknat stöd eller ytterligare indata krävs.
+4. Minsta kompletteringar som behövs för två körbara fasta planer. Skilj nödvändiga indata från sådant som bara behövs för att verifiera leveransservice, kapacitet eller ekonomi.
+5. En bedömning av vad jämförelsen kan respektive inte kan besvara.
+
+Kontrollera särskilt hur villkoret med 20 godkända order kan representeras. Om det endast kan bli ett externt bekräftat kontrollbesked ska det anges tydligt. Det får inte beskrivas som simulerad orderhantering.
+
+Skapa ingen körbar modell med påhittade tider, kostnader, kontrollutfall eller kapaciteter. Rapportera uttryckligen om underlaget ännu inte räcker för körning.
+
+Dokumentera också lärdomar för framtida AI-onboarding:
+- Kunden ska kunna ladda upp egna filer.
+- Föreslagna modelluppgifter ska kunna kopplas till källa eller användarsvar.
+- Okända värden ska ge frågor, inte fyllas automatiskt.
+- AI-leverantören ska kunna bytas mellan moln och lokal LLM genom ett gemensamt kontrakt.
+- Detta är krav för senare arbete, inte funktioner att bygga nu.
+
+Spara dokumentationen isolerat i CE3-arbetsvyns dokumentationsstruktur. Kör relevanta kontroller för ändringarna och committa endast uppgiftens filer. Rapportera commit, filförteckning, stödluckor och rekommenderat nästa steg.
