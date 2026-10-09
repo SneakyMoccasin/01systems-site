@@ -1,0 +1,85 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:ce3:onboarding:session:1",
+  "title": "ce3-onboarding-session/1",
+  "description": "Append-only command log. Commands and semantic transitions are also validated by session.cjs during replay. Does not change onboarding-v1.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "session_id",
+    "events",
+    "checksum"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "ce3-onboarding-session/1"
+    },
+    "session_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$"
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sequence",
+          "op",
+          "args",
+          "previous_digest",
+          "state_digest",
+          "digest"
+        ],
+        "properties": {
+          "sequence": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "op": {
+            "enum": [
+              "register_source",
+              "submit_proposal",
+              "request_review",
+              "complete_review",
+              "add_questions",
+              "answer",
+              "question_status",
+              "disposition",
+              "confirm",
+              "handoff",
+              "lifecycle"
+            ]
+          },
+          "args": {
+            "type": "object"
+          },
+          "previous_digest": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "state_digest": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "digest": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        }
+      }
+    },
+    "checksum": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  }
+}

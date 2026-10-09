@@ -1,0 +1,217 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:ce3:onboarding:transfer:1",
+  "title": "ce3-onboarding-transfer/1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "session_id",
+    "status",
+    "context_digest",
+    "model",
+    "evidence",
+    "review",
+    "confirmation",
+    "limitations",
+    "assumptions",
+    "scope",
+    "packet"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "ce3-onboarding-transfer/1"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "session_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "const": "ready_for_separate_compilation_and_validation"
+    },
+    "context_digest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "revision",
+        "digest"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "digest": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "digest",
+        "sources"
+      ],
+      "properties": {
+        "digest": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "version",
+              "original_sha256",
+              "content_sha256"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "original_sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "content_sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            }
+          }
+        }
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "digest",
+        "assessed_item_ids",
+        "limitations",
+        "producer"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "digest": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "assessed_item_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "producer": {
+          "$ref": "urn:ce3:onboarding:review:1#/properties/result/properties/producer"
+        }
+      }
+    },
+    "confirmation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "evidence_digest",
+        "context_digest",
+        "confirmation"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence_digest": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "context_digest": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "confirmation": {
+          "$ref": "urn:ce3:onboarding:handoff:1#/properties/confirmation"
+        }
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:ce3:onboarding:proposal:1#/definitions/gap"
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:ce3:onboarding:proposal:1#/definitions/item"
+      }
+    },
+    "scope": {
+      "$ref": "urn:ce3:onboarding:proposal:1#/properties/scope"
+    },
+    "packet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "proposal",
+        "reviews",
+        "dialogue",
+        "handoff"
+      ],
+      "properties": {
+        "proposal": {
+          "$ref": "urn:ce3:onboarding:proposal:1"
+        },
+        "reviews": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:ce3:onboarding:review:1"
+          }
+        },
+        "dialogue": {
+          "$ref": "urn:ce3:onboarding:dialogue:1"
+        },
+        "handoff": {
+          "$ref": "urn:ce3:onboarding:handoff:1"
+        }
+      }
+    }
+  }
+}
