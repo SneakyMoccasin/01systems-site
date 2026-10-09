@@ -1,0 +1,194 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:ce3:onboarding:dialogue:1",
+  "title": "ce3-onboarding-dialogue/1",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "ce3-onboarding-dialogue/1"
+    },
+    "proposal_digest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "equivalence_key": {
+            "type": "string",
+            "minLength": 1
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1
+          },
+          "target_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1
+          },
+          "origins": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "actor": {
+                  "enum": [
+                    "ai",
+                    "sr",
+                    "customer"
+                  ]
+                },
+                "ref_id": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "actor",
+                "ref_id"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1
+          },
+          "impact": {
+            "enum": [
+              "blocks_handoff",
+              "limits_conclusion"
+            ]
+          },
+          "priority": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "status": {
+            "enum": [
+              "open",
+              "answered",
+              "deferred",
+              "withdrawn"
+            ]
+          },
+          "answer_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 0
+          },
+          "merged_from": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 0
+          },
+          "resolution": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "equivalence_key",
+          "text",
+          "reasons",
+          "target_ids",
+          "origins",
+          "impact",
+          "priority",
+          "status",
+          "answer_ids",
+          "merged_from",
+          "resolution"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0
+    },
+    "answers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "question_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "replaces_answer_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "question_id",
+          "text",
+          "source_id",
+          "source_version",
+          "replaces_answer_id"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0
+    }
+  },
+  "required": [
+    "schema_version",
+    "proposal_digest",
+    "questions",
+    "answers"
+  ],
+  "additionalProperties": false
+}

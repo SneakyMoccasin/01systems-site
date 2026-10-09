@@ -1,0 +1,199 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:ce3:onboarding:handoff:1",
+  "title": "ce3-onboarding-handoff/1",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "ce3-onboarding-handoff/1"
+    },
+    "proposal_digest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "review_status": {
+      "enum": [
+        "not_requested",
+        "current",
+        "stale",
+        "incomplete"
+      ]
+    },
+    "dispositions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "review_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "finding_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "enum": [
+              "open",
+              "accepted",
+              "rejected",
+              "resolved"
+            ]
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "review_id",
+          "finding_id",
+          "status",
+          "reason",
+          "by"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0
+    },
+    "confirmation": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "enum": [
+            "not_requested",
+            "confirmed",
+            "stale"
+          ]
+        },
+        "proposal_digest": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "item_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "scope_acknowledged": {
+          "type": "boolean"
+        },
+        "by": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "record": {
+          "anyOf": [
+            {
+              "$ref": "urn:ce3:onboarding:proposal:1#/definitions/source"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "status",
+        "proposal_digest",
+        "item_ids",
+        "scope_acknowledged",
+        "by",
+        "record"
+      ],
+      "additionalProperties": false
+    },
+    "dialogue_status": {
+      "enum": [
+        "active",
+        "paused",
+        "closed_no_analysis",
+        "closed_limited",
+        "ready_for_translation"
+      ]
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "unresolved_question_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 0
+    },
+    "unresolved_finding_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 0
+    },
+    "readiness": {
+      "enum": [
+        "not_assessed",
+        "blocked",
+        "candidate_for_validation"
+      ]
+    },
+    "ce3_validation_status": {
+      "const": "not_run"
+    },
+    "ce3_run_status": {
+      "const": "not_run"
+    }
+  },
+  "required": [
+    "schema_version",
+    "proposal_digest",
+    "review_status",
+    "dispositions",
+    "confirmation",
+    "dialogue_status",
+    "summary",
+    "unresolved_question_ids",
+    "unresolved_finding_ids",
+    "readiness",
+    "ce3_validation_status",
+    "ce3_run_status"
+  ],
+  "additionalProperties": false
+}

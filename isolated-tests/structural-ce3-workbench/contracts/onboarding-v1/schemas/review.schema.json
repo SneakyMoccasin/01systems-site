@@ -1,0 +1,227 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:ce3:onboarding:review:1",
+  "title": "ce3-onboarding-review/1",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "ce3-onboarding-review/1"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "request": {
+      "type": "object",
+      "properties": {
+        "proposal_digest": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "snapshot": {
+          "$ref": "urn:ce3:onboarding:proposal:1"
+        },
+        "trigger": {
+          "enum": [
+            "first_draft",
+            "material_change"
+          ]
+        },
+        "changed_item_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "prior_finding_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "trust": {
+          "const": "data_only"
+        }
+      },
+      "required": [
+        "proposal_digest",
+        "snapshot",
+        "trigger",
+        "changed_item_ids",
+        "prior_finding_ids",
+        "trust"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "enum": [
+            "complete",
+            "partial",
+            "failed"
+          ]
+        },
+        "assessed_item_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "target_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "minItems": 1
+              },
+              "category": {
+                "enum": [
+                  "unsupported",
+                  "contradiction",
+                  "meaning_shift",
+                  "certainty_inflation",
+                  "profile_gap",
+                  "hypothesis"
+                ]
+              },
+              "basis": {
+                "enum": [
+                  "evidence",
+                  "absence_in_supplied_material",
+                  "review_hypothesis"
+                ]
+              },
+              "refs": {
+                "type": "array",
+                "items": {
+                  "$ref": "urn:ce3:onboarding:proposal:1#/definitions/reference"
+                },
+                "minItems": 0
+              },
+              "searched_source_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "minItems": 0
+              },
+              "explanation": {
+                "type": "string",
+                "minLength": 1
+              },
+              "suggested_question": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "impact": {
+                "enum": [
+                  "blocks_handoff",
+                  "limits_conclusion"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "target_ids",
+              "category",
+              "basis",
+              "refs",
+              "searched_source_ids",
+              "explanation",
+              "suggested_question",
+              "impact"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 0
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "producer": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "enum": [
+                "synthetic",
+                "live"
+              ]
+            },
+            "adapter": {
+              "type": "string",
+              "minLength": 1
+            },
+            "model": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "prompt_version": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "mode",
+            "adapter",
+            "model",
+            "prompt_version"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "status",
+        "assessed_item_ids",
+        "findings",
+        "limitations",
+        "producer"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "request",
+    "result"
+  ],
+  "additionalProperties": false
+}

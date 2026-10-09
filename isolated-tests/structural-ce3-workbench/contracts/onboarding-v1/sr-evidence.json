@@ -1,0 +1,24 @@
+{
+  "repository": "skeptical-reader",
+  "head": "10d2482186e0d116506f215bdbdbd70f009ab18b",
+  "inspection": "read_only_static_code_review",
+  "files": {
+    "AGENTS.md": "63f2c50380ed6303237cce215ce27af1d620d094c215e28d1b1538a3c070e3bb",
+    "src/lib/pipeline/run.ts": "1c7edb2b1f86d41b19841c3690d265270022461ea24a1deea019efd3993dd287",
+    "src/lib/pipeline/stage-schemas.ts": "9cd528713d268390bf3bc3dedecab7f23c5ce192299202a416ffe7319d6f7e18",
+    "src/lib/grounded/input.ts": "81681d5920ac5e011d9d6fbb9b1acb95deadc56215d7d13c5f81bcbf2e9af0dc",
+    "src/lib/grounded/run.ts": "96041400391566cad6f43e944b7b64003bc61939e51addc1dba5ad59310efcaf",
+    "src/lib/grounded/schemas.ts": "ba38ab1f5b0739a5df8eb878429ead6e2173d08e42a249e5519d733a5770c7af",
+    "src/lib/grounded/stage-schemas.ts": "371815c8d2dcd4a6e0cc9e477a8238bb82b52846a0d8ab1b07bb713ddd474d37",
+    "src/lib/text.ts": "54d1becb35c3263b09467fa5e1862dbd1f72af754320e884c8019f83a0eb7cb2",
+    "src/lib/providers/types.ts": "42a8d73e484f18b250e569c195be1f705726879cfe05489df81b701ab88cc70e",
+    "src/lib/providers/index.ts": "adedbff6ffe54aa964411be3b7352b47e4a3fe50aecdf5054c3f04e728c4175b",
+    "src/lib/providers/openai.ts": "1ccbc08934b95f13fbc333f08c3111508da39ff005b871774442eeac435c883f",
+    "src/lib/prompts/grounded-shared-v0.1.ts": "ec84c3f8996f7a74df23a5b1964fa7e987943bbc0255a832c345419c36eea9db",
+    "src/lib/prompts/grounded-support-assessment-v0.4.ts": "f29492c6f44d5161b7b24607eba278ea8dbd998b117f92e29f71902fe84baecf",
+    "src/lib/prompts/grounded-claim-extraction-v0.3.ts": "b883a7bdc1363f4bd7947ae9c3b83b5fc45216227b132c7ba972cbb9b4f276aa",
+    "src/lib/feedback.ts": "810fc980d00cd80cb1b830ab25cbabbee9f8920f5ddde30ec99b1f7b40d50fe3",
+    "src/app/api/audit/route.ts": "46a037c1efbb3761e3438325be7f488158f6efd5c84a8fb3017f352c8a36fa70",
+    "scripts/grounded-eval.ts": "0e8bba7778848fae29364d16f5c55e99546aea66cf07383d5a0a24c898bc855b"
+  }
+}

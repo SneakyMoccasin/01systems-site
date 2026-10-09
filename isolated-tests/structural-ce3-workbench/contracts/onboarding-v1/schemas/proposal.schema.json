@@ -1,0 +1,481 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:ce3:onboarding:proposal:1",
+  "title": "ce3-onboarding-proposal/1",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "ce3-onboarding-proposal/1"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "profile": {
+      "type": "string",
+      "minLength": 1
+    },
+    "analysis": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "enum": [
+            "none",
+            "choose",
+            "check",
+            "change"
+          ]
+        },
+        "question": {
+          "type": "string",
+          "minLength": 1
+        },
+        "plan_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "criterion_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "changed_assumption_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        }
+      },
+      "required": [
+        "kind",
+        "question",
+        "plan_ids",
+        "criterion_ids",
+        "changed_assumption_ids"
+      ],
+      "additionalProperties": false
+    },
+    "scope": {
+      "type": "object",
+      "properties": {
+        "includes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "excludes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        }
+      },
+      "required": [
+        "includes",
+        "excludes"
+      ],
+      "additionalProperties": false
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:ce3:onboarding:proposal:1#/definitions/source"
+      },
+      "minItems": 0
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:ce3:onboarding:proposal:1#/definitions/item"
+      },
+      "minItems": 0
+    },
+    "gaps": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:ce3:onboarding:proposal:1#/definitions/gap"
+      },
+      "minItems": 0
+    },
+    "change": {
+      "type": "object",
+      "properties": {
+        "parent_digest": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "changed_item_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "affected_finding_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "parent_digest",
+        "changed_item_ids",
+        "affected_finding_ids",
+        "reason"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "revision",
+    "profile",
+    "analysis",
+    "scope",
+    "sources",
+    "items",
+    "gaps",
+    "change"
+  ],
+  "additionalProperties": false,
+  "definitions": {
+    "reference": {
+      "type": "object",
+      "properties": {
+        "source_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "quote": {
+          "type": "string",
+          "minLength": 1
+        },
+        "start": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "end": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "location": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "source_id",
+        "source_version",
+        "quote",
+        "start",
+        "end",
+        "location"
+      ],
+      "additionalProperties": false
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "kind": {
+          "enum": [
+            "document",
+            "answer"
+          ]
+        },
+        "original_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "original_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "extraction": {
+          "enum": [
+            "complete",
+            "partial",
+            "failed",
+            "missing"
+          ]
+        },
+        "content": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "content_sha256": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "extraction_note": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "trust": {
+          "const": "data_only"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "kind",
+        "original_ref",
+        "original_sha256",
+        "extraction",
+        "content",
+        "content_sha256",
+        "extraction_note",
+        "trust"
+      ],
+      "additionalProperties": false
+    },
+    "item": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "enum": [
+            "plan",
+            "criterion",
+            "rule",
+            "value",
+            "assumption"
+          ]
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "enum": [
+            "document_fact",
+            "user_fact",
+            "goal",
+            "requirement",
+            "estimate",
+            "ai_proposal",
+            "scenario_assumption"
+          ]
+        },
+        "status": {
+          "enum": [
+            "known",
+            "unknown",
+            "conflict",
+            "superseded"
+          ]
+        },
+        "value": {
+          "type": [
+            "string",
+            "number",
+            "boolean",
+            "null"
+          ]
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "refs": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:ce3:onboarding:proposal:1#/definitions/reference"
+          },
+          "minItems": 0
+        },
+        "depends_on": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "supersedes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scenario_choice": {
+          "anyOf": [
+            {
+              "$ref": "urn:ce3:onboarding:proposal:1#/definitions/reference"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "statement",
+        "type",
+        "status",
+        "value",
+        "unit",
+        "refs",
+        "depends_on",
+        "supersedes",
+        "rationale",
+        "scenario_choice"
+      ],
+      "additionalProperties": false
+    },
+    "gap": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "item_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "kind": {
+          "enum": [
+            "missing_data",
+            "conflict",
+            "unsupported_profile",
+            "scope_limit"
+          ]
+        },
+        "impact": {
+          "enum": [
+            "blocks_handoff",
+            "limits_conclusion"
+          ]
+        },
+        "status": {
+          "enum": [
+            "open",
+            "resolved",
+            "accepted_limit"
+          ]
+        },
+        "explanation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "resolution": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "item_ids",
+        "kind",
+        "impact",
+        "status",
+        "explanation",
+        "resolution"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

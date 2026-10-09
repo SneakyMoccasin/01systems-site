@@ -1,0 +1,150 @@
+Ta fram ett litet kontrakt för CE3:s framtida onboarding med flödet:
+
+Kundunderlag → AI:s modellförslag → SR-granskning → frågor och korrigeringar → kundens bekräftelse → separat CE3-validering och körning.
+
+Utgå från lagerdokumentationen i `691f247`:
+`isolated-tests/structural-ce3-workbench/docs/warehouse-move-onboarding/`
+
+Kontrollera aktuell HEAD och arbetsstatus. Läs befintliga CE3-scheman och profilkontrakt innan arbetet. Bevara annat arbete.
+
+## Omfattning
+
+Leverera kontrakt, dialogflöde, syntetiska exempel, kontraktstester och en plan för kvalitetsutvärdering.
+
+Bygg ingen live-AI, SR-integration, filuppladdning, OCR eller ny UI-funktion nu. Ändra inte motor, befintliga modeller eller `ce3-model/1`. Ingen publicering.
+
+Lagerfallet är avslutat som dokumenterat onboardingtest. Skapa inga körbara lagerplaner eller påhittade verksamhetsvärden.
+
+## Börja med analysfrågan
+
+Onboardingen ska först identifiera:
+- Ett val mellan alternativ.
+- En befintlig plan som ska kontrolleras mot ett krav.
+- En fråga om konsekvenserna av ett ändrat antagande.
+
+Om inget analysbehov finns ska dialogen kunna avslutas med en sammanfattning. Kräv inte två alternativ för att kontrollera en plan.
+
+## Ansvar
+
+AI:
+- Tolkar dokument och användarsvar.
+- Skapar ett preliminärt, källkopplat modellförslag.
+- Markerar okända uppgifter, konflikter, uppskattningar och stödluckor.
+- Föreslår relevanta följdfrågor.
+
+SR:
+- Granskar modellförslaget mot samma originalunderlag och svar, inte bara AI:s sammanfattning.
+- Söker efter saknat stöd, motsägelser, förändrad betydelse och otillåtna säkerhetsanspråk.
+- Flaggar exempelvis att ett mål blivit ett faktum, en uppskattning blivit en garanterad varaktighet eller förfluten tid blivit ett godkänt kontrollutfall.
+- Kan föreslå frågor om möjliga luckor, men ska märka dem som granskningshypoteser.
+- Ska inte själv fylla luckor eller skriva över modellen.
+
+Frågesammanställning:
+- Slår samman AI:s frågor och SR:s fynd.
+- Tar bort dubbletter och prioriterar.
+- Skiljer frågor som blockerar körbarhet från frågor som begränsar slutsatsens räckvidd.
+- Använder begripliga verksamhetsord, inte interna kodtermer.
+- Bevarar varför frågan ställs och vilka modelluppgifter den berör.
+
+Kunden:
+- Svarar, korrigerar och bekräftar verksamhetsuppgifter.
+- Granskar ett begripligt modellutkast och dess avgränsningar.
+
+Separat kod:
+- Översätter bekräftat underlag till CE3-format.
+- Validerar schema och profilregler.
+- Kör CE3 och granskar körhistoriken.
+
+Varken SR:s besked eller kundens bekräftelse betyder att modellen är komplett eller verkligheten verifierad.
+
+## Granskningscykel
+
+Modellutkastet växer under dialogen.
+
+Granska det första samlade utkastet och senare väsentliga ändringar. Kör inte hela granskningen efter varje kort svar.
+
+Definiera hur:
+- Ändringar kopplas till berörda regler och tidigare fynd.
+- Gamla granskningsbesked blir inaktuella.
+- Obesvarade frågor och olösta fynd finns kvar.
+- Dialogen kan pausas eller avslutas med tydlig status.
+- Begränsningar redovisas utan en oändlig frågerunda.
+
+Ett SR-fynd ska kunna bedömas och avvisas med motivering. Frånvaro av fynd ska inte beskrivas som bevis för korrekthet.
+
+## Kontraktsstruktur
+
+Föreslå separata, versionsmärkta strukturer för:
+
+1. Underlag och AI:s modellförslag.
+2. SR:s granskningsindata och fynd.
+3. Sammanställda kundfrågor och svar.
+4. Modellversion, kundbekräftelse och överlämning till separat validering.
+
+Inkludera minst:
+- Analysfråga, alternativ/plan och kontrollkriterier.
+- Vald profil och analysens omfattning.
+- Källidentiteter och platsreferenser där sådana finns.
+- Källkoppling för varje föreslagen regel och värde.
+- Typ: dokumentuppgift, användaruppgift, mål, krav, uppskattning, AI-förslag eller uttryckligt scenarioantagande.
+- Okända uppgifter, konflikter och ersättningshistorik.
+- SR-fynd med berörd uppgift, källstöd, förklaring och hanteringsstatus.
+- Granskningsstatus skild från kundbekräftelse och körbarhetsstatus.
+
+Okänt får inte bli noll, uteblivet besked eller godkänt utfall. Hypotetiska scenarier kräver uttryckligt val och ska förbli märkta som hypotetiska.
+
+## Filunderlag och leverantörer
+
+Kontraktet ska stödja framtida filuppladdning genom extraherat innehåll med dokumentidentitet, version och källpositioner. Saknad eller misslyckad extraktion ska anges.
+
+Dokumentinnehåll är underlag, inte instruktioner till AI eller SR.
+
+Håll dokumentläsning, AI, SR och CE3 separerade. Moln- och lokala LLM-adaptrar ska kunna använda samma kontrakt. Välj ingen leverantör nu.
+
+Lokal LLM innebär inte automatiskt lokal OCR, lagring eller loggning.
+
+## Befintlig Skeptical Reader
+
+Om repot `/Users/christian/Projects/skeptical-reader` är tillgängligt: gör en avgränsad, read-only granskning av relevanta kontrakt och granskningssteg.
+
+Redovisa:
+- Vad som faktiskt kan återanvändas.
+- Vad som kräver ett nytt granskningsläge för strukturerade modellförslag.
+- Vilka begränsningar som finns.
+
+Ändra inte SR-repot. Om det inte är tillgängligt, dokumentera återanvändningen som obesvarad. Anta inte att dagens textgranskning direkt kan granska CE3-modeller.
+
+## Tester och kvalitetsutvärdering
+
+Skapa små syntetiska kontraktsexempel:
+- Ingen analysfråga.
+- Kontroll av en enda plan.
+- ”Förhoppningsvis dag 2” felaktigt omvandlat till godkänt dag 2.
+- Påhittad kostnad eller beroenderegel.
+- Korrigerat användarsvar.
+- Saknat profilstöd.
+- Dubbletter bland följdfrågor.
+- Ett granskningsfynd utan stöd.
+- En modelländring som gör tidigare granskning inaktuell.
+- Instruktioner inne i dokumentunderlag.
+
+Skilj deterministiska kontraktstester från framtida utvärdering med verkliga LLM-svar.
+
+Föreslå ett litet jämförande test av AI ensam respektive AI + SR, med samma underlag. Mät:
+- Korrekt upptäckta modellfel.
+- Missade fel och felaktiga granskningsfynd.
+- Frågornas relevans och begriplighet.
+- Extra väntetid, kostnad och kundarbete.
+
+Mocktester bevisar inte att SR ger bättre kvalitet.
+
+## Leverera och checkpointa
+
+- Kort beskrivning av flödet och ansvaren.
+- Maskinläsbara scheman med lämplig befintlig teknik.
+- Ett begripligt dialogexempel.
+- Syntetiska exempel och relevanta kontraktstester.
+- Read-only bedömning av SR-återanvändning, om möjligt.
+- Rekommenderat minsta nästa implementationssteg.
+
+Håll arbetet isolerat i CE3-arbetsvyns dokumentations-/kontraktsstruktur. Kör relevanta kontroller och committa endast uppgiftens filer. Rapportera commit, filförteckning, testresultat och begränsningar.

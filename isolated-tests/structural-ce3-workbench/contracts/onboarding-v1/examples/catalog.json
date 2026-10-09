@@ -1,0 +1,13 @@
+[
+  {"id":"noAnalysis","case":"Ingen analysfråga","expected":"closed_no_analysis; inga framtvingade planer eller SR-anrop"},
+  {"id":"base","case":"Kontroll av en enda plan","expected":"En plan och ett kriterium räcker till analysbehovet; CE3 ännu inte validerad"},
+  {"id":"goalAsApproval","case":"Förhoppningsvis dag 2 blir godkänt dag 2","expected":"Förskrivet certainty_inflation-fynd blockerar överlämning; semantisk upptäckt är inte testad"},
+  {"id":"inventedCost","case":"Påhittad kostnad","expected":"Obekräftat AI-förslag och förskrivet fynd kvarstår; ingen nollifyllnad"},
+  {"id":"inventedDependency","case":"Påhittad beroenderegel med ett existerande men otillräckligt citat","expected":"Citatmatchning kan passera; förskrivet semantiskt fynd blockerar"},
+  {"id":"correctedAnswer","case":"Korrigerat användarsvar","expected":"Båda svarsversioner kvar; gammal SR-granskning och kundbekräftelse inaktuella"},
+  {"id":"profileGap","case":"Saknat profilstöd","expected":"Öppen stödlucka blockerar överlämning även med kundbekräftelse och tom fyndlista"},
+  {"id":"duplicateQuestions","case":"Dubbletter bland följdfrågor","expected":"En verksamhetsfråga efter uttrycklig ekvivalens; båda ursprung och skäl bevaras"},
+  {"id":"unsupportedFinding","case":"Ett granskningsfynd utan stöd","expected":"Märkt granskningshypotes; avvisat med motivering, inte ny regel"},
+  {"id":"staleReview","case":"Modelländring gör tidigare granskning inaktuell","expected":"Tidigare fynd finns kvar; ändringskoppling, paus och obesvarad fråga bevaras"},
+  {"id":"embeddedInstructions","case":"Instruktioner inne i dokumentunderlag","expected":"Innehåll bevaras som data_only; ingen instruktion exekveras och ingen modell ändras"}
+]
