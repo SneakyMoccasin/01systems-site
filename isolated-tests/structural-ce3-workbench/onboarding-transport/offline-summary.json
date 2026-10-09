@@ -1,0 +1,13 @@
+{
+  "mode": "OFFLINE SYNTHETIC HTTP RESPONSES THROUGH REAL SR",
+  "external_ai_calls": 0,
+  "actual_cost_usd": 0,
+  "maximum_http_attempts": 6,
+  "recorded_fixture_attempts": 6,
+  "synthetic_reservation_nusd": 61320000,
+  "synthetic_usage_cost_upper_nusd": 48000,
+  "sr_status": "complete",
+  "session_review": "current",
+  "blocking_finding_prevents_handoff": true,
+  "archive_derivation": "explicit_scripted_replay_of_offline_provider_outputs"
+}

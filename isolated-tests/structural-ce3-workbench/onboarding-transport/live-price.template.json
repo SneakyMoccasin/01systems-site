@@ -1,0 +1,22 @@
+{
+  "schema_version": "ce3-price-profile/1",
+  "kind": "verified-live",
+  "currency": "USD",
+  "provider": "openai",
+  "model": null,
+  "input_token_bound": null,
+  "input_nusd_per_token": null,
+  "output_nusd_per_token": null,
+  "source": null,
+  "model_source": null,
+  "dated": null,
+  "verification": {
+    "by": null,
+    "verified_at": null,
+    "valid_until": null,
+    "rate_basis": "upper_bound_all_input_and_output_tiers",
+    "input_bound_basis": "documented_maximum_billable_input_tokens",
+    "model_identity": null,
+    "structured_output_supported": null
+  }
+}

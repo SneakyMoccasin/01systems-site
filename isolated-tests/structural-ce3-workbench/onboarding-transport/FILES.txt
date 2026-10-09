@@ -1,0 +1,17 @@
+isolated-tests/structural-ce3-workbench/onboarding-session/v2/README.md
+isolated-tests/structural-ce3-workbench/onboarding-transport/CHECKPOINT.md
+isolated-tests/structural-ce3-workbench/onboarding-transport/FILES.txt
+isolated-tests/structural-ce3-workbench/onboarding-transport/README.md
+isolated-tests/structural-ce3-workbench/onboarding-transport/demo.cjs
+isolated-tests/structural-ce3-workbench/onboarding-transport/fixtures.cjs
+isolated-tests/structural-ce3-workbench/onboarding-transport/journal.cjs
+isolated-tests/structural-ce3-workbench/onboarding-transport/live.cjs
+isolated-tests/structural-ce3-workbench/onboarding-transport/live-price.template.json
+isolated-tests/structural-ce3-workbench/onboarding-transport/offline-summary.json
+isolated-tests/structural-ce3-workbench/onboarding-transport/price.cjs
+isolated-tests/structural-ce3-workbench/onboarding-transport/runner.cjs
+isolated-tests/structural-ce3-workbench/onboarding-transport/sr.cjs
+isolated-tests/structural-ce3-workbench/onboarding-transport/synthetic-price.json
+isolated-tests/structural-ce3-workbench/onboarding-transport/transport.cjs
+isolated-tests/structural-ce3-workbench/onboarding-transport/transport.test.cjs
+isolated-tests/structural-ce3-workbench/onboarding-transport/worker.cjs

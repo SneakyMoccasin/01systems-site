@@ -1,0 +1,14 @@
+{
+  "schema_version": "ce3-price-profile/1",
+  "kind": "synthetic",
+  "currency": "USD",
+  "provider": "openai",
+  "model": "ce3-synthetic-http-model",
+  "input_token_bound": 1000000,
+  "input_nusd_per_token": 10,
+  "output_nusd_per_token": 20,
+  "source": "synthetic://test-prices-not-market-prices",
+  "model_source": "synthetic://test-input-bound-not-model-specification",
+  "dated": "2026-10-09",
+  "verification": null
+}

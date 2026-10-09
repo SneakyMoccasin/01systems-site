@@ -1,5 +1,7 @@
 # CE3 session/2 med inbäddade strukturerade SR-arkiv
 
+Efterföljande separat [budgeterad transport](../../onboarding-transport/README.md) använder denna oförändrade sessionsversion. Den är offlineverifierad genom riktig SR/provider med injicerade HTTP-testsvar; livekommandot är ännu inte kört. Beskrivningen av kommande transport nedan avser session/2:s ursprungliga checkpoint.
+
 Bas: CE3 `9f18f0c247d201e2dba77e3917a4738f5a54bb28`. Modulen inför en separat sessionsversion för [den strukturerade SR-adaptern](../../onboarding-sr/structured/README.md). SR är fortsatt pinnat till `e7308010ecbea1ebe46c3298aa6a96f06381ad0a`, kontrakt `structured-grounded/1`. Befintliga onboarding-v1-kontrakt, session/1-format, receipts och bundles är oförändrade. Ingen motor, UI, modelltransport eller credentialläsning ingår.
 
 **Offlineverifiering med förskrivna, märkta modellsvar genom riktig SR-kod. Testerna verifierar integration och sessionslogik, inte AI:s eller SR:s granskningskvalitet.**
