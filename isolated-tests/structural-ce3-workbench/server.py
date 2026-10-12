@@ -10,6 +10,7 @@ from urllib.parse import urlparse, parse_qs
 from service import Store, HERE, CORE, example, open_model, LIMITS
 from core.history import loads, encode, read_bundle
 from core.schema import InputError, PROFILE
+from onboarding import Onboarding
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -40,12 +41,20 @@ class Handler(BaseHTTPRequestHandler):
             data = None
             if method == 'POST':
                 size = int(self.headers.get('Content-Length', '0'))
+                if route == '/api/onboarding' and size > 20000:
+                    raise ValueError('Demonstrationen tar bara kort text, inga filer.')
                 if not 0 < size <= 128 * 1024 * 1024:
                     raise ValueError('Tom eller för stor fil (max 128 MB).')
                 if not self.headers.get('Content-Type', '').startswith('application/json'):
                     raise ValueError('Använd JSON-format.')
                 data = loads(self.rfile.read(size).decode('utf-8'))
             store = self.server.store
+            if method == 'POST' and route == '/api/onboarding':
+                return self.send(self.server.onboarding.dispatch(data))
+            onboarding_files = {'/onboarding': 'index.html', '/onboarding/': 'index.html', '/onboarding/app.js': 'app.js', '/onboarding/style.css': 'style.css'}
+            if method == 'GET' and route in onboarding_files:
+                path = HERE / 'onboarding-prototype/static' / onboarding_files[route]
+                return self.send(path.read_bytes(), content_type=mimetypes.guess_type(str(path))[0] + '; charset=utf-8')
             if method == 'GET' and route == '/api/config':
                 return self.send(dict(storage=str(store.root), limits=LIMITS, profile=read_bundle(CORE / 'core/profile.json')))
             if method == 'GET' and route == '/api/projects':
@@ -103,6 +112,7 @@ def make_server(port, data):
         raise ValueError('Lagring inne i repositoryt måste ligga under den nya arbetsbänksmappen.')
     server = ThreadingHTTPServer(('127.0.0.1', port), Handler)
     server.store = Store(data)
+    server.onboarding = Onboarding(data)
     return server
 
 
