@@ -7,7 +7,7 @@ const { customerQuestion } = require('../onboarding-sr/structured/adapter.cjs');
 const Scenario = require('./scenario.cjs');
 const need = (v, code) => { if (!v) throw Error(code); };
 const caseOf = s => s.view().id.split('_')[0];
-const confirmationText = 'Jag bekräftar detta förslag, underlag och granskning. Tidsmålet är ingen garanti. Kostnad och faktisk godkännandetid är okända och ingår inte. Detta är inte en validerad eller körd CE3-modell.';
+const confirmationText = 'Jag bekräftar att sammanfattningen återger vår situation och de antaganden vi vill använda.';
 function confirm(session, by, suffix) {
   const v = session.view();
   session.confirm({ id: `confirmation-${suffix}`, proposal_digest: v.proposal_digest, evidence_digest: v.evidence_digest, context_digest: v.context_digest, review_binding: v.current_review?.binding, by, text: confirmationText, scope_acknowledged: true });
@@ -23,11 +23,14 @@ function gate(session) {
 }
 function canPropose(session) {
   const v = session.view();
-  if (v.proposals.length && !v.statuses.pending_evidence) return false;
+  if (v.proposals.length && !v.statuses.pending_evidence && !(caseOf(session) === 'misread' && v.proposals.at(-1).items.find(i => i.id === 'approval').type === 'document_fact' && v.current_review)) return false;
   try { Scenario.proposal(v, caseOf(session)); return true; } catch { return false; }
 }
 function timingQuestion() {
   return { id: 'timing', equivalence_key: 'timing', text: 'Är dag 2 ett mål eller ett godkännande?', reasons: ['Ett mål visar vad ni hoppas uppnå. Driftstart måste fortfarande vänta på ansvarigs besked.'], target_ids: ['approval'], origins: [{ actor: 'ai', ref_id: 'approval' }], impact: 'blocks_handoff', priority: 1, status: 'open', answer_ids: [], merged_from: [], resolution: null };
+}
+function roleQuestion() {
+  return { ...timingQuestion(), id: 'approver', equivalence_key: 'approver', text: 'Vem ska lämna godkännandet före driftstart?', reasons: ['Analysen behöver veta vems besked som uppfyller startvillkoret. Utan den uppgiften går det inte att bekräfta underlaget.'], target_ids: ['approver'], origins: [{ actor: 'ai', ref_id: 'approver' }] };
 }
 async function act(session, command) {
   // All mutations operate on an isolated clone and publish only on success.
@@ -39,10 +42,12 @@ async function act(session, command) {
       const job = s.requestReview(`review-${next}`), bad = v.proposals.at(-1).items.find(i => i.id === 'approval').type === 'document_fact';
       const archive = await Archive.recorded(job.prepared, tapeFor(job.prepared, bad ? [{ target: 'approval', field: 'type', classification: 'incorrect', explanation: 'FÖRSKRIVET DEMOFYND: ett försiktigt mål visar inte att ett godkännande har lämnats.' }] : []));
       await s.receiveReview(job.id, archive);
-      if (bad && !v.questions.length) {
+      if (bad && caseOf(s) === 'unclear' && !v.questions.length) {
         const q = customerQuestion(archive.receipt, job.id, archive.receipt.result.findings[0].id, timingQuestion().text, 'timing');
         q.reasons = timingQuestion().reasons; s.addQuestions([q]);
       }
+      if (caseOf(s) === 'gap' && !v.questions.some(q => q.id === 'approver')) s.addQuestions([roleQuestion()]);
+      if (caseOf(s) === 'gap' && v.proposals.at(-1).items.find(i => i.id === 'approver').status === 'unknown' && v.answers.length) s.setQuestionStatus({ id: 'approver', status: 'deferred', reason: 'Kunden vet inte ännu. Godkännandeansvarig är fortsatt okänd och blockerar underlaget.' });
       if (!bad) for (const r of v.reviews) for (const f of r.result.findings) {
         s.handleFinding({ review_id: r.id, finding_id: f.id, status: 'resolved', reason: 'Förskriven hantering: nytt uttryckligt förslag håller tidsmål och kontrollvillkor isär; ny strukturerad granskning täcker uppgiften.', by: 'Demonstrationsgranskare (förskrivet)' });
       }
@@ -50,10 +55,16 @@ async function act(session, command) {
     }
     case 'answer': {
       need(v.proposals.length && typeof command.text === 'string' && command.text.trim() && command.text.length <= 5000, 'ANSWER_REQUIRED');
-      if (!v.questions.some(q => q.id === 'timing')) s.addQuestions([timingQuestion()]);
-      const old = v.answers.at(-1);
-      s.answer({ id: `answer-${next}`, question_id: 'timing', text: command.text, replaces_answer_id: old?.id ?? null }); break;
+      const q = caseOf(s) === 'gap' ? roleQuestion() : timingQuestion();
+      if (!v.questions.some(x => x.id === q.id)) s.addQuestions([q]);
+      const old = v.answers.filter(a => a.question_id === q.id).at(-1);
+      s.answer({ id: `answer-${next}`, question_id: q.id, text: command.text, replaces_answer_id: old?.id ?? null }); break;
     }
+    case 'correct': {
+      need(caseOf(s) === 'misread' && v.current_review && v.proposals.at(-1).items.find(i => i.id === 'approval').type === 'document_fact', 'CORRECTION_NOT_AVAILABLE');
+      return act(await act(s, { action: 'propose' }), { action: 'review' });
+    }
+    case 'update': return act(await act(s, { action: 'propose' }), { action: 'review' });
     case 'confirm': {
       need(command.acknowledged === true && typeof command.by === 'string' && command.by.trim() && command.by.length <= 100, 'ACKNOWLEDGEMENT_REQUIRED');
       need(gate(s).allowed, 'CONFIRMATION_BLOCKED');
@@ -74,13 +85,14 @@ function create(caseId, question, situation) {
 function describe(s) {
   const v = s.view(), p = v.proposals.at(-1), prev = v.proposals.at(-2);
   return { view: v, checksum: s.serialize().checksum, can_propose: canPropose(s), gate: gate(s), confirmation_text: confirmationText,
-    changes: p && prev ? p.items.filter(i => JSON.stringify(i) !== JSON.stringify(prev.items.find(x => x.id === i.id))).map(i => ({ before: prev.items.find(x => x.id === i.id)?.statement ?? 'Saknades', after: i.statement })) : [],
+    summary: Scenario.summary(p),
+    changes: p && prev ? Scenario.summary(p).flatMap(field => { const old = Scenario.summary(prev).find(x => x.id === field.id); return old?.text === field.text ? [] : [{ field: field.id, label: field.label, before: old?.text ?? 'Inte angivet', after: field.text }]; }) : [],
     technical: s.serialize() };
 }
 // Snapshot storage only. Session/2 owns all versions, history and validation.
 class Store {
   constructor(root) { this.root = path.resolve(root); fs.mkdirSync(this.root, { recursive: true, mode: 0o700 }); }
-  directory(id) { need(/^(unclear|clear)_[a-f0-9-]{36}$/.test(id), 'SESSION_ID'); return path.join(this.root, id); }
+  directory(id) { need(/^(unclear|clear|misread|gap)_[a-f0-9-]{36}$/.test(id), 'SESSION_ID'); return path.join(this.root, id); }
   versions(id) { return fs.readdirSync(this.directory(id)).filter(n => /^\d{6}\.json$/.test(n)).sort(); }
   load(id, snapshot) {
     const names = this.versions(id), name = snapshot ?? names.at(-1); need(names.includes(name), 'SNAPSHOT_NOT_FOUND');
@@ -90,9 +102,24 @@ class Store {
     const id = s.view().id, dir = this.directory(id); fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
     const snapshot = `${String(this.versions(id).length + 1).padStart(6, '0')}.json`; s.save(path.join(dir, snapshot)); return this.open(id);
   }
-  open(id, snapshot) { const saved = this.load(id, snapshot); return { ...describe(saved.session), id, snapshot: saved.snapshot, latest: saved.latest, snapshots: saved.snapshots }; }
+  open(id, snapshot) {
+    const saved = this.load(id, snapshot);
+    const labels = { register_source: 'Underlag sparat', submit_proposal: 'Förslag uppdaterat', receive_structured_review: 'Granskning sparad', answer: 'Komplettering sparad', disposition: 'Feltolkning hanterad', question_status: 'Okänd uppgift bevarad', add_questions: 'Fråga tillagd', handoff_structured: 'Underlag bekräftat' };
+    let previousCount = 0;
+    const history = saved.snapshots.map(name => {
+      const file = path.join(this.directory(id), name), at = fs.statSync(file).mtime.toISOString();
+      let log;
+      try { log = JSON.parse(fs.readFileSync(file, 'utf8')); need(Array.isArray(log.events), 'INVALID_HISTORY'); }
+      catch { return { snapshot: name, at, label: 'Skadad kopia – kan inte läsas' }; }
+      const added = log.events.slice(previousCount); previousCount = log.events.length;
+      const ops = added.map(e => e.op);
+      const label = !added.length ? 'Extra sparad kopia' : ops.includes('submit_proposal') && ops.includes('receive_structured_review') ? 'Förslag uppdaterat och granskat' : labels[added.at(-1).op] ?? 'Sessionssteg sparat';
+      return { snapshot: name, at, label };
+    });
+    return { ...describe(saved.session), id, snapshot: saved.snapshot, latest: saved.latest, snapshots: saved.snapshots, history };
+  }
   async dispatch(c) {
-    if (c.action === 'list') return { cases: Scenario.cases, answers: [Scenario.answer(2), Scenario.answer(3)], sessions: fs.readdirSync(this.root).filter(n => /^(unclear|clear)_[a-f0-9-]{36}$/.test(n)).map(id => {
+    if (c.action === 'list') return { cases: Scenario.cases.filter(c => !c.legacy), role_answers: Scenario.roleAnswers, answers: [Scenario.answer(2), Scenario.answer(3)], sessions: fs.readdirSync(this.root).filter(n => /^(unclear|clear|misread|gap)_[a-f0-9-]{36}$/.test(n)).map(id => {
       const { session, snapshot } = this.load(id), v = session.view(); return { id, snapshot, title: Scenario.cases.find(x => x.id === caseOf(session)).title, revision: v.proposals.at(-1)?.revision ?? 0 };
     }) };
     if (c.action === 'create') return this.save(create(c.case_id, c.question, c.situation));

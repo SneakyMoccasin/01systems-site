@@ -54,4 +54,56 @@ test('snapshots reopen exact session/2 archives and history; stale screens and t
   const file=path.join(dir,first.id,confirmed.snapshot),bad=JSON.parse(fs.readFileSync(file));delete bad.archives[Object.keys(bad.archives)[0]];
   fs.writeFileSync(file,JSON.stringify(bad));assert.throws(()=>store.open(first.id));
   assert.deepEqual(store.open(first.id,first.snapshot).technical,first.technical);
+  fs.writeFileSync(file,'broken JSON');
+  const older=store.open(first.id,first.snapshot);assert.deepEqual(older.technical,first.technical);
+  assert.equal(older.history.at(-1).label,'Skadad kopia – kan inte läsas');
+});
+test('system error is corrected explicitly without asking the customer or altering sources; diff uses visible named fields',async()=>{
+  let s=await reviewed('misread');const initial=s.view(),before=describe(s);
+  assert.equal(initial.questions.length,0);assert.equal(gate(s).allowed,false);
+  assert.equal(before.summary.find(f=>f.id==='time').text,'Godkänt dag 2');
+  s=await act(s,{action:'correct'});const v=s.view(),result=describe(s);
+  assert.deepEqual(v.sources,initial.sources);assert.equal(v.answers.length,0);assert.equal(v.questions.length,0);
+  assert.equal(v.proposals.length,2);assert.equal(v.reviews.length,2);assert.equal(gate(s).allowed,true);
+  assert.equal(v.reviews[0].result.findings.length,1);assert.equal(v.effective_dispositions[0].status,'resolved');
+  assert.deepEqual(result.changes.map(c=>c.field),['approval','time']);
+  assert.equal(result.changes.find(c=>c.field==='time').before,'Godkänt dag 2');
+  assert(!result.changes.some(c=>c.before==='Saknades'));
+  s=await act(s,{action:'confirm',by:'Testkund',acknowledged:true});
+  s=await act(s,{action:'answer',text:answer(3)});
+  assert.equal(s.view().statuses.review,'stale');assert.equal(s.view().statuses.confirmation,'stale');
+  s=await act(s,{action:'update'});
+  assert.equal(s.view().statuses.confirmation,'stale');assert.equal(gate(s).allowed,true);
+  assert.deepEqual(describe(s).changes.map(c=>c.field),['time']);
+  assert.deepEqual(describe(s).changes[0],{field:'time',label:'Tidpunkt',before:'Dag 2 är ett mål, ingen garanti',after:'Dag 3 är ett mål, ingen garanti'});
+});
+test('genuine gap: unknown stays unknown and blocks even after a new complete scripted review; explicit role can resolve it',async()=>{
+  const {roleAnswers}=require('./scenario.cjs');let s=await reviewed('gap');
+  assert.equal(s.view().questions[0].id,'approver');assert.equal(gate(s).allowed,false);
+  s=await act(s,{action:'answer',text:roleAnswers[2]});
+  assert.equal(s.view().statuses.review,'stale');assert.equal(gate(s).allowed,false);
+  s=await act(s,{action:'update'});
+  assert.equal(s.view().current_review!==null,true);assert.equal(s.view().statuses.review,'current');
+  assert.equal(s.view().proposals.at(-1).items.find(i=>i.id==='approver').value,null);
+  assert.equal(s.view().questions[0].status,'deferred');assert.equal(gate(s).allowed,false);
+  assert.deepEqual(describe(s).changes,[]); // new provenance, same customer-facing facts
+  await assert.rejects(()=>act(s,{action:'confirm',by:'Testkund',acknowledged:true}),/CONFIRMATION_BLOCKED/);
+  s=await act(s,{action:'answer',text:roleAnswers[0]});s=await act(s,{action:'update'});
+  assert.equal(gate(s).allowed,true);assert.equal(s.view().answers.length,2);
+  assert.equal(s.view().proposals.at(-1).items.find(i=>i.id==='approver').value,roleAnswers[0]);
+  assert.deepEqual(describe(s).changes.map(c=>c.field),['approver']);
+});
+test('named-field diff suppresses unchanged approval despite changed references',async()=>{
+  let s=await reviewed('clear');s=await act(s,{action:'answer',text:answer(3)});s=await act(s,{action:'update'});
+  assert.deepEqual(describe(s).changes.map(c=>c.field),['time']);
+});
+test('catalog hides original regression fixture, history labels and timestamps do not alter session/2',async t=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'ce3-ui-history-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+  const store=new Store(dir),s=await reviewed('gap'),first=store.save(s);
+  const list=await store.dispatch({action:'list'});assert.deepEqual(list.cases.map(c=>c.id).sort(),['clear','gap','misread']);
+  assert.equal(first.history[0].label,'Förslag uppdaterat och granskat');assert(Number.isFinite(Date.parse(first.history[0].at)));
+  const again=store.open(first.id);assert.deepEqual(again.technical,s.serialize());
+  const second=await store.dispatch({action:'save',id:first.id,snapshot:first.snapshot,checksum:first.checksum});
+  assert.equal(second.history.at(-1).label,'Extra sparad kopia');assert.equal(second.view.proposals.length,1);assert.equal(second.snapshots.length,2);
+  assert.equal(store.open(first.id,first.snapshot).latest,false);
 });

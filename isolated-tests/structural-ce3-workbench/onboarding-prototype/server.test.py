@@ -31,7 +31,7 @@ class OfflineRoutes(unittest.TestCase):
                     self.assertEqual(request('GET', route)[0], 200)
                 self.assertEqual(request('POST', '/api/onboarding', {'action': 'list'}, 'https://unrelated.invalid')[0], 403)
                 _, raw = request('POST', '/api/onboarding', {'action': 'list'})
-                self.assertEqual(len(json.loads(raw)['cases']), 2)
+                self.assertEqual(len(json.loads(raw)['cases']), 3)
                 _, raw = request('POST', '/api/onboarding', {'action': 'create', 'case_id': 'clear', 'question': 'Egen fråga', 'situation': 'Egen text'})
                 saved = json.loads(raw)
                 self.assertFalse(saved['can_propose'])
