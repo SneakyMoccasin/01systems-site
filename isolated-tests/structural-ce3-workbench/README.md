@@ -122,3 +122,9 @@ Jämförelsens kontrollbesked härleds över alla tillgängliga, fullständigt g
 Se [FACTORY-COMPARISON.md](FACTORY-COMPARISON.md) för den avgränsade jämförelsen av
 produktionsstart i Polen och svensk produktionsförmåga genom vecka 26, med separat
 scenario för uteblivet kundbesked. Körningarna använder samma frysta modell.
+
+## Flyttidpunkt med samma avsedda åtgärder
+
+[FACTORY-TIMING.md](FACTORY-TIMING.md) beskriver den separata jämförelsen av tidig
+flytt och senare flytt: verksamhetsmål, intervall, utbetalningar före godkända
+besked samt den uttryckligen deklarerade väntplanen vid uteblivet kundbesked.

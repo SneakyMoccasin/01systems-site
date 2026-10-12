@@ -12,6 +12,7 @@ from core.history import loads, encode, read_bundle
 from core.schema import InputError, PROFILE
 from onboarding import Onboarding
 from factory_plans import factory_comparison
+from factory_timing import timing_comparison
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -63,6 +64,8 @@ class Handler(BaseHTTPRequestHandler):
             if method == 'GET' and route == '/api/project':
                 p = store.get(query['id'], int(query['revision']) if 'revision' in query else None)
                 return self.send(dict(project=p, versions=[dict(revision=v['revision'], saved_at=v['saved_at'], name=v['name']) for v in [read_bundle(f) for f in store.versions(query['id'])]], runs=store.runs(query['id'])))
+            if method == 'GET' and route == '/api/factory-timing':
+                return self.send(timing_comparison(query.get('scenario', 'base')))
             if method == 'GET' and route == '/api/factory-plans':
                 return self.send(factory_comparison(query.get('scenario', 'base')))
             if method == 'GET' and route == '/api/example':
@@ -87,7 +90,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(store.run(data['project'], data['revision'], data['plan'], data.get('limits')))
             if method == 'POST' and route == '/api/import':
                 return self.send(store.import_project(loads(data['text'])))
-            files = {'/': 'index.html', '/app.js': 'app.js', '/presentation.js': 'presentation.js', '/comparison.js': 'comparison.js', '/factory-comparison.js': 'factory-comparison.js', '/style.css': 'style.css'}
+            files = {'/': 'index.html', '/app.js': 'app.js', '/presentation.js': 'presentation.js', '/comparison.js': 'comparison.js', '/factory-comparison.js': 'factory-comparison.js', '/factory-timing.js': 'factory-timing.js', '/style.css': 'style.css'}
             if method == 'GET' and route in files:
                 path = HERE / 'static' / files[route]
                 return self.send(path.read_bytes(), content_type=mimetypes.guess_type(str(path))[0] + '; charset=utf-8')
