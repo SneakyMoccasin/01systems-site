@@ -116,3 +116,9 @@ python3 -B verification/check_readable_results_invariance.py
 
 
 Jämförelsens kontrollbesked härleds över alla tillgängliga, fullständigt granskade händelseordningar. Variation visas vid berörda mått; tekniska detaljer skiljer den från mellanlägesskillnader. Orsakstabellen skiljer observerade villkorsövergångar från planens försök och genomförande. Se [bevarad orderkontroll och reproduktion](verification/order-audit-20261008/REPORT.md) och [UI-verifieringen](REPORT.md).
+
+## Två handlingsplaner för fabriken
+
+Se [FACTORY-COMPARISON.md](FACTORY-COMPARISON.md) för den avgränsade jämförelsen av
+produktionsstart i Polen och svensk produktionsförmåga genom vecka 26, med separat
+scenario för uteblivet kundbesked. Körningarna använder samma frysta modell.

@@ -59,6 +59,13 @@ for(const day of [2,3])test(`actual CE3 replay day ${day}: on-time/late, audit, 
   for(const result of next.execution.experiments[1].result.scenarios)for(const o of result.observations){
     assert.equal(o.started_by_day,false);assert.equal(o.actual_start,day+1);
     assert(o.trace.find(x=>x.action==='start'&&x.step===day).failures.some(f=>f.field==='test_done'));
+    const finish=o.trace.find(x=>x.action==='test_done'&&x.kind==='event_applied');
+    const retry=o.trace.find(x=>x.action==='start'&&x.step===day+1);
+    assert.equal(finish.step,day+1);assert.equal(retry.kind,'decision_executed');assert(finish.index<retry.index);
+    const {document}=parseHTML('<main id="content"></main>'),context=vm.createContext({document,view:next});
+    vm.runInContext(fs.readFileSync(path.join(__dirname,'static/app.js'),'utf8').split("document.addEventListener('click'")[0],context);
+    vm.runInContext('current=view;document.querySelector("#content").innerHTML=experimentView()',context);
+    assert.match(document.querySelector('#test-finish').lastElementChild.textContent,/efter första startförsöket, före det andra samma dag/);
   }
   const corrected=await command(store,next,'answer',{text:W.timingAnswers[1]});
   assert.equal(corrected.execution.availability.allowed,false);assert(corrected.execution.experiments.every(x=>!x.current));
