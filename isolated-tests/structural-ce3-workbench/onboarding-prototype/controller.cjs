@@ -5,6 +5,7 @@ const Archive = require('../onboarding-session/v2/archive.cjs');
 const { tapeFor } = require('../onboarding-sr/structured/test-tape.cjs');
 const { customerQuestion } = require('../onboarding-sr/structured/adapter.cjs');
 const Scenario = require('./scenario.cjs');
+const Execution = require('./execution.cjs');
 const need = (v, code) => { if (!v) throw Error(code); };
 const caseOf = s => s.view().id.split('_')[0];
 const confirmationText = 'Jag bekräftar att sammanfattningen återger vår situation och de antaganden vi vill använda.';
@@ -150,7 +151,8 @@ class Store {
       const label = !added.length ? 'Extra sparad kopia' : ops.includes('submit_proposal') && ops.includes('receive_structured_review') ? 'Förslag uppdaterat och granskat' : labels[added.at(-1).op] ?? 'Sessionssteg sparat';
       return { snapshot: name, at, label };
     });
-    return { ...describe(saved.session), id, snapshot: saved.snapshot, latest: saved.latest, snapshots: saved.snapshots, history };
+    return { ...describe(saved.session), id, snapshot: saved.snapshot, latest: saved.latest, snapshots: saved.snapshots, history,
+      execution: { availability: Execution.available(saved.session), experiments: Execution.list(this,id,saved.session,saved.latest) } };
   }
   async dispatch(c) {
     if (c.action === 'list') return { cases: Scenario.cases.filter(c => !c.legacy), role_answers: Scenario.roleAnswers, answers: [Scenario.answer(2), Scenario.answer(3)], sessions: fs.readdirSync(this.root).filter(n => /^(unclear|clear|misread|gap|warehouse|warehouseerror|warehousegap)_[a-f0-9-]{36}$/.test(n)).map(id => {
@@ -159,6 +161,8 @@ class Store {
     if (c.action === 'create') return this.save(create(c.case_id, c.question, c.situation));
     if (c.action === 'open') return this.open(c.id, c.snapshot);
     const old = this.load(c.id); need(c.snapshot === old.snapshot && c.checksum === old.session.serialize().checksum, 'STALE_SCREEN');
+    if(c.action==='prepare_experiment') {Execution.prepare(this,old.session,old.snapshot,c.finish_day);return this.open(c.id);}
+    if(c.action==='run_experiment') {need(c.acknowledged===true,'ACKNOWLEDGEMENT_REQUIRED');Execution.run(this,old.session,c.experiment);return this.open(c.id);}
     return this.save(await act(old.session, c));
   }
 }

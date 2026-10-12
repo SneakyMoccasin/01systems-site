@@ -1,6 +1,6 @@
 # Kunddialog · isolerad offlineprototyp
 
-Förbättrad från faktisk HEAD `14eff09ce5152140316c6aaa629d266f38ca43e4`.
+Förbättrad från faktisk HEAD `8b36285`.
 Öppna **http://127.0.0.1:8876/onboarding** i den lokala arbetsvyn.
 Länken ”Prova onboarding · offline” finns även i arbetsvyns sidhuvud.
 
@@ -17,7 +17,8 @@ Servern binder bara till 127.0.0.1. Kör en arbetsvyprocess per datakatalog.
 Syftet visas först: kontrollera uppgifter inför en analys av vad som måste
 ske först och vad som kan hindra planen. Nu granskar kunden beskrivningen;
 sedan behöver underlaget översättas till en modell och kontrolleras.
-Allt är syntetiskt och förskrivet. Egen fritext sparas utan tolkning.
+Underlaget är syntetiskt; modellförslag och SR-svar är förskrivna. Egen fritext
+sparas utan tolkning. Det valfria körprovet efter bekräftelsen använder faktisk CE3-kod.
 
 Tre nya fall i `warehouse.cjs` handlar om att börja använda ett nytt
 lagerdatasystem:
@@ -38,8 +39,9 @@ Sammanfattningen visar **Ni vill**, **Först måste**, **Önskad start**,
 Ingen kostnad, utfört prov, faktisk start eller lämnat klartecken fylls i.
 Kundbekräftelsen gäller beskrivningen; den är **inte beställarens klartecken**.
 
-Efter bekräftelsen visas bara att beskrivningen stämmer, att underlaget
-sparats, att ingen analys körts och ett kort nästa steg. Den bekräftade
+Efter bekräftelsen visas att beskrivningen stämmer och att underlaget sparats.
+**Prova två testplaner i CE3** öppnar det nya, avgränsade körprovet. Ingen
+körning görs automatiskt av kundbekräftelsen. Den bekräftade
 sammanfattningen finns i utfällningen. Analysfrågan visas där en gång från
 `proposal.analysis.question`; den tidigare separata frågelistan är borttagen.
 Kundbekräftelse är fortfarande inte beställarens klartecken till driftstart.
@@ -97,7 +99,8 @@ visas före kundens bekräftelse; inget datum sätts. Det accepterar begränsnin
 för **beskrivningen**, inte en körbar modell eller ett svar om dag 2.
 Inför eventuell analys måste konkreta fasta tidsantaganden (även för provet),
 utfall, initialt läge och övriga körindata anges och kontrolleras separat.
-Detta är ett kvarstående steg, inte något demonstrationen redan har utfört.
+Det separata steget **Välj testförutsättningar** gör nu detta för just de
+förskrivna lagerfallen. Se [översättning, spårbarhet och faktiskt körresultat](EXECUTION.md).
 
 ## Presentation och bevarad sessionslogik
 
@@ -151,8 +154,8 @@ session/2. Flytt/kopiering av filer kan påverka den visade spartiden.
 Node-processen får endast PATH, inga API-credentials, och blockerar utgående
 fetch/HTTP/HTTPS/net. Ingen livetransport importeras. Loopback-, Host-, Origin-
 och CSP-skydd återanvänds. Inga externa resurser eller typsnitt laddas.
-Filuppladdning, filtolkning, kompilering, profilvalidering och CE3-körning ingår
-inte. SR, motor och befintliga modeller/resultat är oförändrade. Liveprovet är pausat.
+Filuppladdning och filtolkning ingår inte. Deterministisk översättning,
+profilvalidering och faktisk CE3-körning ingår endast för lagerexemplets två testplaner. SR, motor och befintliga modeller/resultat är oförändrade. Liveprovet är pausat.
 
 ## Verifiering 2026-10-12
 
@@ -160,16 +163,23 @@ inte. SR, motor och befintliga modeller/resultat är oförändrade. Liveprovet �
 node --test isolated-tests/structural-ce3-workbench/onboarding-prototype/controller.test.cjs isolated-tests/structural-ce3-workbench/onboarding-session/v2/session.test.cjs
 node --test isolated-tests/structural-ce3-workbench/contracts/onboarding-v1/contract.test.cjs isolated-tests/structural-ce3-workbench/onboarding-sr/structured/adapter.test.cjs
 python3 -B isolated-tests/structural-ce3-workbench/onboarding-prototype/server.test.py
+node --test isolated-tests/structural-ce3-workbench/onboarding-prototype/execution.test.cjs
+python3 -B -m unittest discover -s isolated-tests/structural-ce3-replay/verification -p 'test_*.py' -v
+python3 -B -m unittest discover -s isolated-tests/structural-ce3-workbench/verification -p 'test_workbench.py' -v
 node --check isolated-tests/structural-ce3-workbench/onboarding-prototype/static/app.js
 ```
 
 - 39 prototyp-/sessionstester: 14 prototyptester och 25 session/2-regressioner.
 - 60 kontrakts-/adaptertester, inklusive SR-kodpinne och frysta fall.
 - Ett lokalt HTTP-test för rutter, lagring/återöppning, Origin och sökvägsskydd.
-- Webbläsare i detta pass: båda analysdagsvalen på bred och smal vy (390 px),
-  separat ändringslista, kort slutsida med en analysfråga i utfällningen,
-  återgång utan sparning, inaktuell tidigare bekräftelse och återöppning.
-  Tidigare falls kontrollflöden omfattas av regressionerna. Ingen horisontell overflow. Testsessioner ligger kvar lokalt; välj **Nytt demofall**.
+- Fyra nya integrationstester med 12 faktiska motorplaner, plus DOM-kontroller av
+  resultattexterna mot körspåren, båda analysdagarna och klarteckenreglerna,
+  sent funktionsprov, ogiltiga/inaktuella bekräftelser och historiska resultat.
+- 27 befintliga motortester och 14 arbetsvystester, inklusive validering,
+  separat audit, sparning, återöppning, partiella körningar och skadade historiker.
+- Webbläsare: förberedelse, granskning av testantaganden, faktisk körning,
+  ändrade testförutsättningar, återöppning och historiska resultat. Bred vy
+  och smal vy (390 px). Testsessioner ligger kvar lokalt; välj **Nytt demofall**.
 
 **Noll externa AI-anrop, noll kostnad, inga installationer eller publiceringar.**
 Nästa steg är Christians bedömning av kundspråket och dialogen. Ingen live-AI

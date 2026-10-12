@@ -12,3 +12,5 @@ main{max-width:900px;margin:auto;padding:26px 28px 20px}.heading{display:flex;al
 .ongoing .heading p:not(.eyebrow){display:block;font-size:13px;margin:7px 0 0}.ongoing .heading{align-items:flex-start}
 
 .confirmed .purpose{display:none}
+
+.run-result{border-left:3px solid #b9cbbb;padding:8px 14px;margin:12px 0;background:#f6f8f2}.run-result h3{margin:0 0 5px}.run-result p{margin:5px 0}

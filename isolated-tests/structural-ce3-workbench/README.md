@@ -15,7 +15,9 @@ python3 -B isolated-tests/structural-ce3-workbench/server.py --port 8876
 En separat [offlineprototyp för kundens onboarding](onboarding-prototype/README.md)
 finns på **http://127.0.0.1:8876/onboarding**. Den använder session/2 och
 förskrivna modell-/SR-svar, med komplettering, versionsbunden bekräftelse och
-lokal återöppning. Ingen AI, modellkompilering eller motorkörning ingår där.
+lokal återöppning. Efter bekräftelsen kan det syntetiska lagerexemplet
+översättas deterministiskt, valideras och köras genom samma CE3-kärna med
+separata testförutsättningar. AI-/SR-svaren är fortfarande förskrivna.
 
 Standardlagring: `isolated-tests/structural-ce3-workbench/local-data/` på den lokala Macen. Katalogen är git-ignorerad. En alternativ lokal katalog kan anges med `--data /absolut/sökväg`. Servern vägrar placera data i andra delar av detta repository.
 
