@@ -1,5 +1,6 @@
 'use strict';
 // Explicit demonstration data. No text interpretation or model calls.
+const Warehouse = require('./warehouse.cjs');
 const C = require('../contracts/onboarding-v1/contract.cjs');
 const { ref } = require('../onboarding-session/manual-example.cjs');
 const question = 'Vad krävs innan vi får starta driften?';
@@ -41,6 +42,7 @@ cases.push({ id: 'gap', title: 'En uppgift saknas', description: 'Vem lämnar go
   situation: `Vi planerar ett funktionsprov. Driftstart kräver ett godkännande. Vem som lämnar beskedet är inte bestämt. Dag 2 är ett mål. ${limit}` });
 const roleAnswers = ['Driftledaren lämnar godkännandet.', 'Beställaren lämnar godkännandet.', 'Vet inte ännu.'];
 function proposal(view, caseId) {
+  if (caseId.startsWith('warehouse')) return Warehouse.proposal(view, caseId);
   if (['unclear', 'clear'].includes(caseId)) return legacyProposal(view, caseId);
   const fixture = cases.find(c => c.id === caseId), brief = view.sources.find(s => s.id === 'situation'), goal = view.sources.find(s => s.id === 'question');
   if (!fixture || brief.content !== fixture.situation || goal.content !== fixture.question) throw Error('UNSCRIPTED_INPUT');
@@ -65,6 +67,7 @@ function proposal(view, caseId) {
 // Named customer-facing fields are shared by summary and semantic comparison.
 function summary(p) {
   if (!p) return [];
+  if (p.id === 'warehouse-demo') return Warehouse.summary(p);
   const get = id => p.items.find(i => i.id === id);
   return [
     { id: 'plan', label: 'Plan', text: get('plan').statement },
@@ -74,4 +77,6 @@ function summary(p) {
     ...(get('approver') ? [{ id: 'approver', label: 'Vem lämnar beskedet?', text: get('approver').statement }] : []),
   ];
 }
-module.exports = { cases, answer, roleAnswers, proposal, summary };
+cases.forEach(c => { c.legacy = true; });
+cases.push(...Warehouse.cases);
+module.exports = { cases, answer, roleAnswers, proposal, summary, Warehouse };

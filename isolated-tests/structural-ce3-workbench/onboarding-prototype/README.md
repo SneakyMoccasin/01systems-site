@@ -1,6 +1,6 @@
 # Kunddialog · isolerad offlineprototyp
 
-Förbättrad från faktisk HEAD `bd76ef6631ebb5eb0d54494c2bb38f238301715c`.
+Förbättrad från faktisk HEAD `28a697fb423e221a570ad5f3df9143a60be24590`.
 Öppna **http://127.0.0.1:8876/onboarding** i den lokala arbetsvyn.
 Länken ”Prova onboarding · offline” finns även i arbetsvyns sidhuvud.
 
@@ -14,49 +14,79 @@ Servern binder bara till 127.0.0.1. Kör en arbetsvyprocess per datakatalog.
 ## Prova kundflödet
 
 **Beskriv → Kontrollera → Komplettera vid behov → Bekräfta.**
-En aktuell uppgift visas åt gången. Introduktionen förklarar syftet före
-start; under pågående flöde blir sidhuvudet kompakt. Allt är syntetiskt och
-förskrivet. Egen fritext sparas men tolkas inte automatiskt.
+Syftet visas först: kontrollera uppgifter inför en analys av vad som måste
+ske först och vad som kan hindra planen. Nu granskar kunden beskrivningen;
+sedan behöver underlaget översättas till en modell och kontrolleras.
+Allt är syntetiskt och förskrivet. Egen fritext sparas utan tolkning.
 
-- **Tydligt underlag:** visa sammanfattningen, kontrollera den och gå direkt
-  till bekräftelse. Inga kompletteringsfrågor behövs.
-- **Rätta en feltolkning:** originalet säger ”Förhoppningsvis klart dag 2”.
-  Det första förslaget gör fel när det anger ”Godkänt dag 2”. Den förskrivna
-  SR-granskningen pekar ut felet. **Visa rättat förslag** tillför uttryckligen
-  version 2 och en ny granskning, utan kundfråga eller ändrat originalunderlag.
-  SR skriver inte om modellen. Äldre fynd och deras uttryckliga hantering bevaras.
-- **En uppgift saknas:** separat syntetiskt underlag lämnar öppet vem som ska
-  ge godkännandet. Frågan förklarar varför rollen behövs. Välj driftledaren,
-  beställaren eller **Vet inte ännu**. Det sista svaret lämnar modellfältet
-  `unknown` med `null` som värde; frågan skjuts upp och bekräftelse förblir
-  blockerad även efter ny fullständig förskriven granskning. Ett senare
-  uttryckligt svar kan föras in i ett nytt förslag och granskas.
-- Efter bekräftelse: välj **Rätta en uppgift**, exempelvis dag 3 i de två
-  tidsmålsfallen. Tidigare granskning och bekräftelse blir inaktuella. Svaret
-  sparas först; ett separat nytt förslag och en ny granskning följer. Den gamla
-  bekräftelsen uppfyller inte grinden för den nya versionen.
-- Öppna **Historik och sparade kopior**. Återöppna en kopia eller ladda om
-  sidan. Äldre kopior är tydligt historiska och skrivskyddade. Förslagsversion
-  och sparad kopia är olika begrepp. En extra kopia skapar ingen modellversion.
+Tre nya fall i `warehouse.cjs` handlar om att börja använda ett nytt
+lagerdatasystem:
 
-Bekräftelsen gäller sammanfattningen och valda antaganden inför analysen,
-inte ett verksamhetsbeslut, SR:s kvalitet eller en resultatgaranti. Analysfråga,
-omfattning och okända kostnader/godkännandetider visas vid bekräftelsen.
-Sluttexten anger att underlaget är bekräftat och sparat och att ingen analys
-har körts. Kostnad och faktisk tid ligger utanför dessa falls analysomfattning.
+- **Tydligt underlag:** funktionsprovet behöver genomföras och beställaren
+  lämna separat klartecken. Önskad start är dag 2; klartecknets tid är okänd.
+  Kontrollera sammanfattningen och gå direkt till bekräftelse, utan frågor.
+- **Feltolkning i förslaget:** samma originalunderlag. Första förslaget anger
+  felaktigt ”Godkänt dag 2”. Visa rättat förslag: en uttrycklig ny version och
+  ny förskriven granskning, utan kundfråga eller ändrat originalunderlag.
+- **Ett startvillkor är oklart:** separat originalunderlag säger inte om
+  klartecken krävs före start. Ja/nej ändrar den uttryckliga beroenderegeln.
+  **Vet inte ännu** bevarar regeln som `unknown`/`null`, skjuter upp frågan
+  och blockerar bekräftelse. Ingen generell blockeringsregel ändras.
+
+Sammanfattningen visar **Ni vill**, **Först måste**, **Önskad start**,
+**Fortfarande okänt** och **Analysen ska undersöka**, från aktuellt förslag.
+Ingen kostnad, utfört prov, faktisk start eller lämnat klartecken fylls i.
+Kundbekräftelsen gäller beskrivningen; den är **inte beställarens klartecken**.
+
+Efter bekräftelsen visas att underlaget sparats och att ingen analys körts.
+Nästa steg förklaras tillsammans med frågorna om startvillkor, dag 2 och
+senare klartecken. Inga resultat eller ”Kör analys”-knapp finns.
+
+Prova också **Rätta en uppgift** efter bekräftelse, till exempel önskad start
+dag 3. Ändringslistan visar endast tidsmålet. Den ursprungliga analysfrågan
+om dag 2 bevaras; kundens svar ändrar inte andra uppgifter implicit. Tidigare
+bekräftelse blir inaktuell. Ny granskning ersätter inte behovet av ny bekräftelse.
+Öppna **Historik och sparade kopior** för att återöppna exakt version eller
+läsa en äldre, skrivskyddad kopia. Extra sparning skapar ingen modellversion.
+
+## Varför den gamla luckan blockerade
+
+Det äldre `gap`-fallet lade godkännandeansvarig som ett **aktivt okänt
+modellfält** och en blockerande fråga. `contract.cjs` kräver alla aktiva
+fält kända (`UNRESOLVED_ITEM`) och inga öppna blockerande frågor inför
+överlämning. Det är ett kontraktskrav givet den modelleringen, **inte ett
+krav på personnamn eller bevis att namn behövs för en analys**. Gamla
+sessioner och blockeringsregler bevaras; deras presentationsförklaring
+förtydligas. Nya lagerfall frågar i stället om ett faktiskt startvillkor.
+
+## Modellprofil och kvarstående gräns
+
+[fixed-replay/0.1](../../structural-ce3-replay/FORMAT.md) kan representera
+deklarerade förvillkor, genomfört prov, externt klartecken och fasta
+händelsetider/utfallsbindningar. Den kan inte förutsäga klartecknets tid eller
+simulera sannolikheter eller resursbeläggning. Inga sådana funktioner läggs till.
+`depends_on` i onboardingförslaget är spårbarhet, inte ett kompilerat CE3-villkor.
+
+Okänd klarteckentid lagras som en uttrycklig `scope_limit` med
+`limits_conclusion`/`accepted_limit`, kopplad till klarteckensregeln. Den
+visas före kundens bekräftelse; inget datum sätts. Det accepterar begränsningen
+för **beskrivningen**, inte en körbar modell eller ett svar om dag 2.
+Inför eventuell analys måste konkreta fasta tidsantaganden (även för provet),
+utfall, initialt läge och övriga körindata anges och kontrolleras separat.
+Detta är ett kvarstående steg, inte något demonstrationen redan har utfört.
 
 ## Presentation och bevarad sessionslogik
 
-`scenario.cjs` behåller det ursprungliga `unclear`-fallet och dess äldre
-svarsväg för regression och redan sparade sessioner. Det erbjuds inte för
-nya kunddemonstrationer. `misread` återanvänder samma originaltext men rättar
-systemfelet utan att lägga ansvaret på kunden. `clear` är oförändrat.
-Det nya `gap`-fallet är separat. De frysta c3-r1-/clear-filerna och deras
+`scenario.cjs` behåller `unclear`, `clear`, `misread` och `gap` samt deras
+förslags-/svarsvägar för regression och sparade sessioner. De visas som äldre
+demoflöden och erbjuds inte för nya sessioner i kundvyn. `warehouse.cjs`
+tillför tre separata syntetiska fall. De frysta c3-r1-/clear-filerna och deras
 resultat i SR-utvärderingen är orörda.
 
 Sammanfattning och ändringslista använder samma namngivna sakfält och jämför
-senaste och föregående förslaget. Tidpunkten i första utkastet är därför
-”Godkänt dag 2”, inte ”Saknades”. Ändrade källreferenser utan ändrad saktext
+senaste och föregående förslaget. Det äldre utkastets synliga tidpunkt jämförs därför med
+”Godkänt dag 2”, inte ”Saknades”. Lagerfallets feltolkning syns i startvillkoret;
+dess tidsmål är fortfarande dag 2 före och efter rättelsen. Ändrade källreferenser utan ändrad saktext
 visas inte som kundändring. Fullständiga modellobjekt, källreferenser,
 versionskedjor och granskningsarkiv finns under **Tekniska detaljer**.
 
@@ -109,13 +139,13 @@ python3 -B isolated-tests/structural-ce3-workbench/onboarding-prototype/server.t
 node --check isolated-tests/structural-ce3-workbench/onboarding-prototype/static/app.js
 ```
 
-- 33 prototyp-/sessionstester: åtta prototyptester och 25 session/2-regressioner.
+- 36 prototyp-/sessionstester: elva prototyptester och 25 session/2-regressioner.
 - 60 kontrakts-/adaptertester, inklusive SR-kodpinne och frysta fall.
 - Ett lokalt HTTP-test för rutter, lagring/återöppning, Origin och sökvägsskydd.
 - Webbläsare: tydligt fall utan frågor; systemfeltolkning och rättelse;
   verklig lucka med okänt och känt svar; korrekt ändringslista; rättelse efter
   bekräftelse; omladdning, sparning och historisk skrivskyddad version.
-  Bekräftelse med Tab, mellanslag och Enter. Bred och smal vy (390 px), utan
+  Tangentbord stöds med vanliga knappar och formulär (även verifierat i föregående pass). Bred och smal vy (390 px), utan
   horisontell overflow. Testsessioner ligger kvar lokalt; välj **Nytt demofall**.
 
 **Noll externa AI-anrop, noll kostnad, inga installationer eller publiceringar.**

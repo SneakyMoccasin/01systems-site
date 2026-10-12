@@ -7,3 +7,8 @@ main{max-width:900px;margin:auto;padding:26px 28px 20px}.heading{display:flex;al
 /* The purpose is introduced first; later steps keep the current task close to the top. */
 .ongoing .heading p{display:none}.ongoing h1{font-size:25px}.ongoing .heading{align-items:center;flex-wrap:nowrap;margin-bottom:5px}.ongoing .heading button{font-size:12px;padding:8px 10px}
 @media(max-width:620px){.ongoing h1{font-size:21px;margin:0}.ongoing .heading{gap:10px}.ongoing main{padding-top:16px}}
+
+.purpose{border-left:3px solid #b9cbbb;padding:0 12px;margin:12px 0}.purpose p{font-size:13px;margin:4px 0}.story>div{display:block;border:0;padding:7px 0}.story dt,.story dd{display:inline;font-size:15px;line-height:1.6}.story dt::after{content:': ';}.next-questions{padding-left:21px;color:var(--muted);font-size:14px;line-height:1.7}
+.ongoing .heading p:not(.eyebrow){display:block;font-size:13px;margin:7px 0 0}.ongoing .heading{align-items:flex-start}
+
+.confirmed .purpose{display:none}

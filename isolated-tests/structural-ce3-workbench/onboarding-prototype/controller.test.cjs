@@ -100,10 +100,54 @@ test('named-field diff suppresses unchanged approval despite changed references'
 test('catalog hides original regression fixture, history labels and timestamps do not alter session/2',async t=>{
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'ce3-ui-history-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
   const store=new Store(dir),s=await reviewed('gap'),first=store.save(s);
-  const list=await store.dispatch({action:'list'});assert.deepEqual(list.cases.map(c=>c.id).sort(),['clear','gap','misread']);
+  const list=await store.dispatch({action:'list'});assert.deepEqual(list.cases.map(c=>c.id).sort(),['warehouse','warehouseerror','warehousegap']);
   assert.equal(first.history[0].label,'Förslag uppdaterat och granskat');assert(Number.isFinite(Date.parse(first.history[0].at)));
   const again=store.open(first.id);assert.deepEqual(again.technical,s.serialize());
   const second=await store.dispatch({action:'save',id:first.id,snapshot:first.snapshot,checksum:first.checksum});
   assert.equal(second.history.at(-1).label,'Extra sparad kopia');assert.equal(second.view.proposals.length,1);assert.equal(second.snapshots.length,2);
   assert.equal(store.open(first.id,first.snapshot).latest,false);
+});
+test('warehouse description is source-bound, has no name question, and only confirms input; later correction preserves history',async t=>{
+  let s=await reviewed('warehouse'),v=s.view();
+  assert.equal(v.questions.length,0);assert.equal(gate(s).allowed,true);
+  assert.deepEqual(describe(s).summary.map(f=>f.label),['Ni vill','Först måste','Önskad start','Fortfarande okänt','Analysen ska undersöka']);
+  assert.equal(describe(s).summary.find(f=>f.id==='condition').text,'funktionsprovet genomföras och beställaren lämna klartecken.');
+  assert.equal(describe(s).summary.find(f=>f.id==='unknown').text,'när klartecknet kommer.');
+  assert.equal(v.proposals.at(-1).items.some(i=>i.id==='approver'),false);
+  assert.equal(v.proposals.at(-1).gaps[0].status,'accepted_limit');
+  s=await act(s,{action:'confirm',by:'Testkund',acknowledged:true});const confirmed=s.serialize();
+  assert.equal(s.view().transfers_v2[0].ce3_run_status,'not_run');
+  s=await act(s,{action:'answer',text:require('./warehouse.cjs').timingAnswers[1]});
+  assert.equal(s.view().statuses.confirmation,'stale');assert.equal(s.view().statuses.review,'stale');
+  s=await act(s,{action:'update'});assert.equal(gate(s).allowed,true);assert.equal(s.view().statuses.confirmation,'stale');
+  assert.deepEqual(describe(s).changes,[{field:'time',label:'Önskad start',before:'dag 2.',after:'dag 3.'}]);
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'ce3-warehouse-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+  const store=new Store(dir),old=store.save(Session.restore(confirmed)),latest=store.save(s);
+  assert.deepEqual(store.open(latest.id).technical,s.serialize());assert.equal(store.open(old.id,old.snapshot).latest,false);
+  assert.equal(store.open(old.id,old.snapshot).view.statuses.confirmation,'confirmed');
+});
+test('warehouse system error requires explicit correction without changing evidence or creating a customer question',async()=>{
+  let s=await reviewed('warehouseerror');const before=s.view();
+  assert.equal(gate(s).allowed,false);assert.equal(before.questions.length,0);
+  s=await act(s,{action:'correct'});assert.deepEqual(s.view().sources,before.sources);
+  assert.equal(s.view().reviews.length,2);assert.equal(s.view().questions.length,0);assert.equal(gate(s).allowed,true);
+  assert.deepEqual(describe(s).changes.map(f=>f.field),['condition']);
+  assert.match(describe(s).changes[0].before,/Godkänt dag 2/);
+  assert(!describe(s).changes[0].after.includes('Godkänt dag 2'));
+});
+test('warehouse condition gap: unknown blocks, yes/no explicitly change the start requirement without invented timing',async()=>{
+  const {conditionAnswers}=require('./warehouse.cjs');
+  let s=await reviewed('warehousegap');assert.equal(gate(s).allowed,false);
+  assert.equal(s.view().questions[0].target_ids[0],'approval');
+  s=await act(s,{action:'answer',text:conditionAnswers[2]});s=await act(s,{action:'update'});
+  assert.equal(gate(s).allowed,false);assert.equal(s.view().questions[0].status,'deferred');
+  assert.equal(s.view().proposals.at(-1).items.find(i=>i.id==='approval').value,null);
+  assert.deepEqual(describe(s).changes,[]);
+  for(const [index,required] of [[0,true],[1,false]]) {
+    s=await act(s,{action:'answer',text:conditionAnswers[index]});s=await act(s,{action:'update'});
+    assert.equal(gate(s).allowed,true);
+    assert.equal(s.view().proposals.at(-1).items.find(i=>i.id==='approval').value,required);
+    assert.deepEqual(describe(s).changes.map(f=>f.field),['condition']);
+    assert.equal(describe(s).summary.find(f=>f.id==='unknown').text,'när klartecknet kommer.');
+  }
 });

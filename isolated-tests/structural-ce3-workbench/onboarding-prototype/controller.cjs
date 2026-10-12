@@ -23,7 +23,7 @@ function gate(session) {
 }
 function canPropose(session) {
   const v = session.view();
-  if (v.proposals.length && !v.statuses.pending_evidence && !(caseOf(session) === 'misread' && v.proposals.at(-1).items.find(i => i.id === 'approval').type === 'document_fact' && v.current_review)) return false;
+  if (v.proposals.length && !v.statuses.pending_evidence && !(['misread', 'warehouseerror'].includes(caseOf(session)) && v.proposals.at(-1).items.find(i => i.id === 'approval').type === 'document_fact' && v.current_review)) return false;
   try { Scenario.proposal(v, caseOf(session)); return true; } catch { return false; }
 }
 function timingQuestion() {
@@ -31,6 +31,16 @@ function timingQuestion() {
 }
 function roleQuestion() {
   return { ...timingQuestion(), id: 'approver', equivalence_key: 'approver', text: 'Vem ska lämna godkännandet före driftstart?', reasons: ['Analysen behöver veta vems besked som uppfyller startvillkoret. Utan den uppgiften går det inte att bekräfta underlaget.'], target_ids: ['approver'], origins: [{ actor: 'ai', ref_id: 'approver' }] };
+}
+function questionFor(id) {
+  if (id === 'warehousegap') return { ...timingQuestion(), id: 'start-condition', equivalence_key: 'start-condition', text: 'Måste beställarens klartecken komma innan ni börjar använda systemet?', reasons: ['Svaret avgör om klartecken ska vara ett villkor för starten. ”Vet inte ännu” lämnar villkoret öppet; då kan underlaget inte bekräftas ännu.'], target_ids: ['approval'] };
+  if (id.startsWith('warehouse')) return { ...timingQuestion(), text: 'Vilken startdag vill ni använda som mål?', reasons: ['Tidsmålet ändras, men beställarens klartecken är fortfarande ett separat besked.'], target_ids: ['target-day'], origins: [{ actor: 'ai', ref_id: 'target-day' }] };
+  return id === 'gap' ? roleQuestion() : timingQuestion();
+}
+function answersFor(id) {
+  if (id === 'warehousegap') return Scenario.Warehouse.conditionAnswers;
+  if (id.startsWith('warehouse')) return Scenario.Warehouse.timingAnswers;
+  return id === 'gap' ? Scenario.roleAnswers : [Scenario.answer(2), Scenario.answer(3)];
 }
 async function act(session, command) {
   // All mutations operate on an isolated clone and publish only on success.
@@ -48,6 +58,11 @@ async function act(session, command) {
       }
       if (caseOf(s) === 'gap' && !v.questions.some(q => q.id === 'approver')) s.addQuestions([roleQuestion()]);
       if (caseOf(s) === 'gap' && v.proposals.at(-1).items.find(i => i.id === 'approver').status === 'unknown' && v.answers.length) s.setQuestionStatus({ id: 'approver', status: 'deferred', reason: 'Kunden vet inte ännu. Godkännandeansvarig är fortsatt okänd och blockerar underlaget.' });
+      if (caseOf(s) === 'warehousegap') {
+        const q = questionFor(caseOf(s));
+        if (!v.questions.some(x => x.id === q.id)) s.addQuestions([q]);
+        if (v.answers.length && v.proposals.at(-1).items.find(i => i.id === 'approval').status === 'unknown') s.setQuestionStatus({ id: q.id, status: 'deferred', reason: 'Vet inte ännu: startvillkoret förblir okänt.' });
+      }
       if (!bad) for (const r of v.reviews) for (const f of r.result.findings) {
         s.handleFinding({ review_id: r.id, finding_id: f.id, status: 'resolved', reason: 'Förskriven hantering: nytt uttryckligt förslag håller tidsmål och kontrollvillkor isär; ny strukturerad granskning täcker uppgiften.', by: 'Demonstrationsgranskare (förskrivet)' });
       }
@@ -55,13 +70,13 @@ async function act(session, command) {
     }
     case 'answer': {
       need(v.proposals.length && typeof command.text === 'string' && command.text.trim() && command.text.length <= 5000, 'ANSWER_REQUIRED');
-      const q = caseOf(s) === 'gap' ? roleQuestion() : timingQuestion();
+      const q = questionFor(caseOf(s));
       if (!v.questions.some(x => x.id === q.id)) s.addQuestions([q]);
       const old = v.answers.filter(a => a.question_id === q.id).at(-1);
       s.answer({ id: `answer-${next}`, question_id: q.id, text: command.text, replaces_answer_id: old?.id ?? null }); break;
     }
     case 'correct': {
-      need(caseOf(s) === 'misread' && v.current_review && v.proposals.at(-1).items.find(i => i.id === 'approval').type === 'document_fact', 'CORRECTION_NOT_AVAILABLE');
+      need(['misread', 'warehouseerror'].includes(caseOf(s)) && v.current_review && v.proposals.at(-1).items.find(i => i.id === 'approval').type === 'document_fact', 'CORRECTION_NOT_AVAILABLE');
       return act(await act(s, { action: 'propose' }), { action: 'review' });
     }
     case 'update': return act(await act(s, { action: 'propose' }), { action: 'review' });
@@ -85,6 +100,7 @@ function create(caseId, question, situation) {
 function describe(s) {
   const v = s.view(), p = v.proposals.at(-1), prev = v.proposals.at(-2);
   return { view: v, checksum: s.serialize().checksum, can_propose: canPropose(s), gate: gate(s), confirmation_text: confirmationText,
+    case_id: caseOf(s), legacy: !caseOf(s).startsWith('warehouse'), answer_options: answersFor(caseOf(s)), question_template: questionFor(caseOf(s)),
     summary: Scenario.summary(p),
     changes: p && prev ? Scenario.summary(p).flatMap(field => { const old = Scenario.summary(prev).find(x => x.id === field.id); return old?.text === field.text ? [] : [{ field: field.id, label: field.label, before: old?.text ?? 'Inte angivet', after: field.text }]; }) : [],
     technical: s.serialize() };
@@ -92,7 +108,7 @@ function describe(s) {
 // Snapshot storage only. Session/2 owns all versions, history and validation.
 class Store {
   constructor(root) { this.root = path.resolve(root); fs.mkdirSync(this.root, { recursive: true, mode: 0o700 }); }
-  directory(id) { need(/^(unclear|clear|misread|gap)_[a-f0-9-]{36}$/.test(id), 'SESSION_ID'); return path.join(this.root, id); }
+  directory(id) { need(/^(unclear|clear|misread|gap|warehouse|warehouseerror|warehousegap)_[a-f0-9-]{36}$/.test(id), 'SESSION_ID'); return path.join(this.root, id); }
   versions(id) { return fs.readdirSync(this.directory(id)).filter(n => /^\d{6}\.json$/.test(n)).sort(); }
   load(id, snapshot) {
     const names = this.versions(id), name = snapshot ?? names.at(-1); need(names.includes(name), 'SNAPSHOT_NOT_FOUND');
@@ -119,7 +135,7 @@ class Store {
     return { ...describe(saved.session), id, snapshot: saved.snapshot, latest: saved.latest, snapshots: saved.snapshots, history };
   }
   async dispatch(c) {
-    if (c.action === 'list') return { cases: Scenario.cases.filter(c => !c.legacy), role_answers: Scenario.roleAnswers, answers: [Scenario.answer(2), Scenario.answer(3)], sessions: fs.readdirSync(this.root).filter(n => /^(unclear|clear|misread|gap)_[a-f0-9-]{36}$/.test(n)).map(id => {
+    if (c.action === 'list') return { cases: Scenario.cases.filter(c => !c.legacy), role_answers: Scenario.roleAnswers, answers: [Scenario.answer(2), Scenario.answer(3)], sessions: fs.readdirSync(this.root).filter(n => /^(unclear|clear|misread|gap|warehouse|warehouseerror|warehousegap)_[a-f0-9-]{36}$/.test(n)).map(id => {
       const { session, snapshot } = this.load(id), v = session.view(); return { id, snapshot, title: Scenario.cases.find(x => x.id === caseOf(session)).title, revision: v.proposals.at(-1)?.revision ?? 0 };
     }) };
     if (c.action === 'create') return this.save(create(c.case_id, c.question, c.situation));
