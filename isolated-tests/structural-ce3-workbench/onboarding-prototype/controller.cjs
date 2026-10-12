@@ -73,7 +73,24 @@ async function act(session, command) {
       const q = questionFor(caseOf(s));
       if (!v.questions.some(x => x.id === q.id)) s.addQuestions([q]);
       const old = v.answers.filter(a => a.question_id === q.id).at(-1);
-      s.answer({ id: `answer-${next}`, question_id: q.id, text: command.text, replaces_answer_id: old?.id ?? null }); break;
+      const answerId = `answer-${next}`;
+      s.answer({ id: answerId, question_id: q.id, text: command.text, replaces_answer_id: old?.id ?? null });
+      if (['warehouse', 'warehouseerror'].includes(caseOf(s))) {
+        // Each saved start correction owns its own ordinary session question.
+        // Replacing it withdraws an unanswered older question, never its history.
+        for (const pending of v.questions.filter(x => x.id.startsWith(Scenario.Warehouse.choicePrefix) && ['open', 'deferred'].includes(x.status))) s.setQuestionStatus({ id: pending.id, status: 'withdrawn', reason: 'En ny sparad rättelse ersätter det tidigare startsvaret.' });
+        if (command.text === Scenario.Warehouse.timingAnswers[1]) {
+          const id = `${Scenario.Warehouse.choicePrefix}${answerId}`;
+          s.addQuestions([{ ...timingQuestion(), id, equivalence_key: id, text: 'Du har ändrat önskad start till dag 3. Vill du också ändra vilken dag analysen ska undersöka?', reasons: ['Startmålet ändrar inte automatiskt analysfrågan. Ett uttryckligt val behövs före ny bekräftelse.'], target_ids: ['target-day'], origins: [{ actor: 'ai', ref_id: 'target-day' }] }]);
+        }
+      }
+      break;
+    }
+    case 'analysis_choice': {
+      const q = Scenario.Warehouse.pendingChoice(v);
+      need(q && q.id === command.question_id && Scenario.Warehouse.analysisOptions.some(o => o.text === command.text), 'ANALYSIS_CHOICE_REQUIRED');
+      s.answer({ id: `answer-${next}`, question_id: q.id, text: command.text, replaces_answer_id: null });
+      break;
     }
     case 'correct': {
       need(['misread', 'warehouseerror'].includes(caseOf(s)) && v.current_review && v.proposals.at(-1).items.find(i => i.id === 'approval').type === 'document_fact', 'CORRECTION_NOT_AVAILABLE');
@@ -101,6 +118,7 @@ function describe(s) {
   const v = s.view(), p = v.proposals.at(-1), prev = v.proposals.at(-2);
   return { view: v, checksum: s.serialize().checksum, can_propose: canPropose(s), gate: gate(s), confirmation_text: confirmationText,
     case_id: caseOf(s), legacy: !caseOf(s).startsWith('warehouse'), answer_options: answersFor(caseOf(s)), question_template: questionFor(caseOf(s)),
+    analysis_choice: Scenario.Warehouse.pendingChoice(v), analysis_options: Scenario.Warehouse.analysisOptions.map(o => o.text), relationship: Scenario.Warehouse.relationship(p),
     summary: Scenario.summary(p),
     changes: p && prev ? Scenario.summary(p).flatMap(field => { const old = Scenario.summary(prev).find(x => x.id === field.id); return old?.text === field.text ? [] : [{ field: field.id, label: field.label, before: old?.text ?? 'Inte angivet', after: field.text }]; }) : [],
     technical: s.serialize() };

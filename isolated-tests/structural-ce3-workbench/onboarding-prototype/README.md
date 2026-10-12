@@ -1,6 +1,6 @@
 # Kunddialog · isolerad offlineprototyp
 
-Förbättrad från faktisk HEAD `28a697fb423e221a570ad5f3df9143a60be24590`.
+Förbättrad från faktisk HEAD `14eff09ce5152140316c6aaa629d266f38ca43e4`.
 Öppna **http://127.0.0.1:8876/onboarding** i den lokala arbetsvyn.
 Länken ”Prova onboarding · offline” finns även i arbetsvyns sidhuvud.
 
@@ -38,16 +38,40 @@ Sammanfattningen visar **Ni vill**, **Först måste**, **Önskad start**,
 Ingen kostnad, utfört prov, faktisk start eller lämnat klartecken fylls i.
 Kundbekräftelsen gäller beskrivningen; den är **inte beställarens klartecken**.
 
-Efter bekräftelsen visas att underlaget sparats och att ingen analys körts.
-Nästa steg förklaras tillsammans med frågorna om startvillkor, dag 2 och
-senare klartecken. Inga resultat eller ”Kör analys”-knapp finns.
+Efter bekräftelsen visas bara att beskrivningen stämmer, att underlaget
+sparats, att ingen analys körts och ett kort nästa steg. Den bekräftade
+sammanfattningen finns i utfällningen. Analysfrågan visas där en gång från
+`proposal.analysis.question`; den tidigare separata frågelistan är borttagen.
+Kundbekräftelse är fortfarande inte beställarens klartecken till driftstart.
 
-Prova också **Rätta en uppgift** efter bekräftelse, till exempel önskad start
-dag 3. Ändringslistan visar endast tidsmålet. Den ursprungliga analysfrågan
-om dag 2 bevaras; kundens svar ändrar inte andra uppgifter implicit. Tidigare
-bekräftelse blir inaktuell. Ny granskning ersätter inte behovet av ny bekräftelse.
-Öppna **Historik och sparade kopior** för att återöppna exakt version eller
-läsa en äldre, skrivskyddad kopia. Extra sparning skapar ingen modellversion.
+### När önskad start ändras till dag 3
+
+Välj **Rätta en uppgift**, dag 3 och spara. Tidigare granskning och bekräftelse
+blir inaktuella direkt. Demot frågar sedan uttryckligen om analysen också ska
+undersöka dag 3 eller behålla dag 2. Inget alternativ är automatiskt valt.
+Ett klick på ett av de två alternativen sparar valet och tillför ett nytt
+förskrivet förslag och en ny granskning. Före valet kan varken nytt förslag
+eller ny bekräftelse skapas genom prototypens kommandon.
+
+Valet använder befintlig session/2: en blockerande fråga med ID knutet till
+det sparade startsvaret, sedan ett vanligt svar med egen källidentitet.
+Inga nya sessionsfält eller kontrakt införs. Hela analysfrågan väljs ur två
+förskrivna texter; inga datum ersätts i fri kundtext. Startmålet hämtas från
+startsvaret och analysfrågan från analysdagssvaret, inte från senaste svaret
+utan hänsyn till vilken fråga det besvarar.
+
+- **Undersök dag 3:** ändringslistan visar startmål och analysfråga var för sig.
+- **Behåll dag 2:** bara startmålet är ändrat. Vyn förklarar att önskad start
+  är dag 3 men att analysen fortfarande ska undersöka om dag 2 är möjlig.
+- Ny rättelse ersätter en obesvarad äldre analysdagsfråga med motiverat
+  återtagande. Ett sent val för fel fråga avvisas; tidigare historik bevaras.
+- Att välja dag 3 i formuläret och sedan gå tillbaka **utan att spara** gör
+  inga sessionsanrop och skapar ingen version. Först sparknappen ändrar underlaget.
+
+En ny granskning ersätter inte behovet av ny kundbekräftelse. Öppna
+**Historik och sparade kopior** för att återöppna exakt version eller läsa
+en äldre, skrivskyddad kopia. Äldre sparade sessioner skrivs inte om; valet
+införs för nya sparade startkorrigeringar. Extra sparning skapar ingen modellversion.
 
 ## Varför den gamla luckan blockerade
 
@@ -139,14 +163,13 @@ python3 -B isolated-tests/structural-ce3-workbench/onboarding-prototype/server.t
 node --check isolated-tests/structural-ce3-workbench/onboarding-prototype/static/app.js
 ```
 
-- 36 prototyp-/sessionstester: elva prototyptester och 25 session/2-regressioner.
+- 39 prototyp-/sessionstester: 14 prototyptester och 25 session/2-regressioner.
 - 60 kontrakts-/adaptertester, inklusive SR-kodpinne och frysta fall.
 - Ett lokalt HTTP-test för rutter, lagring/återöppning, Origin och sökvägsskydd.
-- Webbläsare: tydligt fall utan frågor; systemfeltolkning och rättelse;
-  verklig lucka med okänt och känt svar; korrekt ändringslista; rättelse efter
-  bekräftelse; omladdning, sparning och historisk skrivskyddad version.
-  Tangentbord stöds med vanliga knappar och formulär (även verifierat i föregående pass). Bred och smal vy (390 px), utan
-  horisontell overflow. Testsessioner ligger kvar lokalt; välj **Nytt demofall**.
+- Webbläsare i detta pass: båda analysdagsvalen på bred och smal vy (390 px),
+  separat ändringslista, kort slutsida med en analysfråga i utfällningen,
+  återgång utan sparning, inaktuell tidigare bekräftelse och återöppning.
+  Tidigare falls kontrollflöden omfattas av regressionerna. Ingen horisontell overflow. Testsessioner ligger kvar lokalt; välj **Nytt demofall**.
 
 **Noll externa AI-anrop, noll kostnad, inga installationer eller publiceringar.**
 Nästa steg är Christians bedömning av kundspråket och dialogen. Ingen live-AI

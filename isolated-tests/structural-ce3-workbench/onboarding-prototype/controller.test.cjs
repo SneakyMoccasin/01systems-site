@@ -119,6 +119,7 @@ test('warehouse description is source-bound, has no name question, and only conf
   assert.equal(s.view().transfers_v2[0].ce3_run_status,'not_run');
   s=await act(s,{action:'answer',text:require('./warehouse.cjs').timingAnswers[1]});
   assert.equal(s.view().statuses.confirmation,'stale');assert.equal(s.view().statuses.review,'stale');
+  s=await act(s,{action:'analysis_choice',question_id:describe(s).analysis_choice.id,text:require('./warehouse.cjs').analysisOptions[1].text});
   s=await act(s,{action:'update'});assert.equal(gate(s).allowed,true);assert.equal(s.view().statuses.confirmation,'stale');
   assert.deepEqual(describe(s).changes,[{field:'time',label:'Önskad start',before:'dag 2.',after:'dag 3.'}]);
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'ce3-warehouse-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
@@ -150,4 +151,55 @@ test('warehouse condition gap: unknown blocks, yes/no explicitly change the star
     assert.deepEqual(describe(s).changes.map(f=>f.field),['condition']);
     assert.equal(describe(s).summary.find(f=>f.id==='unknown').text,'när klartecknet kommer.');
   }
+});
+for (const option of require('./warehouse.cjs').analysisOptions) test(`explicit analysis choice: ${option.text}`,async t=>{
+  const W=require('./warehouse.cjs');
+  let s=await reviewed('warehouse');s=await act(s,{action:'confirm',by:'Testkund',acknowledged:true});
+  const before=s.serialize(),beforeView=s.view();
+  s=await act(s,{action:'answer',text:W.timingAnswers[1]});
+  const waiting=s.serialize(),q=describe(s).analysis_choice;
+  assert(q);assert.equal(q.impact,'blocks_handoff');assert.equal(q.status,'open');
+  assert.equal(s.view().statuses.review,'stale');assert.equal(s.view().statuses.confirmation,'stale');
+  assert.equal(s.view().proposals.length,1);assert.equal(gate(s).allowed,false);assert.equal(describe(s).can_propose,false);
+  await assert.rejects(()=>act(s,{action:'confirm',by:'Testkund',acknowledged:true}),/CONFIRMATION_BLOCKED/);
+  await assert.rejects(()=>act(s,{action:'update'}),/UNSCRIPTED_INPUT/);
+  await assert.rejects(()=>act(s,{action:'analysis_choice',question_id:q.id,text:'Välj automatiskt'}),/ANALYSIS_CHOICE_REQUIRED/);
+  assert.deepEqual(s.serialize(),waiting);
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'ce3-analysis-choice-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+  const store=new Store(dir),old=store.save(Session.restore(before)),saved=store.save(s);
+  assert.equal(store.open(saved.id).analysis_choice.id,q.id);
+  s=Session.load(path.join(dir,saved.id,saved.snapshot));
+  s=await act(s,{action:'analysis_choice',question_id:q.id,text:option.text});
+  assert.equal(s.view().answers.at(-1).question_id,q.id);
+  assert.equal(s.view().proposals.at(-1).analysis.question,beforeView.proposals.at(-1).analysis.question);
+  assert.equal(gate(s).allowed,false); // choice alone is neither new proposal nor new review
+  s=await act(s,{action:'update'});const updated=s.view(),description=describe(s);
+  assert.equal(updated.proposals.at(-1).analysis.question,option.question);
+  assert.equal(updated.proposals.at(-1).items.find(i=>i.id==='target-day').value,3);
+  assert.equal(updated.reviews.at(-1).request.proposal_digest,updated.proposal_digest);
+  assert.notEqual(updated.current_review.binding.archive_digest,beforeView.current_review.binding.archive_digest);
+  assert.equal(description.summary.find(f=>f.id==='analysis').text,option.question);
+  assert.deepEqual(description.changes.map(c=>c.field),option===W.analysisOptions[0]?['time','analysis']:['time']);
+  assert.equal(Boolean(description.relationship),option===W.analysisOptions[1]);
+  assert.equal(updated.statuses.confirmation,'stale');assert.equal(gate(s).allowed,true);
+  s=await act(s,{action:'confirm',by:'Testkund',acknowledged:true});const v=s.view(),confirmation=v.confirmations_v2.at(-1);
+  assert.equal(confirmation.proposal_digest,v.proposal_digest);assert.equal(confirmation.evidence_digest,v.evidence_digest);
+  assert.equal(confirmation.context_digest,v.context_digest);assert.deepEqual(confirmation.review_binding,v.current_review.binding);
+  const final=store.save(s),reopened=new Store(dir).open(final.id);
+  assert.deepEqual(reopened.technical,final.technical);assert.equal(reopened.view.statuses.confirmation,'confirmed');
+  assert.equal(reopened.view.proposals.at(-1).analysis.question,option.question);
+  assert.equal(store.open(old.id,old.snapshot).latest,false);
+  assert.deepEqual(store.open(old.id,old.snapshot).technical,before);
+  await assert.rejects(()=>store.dispatch({action:'answer',id:old.id,snapshot:old.snapshot,checksum:old.checksum,text:W.timingAnswers[1]}),/STALE_SCREEN/);
+});
+test('a replaced start answer withdraws its open choice, and stale choices cannot answer a newer correction',async()=>{
+  const W=require('./warehouse.cjs');let s=await reviewed('warehouseerror');s=await act(s,{action:'correct'});
+  s=await act(s,{action:'answer',text:W.timingAnswers[1]});const first=describe(s).analysis_choice.id;
+  s=await act(s,{action:'answer',text:W.timingAnswers[0]});assert.equal(describe(s).analysis_choice,null);
+  assert.equal(s.view().questions.find(q=>q.id===first).status,'withdrawn');
+  s=await act(s,{action:'answer',text:W.timingAnswers[1]});const second=describe(s).analysis_choice.id;
+  assert.notEqual(first,second);
+  await assert.rejects(()=>act(s,{action:'analysis_choice',question_id:first,text:W.analysisOptions[0].text}),/ANALYSIS_CHOICE_REQUIRED/);
+  s=await act(s,{action:'analysis_choice',question_id:second,text:W.analysisOptions[0].text});s=await act(s,{action:'update'});
+  assert.equal(s.view().proposals.at(-1).analysis.question,W.analysisOptions[0].question);assert.equal(gate(s).allowed,true);
 });
