@@ -3,10 +3,12 @@ const C=require('../contracts/onboarding-v1/contract.cjs');
 const {need,integer}=require('./price.cjs');
 const METHOD='openai-responses-input-tokens/1';
 // These are ALL model-input fields in the pinned SR provider's request.
-// store and max_output_tokens affect storage/output, not model input.
+// store, max_output_tokens and CE3's service_tier affect execution, not input.
 function payload(raw) {
   const b=JSON.parse(raw);
-  need(Object.keys(b).sort().join(',')==='input,instructions,max_output_tokens,model,store,text','INPUT_REQUEST_FIELDS');
+  // Accept historical archives without a tier; new dispatches always use default.
+  need(!Object.hasOwn(b,'service_tier') || b.service_tier==='default','INPUT_SERVICE_TIER');
+  need(Object.keys(b).filter(k=>k!=='service_tier').sort().join(',')==='input,instructions,max_output_tokens,model,store,text','INPUT_REQUEST_FIELDS');
   need(typeof b.input==='string' && typeof b.instructions==='string' && b.text?.format?.type==='json_schema','INPUT_REQUEST_SHAPE');
   return {model:b.model,instructions:b.instructions,input:b.input,text:b.text};
 }

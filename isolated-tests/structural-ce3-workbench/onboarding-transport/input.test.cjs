@@ -21,6 +21,11 @@ test('count payload includes complete instructions, data and JSON schema, with U
   assert.throws(()=>Input.payload(JSON.stringify({...b,tools:[]})),/INPUT_REQUEST_FIELDS/);
   const count={method:'synthetic-input-counter/1',model:b.model,...Input.measurement(raw),input_tokens:10};
   Input.validateCount(count,raw,'offline');
+  const standardRaw=JSON.stringify({...b,service_tier:'default'});
+  assert.deepEqual(Input.payload(standardRaw),p);
+  // An old count cannot authorize changed wire bytes, even with identical input.
+  assert.throws(()=>Input.validateCount(count,standardRaw,'offline'),/INPUT_COUNT_BINDING/);
+  for(const tier of ['auto','priority','fast','flex',null]) assert.throws(()=>Input.payload(JSON.stringify({...b,service_tier:tier})),/INPUT_SERVICE_TIER/);
   for(const changed of ['instructions','input','text']) assert.throws(()=>Input.validateCount(count,JSON.stringify({...b,[changed]:changed==='text'?{format:{...b.text.format,schema:{}}}:'changed'}),'offline'),/INPUT_COUNT_BINDING/);
   assert.throws(()=>Input.validateCount(count,raw,'live'),/PROVENANCE/);
   assert.throws(()=>Input.validateCount({...count,model:'wrong'},raw,'offline'),/BINDING/);
@@ -104,6 +109,14 @@ test('both unmodified frozen cases exercise every counted stage and repair throu
     assert.equal(sent(out).length,6);assert.equal(counted(out).length,6);
     for(const a of sent(out)) {
       const original=JSON.parse(a.request.body),count=JSON.parse(a.input_count.request.body);
+      assert.equal(original.service_tier,'default');
+      assert.equal(a.request.body_sha256,C.hash(a.request.body));
+      assert.equal(a.input_count.count.request_sha256,a.request.body_sha256);
+      assert(!Object.hasOwn(count,'service_tier'));
+      const srStage=out.run.result.original_sr_result.stages.find(s=>s.stage===a.stage);
+      assert.equal(original.instructions,srStage.instructions);
+      if(a.attempt==='initial') assert.equal(original.input,srStage.input);
+      else assert(original.input.startsWith(srStage.input+'\n\nRepair only'));
       assert.deepEqual(count,Input.payload(a.request.body));assert.equal(count.instructions,original.instructions);assert.equal(count.input,original.input);assert.deepEqual(count.text,original.text);
       assert.equal(a.input_count.count.method,'synthetic-input-counter/1');
     }

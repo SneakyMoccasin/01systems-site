@@ -36,8 +36,28 @@ test('all real SR provider repairs are separately reserved, captured and reconci
   assert.equal(out.run.attempts.filter(a=>a.state==='settled').length,6);
   assert(out.run.attempts.filter(a=>a.attempt==='repair').every(a=>a.request.body.includes('<invalid_result>')));
   assert(out.run.attempts.every(a=>a.request.automatic_retries===0 && a.usage.input_tokens===200 && a.usage.output_tokens===300));
+  assert(out.run.attempts.every(a=>JSON.parse(a.request.body).service_tier==='default'));
   assert.equal(out.journal.liability_nusd,48000);assert.equal(out.run.result.original_sr_result.grounded.metadata.usage.apiCalls,6);
   assert.equal(out.run.result.original_sr_result.grounded.metadata.diagnostics.repairs.length,3);
+});
+test('HTTP dispatch explicitly requests Standard for all six slots and preserves provider input',async t=>{
+  const x=context(t),j=new Journal(x.file),sent=[];
+  j.begin('standard',profile,x.plan,x.job.prepared.digest);
+  const boundary=fetchBoundary({journal:j,runId:'standard',profile,plan:x.plan,apiKey:'test-key',send:async({body})=>{
+    sent.push(body);assert.equal(JSON.parse(body).service_tier,'default');
+    return {status:200,body:JSON.stringify({model:profile.model,usage:{input_tokens:1,output_tokens:1,total_tokens:2}})};
+  }});
+  try {
+    for(const slot of x.plan.slots) {
+      const b={model:profile.model,store:false,instructions:'unchanged instructions',input:slot.attempt==='repair'?'unchanged <invalid_result>':'unchanged original',max_output_tokens:slot.output_tokens,text:{format:{type:'json_schema',strict:true,name:`skeptical_reader_${slot.stage}_v01`,schema:{type:'object'}}}};
+      const options={method:'POST',headers:{Authorization:'Bearer test-key','Content-Type':'application/json'},body:JSON.stringify(b)};
+      await boundary(ENDPOINT,options);
+      assert.equal(options.body,JSON.stringify(b));
+      const {service_tier,...wire}=JSON.parse(sent.at(-1));assert.deepEqual(wire,b);
+    }
+    assert.equal(sent.length,6);
+    assert.deepEqual(j.read().runs.find(r=>r.id==='standard').attempts.map(a=>a.request.body),sent);
+  } finally {j.close();}
 });
 test('unused repair reservations release only on explicit normal run completion',async t=>{
   const x=context(t),out=await execute(x);assert.equal(out.run.attempts.filter(a=>a.state==='not_sent').length,3);

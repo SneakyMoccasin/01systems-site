@@ -1,0 +1,9 @@
+{
+  "schema_version": "ce3-input-count-price/1",
+  "kind": "verified-live",
+  "currency": "USD",
+  "method": "openai-responses-input-tokens/1",
+  "max_request_nusd": null,
+  "source": "https://developers.openai.com/api/docs/guides/token-counting",
+  "verification": null
+}

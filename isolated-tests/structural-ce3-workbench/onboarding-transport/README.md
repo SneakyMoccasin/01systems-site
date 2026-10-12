@@ -4,6 +4,17 @@ Isolerad transport från CE3-checkpoint `2cab759197e46af7007006c66b8a5446adada51
 
 SR:s riktiga `runStructuredGroundedReview`, grounded-pipeline och `OpenAIProvider` används oförändrade. En separat workerprocess ersätter processens `fetch` med en budgeterad HTTP-gräns. Den får både ursprungliga anrop och providerns interna formatreparationer. Ingen SR-prompt eller granskningspipeline kopieras till CE3. SR:s exakta commit och 49 filhashar verifieras före laddning.
 
+Återkontroll 2026-10-12: transportgränsen sätter nu uttryckligen
+`service_tier: "default"` i varje utgående modellanrop, inklusive alla
+formatreparationer. Det är API-värdet för Standard enligt
+[Responses API](https://developers.openai.com/api/reference/python/resources/responses/methods/create).
+Fältet läggs till före räkning och journalföring; räkningsbehörigheten och
+journalen binds till exakt dessa utgående bytes. Modellindatan är oförändrad.
+Historiska arkiv utan tjänstenivå kan fortfarande läsas. SR-repot ändras inte.
+Den [befintliga beredningen](prepared-standard-2026-10-09/README.md) är
+uppdaterad, men live förblir blockerad: ett officiellt avgiftstak för
+tokenräkning kunde fortfarande inte beläggas.
+
 ## Kontrollerad inputram (transport-plan/2)
 
 Livevägen kräver nu `--input-token-limit`, `--count-price` och
@@ -18,8 +29,8 @@ exakt `model`, `instructions`, `input` och `text` till OpenAI:s
 `POST /v1/responses/input_tokens`. Därmed ingår prompts, originalunderlag,
 utkast, register, fullständigt JSON-schema, tidigare stegresultat och
 reparationens ogiltiga svar. Den pinnade providern har inga andra
-modellinputfält; okända fält avvisas. `store` och `max_output_tokens` är
-lagrings-/outputinställningar och skickas inte till räkningsendpointen.
+modellinputfält; okända fält avvisas. `store`, `max_output_tokens` och CE3:s
+`service_tier` är körinställningar och skickas inte till räkningsendpointen.
 
 OpenAI dokumenterar att denna räknare omfattar även dold meddelandeinramning.
 Lokal strängtokenisering eller byteantal har ingen verifierad motsvarande

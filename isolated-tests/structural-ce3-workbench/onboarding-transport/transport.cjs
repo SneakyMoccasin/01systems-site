@@ -59,13 +59,17 @@ function fetchBoundary({journal,runId,profile,plan,apiKey,send,countSend,mode='o
     const index=counts.get(stage)??0; need(index<2,'NO_THIRD_ATTEMPT');
     const attempt=index===0?'initial':'repair', slot=plan.slots.find(x=>x.stage===stage && x.attempt===attempt);
     need(body.max_output_tokens===slot.output_tokens,'OUTPUT_BOUND_CHANGED');
+    // The pinned SR provider omits service_tier (OpenAI then uses project auto).
+    // Bind every initial/repair dispatch to Standard without changing SR input.
+    // Count authorization and the journal must bind the actual wire request.
+    const providerRaw=options.body, requestRaw=JSON.stringify({...body,service_tier:'default'});
+    need(Buffer.byteLength(requestRaw)<=MAX_BYTES,'REQUEST_SIZE');
     need(!options.signal?.aborted,'ABORTED_BEFORE_DISPATCH');
     if(plan.input_policy) {
       Input.validatePolicy(plan.input_policy,profile,mode);
       need(typeof countSend==='function','INPUT_COUNTER_REQUIRED');
-      // Snapshot all relevant fields. The unchanged original raw body below
-      // is the only generation request that this count may authorize.
-      const raw=options.body,countBody=JSON.stringify(Input.payload(raw)),measured=Input.measurement(raw);
+      // Snapshot model input; service_tier changes billing, not model input.
+      const raw=requestRaw,countBody=JSON.stringify(Input.payload(raw)),measured=Input.measurement(raw);
       journal.countDispatch(runId,stage,attempt,{endpoint:COUNT_ENDPOINT,body:countBody,body_sha256:C.hash(countBody),...measured,automatic_retries:0});
       const countStart=performance.now();
       const response=await withAbort(Promise.resolve().then(()=>{
@@ -79,13 +83,13 @@ function fetchBoundary({journal,runId,profile,plan,apiKey,send,countSend,mode='o
       const error=!valid?'INPUT_COUNT_UNAVAILABLE':count.input_tokens>slot.input_tokens?'INPUT_LIMIT_EXCEEDED':null;
       journal.countSettle(runId,stage,attempt,{state:valid?'observed':'uncertain',count,error,response:{status:Number.isInteger(response.status)?response.status:null,body:safe,body_sha256:C.hash(safe),redacted:safe!==rawResponse,duration_ms:Math.round(performance.now()-countStart)}});
       if(error){inputStopped=true;throw new Error(error);}
-      need(options.body===raw,'INPUT_CHANGED_AFTER_COUNT');
+      need(options.body===providerRaw,'INPUT_CHANGED_AFTER_COUNT');
       need(!options.signal?.aborted,'ABORTED_BEFORE_DISPATCH');
     }
-    journal.dispatch(runId,stage,attempt,{endpoint:ENDPOINT,body:options.body,body_sha256:C.hash(options.body),automatic_retries:0}); counts.set(stage,index+1);
+    journal.dispatch(runId,stage,attempt,{endpoint:ENDPOINT,body:requestRaw,body_sha256:C.hash(requestRaw),automatic_retries:0}); counts.set(stage,index+1);
     const start=performance.now();
     let response;
-    try { response=await withAbort(Promise.resolve().then(()=>{need(!options.signal?.aborted,'ABORTED_BEFORE_SEND');return send({body:options.body,signal:options.signal,apiKey});}),options.signal); }
+    try { response=await withAbort(Promise.resolve().then(()=>{need(!options.signal?.aborted,'ABORTED_BEFORE_SEND');return send({body:requestRaw,signal:options.signal,apiKey});}),options.signal); }
     catch { response={status:null,body:'',error_code:'TRANSPORT_ERROR'}; }
     // Never persist response headers, request options, raw exceptions, or stacks.
     const raw=typeof response.body==='string'?response.body.slice(0,MAX_BYTES):'', safe=redact(raw,apiKey);

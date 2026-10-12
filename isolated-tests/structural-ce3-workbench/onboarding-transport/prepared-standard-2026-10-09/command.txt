@@ -1,0 +1,16 @@
+# INTE KÖRKLART. Ej kört. Mallarna avvisas före journal och nätverk.
+# Läs README.md: Standard är bunden; verifierad räkningsavgift och prisattester saknas.
+cd /Users/christian/Projects/pulse_engine_clean
+ce3_trial="/Users/christian/Projects/pulse_engine_clean/isolated-tests/structural-ce3-workbench/onboarding-transport/prepared-standard-2026-10-09"
+node --env-file=/Users/christian/Projects/skeptical-reader/.env.local \
+  isolated-tests/structural-ce3-workbench/onboarding-transport/live.cjs \
+  --execute-live \
+  --journal "$ce3_trial/budget.sqlite" \
+  --output "$ce3_trial/results" \
+  --profile "$ce3_trial/price.template.json" \
+  --price-digest 1c7d7afb82d6a5730c79bd15553f42e788380ab17703479d7421e3402588e735 \
+  --input-token-limit 100000 \
+  --count-price "$ce3_trial/count-price.template.json" \
+  --count-price-digest d3fdc59f6ac300ed77ce7bf825839031f287074de2f41cf5375f2c41b39282ca \
+  --currency USD --total-usd 5 --per-run-usd 2.5 \
+  --cases c3-r1,clear --run-prefix ce3-sr-standard-20261012
