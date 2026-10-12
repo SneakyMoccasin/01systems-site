@@ -1,6 +1,101 @@
 # OpenAI-liveprov: verifierad prisuppgift, ännu ingen verifierad totalram
 
-Återkontrollerat 2026-10-12 från senaste faktiska CE3-checkpoint `1c1b5674b855b663205ce182989096ffda6b1014`.
+## Ny kontroll: väg utan extern tokenräkning, 2026-10-12
+
+Utgångspunkt: faktisk HEAD `053cfebfd3f2ccdaab58dbc5cb6f030d31abbf0a`.
+**Inte verifierad inom 5 USD. Live förblir blockerad.** Ingen transportkod,
+profilvariant eller ny integrationsväg införs. Nedanstående tidigare
+beredning behålls som underlag, inte som körklar instruktion.
+Enligt Christians uppgift har OpenAI-support i ärende **17047697** inte
+kunnat verifiera räkningsavgiften; ärendet har inte hämtats eller kontaktats
+i detta pass.
+
+### Lokal kontroll och konkret lucka
+
+- Befintliga `input.cjs` mäter serialiserade UTF-8-byte men märker dem
+  `bytes_not_tokens`. Offlinetrackerns bytebaserade svar är uttryckligen
+  syntetiska testdata. Varken dessa eller sparad usage är ett bevis för nya anrop.
+- `tiktoken`, `js-tiktoken`, `gpt-tokenizer` och `@dqbd/tiktoken` kunde inte
+  resolvas från CE3 eller SR:s installerade Node-miljöer. Aktuell Python3
+  saknar `tiktoken` och `tokenizers`; de två projektens lockfiler saknar
+  också dessa tokenizerberoenden. Inget installerades. Detta är en kontroll
+  av projektens tillgängliga verktyg, inte en inventering av hela datorn.
+- [OpenAI:s räkningsguide](https://developers.openai.com/api/docs/guides/token-counting)
+  anger att exakt input inkluderar inramning som inte behöver förekomma i
+  lokalt tokeniserade fält. Scheman och modellspecifik behandling begränsar
+  lokal räkning. Ingen verifierbar lokal formel eller maximal overhead för
+  hela Responses-indatan hos `gpt-5.6-terra` kunde beläggas. Inte heller
+  antal bytes plus en vald marginal ger ett belagt tak för serverns representation.
+- Pinnad SR skickar `instructions`, hela `input` och `text.format.schema`.
+  Senare steg innehåller tidigare bedömningar; reparationer återför originalinput
+  plus det ogiltiga svaret. Outputtaken begränsar föregående generering men
+  fastställer inte storleken på nästa fullständiga serverrepresenterade input.
+  Ett eventuellt lokalt tak måste kontrolleras på varje färdig request,
+  inklusive dessa fall. Ingen text får trunkeras.
+- [Responses-referensen](https://developers.openai.com/api/reference/python/resources/responses/methods/create)
+  dokumenterar outputtak och kontextöverskridande fel med standardvärdet
+  `truncation: disabled`, men inget valbart `max_input_tokens` som gör
+  100 000 till en serverkontrollerad inputgräns. Usage efter svaret kan
+  inte ersätta budgetkontroll före dispatch.
+
+Det som saknas för en lokal väg är alltså **en dokumenterad, modellbunden
+övre beräkning för all debiterbar input inklusive schema och dold inramning**.
+Att installera en strängtokenizer ensam fyller inte den luckan.
+
+### Ny pris- och reservationskontroll
+
+[Modellsidan](https://developers.openai.com/api/docs/models/gpt-5.6-terra),
+[prissidan](https://developers.openai.com/api/docs/pricing) och
+[Standard-värdet i API:t](https://developers.openai.com/api/reference/python/resources/responses/methods/create)
+lästes på nytt. Modellens dokumenterade priser är fortsatt 2 USD input,
+0,20 USD cacheläsning och 12 USD output per miljon token. Cache-skrivning
+kostar 1,25 × input. Över 272 000 inputtoken gäller 2 × input och 1,5 ×
+output för hela requesten. `service_tier: default` betyder fortsatt Standard.
+Oförändrad transport sätter det för både initiala försök och reparationer.
+
+SR:s tre steg med högst en reparation vardera ger för de två fallen högst
+12 genereringar och 132 000 outputtoken; inga extra HTTP-retries tillåts.
+Följande är omräknade API-förbrukningsbelopp i USD, inte en usageprognos:
+
+| Beräkningsgrund utan räkningsanrop | Båda fallen | Status |
+|---|---:|---|
+| 100 000 input/anrop × 12, input 2,50/M och output 12/M | 4,584 USD | Endast villkorad aritmetik; inputtaket kan inte verifieras lokalt |
+| Full dokumenterad kontext 1 050 000/anrop × 12, input 5/M och output 18/M | 65,376 USD | Grov kontextbaserad reserv, över 5 USD; inte en ny godkänd prisprofil |
+
+Den senare raden tar högsta Standardpris inklusive cache-skrivning och
+lång kontext för samtliga token, utan rabatt eller avdrag för output från
+kontextutrymmet. Den visar varför kontextgränsen ensam inte räcker för
+fem-dollarprovet; den är **inte minsta nödvändiga budget eller förväntad
+kostnad**, och belägger inte debiteringsvillkoren för nekade requests.
+Ingen högre budget föreslås. Skatt, växling och kreditköp ingår inte.
+
+Med samma kortkontextpriser och outputreserv tillåter 5 USD matematiskt
+högst ett jämnt tak på 113 866 inputtoken per anrop. Inte heller detta tak
+har en belagd lokal kontrollmetod. **4,584 USD får därför inte användas som
+garanterad totalreservation genom att räkningsendpointen bara tas bort.**
+Prisattesterna förblir `null`; kommandot förblir blockerat och oförändrat.
+
+### Offlineverifiering i detta pass
+
+De befintliga transport-/inputtesterna körs med injicerade svar och spärrade
+nätverkssockets i offlineworkern. Nya negativa tester verifierar att borttagen
+räknare stoppar före både räknings- och modelldispatch, att hela reservationen
+kvarstår, att lokala/syntetiska mätningar inte accepteras som livebevis och
+att befintliga prismallar fortfarande avvisas. Detta verifierar blockeringen,
+**inte en fungerande liveväg utan räkningsendpoint**. Övriga regressioner
+täcker Standard vid reparationer, budgetstopp, samtidighet, avbrott, saknad
+usage, senare steg och session/2-blockerare. **41 av 41 tester passerade** med
+`node --test isolated-tests/structural-ce3-workbench/onboarding-transport/input.test.cjs isolated-tests/structural-ce3-workbench/onboarding-transport/transport.test.cjs`.
+
+SR:s exakta pinne och 49 filhashar kontrollerades; frysta c3-r1 och clear
+verifieras i regressionerna. Noll externa modell-/tokenräknings-/övriga
+API-anrop, noll kostnad och inga kreditpåfyllningar. Endast offentliga
+dokumentationssidor har hämtats. SR, granskningslogik, motor, UI och fall
+är oförändrade; befintligt orelaterat arbete är bevarat.
+
+## Tidigare beredning: extern räkningsgrind, fortfarande blockerad
+
+Återkontrollerat 2026-10-12 från dåvarande CE3-checkpoint `1c1b5674b855b663205ce182989096ffda6b1014`.
 SR `e7308010ecbea1ebe46c3298aa6a96f06381ad0a`, `structured-grounded/1`,
 samtliga 49 pinnade filhashar verifierade. Endast förberedelse;
 **inga modell-/tokenräkningsanrop, inga kreditpåfyllningar, faktisk kostnad 0 USD**.

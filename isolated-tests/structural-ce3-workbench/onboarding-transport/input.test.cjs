@@ -102,6 +102,30 @@ test('journal dispatch cannot bypass exact request count binding',t=>{
   const x=context(t),j=new Journal(x.journal);j.begin('bound',profile,x.plan,x.prepared.digest);
   try {assert.throws(()=>j.dispatch('bound',x.plan.slots[0].stage,'initial',{body:'{}',body_sha256:C.hash('{}')}),/INPUT_COUNT_REQUIRED/);}finally{j.close();}
 });
+test('removing the counter does not enable a local-count live bypass or dispatch either endpoint',async t=>{
+  const x=context(t),j=new Journal(x.journal),{fetchBoundary,ENDPOINT}=require('./transport.cjs');
+  j.begin('no-counter',profile,x.plan,x.prepared.digest);
+  let sends=0;
+  const boundary=fetchBoundary({journal:j,runId:'no-counter',profile,plan:x.plan,mode:'offline',apiKey:'fake-key',send:async()=>{sends++;assert.fail('generation must not dispatch');}});
+  const slot=x.plan.slots[0],body={model:profile.model,store:false,instructions:'unchanged',input:'source / draft / register',max_output_tokens:slot.output_tokens,text:{format:{type:'json_schema',strict:true,name:`skeptical_reader_${slot.stage}_v01`,schema:{type:'object'}}}};
+  try {
+    await assert.rejects(()=>boundary(ENDPOINT,{method:'POST',headers:{Authorization:'Bearer fake-key','Content-Type':'application/json'},body:JSON.stringify(body)}),/INPUT_COUNTER_REQUIRED/);
+    const run=j.snapshot().runs[0];
+    assert.equal(sends,0);assert(run.attempts.every(a=>!a.request && !a.input_count));
+    assert.equal(j.snapshot().liability_nusd,x.plan.maximum_nusd);
+    for(const method of ['serialized-utf8-bytes/1','local-tokenizer-estimate/1','synthetic-input-counter/1']) {
+      assert.throws(()=>Input.validateCount({method,model:body.model,...Input.measurement(JSON.stringify(body)),input_tokens:1},JSON.stringify(body),'live'),/INPUT_COUNT_PROVENANCE/);
+    }
+  } finally {j.close();}
+});
+test('existing prepared Standard templates remain blocked before journal, credentials or HTTP',()=>{
+  const dir=path.join(__dirname,'prepared-standard-2026-10-09');
+  const p=JSON.parse(fs.readFileSync(path.join(dir,'price.template.json'),'utf8'));
+  const cp=JSON.parse(fs.readFileSync(path.join(dir,'count-price.template.json'),'utf8'));
+  assert.equal(p.verification,null);assert.equal(cp.max_request_nusd,null);
+  assert.throws(()=>Price.validate(p,'live'),/PRICE_FIELDS/);
+  assert.throws(()=>Input.validateCountPrice(cp,'live'),/COUNT_PRICE_BOUND/);
+});
 test('both unmodified frozen cases exercise every counted stage and repair through actual SR with test doubles',async t=>{
   for(const item of require('../onboarding-sr/structured/diagnostic.cjs').inputs()) {
     const prepared=Archive.prepare(item.request,undefined,{draftText:item.draftText}),x=context(t,1000000,prepared),out=await execute(x,{repairs:[0,1,2]});
