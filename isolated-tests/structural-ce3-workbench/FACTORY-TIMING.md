@@ -11,9 +11,9 @@ AI-generering eller verifiering av kundnytta.
 python3 -B isolated-tests/structural-ce3-workbench/server.py --port 8878
 ```
 
-<http://127.0.0.1:8878/> → **Öppna tidsjämförelse** → **Kör båda handlingsplanerna**.
-Det separata scenariot öppnas med **Tidsjämförelse: uteblivet kundbesked**.
-Sparade projekt öppnas från Projekt → Jämförelse → Jämför körningarna. Det läser
+<http://127.0.0.1:8878/> → **Kundgodkännande kommer** → **Kör båda handlingsplanerna**.
+Det separata scenariot öppnas med **Kundbesked uteblir**.
+Sparade projekt öppnas från Projekt → Jämförelse → Jämför sparade körningar. Det läser
 befintliga resultat och granskar dem igen utan ny körning.
 
 ## Deklarerade planer och modellstöd
@@ -146,3 +146,32 @@ bred (1280 px) och smal (390 px) skärm. Slutsatsen ligger före tabellen och te
 status under utfällning. Modell, frysta fall, SR, session/2 och onboarding är
 oförändrade. Ingen extern AI, installation, kostnad eller publicering. Liveprovet
 är fortsatt pausat. Detta säger inget om bästa plan eller verifierad kundnytta.
+
+
+## Kundvy efter 517c8f6
+
+Presentationsrättelse med oförändrade planer, beräkningar och arkiv. Ordningen är
+analysfråga och alternativ → markerat kundbesked → kör/jämför → avvägning och två
+delmål → fem huvudmått och kort orsakskedja → utfällbara detaljer.
+
+Sammanfattningen läser också glapplängd och målstatus från de befintliga
+observationerna. Tidig/senare identifieras från de deklarerade skripten, så
+omkastade kolumner ändrar inte innebörden. Varierande observationer ger ingen
+påhittad enskild differens; värden och antal banor visas. Saknad start förblir
+saknad. Glapp som kvarstår räknas endast till horisonten.
+
+Huvudtabellen har fem rader: start, svensk förmågas varaktighet/första förlust,
+glapp, utbetalt före kundgodkännande och totalt utbetalt. Övriga budgetmått,
+blockeringar, intervallnotation, besluts-ID och COMPLETE/PASS ligger i detaljer.
+Väntplanens avstående från flytt och kvalitetsprövning förklaras i kundvyn.
+Scenariobyte visar inga föregående resultat. Ny jämförelse kräver aktuella
+körningar för exakt de valda planerna och deras besked.
+
+Verifiering av denna rättelse: 3 integrationstester med 20 faktiska banor,
+utökad timing-UI-regression, tidigare strategi-/planarbetsyta-/jämförelsetester
+och 14 arbetsbänkstester passerar. Observatörs-, intervall-, täcknings- och
+plandefinitionskoden jämförs byte för byte med 517c8f6, och observationsresultaten
+jämförs för alla 20 banor. Inget beräkningsfel har upptäckts eller korrigerats.
+Webbläsarprov omfattar båda scenariernas faktiska körning, markerat scenario,
+omkastade kolumner, tom resultatvy, sparning/återöppning och 1280/390 px.
+Detta verifierar presentation och kontrollflöde, inte kundnytta.

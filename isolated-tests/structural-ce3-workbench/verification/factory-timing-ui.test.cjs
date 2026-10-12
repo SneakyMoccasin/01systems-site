@@ -18,8 +18,19 @@ for(const f of fixtures){
   assert.equal(bank.step,recruit.step);assert(bank.index<recruit.index);assert.equal(recruit.before.bank,'approved');
  }
  const html=T.render(c,C,p),{document}=parseHTML(html),text=document.querySelector('.story-lead').textContent;
- assert.match(text,f.scenario==='base'?/4 veckor längre.*4 veckor senare.*2 Mkr/:/24 veckor längre.*Ingen av planerna.*3 Mkr/);
- const rows=[...document.querySelectorAll('tbody tr')];assert.equal(rows.length,13);assert(rows.at(-1).textContent.endsWith('NejNej'));
+ assert.match(text,f.scenario==='base'?/4 veckor längre.*2 Mkr.*4 veckor senare.*oförändrat: 6 veckor.*Båda klarar.*Ingen bevarar/:/24 veckor längre.*3 Mkr.*Ingen av planerna.*24 till 0.*Ingen klarar.*Endast väntplanen/);
+ const rows=[...document.querySelectorAll('.timing-main-table tbody tr')];assert.equal(rows.length,5);
+ assert(rows[0].textContent.includes(f.scenario==='base'?'Vecka 8':'Inte genomförd till och med vecka 26'));
+ assert(rows[1].textContent.includes(f.scenario==='base'?'6 veckor · första förlust vecka 6':'26 veckor · ingen förlust'));
+ assert(rows[2].textContent.includes(f.scenario==='base'?'6 veckor · vecka 2–8':'24 veckor · vecka 2–26, glappet kvarstår'));
+ assert(rows[3].textContent.endsWith(f.scenario==='base'?'9 Mkr7 Mkr':'10 Mkr7 Mkr'));
+ assert(rows[4].textContent.endsWith(f.scenario==='base'?'10 Mkr10 Mkr':'10 Mkr7 Mkr'));
+ const goals=document.querySelector('.timing-goals').textContent;
+ assert.equal((goals.match(/Start senast vecka 26: Ja/g)||[]).length,f.scenario==='base'?2:0);
+ assert.equal((goals.match(/Svensk förmåga hela vecka 0–26: Ja/g)||[]).length,f.scenario==='base'?0:1);
+ const visible=document.querySelector('.timing-result').cloneNode(true);visible.querySelectorAll('details').forEach(d=>d.remove());
+ assert.doesNotMatch(visible.textContent,/D5|D6|D8|COMPLETE|PASS|\[2,/);
+ if(f.scenario==='customer_absent'){assert.match(visible.textContent,/motorn har inte själv valt att vänta/);assert.doesNotMatch(visible.textContent,/Vecka 0|start godkänns 0/);}
  assert.equal(document.querySelectorAll('.timing-result > details').length,1);
  assert.match(document.querySelector('.timing-result > details').textContent,/Slutförd körning \(COMPLETE\).*Godkänd teknisk granskning \(PASS\)/);
  const swapped=T.render({...c,left:c.right,right:c.left,allA:c.allB,allB:c.allA},C,p);
@@ -47,7 +58,35 @@ const ctx=vm.createContext({document,window,CE3FactoryTiming:T,CE3FactoryCompari
 vm.runInContext(fs.readFileSync(require.resolve('../static/app.js'),'utf8').split("document.addEventListener('click'")[0],ctx);ctx.fixture=f;
 vm.runInContext(`useProject(fixture.project);S.runs=fixture.runs.map(r=>r.result.record);S.config={storage:'local',limits:{}};S.tab='compare';S.comparison={left:fixture.runs[0].result,right:fixture.runs[1].result,allA:fixture.runs[0].bundle,allB:fixture.runs[1].bundle};render();`,ctx);
 assert.equal(document.querySelectorAll('.timing-result').length,1);
-assert(document.querySelector('#content').innerHTML.indexOf('Värdet av att flytta senare')<document.querySelector('#content').innerHTML.indexOf('Öppna tidsjämförelse'));
+const content=document.querySelector('#content').innerHTML;
+assert(content.indexOf('Vad vinner och förlorar vi på')<content.indexOf('Välj kundbesked'));
+assert(content.indexOf('Välj kundbesked')<content.indexOf('Kör och jämför'));
+assert(content.indexOf('Kör och jämför')<content.indexOf('Vad vinner och förlorar vi?'));
+assert.equal(document.querySelector('[aria-pressed=true]').dataset.scenario,'base');
+// Swapped actual plan identities continue to show the same summary in swapped columns.
+vm.runInContext(`S.compareIds=[fixture.project.plans[1].id,fixture.project.plans[0].id];S.comparison={left:fixture.runs[1].result,right:fixture.runs[0].result,allA:fixture.runs[1].bundle,allB:fixture.runs[0].bundle};render();`,ctx);
+assert.equal(document.querySelectorAll('.timing-result').length,1);
+assert.match(document.querySelector('.timing-main-table thead').textContent,/Senare flytt.*Tidig flytt/);
+// Fail closed on a stale comparison even if a caller forgot to clear its cached HTML/data.
+vm.runInContext(`S.p.plans[0].outcomes.E_CUSTOMER='absent';render();`,ctx);
+assert.equal(document.querySelectorAll('.timing-result').length,0);
+vm.runInContext(`useProject(fixture.project);S.runs=[];S.comparison=null;render();`,ctx);
+assert.equal(document.querySelectorAll('.timing-result').length,0);
+assert.match(document.querySelector('.timing-empty').textContent,/Inga aktuella resultat/);
 vm.runInContext(`S.p.plans[0].script.steps['8'][0].mode='if_not_taken';dirty();render();`,ctx);
 assert.equal(document.querySelectorAll('.timing-result').length,0);
 console.log('PASS: 20 real paths, metrics/differences, same-week payments, zero-duration/horizon intervals, variation, technical vs business status, reopening/stale display.');
+
+// Presentation-only revision: original observations and interval calculations remain byte-identical.
+const checkpoint=require('node:child_process').execFileSync('git',['show','517c8f6:isolated-tests/structural-ce3-workbench/static/factory-timing.js'],{encoding:'utf8'});
+assert.equal(fs.readFileSync(require.resolve('../static/factory-timing.js'),'utf8').split(' function summary(')[0],checkpoint.split(' function summary(')[0],'Observation, interval, coverage and preset definitions are unchanged');
+const old={module:{exports:{}}};vm.runInNewContext(checkpoint,old);
+for(const f of fixtures)for(const r of f.runs)for(const path of r.bundle.paths){
+ assert.equal(JSON.stringify(T.observe(r.result.input.model,path)),JSON.stringify(old.module.exports.observe(r.result.input.model,path)));
+}
+// Explicit presentation fixtures: unchanged differences and unavailable starts must not invent zero dates.
+const a=T.assess(fixtures[0].runs[0].result,fixtures[0].runs[0].bundle,C);
+assert.match(T.summary(a,a),/oförändrad.*oförändrade.*samma vecka.*oförändrat/);
+const unavailable=structuredClone(a);unavailable.paths[0].metrics.start=null;unavailable.paths[0].metrics.startGoal=false;
+assert.match(T.summary(a,unavailable),/Endast den tidiga planen/);assert.doesNotMatch(T.summary(a,unavailable),/0 veckor senare|8 veckor tidigare/);
+console.log('PASS: five customer rows, both goals, full tradeoff, null dates, reversed columns, scenario/stale/no-result view, original calculations unchanged.');
