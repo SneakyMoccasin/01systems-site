@@ -1,0 +1,12 @@
+{
+  "schema_version": "ce3-explorer-test-oracle/1",
+  "basis": "Hand-derived before executing explorer. P schedules ready at its next step. Q only accepts after ready; X is independent and total Q+X cost is 2. Only the six explicitly scoped slot assignments count.",
+  "orders": [
+    {"order": ["P", "Q", "X"], "goal": true, "budget": 0, "blocked_step": null, "pending_due": []},
+    {"order": ["P", "X", "Q"], "goal": true, "budget": 0, "blocked_step": null, "pending_due": []},
+    {"order": ["Q", "P", "X"], "goal": false, "budget": 1, "blocked_step": 0, "pending_due": []},
+    {"order": ["Q", "X", "P"], "goal": false, "budget": 1, "blocked_step": 0, "pending_due": [3]},
+    {"order": ["X", "P", "Q"], "goal": true, "budget": 0, "blocked_step": null, "pending_due": []},
+    {"order": ["X", "Q", "P"], "goal": false, "budget": 1, "blocked_step": 1, "pending_due": [3]}
+  ]
+}

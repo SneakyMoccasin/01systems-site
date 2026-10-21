@@ -1,0 +1,59 @@
+{
+  "schema_version": "ce3-explorer-problem/1",
+  "revision": 1,
+  "purpose": "synthetic_integration_test",
+  "profile": "fixed-replay/0.1",
+  "model": {
+    "schema_version": "ce3-model/1",
+    "source": "Synthetic P/Q/X integration test from CE3 Phase 1A.2 section 12; no customer-value claim.",
+    "clock": {"start": 0, "horizon": 2, "step": 1, "unit": "synthetic_step", "events_before_decisions": true, "horizon_inclusive": true},
+    "domains": {
+      "prepared": {"enum": [false, true]},
+      "ready": {"enum": [false, true]},
+      "done": {"enum": [false, true]},
+      "aux_done": {"enum": [false, true]},
+      "budget": {"integer": [0, 2]}
+    },
+    "initial": {"prepared": false, "ready": false, "done": false, "aux_done": false, "budget": 2},
+    "budget": {"field": "budget"},
+    "decisions": {
+      "P": {
+        "requires": [], "effects": {"set": {"prepared": true}, "add": {}},
+        "cost": 0, "schedule": {"event": "ready_event", "delay": 1},
+        "source": "Synthetic P/Q/X integration test from CE3 Phase 1A.2 section 12; no customer-value claim."
+      },
+      "Q": {
+        "requires": [{"field": "ready", "op": "eq", "value": true}],
+        "effects": {"set": {"done": true}, "add": {}}, "cost": 1, "schedule": null,
+        "source": "Synthetic P/Q/X integration test from CE3 Phase 1A.2 section 12; no customer-value claim."
+      },
+      "X": {
+        "requires": [], "effects": {"set": {"aux_done": true}, "add": {}},
+        "cost": 1, "schedule": null,
+        "source": "Synthetic P/Q/X integration test from CE3 Phase 1A.2 section 12; no customer-value claim."
+      }
+    },
+    "events": {
+      "ready_event": {
+        "requires": [], "kind": "timer", "outcomes": {"ready": {"set": {"ready": true}, "add": {}}}, "absent": null,
+        "source": "Synthetic P/Q/X integration test from CE3 Phase 1A.2 section 12; no customer-value claim."
+      }
+    },
+    "initial_events": [], "reference_event_order": ["ready_event"],
+    "metadata": {
+      "assumption": "Synthetic technical integration fixture, not a real-world or customer-value model.",
+      "time_basis": "Unit steps 0..2 inclusive; due events precede decisions; P schedules readiness at step+1.",
+      "deadlines": []
+    }
+  },
+  "outcomes": {}, "sources": {},
+  "search": {
+    "kind": "permutations_once/1", "decision_ids": ["P", "Q", "X"], "slots": [0, 1, 2],
+    "mode": "attempt", "retry": false, "early_stop": false
+  },
+  "observation": {
+    "schema_version": "ce3-terminal-goal/1", "goal_id": "all_required_decisions_and_terminal_goal",
+    "sampling": "last_row.after", "quantifier": "all_event_paths",
+    "terminal_equals": {"done": true, "aux_done": true}, "all_attempts_accepted": true
+  }
+}
