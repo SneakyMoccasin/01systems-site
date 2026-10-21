@@ -118,3 +118,19 @@ Etappen bevisar att CE3 kan verifiera alla sex scripts och att detta begränsade
 söklager kan redovisa deras mål och täckning. Den bevisar inte generell nåbarhet,
 permanent förlorade beslut, optimalitet, adaptiva policyer, kundnytta eller
 fullständig täckning utanför den deklarerade sökrymden.
+
+## Ny separat etapp: scenariokorsning
+
+`scenario_runner.py` korsar samma trebeslutsgrammatik med en fryst, explicit
+scenariomängd och varierar endast fulla externa outcomes. Acceptansfixturen
+har sex kandidater × ja/nej/uteblivet = 18 celler. Enscenarioflödet ovan och
+dess kontrakt är fortsatt separata.
+
+Se [scenariokontraktet](SCENARIO-FORMAT.md) och
+[implementationsrapporten med matris, blockerare och testkommandon](SCENARIO-IMPLEMENTATION-REPORT.md).
+
+```sh
+python3 -B isolated-tests/structural-ce3-explorer/scenario_runner.py run --output /tmp/ce3-crossing-new
+python3 -B isolated-tests/structural-ce3-explorer/scenario_runner.py verify --output /tmp/ce3-crossing-new
+python3 -B -m unittest discover -s isolated-tests/structural-ce3-explorer/scenario_tests -p 'test_*.py' -v
+```

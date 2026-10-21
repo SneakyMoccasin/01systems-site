@@ -1,0 +1,107 @@
+{
+  "derivation": "P sets prepared; X sets ready and aux_done; Q needs both prepared and ready. At step 1 before decisions approved sets ready, rejected clears ready, absent leaves readiness unchanged and stays waiting. Q has no retry. Goal done & aux_done & all attempts accepted on every event path.",
+  "orders": [
+    {
+      "order": [
+        "P",
+        "Q",
+        "X"
+      ],
+      "goals": {
+        "ja": true,
+        "nej": false,
+        "uteblivet": false
+      },
+      "blocked_steps": {
+        "ja": null,
+        "nej": 1,
+        "uteblivet": 1
+      }
+    },
+    {
+      "order": [
+        "P",
+        "X",
+        "Q"
+      ],
+      "goals": {
+        "ja": true,
+        "nej": true,
+        "uteblivet": true
+      },
+      "blocked_steps": {
+        "ja": null,
+        "nej": null,
+        "uteblivet": null
+      }
+    },
+    {
+      "order": [
+        "Q",
+        "P",
+        "X"
+      ],
+      "goals": {
+        "ja": false,
+        "nej": false,
+        "uteblivet": false
+      },
+      "blocked_steps": {
+        "ja": 0,
+        "nej": 0,
+        "uteblivet": 0
+      }
+    },
+    {
+      "order": [
+        "Q",
+        "X",
+        "P"
+      ],
+      "goals": {
+        "ja": false,
+        "nej": false,
+        "uteblivet": false
+      },
+      "blocked_steps": {
+        "ja": 0,
+        "nej": 0,
+        "uteblivet": 0
+      }
+    },
+    {
+      "order": [
+        "X",
+        "P",
+        "Q"
+      ],
+      "goals": {
+        "ja": true,
+        "nej": false,
+        "uteblivet": true
+      },
+      "blocked_steps": {
+        "ja": null,
+        "nej": 2,
+        "uteblivet": null
+      }
+    },
+    {
+      "order": [
+        "X",
+        "Q",
+        "P"
+      ],
+      "goals": {
+        "ja": false,
+        "nej": false,
+        "uteblivet": false
+      },
+      "blocked_steps": {
+        "ja": 1,
+        "nej": 1,
+        "uteblivet": 1
+      }
+    }
+  ]
+}

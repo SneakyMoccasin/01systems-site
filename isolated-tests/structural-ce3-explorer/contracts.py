@@ -18,9 +18,21 @@ def materialize(problem, order):
 
 
 def validate_problem(problem):
+    validate_declaration(problem)
+    equal(problem["schema_version"], "ce3-explorer-problem/1", "Unsupported problem version")
+    equal(problem["outcomes"], {}, "Scenario expansion is outside this stage")
+    require(all(e["kind"] == "timer" for e in problem["model"]["events"].values()),
+            "Only timer events supported in this stage")
+    return problem
+
+
+def validate_declaration(problem):
+    """Shared shape/grammar/goal checks, not a public version authorization.
+
+    Callers must separately enforce their version and environment contract.
+    """
     obj(problem, ("schema_version", "revision", "purpose", "profile", "model", "outcomes",
                   "sources", "search", "observation"), "problem")
-    require(problem["schema_version"] == "ce3-explorer-problem/1", "Unsupported problem version")
     require(type(problem["revision"]) is int and problem["revision"] >= 1, "Invalid revision")
     equal(problem["purpose"], "synthetic_integration_test", "Only technical integration scope supported")
     equal(problem["profile"], PROFILE, "Unsupported profile")
@@ -37,9 +49,6 @@ def validate_problem(problem):
     equal(sorted(problem["model"]["decisions"]), ids, "Search must include all model decisions")
     clock = problem["model"]["clock"]
     require(clock["start"] == 0 and clock["horizon"] == 2, "Only horizon 0..2 supported")
-    equal(problem["outcomes"], {}, "Scenario expansion is outside this stage")
-    require(all(e["kind"] == "timer" for e in problem["model"]["events"].values()),
-            "Only timer events supported in this stage")
     observation = problem["observation"]
     obj(observation, ("schema_version", "goal_id", "sampling", "quantifier", "terminal_equals",
                       "all_attempts_accepted"), "observation")
