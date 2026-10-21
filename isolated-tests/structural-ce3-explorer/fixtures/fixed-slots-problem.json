@@ -1,0 +1,259 @@
+{
+  "schema_version": "ce3-scenario-problem/2",
+  "revision": 1,
+  "purpose": "synthetic_integration_test",
+  "profile": "fixed-replay/0.1",
+  "model": {
+    "schema_version": "ce3-model/1",
+    "source": "Synthetic four-decision fixed-slot experiment; response at 4, timer two steps after T, horizon 14.",
+    "clock": {
+      "start": 1,
+      "horizon": 14,
+      "step": 1,
+      "unit": "synthetic_step",
+      "events_before_decisions": true,
+      "horizon_inclusive": true
+    },
+    "domains": {
+      "prepared": {
+        "enum": [
+          false,
+          true
+        ]
+      },
+      "ready": {
+        "enum": [
+          false,
+          true
+        ]
+      },
+      "done": {
+        "enum": [
+          false,
+          true
+        ]
+      },
+      "aux_done": {
+        "enum": [
+          false,
+          true
+        ]
+      },
+      "budget": {
+        "integer": [
+          0,
+          2
+        ]
+      },
+      "response": {
+        "enum": [
+          "waiting",
+          "approved",
+          "rejected"
+        ]
+      },
+      "tail": {
+        "enum": [
+          false,
+          true
+        ]
+      }
+    },
+    "initial": {
+      "prepared": false,
+      "ready": false,
+      "done": false,
+      "aux_done": false,
+      "budget": 2,
+      "response": "waiting",
+      "tail": false
+    },
+    "budget": {
+      "field": "budget"
+    },
+    "decisions": {
+      "P": {
+        "requires": [],
+        "effects": {
+          "set": {
+            "prepared": true
+          },
+          "add": {}
+        },
+        "cost": 0,
+        "schedule": null,
+        "source": "Synthetic fixed-slot fixture; response at 4 before decisions, horizon 14."
+      },
+      "Q": {
+        "requires": [
+          {
+            "field": "prepared",
+            "op": "eq",
+            "value": true
+          },
+          {
+            "field": "ready",
+            "op": "eq",
+            "value": true
+          }
+        ],
+        "effects": {
+          "set": {
+            "done": true
+          },
+          "add": {}
+        },
+        "cost": 1,
+        "schedule": null,
+        "source": "Synthetic fixed-slot fixture; response at 4 before decisions, horizon 14."
+      },
+      "X": {
+        "requires": [],
+        "effects": {
+          "set": {
+            "aux_done": true,
+            "ready": true
+          },
+          "add": {}
+        },
+        "cost": 1,
+        "schedule": null,
+        "source": "Synthetic fixed-slot fixture; response at 4 before decisions, horizon 14."
+      },
+      "T": {
+        "requires": [],
+        "effects": {
+          "set": {},
+          "add": {}
+        },
+        "cost": 0,
+        "schedule": {
+          "event": "tail_event",
+          "delay": 2
+        },
+        "source": "Synthetic unconditional timer scheduling decision."
+      }
+    },
+    "events": {
+      "response": {
+        "requires": [],
+        "kind": "external",
+        "outcomes": {
+          "approved": {
+            "set": {
+              "response": "approved",
+              "ready": true
+            },
+            "add": {}
+          },
+          "rejected": {
+            "set": {
+              "response": "rejected",
+              "ready": false
+            },
+            "add": {}
+          },
+          "absent": {
+            "set": {
+              "response": "waiting"
+            },
+            "add": {}
+          }
+        },
+        "absent": {
+          "outcome": "absent",
+          "field": "response",
+          "value": "waiting",
+          "source": "Explicit no response through horizon 14; leaves readiness unchanged."
+        },
+        "source": "Synthetic fixed-slot fixture; response at 4 before decisions, horizon 14."
+      },
+      "tail_event": {
+        "requires": [],
+        "kind": "timer",
+        "outcomes": {
+          "finish": {
+            "set": {
+              "tail": true
+            },
+            "add": {}
+          }
+        },
+        "absent": null,
+        "source": "Synthetic tail event exactly two steps after accepted T."
+      }
+    },
+    "initial_events": [
+      {
+        "id": "response",
+        "due": 4,
+        "scheduled_at": 1
+      }
+    ],
+    "reference_event_order": [
+      "response",
+      "tail_event"
+    ],
+    "metadata": {
+      "assumption": "Synthetic technical integration fixture, not a real-world or customer-value model.",
+      "time_basis": "Start 1; slots 2,5,9,12; response 4 before decisions; terminal sampling at inclusive horizon 14.",
+      "deadlines": []
+    }
+  },
+  "sources": {},
+  "search": {
+    "kind": "permutations_once/2",
+    "decision_ids": [
+      "X",
+      "T",
+      "Q",
+      "P"
+    ],
+    "slots": [
+      2,
+      5,
+      9,
+      12
+    ],
+    "mode": "attempt",
+    "retry": false,
+    "early_stop": false
+  },
+  "observation": {
+    "schema_version": "ce3-terminal-goal/1",
+    "goal_id": "all_required_decisions_and_terminal_goal",
+    "sampling": "last_row.after",
+    "quantifier": "all_event_paths",
+    "terminal_equals": {
+      "done": true,
+      "aux_done": true,
+      "tail": true
+    },
+    "all_attempts_accepted": true
+  },
+  "scenario_set": {
+    "schema_version": "ce3-scenario-set/1",
+    "variation": "outcomes_only",
+    "selection": "explicit_complete_list",
+    "members": [
+      {
+        "label": "ja",
+        "outcomes": {
+          "response": "approved"
+        }
+      },
+      {
+        "label": "nej",
+        "outcomes": {
+          "response": "rejected"
+        }
+      },
+      {
+        "label": "uteblivet",
+        "outcomes": {
+          "response": "absent"
+        }
+      }
+    ]
+  }
+}

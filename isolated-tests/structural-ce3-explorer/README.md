@@ -134,3 +134,21 @@ python3 -B isolated-tests/structural-ce3-explorer/scenario_runner.py run --outpu
 python3 -B isolated-tests/structural-ce3-explorer/scenario_runner.py verify --output /tmp/ce3-crossing-new
 python3 -B -m unittest discover -s isolated-tests/structural-ce3-explorer/scenario_tests -p 'test_*.py' -v
 ```
+
+## Deklarerade beslut och fasta tidsplatser /2
+
+`scenario_runner.py` stöder även opt-in `ce3-scenario-problem/2` med 1–6
+deklarerade beslut och lika många strikt stigande heltalsslots. Horisonten
+deklareras separat i modellen. Högst 720 kandidater och 2160 celler stöds;
+storleken kontrolleras före uppräkning. Lägre körbudget bevarar hela den
+förväntade populationen och lämnar återstående celler NOT_RUN/UNKNOWN.
+
+Se [arkitekturkontrollen](FIXED-SLOTS-ARCHITECTURE.md),
+[kontrakt och run-/verify-kommandon](FIXED-SLOTS-FORMAT.md) och
+[implementationsrapporten](FIXED-SLOTS-IMPLEMENTATION-REPORT.md).
+Den nya fixturen har 24 ordningar × 3 scenarier vid slots 2/5/9/12 och
+horisont 14. Standardkommandona ovan fortsätter använda de gamla /1-fixturerna.
+
+```sh
+python3 -B -m unittest discover -s isolated-tests/structural-ce3-explorer/fixed_slots_tests -p 'test_*.py' -v
+```

@@ -1,9 +1,15 @@
-"""Outcome-only crossing of the existing three-decision grammar. No transitions."""
+"""Outcome-only crossing of versioned fixed-script grammars. No transitions."""
 from copy import deepcopy
 from itertools import permutations, product
 
 from bridge import digest, equal, obj, require, validate
 from contracts import materialize as single_input, validate_declaration, SCRIPT_SOURCE
+from fixed_slots import expected_orders, search_size
+
+
+def version(problem, name):
+    """Only changed explorer payloads use /2; unchanged scenario/CE3 types stay /1."""
+    return "ce3-scenario-" + name + ("/2" if problem["schema_version"].endswith("/2") else "/1")
 
 
 def effective_problem(problem, scenario):
@@ -15,13 +21,17 @@ def effective_problem(problem, scenario):
 def validate_problem(problem):
     obj(problem, ("schema_version", "revision", "purpose", "profile", "model", "sources",
                   "search", "observation", "scenario_set"), "scenario problem")
-    equal(problem["schema_version"], "ce3-scenario-problem/1", "Unsupported scenario problem")
+    require(problem["schema_version"] in ("ce3-scenario-problem/1", "ce3-scenario-problem/2"),
+            "Unsupported scenario problem")
+    expanded = problem["schema_version"] == "ce3-scenario-problem/2"
     space = problem["scenario_set"]
     obj(space, ("schema_version", "variation", "selection", "members"), "scenario set")
     equal(space["schema_version"], "ce3-scenario-set/1", "Unsupported scenario set")
     equal(space["variation"], "outcomes_only", "Only outcomes may vary")
     equal(space["selection"], "explicit_complete_list", "Unsupported scenario selection")
     require(type(space["members"]) is list and bool(space["members"]), "Nonempty scenario set required")
+    if expanded:
+        search_size(problem)  # before envelopes, candidate lists or manifests
     labels = set()
     for scenario in space["members"]:
         obj(scenario, ("label", "outcomes"), "scenario")
@@ -29,14 +39,17 @@ def validate_problem(problem):
         require(type(label) is str and bool(label.strip()) and label not in labels,
                 "Unique nonempty scenario label required")
         labels.add(label)
-        validate_declaration(effective_problem(problem, scenario))
+        validate_declaration(effective_problem(problem, scenario), fixed_slots=expanded)
     return problem
 
 
 def search_identity(problem):
-    return digest({"schema_version": "ce3-scenario-search-space/1",
+    grammar = deepcopy(problem["search"])
+    if problem["schema_version"] == "ce3-scenario-problem/2":
+        grammar["decision_ids"] = sorted(grammar["decision_ids"])
+    return digest({"schema_version": version(problem, "search-space"),
                    "model_id": digest(problem["model"]), "source_set_id": digest(problem["sources"]),
-                   "grammar": problem["search"], "script_source": SCRIPT_SOURCE})
+                   "grammar": grammar, "script_source": SCRIPT_SOURCE})
 
 
 def scenario_space_identity(problem):
@@ -47,7 +60,7 @@ def scenario_space_identity(problem):
 def candidate(problem, order):
     script = single_input(effective_problem(problem, problem["scenario_set"]["members"][0]), order)["script"]
     plan_id = digest({"kind": "ce3-plan/1", "script": script})
-    return {"candidate_id": digest({"schema_version": "ce3-scenario-candidate/1",
+    return {"candidate_id": digest({"schema_version": version(problem, "candidate"),
                                    "search_space_id": search_identity(problem), "plan_id": plan_id}),
             "plan_id": plan_id, "order": list(order), "script": script}
 
@@ -65,7 +78,7 @@ def materialize(problem, plan, scenario):
 
 
 def cell(problem, plan, scenario):
-    payload = {"schema_version": "ce3-scenario-cell/1", "problem_id": digest(problem),
+    payload = {"schema_version": version(problem, "cell"), "problem_id": digest(problem),
                "candidate_id": plan["candidate_id"], "plan_id": plan["plan_id"],
                "scenario_space_id": scenario_space_identity(problem), "scenario_id": scenario["scenario_id"],
                "outcomes_id": scenario["outcomes_id"],
@@ -74,23 +87,27 @@ def cell(problem, plan, scenario):
 
 
 def freeze(problem):
-    """Independent enumerator: all length-three words, filtered by all-different.
+    """Independent oracle: /1 Cartesian words; /2 factorial rank decoding.
 
     Crosses by scenario first, unlike generate's permutations then scenario loop.
     Shared materialization is additionally checked by direct input tests.
     """
     validate_problem(problem)
     ids = problem["search"]["decision_ids"]
-    plans = [candidate(problem, w) for w in product(ids, repeat=3) if len(set(w)) == 3]
+    expanded = problem["schema_version"] == "ce3-scenario-problem/2"
+    orders = expected_orders(ids) if expanded else (w for w in product(ids, repeat=3) if len(set(w)) == 3)
+    plans = [candidate(problem, w) for w in orders]
     scenarios = [scenario_member(problem, s) for s in problem["scenario_set"]["members"]]
     cells = [cell(problem, p, s) for s in scenarios for p in plans]
     cells.sort(key=lambda c: c["cell_id"])
-    manifest = {"schema_version": "ce3-scenario-manifest/1", "problem_id": digest(problem),
+    manifest = {"schema_version": version(problem, "manifest"), "problem_id": digest(problem),
                 "search_space_id": search_identity(problem), "scenario_space_id": scenario_space_identity(problem),
                 "model_id": digest(problem["model"]), "source_set_id": digest(problem["sources"]),
                 "observation_definition_id": digest(problem["observation"]),
                 "candidates": plans, "scenarios": scenarios, "cells": cells}
-    return manifest, {"schema_version": "ce3-scenario-pins/1", "problem_id": digest(problem),
+    if expanded:
+        manifest["search_size"] = search_size(problem)
+    return manifest, {"schema_version": version(problem, "pins"), "problem_id": digest(problem),
                       "manifest_id": digest(manifest)}
 
 
@@ -101,8 +118,12 @@ def verify_frozen(problem, manifest, pins):
 
 
 def generate(problem):
+    ids = problem["search"]["decision_ids"]
+    if problem["schema_version"] == "ce3-scenario-problem/2":
+        validate_problem(problem)  # size gate also protects direct generator calls
+        ids = sorted(ids)
     return [cell(problem, candidate(problem, order), scenario_member(problem, s))
-            for order in permutations(problem["search"]["decision_ids"])
+            for order in permutations(ids)
             for s in problem["scenario_set"]["members"]]
 
 

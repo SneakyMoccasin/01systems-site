@@ -1,0 +1,68 @@
+{
+  "orders": [
+    "PQXT",
+    "PQTX",
+    "PXQT",
+    "PXTQ",
+    "PTQX",
+    "PTXQ",
+    "QPXT",
+    "QPTX",
+    "QXPT",
+    "QXTP",
+    "QTPX",
+    "QTXP",
+    "XPQT",
+    "XPTQ",
+    "XQPT",
+    "XQTP",
+    "XTPQ",
+    "XTQP",
+    "TPQX",
+    "TPXQ",
+    "TQPX",
+    "TQXP",
+    "TXPQ",
+    "TXQP"
+  ],
+  "goals": {
+    "ja": [
+      "PQXT",
+      "PQTX",
+      "PXQT",
+      "PXTQ",
+      "PTQX",
+      "PTXQ",
+      "XPQT",
+      "XPTQ",
+      "XTPQ",
+      "TPQX",
+      "TPXQ",
+      "TXPQ"
+    ],
+    "nej": [
+      "PXQT",
+      "PXTQ",
+      "PTXQ",
+      "TPXQ",
+      "TXPQ"
+    ],
+    "uteblivet": [
+      "PXQT",
+      "PXTQ",
+      "PTXQ",
+      "XPQT",
+      "XPTQ",
+      "XTPQ",
+      "TPXQ",
+      "TXPQ"
+    ]
+  },
+  "robust_true": [
+    "PXQT",
+    "PXTQ",
+    "PTXQ",
+    "TPXQ",
+    "TXPQ"
+  ]
+}
