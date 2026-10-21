@@ -11,7 +11,7 @@ from bridge import (ROOT, digest, equal, explorer_build, read_bundle, require,
                     runtime_manifest, write_bundle)
 from contracts import LIMITS
 from observe import audit_receipt, observe
-from runner import artifact_record, cli_process
+from runner import artifact_record, cli_process, execution_prefix_valid
 from scenario_contracts import (check_population, effective_problem, freeze, generate,
                                 materialize, verify_frozen, version)
 from fixed_slots import search_size
@@ -139,6 +139,13 @@ def verify(output, pins):
     expected_ids = {c["cell_id"] for c in manifest["cells"]}
     actual_ids = {p.name for p in (output / "runs").iterdir()} if (output / "runs").exists() else set()
     unexpected = sorted(actual_ids - expected_ids)
+    plans, scenarios = lookups(manifest)
+    # Manifest cells are hash-sorted, not execution-ordered. The verified
+    # scenario list retains declaration order; candidate orders are lexical.
+    scenario_positions = {s["scenario_id"]: i for i, s in enumerate(manifest["scenarios"])}
+    ordered_cells = sorted(manifest["cells"], key=lambda c: (
+        plans[c["candidate_id"]]["order"], scenario_positions[c["scenario_id"]]))
+    execution_valid = execution_prefix_valid([c["cell_id"] for c in ordered_cells], actual_ids, spec["max_cells"])
     # A duplicate occurrence makes every claimant unknown, independent of iteration order.
     occurrences = Counter()
     for key in expected_ids:
@@ -148,7 +155,6 @@ def verify(output, pins):
                 occurrences[value] += 1
         except ERRORS:
             pass
-    plans, scenarios = lookups(manifest)
     results = []
     for cell in manifest["cells"]:
         key = cell["cell_id"]
@@ -188,7 +194,7 @@ def verify(output, pins):
             entry["reason"] = str(error)
         results.append(entry)
     certified = [c for c in results if c["run_status"] == "CERTIFIED"]
-    invalid = membership["status"] == "INVALID" or bool(unexpected)
+    invalid = membership["status"] == "INVALID" or not execution_valid
 
     def projection_coverage(field, members):
         expected = {m[field] for m in members}

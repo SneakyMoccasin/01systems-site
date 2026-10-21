@@ -102,6 +102,18 @@ def run(problem, manifest, trusted_pins, output, *, limits=None, max_candidates=
     return result
 
 
+def execution_prefix_valid(ordered_ids, actual_ids, budget):
+    """Check retained attempt evidence against the declared start budget.
+
+    Callers derive order from the verified domain, never saved enumeration.
+    Creating a runs/<id> entry reserves an attempt, before started.json or
+    a successful record exists. Failed/incomplete attempts consume budget.
+    Missing entries remain unknown: this is no attestation of chronology or
+    of attempts whose entire evidence was removed.
+    """
+    return len(actual_ids) <= budget and actual_ids <= set(ordered_ids[:budget])
+
+
 def verify(output, trusted_pins):
     """Read-only: validate trusted identities, fresh audit, recompute observations.
 
@@ -123,6 +135,9 @@ def verify(output, trusted_pins):
     expected_ids = {m["candidate_id"] for m in manifest["members"]}
     actual_ids = {p.name for p in (output / "runs").iterdir()} if (output / "runs").exists() else set()
     unexpected_runs = sorted(actual_ids - expected_ids)
+    execution_valid = execution_prefix_valid(
+        [m["candidate_id"] for m in sorted(manifest["members"], key=lambda m: m["order"])],
+        actual_ids, spec["max_candidates"])
     results, seen_runs = [], set()
     for candidate in manifest["members"]:
         directory = output / "runs" / candidate["candidate_id"]
@@ -161,7 +176,7 @@ def verify(output, trusted_pins):
             entry["reason"] = str(error)
         results.append(entry)
     uncertified = [r["candidate_id"] for r in results if r["run_status"] != "CERTIFIED"]
-    invalid = coverage["status"] == "INVALID" or bool(unexpected_runs)
+    invalid = coverage["status"] == "INVALID" or not execution_valid
     complete = coverage["status"] == "COMPLETE" and not uncertified and not invalid
     result = {"schema_version": "ce3-explorer-result/1", "problem_id": digest(problem),
               "problem_revision": problem["revision"], "manifest_id": digest(manifest),

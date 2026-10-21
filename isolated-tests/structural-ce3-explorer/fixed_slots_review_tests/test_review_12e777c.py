@@ -1,6 +1,6 @@
 """Independent falsification of 12e777c. No production helpers as test oracles.
 
-R1's expectedFailure is an OPEN verifier defect, not a passed requirement.
+R1 regression now requires rejection of the contradictory execution budget.
 All artifact mutations occur only in private temporary copies.
 """
 from copy import deepcopy
@@ -532,17 +532,18 @@ class Review12e777c(unittest.TestCase):
         return root
 
     def test_16_R1_characterize_budget_contradiction(self):
-        """A passing reproduction of the OPEN defect; not a correctness claim."""
+        """Reject the batch contract while preserving independently valid goals."""
         root = self.budget_forgery()
         result = runner.verify(root, self.pins)
         self.assertEqual(result["execution_budget"]["max_cells"], 0)
-        self.assertEqual(result["cell_coverage"]["status"], "COMPLETE")
+        self.assertEqual(result["cell_coverage"]["status"], "INVALID")
         self.assertEqual(result["cell_coverage"]["certified"], 72)
-        self.assertEqual(cli("verify", "--output", root, "--pins", self.frozen / "pins.json").returncode, 0)
+        self.assertEqual([c["goal_satisfied"] for c in result["cells"]],
+                         [c["goal_satisfied"] for c in self.result["cells"]])
+        self.assertEqual(cli("verify", "--output", root, "--pins", self.frozen / "pins.json").returncode, 2)
 
-    @unittest.expectedFailure
     def test_17_R1_budget_contradiction_must_not_certify_complete_batch(self):
-        """Desired gate is missing at 12e777c; do not count this as PASS."""
+        """Regression for the missing gate at 12e777c."""
         root = self.budget_forgery()
         try:
             result = runner.verify(root, self.pins)
