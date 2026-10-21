@@ -1,15 +1,25 @@
 """Use CE3's existing codec/schema; execution remains in its separate CLI."""
+import gzip
 import hashlib
 from pathlib import Path
 import platform
 import sys
+import zlib
 
 ROOT = Path(__file__).resolve().parent
 REPLAY = ROOT.parent / "structural-ce3-replay"
 sys.path.insert(0, str(REPLAY))
 
-from core.history import digest, encode, read_bundle, write_bundle
+from core.history import digest, encode, read_bundle as _read_bundle, write_bundle
 from core.schema import PROFILE, in_domain, obj, validate
+
+
+def read_bundle(path):
+    """Normalize gzip corruption at the explorer's artifact boundary only."""
+    try:
+        return _read_bundle(path)
+    except (EOFError, gzip.BadGzipFile, zlib.error) as error:
+        raise ValueError(f"Invalid gzip artifact {path}: {error}") from error
 
 
 def require(condition, message):
