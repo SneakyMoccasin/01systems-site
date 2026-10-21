@@ -121,3 +121,31 @@ test('timeout consumes one intent and stops; contract rejection also prevents fu
   const v=await other.agent.dispatch({action:'create',text:BRIEF});assert.match(v.last_attempt.error,/MODEL_REQUEST_BINDING/);
   await assert.rejects(other.provider.generate(request()),/LIVE_STOPPED/);assert.equal(other.calls(),1);
 });
+
+test('stored 401 diagnostics explain invalid key safely without journal mutation or another send',async t=>{
+  const {status}=require('./openai-provider.cjs');
+  const f=setup(t,()=>({status:401,body:JSON.stringify({error:{type:'invalid_request_error',code:'invalid_api_key',message:'Incorrect API key provided: sk-partial****echo. Bearer secret-fragment'}})}));
+  const v=await f.agent.dispatch({action:'create',text:BRIEF});assert.equal(v.last_attempt.error,'CREDENTIAL_IN_RESPONSE');
+  const j=new Journal(f.journalFile),before=j.snapshot(),diagnostic=f.provider.status().last_failure;
+  assert.deepEqual(require('./diagnostics.cjs').diagnosticForAttempt({...before.runs[0].attempts[0],error:'OPENAI_HTTP_OR_NETWORK_ERROR'}),diagnostic);
+  assert.equal(diagnostic.http_status,401);assert.equal(diagnostic.api_code,'invalid_api_key');assert.match(diagnostic.message,/avvisade API-nyckeln/);
+  assert(!JSON.stringify(diagnostic).includes('echo'));assert(!JSON.stringify(diagnostic).includes('secret-fragment'));
+  assert.deepEqual(status(f.journalFile).last_failure,diagnostic);assert.deepEqual(j.snapshot(),before);j.close();
+  assert.equal(f.provider.status().dispatched,1);assert.equal(f.provider.status().reserved_usd,1.062);assert(f.provider.status().stopped);assert.equal(f.calls(),1);
+  const {parseHTML}=require('linkedom'),vm=require('node:vm');
+  const {document}=parseHTML(fs.readFileSync(path.join(__dirname,'static/index.html'),'utf8'));
+  const context=vm.createContext({document,fetch:async()=>({ok:true,json:async()=>({provider:{kind:'openai_live',label:'Test'},sessions:[],budget:f.provider.status()})})});
+  vm.runInContext(fs.readFileSync(path.join(__dirname,'static/app.js'),'utf8'),context);await vm.runInContext('list()',context);
+  const notice=document.getElementById('provider').textContent;
+  assert.match(notice,/1\/3 anrop/);assert.match(notice,/HTTP 401, invalid_api_key/);assert.match(notice,/Provet har stoppats/);assert(!notice.includes('secret-fragment'));
+});
+test('diagnostics distinguish HTTP failures from absent response and never echo unknown error fields',()=>{
+  const {diagnosticForAttempt}=require('./diagnostics.cjs');
+  const receipt=(status,code)=>({error:'OPENAI_HTTP_OR_NETWORK_ERROR',response:{status,body:JSON.stringify({error:{code,param:'secret',message:'do not display secret'}})}});
+  assert.match(diagnosticForAttempt(receipt(429,'insufficient_quota')).message,/API-kvoten/);
+  assert.match(diagnosticForAttempt(receipt(null,null)).message,/Inget fullständigt HTTP-svar/);
+  assert.match(diagnosticForAttempt(receipt(400,'invalid_json_schema')).message,/invalid_json_schema/);
+  assert.match(diagnosticForAttempt(receipt(503,null)).message,/serverfel/);
+  const unknown=diagnosticForAttempt(receipt(400,'sk-never-display'));assert.equal(unknown.api_code,null);assert(!JSON.stringify(unknown).includes('secret'));assert(!JSON.stringify(unknown).includes('sk-never-display'));
+  assert.equal(diagnosticForAttempt({state:'planned'}),null);assert.equal(diagnosticForAttempt({state:'settled'}),null);
+});

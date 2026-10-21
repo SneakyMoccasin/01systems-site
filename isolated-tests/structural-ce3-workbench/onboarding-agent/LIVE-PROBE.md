@@ -172,3 +172,38 @@ Befintliga 78 kontrakts-, Session/2- och prototypregressioner är också körda.
 Basens filhashar är oförändrade. Senare motorcommit `d24d6d1` är endast noterad i
 `engine-information.json`, aldrig införd som kapabilitet. Motor- och SR-repot
 har inte ändrats. Inga paket har installerats och ingen push har gjorts.
+
+## Felsökning av första liveförsöket, 2026-10-21
+
+Det sparade anropet kl. 18:28:08 UTC fick **HTTP 401**,
+`error.type: invalid_request_error`, `error.code: invalid_api_key`.
+API-svaret klassificerades som ”incorrect API key provided”; nyckel eller
+nyckelfragment återges inte. Det är ett autentiseringsfel, inte belägg för ett
+fel i modellens JSON-schema. Det går inte att avgöra lokalt om nyckeln var
+felkopierad, återkallad eller från fel källa. Inget utkast skapades.
+
+Journalen granskades via en separat kopia av SQLite- och WAL-filerna. Serverns
+stdout/stderr var kopplade till en terminal, inte en sparad loggfil; terminalens
+scrollback var inte tillgänglig här. Det lokala `outcome.json` bekräftar endast
+den äldre generiska felkoden. HTTP-kvittot i journalen är underlaget för diagnosen.
+Ingen API-kontroll, nyckelläsning ur processmiljö eller nytt modellanrop gjordes.
+
+`diagnostics.cjs` ger en säker läsvy av befintliga kvitton. UI visar nu HTTP-status,
+en känd felkod och nästa steg även för gamla generiska fel. API:ets fria
+felmeddelande, okända koder, parametrar och headers skickas aldrig till UI.
+Ändringen kräver omstart av serverprocessen och omladdning av sidan. Den startar
+inte något anrop och häver inte stoppet. Journal, reservationer och räknare ändras
+inte vid diagnostikläsning.
+
+Nästa steg är att kontrollera eller ersätta projektnyckeln lokalt och läsa in den
+på nytt enligt instruktionen ovan. Ingen nyckel ska delas i chatten. Nyckelbyte
+eller omstart räcker inte för att häva budgetstoppet: fortsatt liveprov kräver en
+separat, uttrycklig återupptagning som bevarar första försöket och bara använder
+de två återstående platserna. Ingen återupptagning eller budgetåterställning har
+införts eller utförts i felsökningen. Radera inte journalen.
+
+Räknaren är **1/3**, första försökets reservation **0,354 USD**, hela provets
+reservation **1,062 USD**. Kvittot saknar usage; ingen slutsats om faktisk
+debitering dras och ingen reservation återbetalas. Offlineverifieringen omfattar
+40 passerande onboarding-/adaptertester, inklusive 401-diagnos, sekretess,
+UI-visning, oförändrad journal och noll extra anrop vid diagnostikläsning.

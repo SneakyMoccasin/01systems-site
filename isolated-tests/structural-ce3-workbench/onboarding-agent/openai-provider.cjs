@@ -5,6 +5,7 @@ const Price=require('../onboarding-transport/price.cjs');
 const {Journal}=require('../onboarding-transport/journal.cjs');
 const {httpsSend,redact,ENDPOINT}=require('../onboarding-transport/transport.cjs');
 const {wireRequest,resolveResponse}=require('./openai-wire.cjs');
+const {diagnosticForAttempt}=require('./diagnostics.cjs');
 const POLICY_SHA='f6c0db3c00312727afaad65ccbafbde6c046c75b5fdde11372ee0ac457df1f86';
 const defaultJournal=path.join(__dirname,'../local-data/onboarding-agent-first-live/budget.sqlite');
 function policy(){
@@ -33,6 +34,7 @@ function status(file=defaultJournal){
 function budgetStatus(j,p){
   const s=checkJournal(j,p),a=s.runs[0].attempts,dispatched=a.filter(t=>t.request!==null).length;
   return {prepared:true,maximum_calls:p.maximum_calls,dispatched,maximum_usd:p.total_nusd/1e9,reserved_usd:s.liability_nusd/1e9,maximum_count_calls:0,
+    last_failure:diagnosticForAttempt([...a].reverse().find(t=>t.error||t.state==='uncertain')),
     stopped:s.frozen||s.events.some(e=>e.detail?.code==='DRAFT_REJECTED')||a.some(t=>t.error||t.state==='uncertain')||dispatched===p.maximum_calls,valid_until:p.price.verification.valid_until};
 }
 class OpenAIProvider {
