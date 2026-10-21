@@ -1,0 +1,20 @@
+{
+  "schema_version": "ce3-engine-information/1",
+  "observed_at": "2026-10-21",
+  "observed_head": "362f647af691e7cd1d4c2be21369b1dfdaf68f28",
+  "adopted": false,
+  "capability_baseline": "2dbb0fb19193fee8ffeee3612dd045e33762a750",
+  "note": "Information only: fixed-slots /2 implementation and independent review observed after the frozen base. Further budget work remains uncommitted. No motor files or capabilities adopted; a tested, explicit capability version update is required.",
+  "deliveries": [
+    {
+      "commit": "362f647af691e7cd1d4c2be21369b1dfdaf68f28",
+      "description": "Review CE3 fixed-slot explorer 12e777c with independent falsification tests",
+      "adopted": false
+    },
+    {
+      "commit": "12e777c023d91ad79487527c01a6f466ee926708",
+      "description": "Extend CE3 explorer with declared decisions and fixed time slots",
+      "adopted": false
+    }
+  ]
+}
