@@ -1,5 +1,12 @@
 # CE3 – första minimala explorer
 
+Nästa opt-in-etapp finns nu som `ce3-scenario-problem/2`: 1–6 deklarerade
+beslut med lika många fasta tidsplatser och separat horisont. Se
+[kontrakt och kommandon](FIXED-SLOTS-FORMAT.md),
+[arkitekturkontroll](FIXED-SLOTS-ARCHITECTURE.md) och
+[test-/leveransrapport](FIXED-SLOTS-REPORT.md).
+Beskrivningen nedan gäller fortsatt de ursprungliga /1-kontrakten.
+
 Tekniskt integrationstest ovanpå oförändrad `fixed-replay/0.1`, enligt
 [Fas 1A](../../CE3-PHASE1A-ARCHITECTURE-AUDIT.md) och
 [Fas 1A.2](../../CE3-PHASE1A2-PROBLEM-EXPLORER-AUDIT.md).

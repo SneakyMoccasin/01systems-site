@@ -26,7 +26,7 @@ def validate_problem(problem):
     return problem
 
 
-def validate_declaration(problem):
+def validate_declaration(problem, *, declared_slots=False):
     """Shared shape/grammar/goal checks, not a public version authorization.
 
     Callers must separately enforce their version and environment contract.
@@ -39,16 +39,21 @@ def validate_declaration(problem):
     search = problem["search"]
     obj(search, ("kind", "decision_ids", "slots", "mode", "retry", "early_stop"), "search")
     ids = search["decision_ids"]
-    require(type(ids) is list and len(ids) == 3 and all(type(x) is str for x in ids),
-            "Exactly three decision IDs required")
-    require(len(set(ids)) == 3 and ids == sorted(ids), "Decision set must be unique and canonical")
-    equal(search, {"kind": "permutations_once/1", "decision_ids": ids, "slots": [0, 1, 2],
-                   "mode": "attempt", "retry": False, "early_stop": False}, "Unsupported search grammar")
+    if declared_slots:
+        from fixed_slots import validate_search
+        validate_search(problem)
+    else:
+        require(type(ids) is list and len(ids) == 3 and all(type(x) is str for x in ids),
+                "Exactly three decision IDs required")
+        require(len(set(ids)) == 3 and ids == sorted(ids), "Decision set must be unique and canonical")
+        equal(search, {"kind": "permutations_once/1", "decision_ids": ids, "slots": [0, 1, 2],
+                       "mode": "attempt", "retry": False, "early_stop": False}, "Unsupported search grammar")
     # Schema validation is delegated, including every unused model rule/outcome.
     validate(materialize(problem, ids))
-    equal(sorted(problem["model"]["decisions"]), ids, "Search must include all model decisions")
+    equal(sorted(problem["model"]["decisions"]), sorted(ids), "Search must include all model decisions")
     clock = problem["model"]["clock"]
-    require(clock["start"] == 0 and clock["horizon"] == 2, "Only horizon 0..2 supported")
+    if not declared_slots:
+        require(clock["start"] == 0 and clock["horizon"] == 2, "Only horizon 0..2 supported")
     observation = problem["observation"]
     obj(observation, ("schema_version", "goal_id", "sampling", "quantifier", "terminal_equals",
                       "all_attempts_accepted"), "observation")

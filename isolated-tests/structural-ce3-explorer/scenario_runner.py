@@ -13,24 +13,48 @@ from contracts import LIMITS
 from observe import audit_receipt, observe
 from runner import artifact_record, cli_process
 from scenario_contracts import (check_population, effective_problem, freeze, generate,
-                                materialize, verify_frozen)
+                                materialize, validate_problem, verify_frozen, version)
+from fixed_slots import search_size
 
 ERRORS = (OSError, ValueError, KeyError, TypeError, IndexError)
 
 
-def batch_spec(problem, manifest, runtime, build, limits, max_cells):
+def validate_limits(limits, max_cells, population):
     equal(sorted(limits), sorted(LIMITS), "Invalid limits keys")
     require(all(type(v) is int and v > 0 for v in limits.values()), "Invalid limits")
-    require(type(max_cells) is int and 0 <= max_cells <= len(manifest["cells"]), "Invalid cell budget")
-    return {"schema_version": "ce3-scenario-execution/1", "problem_id": digest(problem),
+    require(type(max_cells) is int and 0 <= max_cells <= population, "Invalid cell budget")
+
+
+def preflight(problem, *, limits=None, max_cells=None):
+    """/2 declaration and resource check, without creating a candidate population."""
+    equal(problem["schema_version"], "ce3-scenario-problem/2", "Preflight requires scenario problem /2")
+    size = search_size(problem)
+    limits = dict(LIMITS if limits is None else limits)
+    budget = size["cell_count"] if max_cells is None else max_cells
+    validate_limits(limits, budget, size["cell_count"])
+    validate_problem(problem)
+    return {"search_size": size, "limits": limits, "max_cells": budget,
+            "process_timeout_seconds": 60}
+
+
+def batch_spec(problem, manifest, runtime, build, limits, max_cells):
+    validate_limits(limits, max_cells, len(manifest["cells"]))
+    spec = {"schema_version": version(problem, "execution"), "problem_id": digest(problem),
             "manifest_id": digest(manifest), "runtime_id": digest(runtime),
             "explorer_build_id": digest(build), "limits": limits, "max_cells": max_cells}
+    if problem["schema_version"] == "ce3-scenario-problem/2":
+        spec.update(preflight(problem, limits=limits, max_cells=max_cells))
+    return spec
+
+
+def execution_version(spec, kind):
+    return "ce3-scenario-" + kind + "/" + spec["schema_version"].rsplit("/", 1)[1]
 
 
 def base_record(cell, spec, batch_id, run_id):
     for value in (batch_id, run_id):
         require(type(value) is str and uuid.UUID(hex=value).hex == value, "Invalid attempt UUID")
-    return {"schema_version": "ce3-scenario-run/1", "cell": cell, "run_id": run_id,
+    return {"schema_version": execution_version(spec, "run"), "cell": cell, "run_id": run_id,
             "batch_attempt_id": batch_id, "batch_spec_id": digest(spec),
             "execution_id": digest({"schema_version": "ce3-execution/1",
                                     "input_identity": cell["input_identity"],
@@ -40,7 +64,7 @@ def base_record(cell, spec, batch_id, run_id):
 def observation(problem, scenario, cell, bundle, run_input, audit, spec):
     projection = observe(effective_problem(problem, scenario["definition"]), bundle, run_input, audit,
                          spec["runtime_id"], spec["explorer_build_id"])
-    return {"schema_version": "ce3-scenario-observation/1", "problem_id": digest(problem),
+    return {"schema_version": version(problem, "observation"), "problem_id": digest(problem),
             "cell_id": cell["cell_id"], "scenario_id": scenario["scenario_id"],
             "batch_spec_id": digest(spec), "projection": projection}
 
@@ -51,6 +75,8 @@ def lookups(manifest):
 
 
 def run(problem, manifest, pins, output, *, limits=None, max_cells=None):
+    if problem["schema_version"] == "ce3-scenario-problem/2":
+        preflight(problem, limits=limits, max_cells=max_cells)
     verify_frozen(problem, manifest, pins)
     runtime, build = runtime_manifest(), explorer_build()
     spec = batch_spec(problem, manifest, runtime, build, dict(LIMITS if limits is None else limits),
@@ -59,7 +85,7 @@ def run(problem, manifest, pins, output, *, limits=None, max_cells=None):
     equal(check_population(manifest, cells)["status"], "COMPLETE", "Generator coverage failed")
     output = Path(output)
     output.mkdir(parents=True, exist_ok=False)  # no overwrite, resume or retry
-    attempt = {"schema_version": "ce3-scenario-attempt/1", "batch_spec_id": digest(spec),
+    attempt = {"schema_version": execution_version(spec, "attempt"), "batch_spec_id": digest(spec),
                "batch_attempt_id": uuid.uuid4().hex}
     for name, value in (("problem", problem), ("manifest", manifest), ("pins", pins),
                         ("runtime", runtime), ("explorer-build", build), ("batch", spec),
@@ -125,7 +151,7 @@ def verify(output, pins):
     spec, attempt = read_bundle(output / "batch.json"), read_bundle(output / "attempt.json")
     equal(spec, batch_spec(problem, manifest, runtime, build, spec["limits"], spec["max_cells"]),
           "Batch specification mismatch")
-    equal(attempt, {"schema_version": "ce3-scenario-attempt/1", "batch_spec_id": digest(spec),
+    equal(attempt, {"schema_version": execution_version(spec, "attempt"), "batch_spec_id": digest(spec),
                     "batch_attempt_id": attempt["batch_attempt_id"]}, "Batch attempt mismatch")
     # Validate even a zero-budget attempt UUID.
     base_record(manifest["cells"][0], spec, attempt["batch_attempt_id"], attempt["batch_attempt_id"])
@@ -200,7 +226,7 @@ def verify(output, pins):
                            "robust": robust(group), "expected_scenarios": len(group),
                            "certified_cells": sum(c["run_status"] == "CERTIFIED" for c in group),
                            "cell_ids": [c["cell_id"] for c in group]})
-    result = {"schema_version": "ce3-scenario-result/1", "problem_id": digest(problem),
+    result = {"schema_version": version(problem, "result"), "problem_id": digest(problem),
               "manifest_id": digest(manifest), "scenario_space_id": manifest["scenario_space_id"],
               "batch_spec_id": digest(spec), "batch_attempt_id": attempt["batch_attempt_id"],
               "runtime_id": digest(runtime), "explorer_build_id": digest(build),
@@ -214,30 +240,41 @@ def verify(output, pins):
                                 "unexpected_run_directories": unexpected},
               "cells": results, "candidates": aggregates,
               "interpretation": "frozen_scenario_set_only_not_probability_or_customer_value"}
+    if problem["schema_version"] == "ce3-scenario-problem/2":
+        result["preflight"] = preflight(problem, limits=spec["limits"], max_cells=spec["max_cells"])
     return dict(result, result_id=digest(result))
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("freeze", "run", "verify"))
+    parser.add_argument("command", choices=("preflight", "freeze", "run", "verify"))
     parser.add_argument("--problem", type=Path, default=ROOT / "fixtures/scenario-problem.json")
     parser.add_argument("--manifest", type=Path, default=ROOT / "fixtures/scenario-manifest.json")
     parser.add_argument("--pins", type=Path, default=ROOT / "fixtures/scenario-pins.json")
-    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--output", type=Path)
     parser.add_argument("--max-cells", type=int)
     for key, value in LIMITS.items():
         parser.add_argument("--" + key.replace("_", "-"), type=int, default=value)
     args = parser.parse_args()
+    if args.command != "preflight" and args.output is None:
+        parser.error("--output is required")
     try:
+        if args.command in ("preflight", "freeze", "run"):
+            problem = read_bundle(args.problem)
+            if args.command == "preflight" or problem["schema_version"] == "ce3-scenario-problem/2":
+                print("Preflight:", preflight(problem, limits={key: getattr(args, key) for key in LIMITS},
+                                              max_cells=args.max_cells), flush=True)
+            if args.command == "preflight":
+                return 0
         if args.command == "freeze":
-            manifest, pins = freeze(read_bundle(args.problem))
+            manifest, pins = freeze(problem)
             args.output.mkdir(parents=True, exist_ok=False)
             write_bundle(manifest, args.output / "manifest.json")
             write_bundle(pins, args.output / "pins.json")
             print("Retain reviewed pins separately:", pins)
             return 0
         pins = read_bundle(args.pins)
-        result = (run(read_bundle(args.problem), read_bundle(args.manifest), pins, args.output,
+        result = (run(problem, read_bundle(args.manifest), pins, args.output,
                       limits={key: getattr(args, key) for key in LIMITS}, max_cells=args.max_cells)
                   if args.command == "run" else verify(args.output, pins))
         for cell in sorted(result["cells"], key=lambda c: (c["order"], c["scenario_label"])):
