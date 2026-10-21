@@ -1,3 +1,6 @@
+> Historisk rapport för första offlineleveransen. Aktuell modelladapter,
+> verifiering och livebudget finns i [LIVE-PROBE.md](LIVE-PROBE.md).
+
 # Leveransrapport · onboardingagent etapp 1
 
 Arbetsmapp: `/Users/christian/Projects/pulse_engine_ce3_onboarding`.

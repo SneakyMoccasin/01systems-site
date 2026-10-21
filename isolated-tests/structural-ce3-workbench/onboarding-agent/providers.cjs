@@ -1,8 +1,8 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),{spawn}=require('node:child_process');
 const {C,roles,kinds,need,gap,resourceUnsupported}=require('./protocol.cjs');
-const ask={goal:'Vad vill ni uppnå, och hur märker ni att målet är uppfyllt?',initial:'Hur ser läget ut innan ni fattar besluten – vad är redan klart och vad återstår?',decision:'Vilka konkreta beslut eller åtgärder kan ni välja?',dependency:'Vad måste vara uppfyllt innan respektive åtgärd kan genomföras?',external:'Vilka besked behövs från andra, och vad händer om de uteblir?',time:'Vilka tider är önskemål, vilka är fasta villkor, och vilka är fortfarande okända?',other:'Hur hör den här uppgiften ihop med målet eller besluten?'};
-const prefix={mål:'goal',startläge:'initial',beslut:'decision',beroende:'dependency',beroenden:'dependency',besked:'external',tid:'time',tidsvillkor:'time',övrigt:'other'};
+const ask={requirement:'Vilka krav måste lösningen uppfylla?',goal:'Vad vill ni uppnå, och hur märker ni att målet är uppfyllt?',initial:'Hur ser läget ut innan ni fattar besluten – vad är redan klart och vad återstår?',decision:'Vilka konkreta beslut eller åtgärder kan ni välja?',dependency:'Vad måste vara uppfyllt innan respektive åtgärd kan genomföras?',external:'Vilka besked behövs från andra, och vad händer om de uteblir?',time:'Vilka tider är önskemål, vilka är fasta villkor, och vilka är fortfarande okända?',other:'Hur hör den här uppgiften ihop med målet eller besluten?'};
+const prefix={krav:'requirement',mål:'goal',startläge:'initial',beslut:'decision',beroende:'dependency',beroenden:'dependency',besked:'external',tid:'time',tidsvillkor:'time',övrigt:'other'};
 function classify(text, fallback) {
   const label=/^\s*([åäöa-z]+)\s*:/i.exec(text);
   if(label&&prefix[label[1].toLowerCase()])return prefix[label[1].toLowerCase()];
@@ -32,13 +32,13 @@ function offline(req) {
       if(question && n===1 && question.target_ids[0].startsWith(role+'-')) id=question.target_ids[0];
       const unknown=/vet inte|okän[dt]|osäker|saknas|inte bestämt|kanske/i.test(statement);
       const proposed=/antagande|föreslår|förslag|anta att|kanske/i.test(statement);
-      const type=proposed?'ai_proposal':role==='goal'?'goal':role==='dependency'?'requirement':source.kind==='answer'?'user_fact':'document_fact';
+      const type=proposed?'ai_proposal':role==='goal'?'goal':['dependency','requirement'].includes(role)?'requirement':source.kind==='answer'?'user_fact':'document_fact';
       const priorIndex=items.findIndex(i=>i.id===id);if(priorIndex>=0)items.splice(priorIndex,1);
       items.push({id,kind:kinds[role],statement,type,status:unknown?'unknown':'known',value:unknown?null:statement,unit:null,
         refs:[quote(source,statement,start)],depends_on:[],supersedes:[],rationale:'Ordagrant utdrag. Kategorin är ett regelbaserat tolkningsförslag, inte AI- eller SR-granskning. Texten är ännu inte en motorregel.',scenario_choice:null});
     }
   }
-  for(const role of Object.keys(roles).filter(r=>r!=='other'))if(!items.some(i=>i.id.startsWith(role+'-')))items.push(missing(role));
+  for(const role of Object.keys(roles).filter(r=>!['other','requirement'].includes(r)))if(!items.some(i=>i.id.startsWith(role+'-')))items.push(missing(role));
   // Detect only narrow, explicit contradictions. Different dates for different activities are not a conflict.
   const conflicting=(a,b)=>C.digest(a.match(/\d+/g)??[])!==C.digest(b.match(/\d+/g)??[]) || /\binte\b/i.test(a)!==/\binte\b/i.test(b);
   const skeleton=i=>i.statement.toLowerCase().replace(/\d+/g,'#').replace(/\binte\s+/g,'').replace(/[.!?]/g,'').trim();

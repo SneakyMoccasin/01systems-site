@@ -17,7 +17,7 @@ function createServer({data,provider=new OfflineProvider(),port=8877}){
       need(req.headers.host===new URL(origin).host,'HOST_REJECTED');
       const url=new URL(req.url,origin);
       if(req.method==='GET'){
-        if(url.pathname==='/api/sessions')return json(200,{sessions:store.list(),provider:provider.identity});
+        if(url.pathname==='/api/sessions')return json(200,{sessions:store.list(),provider:provider.identity,budget:provider.status?.()??null});
         if(url.pathname==='/api/session')return json(200,describe(store,url.searchParams.get('id'),url.searchParams.get('snapshot')||undefined));
         const assets={'/':['index.html','text/html'],'/app.js':['app.js','application/javascript'],'/style.css':['style.css','text/css']};
         const asset=assets[url.pathname];if(!asset)return json(404,{error:'NOT_FOUND'});
@@ -38,13 +38,22 @@ function createServer({data,provider=new OfflineProvider(),port=8877}){
   return server;
 }
 async function main(args){
-  const opts={};for(let i=0;i<args.length;i+=2){need(['--data','--port','--model-command','--model-args','--model-id'].includes(args[i])&&args[i+1]!==undefined,'CLI_ARGUMENT');opts[args[i]]=args[i+1];}
+  if(args.length===1&&args[0]==='--prepare-live'){console.log(JSON.stringify(require('./openai-provider.cjs').prepare(),null,2));return;}
+  if(args.length===1&&args[0]==='--live-status'){
+    const {policy,status}=require('./openai-provider.cjs');
+    console.log(JSON.stringify({policy:policy(),budget:status(),network_calls:0},null,2));return;
+  }
+  const executeLive=args.includes('--execute-live');args=args.filter(a=>a!=='--execute-live');
+  const opts={};for(let i=0;i<args.length;i+=2){need(['--data','--port','--model-command','--model-args','--model-id','--provider'].includes(args[i])&&args[i+1]!==undefined,'CLI_ARGUMENT');opts[args[i]]=args[i+1];}
   const port=Number(opts['--port']??8877);need(Number.isInteger(port)&&port>=0&&port<=65535,'PORT');
-  const provider=opts['--model-command']?new LocalCommandProvider(opts['--model-command'],JSON.parse(opts['--model-args']??'[]'),opts['--model-id']):new OfflineProvider();
+  need(!executeLive||opts['--provider']==='openai','LIVE_PROVIDER_REQUIRED');
+  need(!opts['--provider']||['offline','openai'].includes(opts['--provider']),'PROVIDER');
+  need(!(opts['--provider']&&opts['--model-command']),'PROVIDER_CONFLICT');
+  const provider=opts['--provider']==='openai'?new (require('./openai-provider.cjs').OpenAIProvider)({executeLive,apiKey:process.env.OPENAI_API_KEY}):opts['--model-command']?new LocalCommandProvider(opts['--model-command'],JSON.parse(opts['--model-args']??'[]'),opts['--model-id']):new OfflineProvider();
   const data=opts['--data']??path.join(__dirname,'../local-data/onboarding-agent');
   const server=createServer({data,port,provider});const address=await server.start();
   console.log(`CE3 onboarding: http://127.0.0.1:${address.port}\n${provider.identity.label}\nLagring: ${path.resolve(data)}`);
-  for(const sig of ['SIGINT','SIGTERM'])process.once(sig,()=>server.close(()=>process.exit(0)));
+  for(const sig of ['SIGINT','SIGTERM'])process.once(sig,()=>server.close(()=>{provider.close?.();process.exit(0);}));
 }
 if(require.main===module)main(process.argv.slice(2)).catch(e=>{console.error(e.message);process.exitCode=1;});
 module.exports={createServer};

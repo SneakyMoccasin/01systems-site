@@ -5,6 +5,10 @@ svar eller inklistrade dokumentpassager, rätta uppgifter, återöppna historik
 och exportera sammanställning och `ce3-onboarding-proposal/1` med källor.
 Inget här kompilerar, kör CE3, begär SR-granskning eller bekräftar en modell.
 
+En färdig OpenAI-adapter finns nu för ett uttryckligt, budgetbegränsat liveprov.
+Se **[LIVE-PROBE.md](LIVE-PROBE.md)** för exakt API-konfigurering, treanropsbudget
+på 1,062 USD, prisgiltighet och skillnaden mellan offlineprov och verkliga körningar.
+
 ## Starta lokalt
 
 ```sh
@@ -47,8 +51,11 @@ versionsbundet kapabilitetsunderlag, instruktion och JSON-schema.
 kontrolleras. Agenten äger källpaket, utkast-ID, revisionskedja och påverkan på
 tidigare fynd; modellen får inte skriva dessa delar eller skapa en bekräftelse.
 
-Tre utbytbara adaptrar finns:
+Fyra utbytbara adaptrar finns:
 
+- `OpenAIProvider`: Responses API med strikt schema, fasta engångsplatser i
+  befintlig SQLite-budgetjournal och inget automatiskt omförsök. Kräver uttrycklig
+  aktivering; se [LIVE-PROBE.md](LIVE-PROBE.md).
 - `OfflineProvider`: deterministiska svenska regler, `model_calls: 0`.
 - `RecordedProvider`: explicit `scripted_test`; endast för integrationstester.
 - `LocalCommandProvider`: ett uttryckligen valt lokalt modellprogram. Det får
@@ -64,10 +71,10 @@ node .../onboarding-agent/start.cjs --model-command /absolut/lokal-modell-wrappe
 ```
 
 Programmet behöver självt anropa den lokala modellen och hantera schemaformatet.
-Detta är en protokollgräns, inte en färdig Ollama-/OpenAI-adapter. Inget
+Detta lokala programgränssnitt är inte en färdig Ollama-adapter; OpenAI har en separat adapter. Inget
 modellpaket laddas ned. Välj endast ett betrott lokalt program: gränsen är ingen
-OS-sandbox som hindrar programmet från egen fil-/nätverksåtkomst. Ingen betald
-modelladapter eller credentialläsning är aktiverad här.
+OS-sandbox som hindrar programmet från egen fil-/nätverksåtkomst. Standardläget aktiverar ingen betald
+modelladapter eller credentialläsning.
 
 Alla försök får nya kataloger med `request.json`, mottaget `response.json` och
 `outcome.json`. Misslyckade svar arkiveras men publiceras aldrig som utkast.
@@ -107,7 +114,7 @@ kapabilitetsversion och testad kompatibilitet, inte omtolkning av gamla sessione
   eller kundautentisering. Ingen fleranvändardrift.
 - Max 20 000 tecken per inmatning, 120 000 serialiserade källbytes i request,
   100 utkast-items (inklusive historiska), 100 modellrapporterade luckor och
-  20 föreslagna frågor per svar. Överskridande avvisas; inget trunkeras tyst.
+  20 föreslagna frågor per protokollsvar (OpenAI-adaptern begränsar till 3). Överskridande avvisas; inget trunkeras tyst.
   SR:s separata 80-fältsgräns kan blockera större framtida granskningar.
 
 ## Tester
@@ -119,4 +126,5 @@ node /Users/christian/Projects/pulse_engine_ce3_onboarding/isolated-tests/struct
 Testerna använder temporära datakataloger och en tillfällig loopback-port.
 De gör inga betalda anrop. SR-regressionen kör riktig SR med förskrivna svar;
 processadaptertestet använder en märkt programstub, ingen språkmodell.
-Se `REPORT.md` för genomförd verifiering och vad som krävs före liveprov.
+Se [LIVE-PROBE.md](LIVE-PROBE.md) för aktuell verifiering och liveprov.
+`REPORT.md` beskriver den tidigare offlineleveransen.

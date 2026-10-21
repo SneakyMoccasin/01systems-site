@@ -14,7 +14,7 @@ async function command(action,extra={}){
   finally{busy(false);}
 }
 async function open(id,snapshot){try{show(await api('/api/session?id='+encodeURIComponent(id)+(snapshot?'&snapshot='+encodeURIComponent(snapshot):'')));}catch(e){$('error').textContent=e.message;$('error').hidden=false;}}
-async function list(){const v=await api('/api/sessions');$('provider').textContent=v.provider.label+'. Inga betalda modellkopplingar är aktiverade.';const box=$('sessions');box.replaceChildren();v.sessions.forEach(s=>box.append(button(s.title,()=>open(s.id),true)));}
+async function list(){const v=await api('/api/sessions');$('offline-help').hidden=v.provider.kind==='openai_live';$('provider').textContent=v.provider.label+(v.budget?` · ${v.budget.dispatched}/${v.budget.maximum_calls} anrop skickade. Provets kostnadstak: ${v.budget.maximum_usd} USD. ${v.budget.stopped?'Provet har stoppats.':''}`:'. Ingen betald OpenAI-koppling är aktiverad.');const box=$('sessions');box.replaceChildren();v.sessions.forEach(s=>box.append(button(s.title,()=>open(s.id),true)));}
 function download(value,name){const a=el('a');const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)+'\n'],{type:'application/json'}));a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 function textForm(container,label,value,onSubmit,submit='Spara'){
   const form=el('form'),id='input-'+crypto.randomUUID(),l=el('label',label);l.htmlFor=id;

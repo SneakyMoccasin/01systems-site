@@ -1,0 +1,33 @@
+{
+  "schema_version": "ce3-agent-live-policy/1",
+  "id": "first-live-2026-10-21",
+  "price": {
+    "schema_version": "ce3-price-profile/1",
+    "kind": "verified-live",
+    "currency": "USD",
+    "provider": "openai",
+    "model": "gpt-5.4-mini-2026-03-17",
+    "input_token_bound": 400000,
+    "input_nusd_per_token": 750,
+    "output_nusd_per_token": 4500,
+    "source": "https://developers.openai.com/api/docs/models/gpt-5.4-mini",
+    "model_source": "https://developers.openai.com/api/docs/models/gpt-5.4-mini",
+    "dated": "2026-10-21",
+    "verification": {
+      "by": "Codex: official model, pricing and prompt-caching documentation checked; no API calls",
+      "verified_at": "2026-10-21T18:00:00Z",
+      "valid_until": "2026-10-28T18:00:00Z",
+      "rate_basis": "upper_bound_all_input_and_output_tiers",
+      "input_bound_basis": "documented_maximum_billable_input_tokens",
+      "model_identity": "gpt-5.4-mini-2026-03-17",
+      "structured_output_supported": true
+    }
+  },
+  "maximum_calls": 3,
+  "maximum_count_calls": 0,
+  "output_tokens": 12000,
+  "per_call_nusd": 354000000,
+  "total_nusd": 1062000000,
+  "maximum_wire_bytes": 240000,
+  "timeout_ms": 60000
+}

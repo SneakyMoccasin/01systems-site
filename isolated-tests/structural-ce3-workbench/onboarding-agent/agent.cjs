@@ -37,7 +37,12 @@ class Store {
 }
 function describe(store,id,snapshot){
   const saved=store.load(id,snapshot),s=saved.session,v=s.view(),p=v.proposals.at(-1)??null;
-  const pending=v.questions.filter(q=>q.status==='open').sort((a,b)=>a.priority-b.priority||a.id.localeCompare(b.id));
+  // Keep every question in Session/2 history, but show current, relevant questions
+  // before older formulations of the same targets (including offline questions).
+  const currentQuestions=v.questions.filter(q=>q.status==='open'&&!q.target_ids.every(id=>p?.items.find(i=>i.id===id)?.status==='superseded'));
+  const revision=q=>Number(/^agent-q-(\d+)-/.exec(q.id)?.[1]??0);
+  const pending=currentQuestions.filter(q=>!currentQuestions.some(n=>revision(n)>revision(q)&&P.same(n.target_ids,q.target_ids)))
+    .sort((a,b)=>b.priority===a.priority?revision(b)-revision(a)||a.id.localeCompare(b.id):a.priority-b.priority);
   const attempts=store.attempts(id),last=attempts.at(-1);
   const provenance=[...attempts].reverse().find(a=>a.outcome.proposal_digest===v.proposal_digest&&a.outcome.status==='accepted')?.outcome.producer??null;
   return {id,snapshot:saved.snapshot,snapshots:saved.snapshots,latest:saved.latest,checksum:s.serialize().checksum,
@@ -58,9 +63,9 @@ class Agent {
   async propose(session){
     const req=P.request(session),folder=path.join(this.store.directory(session.view().id),'attempts',`${String(Date.now())}-${randomUUID()}`);
     fs.mkdirSync(folder,{recursive:true,mode:0o700});writeNew(path.join(folder,'request.json'),{request:req,producer:this.provider.identity});
-    let outcome;
+    let outcome,generated;
     try {
-      const generated=await this.provider.generate(structuredClone(req));
+      generated=await this.provider.generate(structuredClone(req));
       writeNew(path.join(folder,'response.json'),generated);
       need(Object.entries(this.provider.identity).every(([k,value])=>P.same(generated.metadata[k],value)),'PRODUCER_BINDING');
       const {proposal,questions}=P.build(session,req,generated.response);
@@ -71,7 +76,7 @@ class Agent {
       // Only explicit customer input can withdraw questions or dispose of SR findings.
       const snapshot=this.store.save(trial);
       outcome={status:'accepted',snapshot,session_checksum:trial.serialize().checksum,proposal_digest:C.digest(proposal),request_digest:req.digest,producer:generated.metadata,error:null};
-    }catch(error){outcome={status:'rejected',request_digest:req.digest,producer:this.provider.identity,error:String(error.message).slice(0,2000)};}
+    }catch(error){if(generated)this.provider.rejectDraft?.();outcome={status:'rejected',request_digest:req.digest,producer:this.provider.identity,error:String(error.message).slice(0,2000)};}
     outcome.response_sha256=fs.existsSync(path.join(folder,'response.json'))?C.hash(fs.readFileSync(path.join(folder,'response.json'))):null;
     writeNew(path.join(folder,'outcome.json'),{...outcome,checksum:C.digest(outcome)});
     return describe(this.store,session.view().id);
