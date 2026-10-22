@@ -160,3 +160,17 @@ och `reach_by` från fullständigt auditerad historik. Se
 [format och reproduktion](TEMPORAL-GOALS-FORMAT.md),
 [arkitektur](TEMPORAL-GOALS-ARCHITECTURE.md) och
 [leveransrapport](TEMPORAL-GOALS-REPORT.md). Äldre /1 och /2 behåller sin betydelse.
+
+## Valfria beslut: separat opt-in-kontrakt /4
+
+`ce3-scenario-problem/4` kan välja delmängder med obligatoriska/valfria beslut,
+disjunkta exakt-ett-/högst-ett-grupper och prefix av fasta slots. Hela modellen
+behålls. Samma fasta kandidat körs i varje scenario genom vanlig replay/audit.
+Se [kontrakt och reproducerbara kommandon](OPTIONAL-DECISIONS-FORMAT.md),
+[implementationsrapport](OPTIONAL-DECISIONS-IMPLEMENTATION-REPORT.md) och
+[arkitekturbeslutet](OPTIONAL-DECISIONS-ARCHITECTURE-PROPOSAL.md).
+
+[Kapabilitetsbaslinje v1](../../docs/ce3/capabilities/engine-baseline-v1.json)
+beskriver den **tidigare omfattningen**, till och med scenario /3. Dess historiska
+innehåll och läsanvisning är bevarade; /4 dokumenteras separat ovan. Purpose
+är fortsatt `synthetic_integration_test`; inget pilotläge eller UI ingår.

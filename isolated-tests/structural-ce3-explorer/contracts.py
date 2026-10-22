@@ -5,15 +5,18 @@ from itertools import product
 from bridge import PROFILE, digest, equal, in_domain, obj, require, validate
 from fixed_slots import validate_search
 from temporal_goals import validate_goal
+import selection
 
 SCRIPT_SOURCE = "CE3 minimal explorer: fixed permutation, one attempt per slot; synthetic integration test."
 LIMITS = {"max_paths": 10000, "max_rows": 1000000, "max_steps": 10000}
 
 
 def materialize(problem, order):
+    if selection.enabled(problem):
+        selection.search_size(problem)  # also guard direct calls before copying any model/input
     return {"schema_version": "ce3-run/1", "profile": PROFILE,
             "model": deepcopy(problem["model"]),
-            "script": {"schema_version": "ce3-script/1", "source": SCRIPT_SOURCE,
+            "script": selection.script(problem, order) if selection.enabled(problem) else {"schema_version": "ce3-script/1", "source": SCRIPT_SOURCE,
                        "steps": {str(step): [{"decision": name, "mode": "attempt"}]
                                  for step, name in zip(problem["search"]["slots"], order)}},
             "outcomes": deepcopy(problem["outcomes"]), "sources": deepcopy(problem["sources"])}
@@ -28,7 +31,7 @@ def validate_problem(problem):
     return problem
 
 
-def validate_declaration(problem, *, fixed_slots=False, history_goals=False):
+def validate_declaration(problem, *, fixed_slots=False, history_goals=False, selected=False):
     """Shared shape/grammar/goal checks, not a public version authorization.
 
     Callers must separately enforce their version and environment contract.
@@ -38,6 +41,14 @@ def validate_declaration(problem, *, fixed_slots=False, history_goals=False):
     require(type(problem["revision"]) is int and problem["revision"] >= 1, "Invalid revision")
     equal(problem["purpose"], "synthetic_integration_test", "Only technical integration scope supported")
     equal(problem["profile"], PROFILE, "Unsupported profile")
+    if selected:
+        selection.search_size(problem)
+        # An empty validation envelope validates ALL rules and outcomes, not a candidate.
+        validate({"schema_version": "ce3-run/1", "profile": PROFILE, "model": problem["model"],
+                  "sources": problem["sources"], "outcomes": problem["outcomes"],
+                  "script": {"schema_version": "ce3-script/1", "source": selection.SCRIPT_SOURCE, "steps": {}}})
+        selection.validate_goal(problem["observation"], problem["model"])
+        return problem
     search = problem["search"]
     obj(search, ("kind", "decision_ids", "slots", "mode", "retry", "early_stop"), "search")
     ids = search["decision_ids"]

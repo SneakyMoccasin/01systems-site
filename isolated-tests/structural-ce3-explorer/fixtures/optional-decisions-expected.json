@@ -1,0 +1,44 @@
+{
+  "derivation": "Architecture proposal section 9: 2*2! + 2*3! = 16. P before route; selected X after route; U also requires approved.",
+  "orders": [
+    "PU",
+    "UP",
+    "PN",
+    "NP",
+    "PUX",
+    "PXU",
+    "UPX",
+    "UXP",
+    "XPU",
+    "XUP",
+    "PNX",
+    "PXN",
+    "NPX",
+    "NXP",
+    "XPN",
+    "XNP"
+  ],
+  "positive": {
+    "approved": [
+      "PU",
+      "PN",
+      "PUX",
+      "PNX"
+    ],
+    "rejected": [
+      "PN",
+      "PNX"
+    ],
+    "absent": [
+      "PN",
+      "PNX"
+    ]
+  },
+  "robust": [
+    "PN",
+    "PNX"
+  ],
+  "candidates": 16,
+  "cells": 48,
+  "positive_cells": 8
+}

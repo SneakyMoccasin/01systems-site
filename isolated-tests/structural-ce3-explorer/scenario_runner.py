@@ -13,8 +13,8 @@ from contracts import LIMITS
 from observe import audit_receipt, observe
 from runner import artifact_record, cli_process, execution_prefix_valid
 from scenario_contracts import (check_population, effective_problem, freeze, generate,
-                                materialize, verify_frozen, version)
-from fixed_slots import search_size
+                                materialize, verify_frozen, version, search_size)
+import selection
 
 ERRORS = (OSError, ValueError, KeyError, TypeError, IndexError)
 
@@ -26,7 +26,7 @@ def batch_spec(problem, manifest, runtime, build, limits, max_cells):
     spec = {"schema_version": version(problem, "execution"), "problem_id": digest(problem),
             "manifest_id": digest(manifest), "runtime_id": digest(runtime),
             "explorer_build_id": digest(build), "limits": limits, "max_cells": max_cells}
-    if problem["schema_version"] in ("ce3-scenario-problem/2", "ce3-scenario-problem/3"):
+    if problem["schema_version"] in ("ce3-scenario-problem/2", "ce3-scenario-problem/3", selection.PROBLEM):
         spec.update(search_size=search_size(problem), process_timeout_seconds=60)
     return spec
 
@@ -141,9 +141,10 @@ def verify(output, pins):
     unexpected = sorted(actual_ids - expected_ids)
     plans, scenarios = lookups(manifest)
     # Manifest cells are hash-sorted, not execution-ordered. The verified
-    # scenario list retains declaration order; candidate orders are lexical.
+    # Scenario declaration order is retained; /4 first sorts by candidate length.
     scenario_positions = {s["scenario_id"]: i for i, s in enumerate(manifest["scenarios"])}
     ordered_cells = sorted(manifest["cells"], key=lambda c: (
+        *((len(plans[c["candidate_id"]]["order"]),) if selection.enabled(problem) else ()),
         plans[c["candidate_id"]]["order"], scenario_positions[c["scenario_id"]]))
     execution_valid = execution_prefix_valid([c["cell_id"] for c in ordered_cells], actual_ids, spec["max_cells"])
     # A duplicate occurrence makes every claimant unknown, independent of iteration order.
@@ -224,7 +225,7 @@ def verify(output, pins):
                                 "unexpected_run_directories": unexpected},
               "cells": results, "candidates": aggregates,
               "interpretation": "frozen_scenario_set_only_not_probability_or_customer_value"}
-    if problem["schema_version"] in ("ce3-scenario-problem/2", "ce3-scenario-problem/3"):
+    if problem["schema_version"] in ("ce3-scenario-problem/2", "ce3-scenario-problem/3", selection.PROBLEM):
         result.update(search_size=spec["search_size"],
                       execution_budget={"max_cells": spec["max_cells"], "limits": spec["limits"],
                                         "process_timeout_seconds": spec["process_timeout_seconds"]})

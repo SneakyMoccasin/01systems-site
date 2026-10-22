@@ -2,6 +2,7 @@
 from bridge import digest, encode, equal, require
 from audit.verify import audit_bundle
 from temporal_goals import VERSION, components_for_path, validate_goal
+import selection
 
 
 def audit_receipt(bundle, trusted_input, audit_result, runtime_id):
@@ -19,8 +20,12 @@ def observe(problem, bundle, trusted_input, audit_result, runtime_id, observer_b
     for key in ("model", "outcomes", "sources"):
         equal(trusted_input[key], problem[key], "Observation problem/input mismatch: " + key)
     definition = problem["observation"]
-    temporal = definition["schema_version"] == VERSION
-    if temporal:
+    selected = selection.enabled(problem)
+    temporal = selected or definition["schema_version"] == VERSION
+    if selected:
+        selection.validate_goal(definition, problem["model"])
+        selection_evidence = selection.script_evidence(problem, trusted_input["script"])
+    elif temporal:
         validate_goal(definition, problem["model"])
     paths = []
     for index, path in enumerate(bundle["paths"]):
@@ -32,7 +37,8 @@ def observe(problem, bundle, trusted_input, audit_result, runtime_id, observer_b
                   for field, value in sorted(({} if temporal else definition["terminal_equals"]).items())]
         executed = [r for r in rows if r["kind"] == "decision_executed"]
         blocked = [r for r in rows if r["kind"] == "attempt_blocked"]
-        accepted = not blocked and len(executed) == len(problem["search"]["decision_ids"])
+        accepted = (selection.accepted_attempts(selection_evidence, rows) if selected else
+                    not blocked and len(executed) == len(problem["search"]["decision_ids"]))
         paths.append({"path_index": index, "event_orders": path["event_orders"],
                       "terminal_evidence": {"row_index": terminal["index"], "side": "after"},
                       "attempt_evidence": {"row_interval": [0, terminal["index"]],
@@ -56,6 +62,8 @@ def observe(problem, bundle, trusted_input, audit_result, runtime_id, observer_b
             "input_identity": digest(trusted_input), "history_id": digest(bundle),
             "audit_receipt_id": digest(receipt), "quantifier": definition["quantifier"],
             "goal_satisfied": all(p["goal_satisfied"] for p in paths), "paths": paths}
+    if selected:
+        result.update(schema_version="ce3-goal-observation/3", selection_evidence=selection_evidence)
     if temporal:
         result.update(components_satisfied=all(p["components_satisfied"] for p in paths),
                       all_attempts_accepted=all(p["all_attempts_accepted"] for p in paths))

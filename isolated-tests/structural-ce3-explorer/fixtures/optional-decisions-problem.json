@@ -1,0 +1,270 @@
+{
+  "schema_version": "ce3-scenario-problem/4",
+  "revision": 1,
+  "purpose": "synthetic_integration_test",
+  "profile": "fixed-replay/0.1",
+  "sources": {},
+  "model": {
+    "schema_version": "ce3-model/1",
+    "source": "Synthetic optional-decision acceptance model; no customer-value claim.",
+    "clock": {
+      "start": 0,
+      "horizon": 5,
+      "step": 1,
+      "unit": "synthetic_step",
+      "events_before_decisions": true,
+      "horizon_inclusive": true
+    },
+    "domains": {
+      "prepared": {
+        "enum": [
+          false,
+          true
+        ]
+      },
+      "done": {
+        "enum": [
+          false,
+          true
+        ]
+      },
+      "aux_done": {
+        "enum": [
+          false,
+          true
+        ]
+      },
+      "safe": {
+        "enum": [
+          false,
+          true
+        ]
+      },
+      "response": {
+        "enum": [
+          "waiting",
+          "approved",
+          "rejected"
+        ]
+      }
+    },
+    "initial": {
+      "prepared": false,
+      "done": false,
+      "aux_done": false,
+      "safe": true,
+      "response": "waiting"
+    },
+    "budget": null,
+    "decisions": {
+      "P": {
+        "requires": [],
+        "effects": {
+          "set": {
+            "prepared": true
+          },
+          "add": {}
+        },
+        "cost": 0,
+        "schedule": null,
+        "source": "Synthetic optional-decision acceptance model; no customer-value claim."
+      },
+      "U": {
+        "requires": [
+          {
+            "field": "prepared",
+            "op": "eq",
+            "value": true
+          },
+          {
+            "field": "response",
+            "op": "eq",
+            "value": "approved"
+          }
+        ],
+        "effects": {
+          "set": {
+            "done": true
+          },
+          "add": {}
+        },
+        "cost": 0,
+        "schedule": null,
+        "source": "Synthetic optional-decision acceptance model; no customer-value claim."
+      },
+      "N": {
+        "requires": [
+          {
+            "field": "prepared",
+            "op": "eq",
+            "value": true
+          }
+        ],
+        "effects": {
+          "set": {
+            "done": true
+          },
+          "add": {}
+        },
+        "cost": 0,
+        "schedule": null,
+        "source": "Synthetic optional-decision acceptance model; no customer-value claim."
+      },
+      "X": {
+        "requires": [
+          {
+            "field": "done",
+            "op": "eq",
+            "value": true
+          }
+        ],
+        "effects": {
+          "set": {
+            "aux_done": true
+          },
+          "add": {}
+        },
+        "cost": 0,
+        "schedule": null,
+        "source": "Synthetic optional-decision acceptance model; no customer-value claim."
+      }
+    },
+    "events": {
+      "response": {
+        "requires": [],
+        "kind": "external",
+        "outcomes": {
+          "approved": {
+            "set": {
+              "response": "approved"
+            },
+            "add": {}
+          },
+          "rejected": {
+            "set": {
+              "response": "rejected"
+            },
+            "add": {}
+          },
+          "absent": {
+            "set": {
+              "response": "waiting"
+            },
+            "add": {}
+          }
+        },
+        "absent": {
+          "outcome": "absent",
+          "field": "response",
+          "value": "waiting",
+          "source": "No reply through horizon; no later response."
+        },
+        "source": "Synthetic optional-decision acceptance model; no customer-value claim."
+      }
+    },
+    "initial_events": [
+      {
+        "id": "response",
+        "due": 1,
+        "scheduled_at": 0
+      }
+    ],
+    "reference_event_order": [
+      "response"
+    ],
+    "metadata": {
+      "assumption": "Synthetic optional-decision acceptance model; no customer-value claim.",
+      "time_basis": "Slots 0/2/4, response at 1 before decisions, inclusive horizon 5.",
+      "deadlines": []
+    }
+  },
+  "search": {
+    "kind": "selected_permutations_once/1",
+    "required_decision_ids": [
+      "P"
+    ],
+    "optional_decision_ids": [
+      "U",
+      "N",
+      "X"
+    ],
+    "choice_groups": [
+      {
+        "id": "delivery_route",
+        "kind": "exactly_one",
+        "members": [
+          "U",
+          "N"
+        ]
+      }
+    ],
+    "slots": [
+      0,
+      2,
+      4
+    ],
+    "slot_policy": "prefix/1",
+    "allow_empty": false,
+    "mode": "attempt",
+    "retry": false,
+    "early_stop": false
+  },
+  "observation": {
+    "schema_version": "ce3-history-goal/2",
+    "goal_id": "delivery",
+    "sampling": "each_row.before_after.snapshot_step/1",
+    "quantifier": "all_event_paths",
+    "acceptance_scope": "candidate_script",
+    "all_attempts_accepted": true,
+    "all": [
+      {
+        "id": "finish",
+        "operator": "terminal",
+        "equals": {
+          "done": true
+        }
+      },
+      {
+        "id": "early",
+        "operator": "reach_by",
+        "equals": {
+          "done": true
+        },
+        "deadline": 2
+      },
+      {
+        "id": "safe",
+        "operator": "always",
+        "equals": {
+          "safe": true
+        },
+        "through": 5
+      }
+    ]
+  },
+  "scenario_set": {
+    "schema_version": "ce3-scenario-set/1",
+    "variation": "outcomes_only",
+    "selection": "explicit_complete_list",
+    "members": [
+      {
+        "label": "approved",
+        "outcomes": {
+          "response": "approved"
+        }
+      },
+      {
+        "label": "rejected",
+        "outcomes": {
+          "response": "rejected"
+        }
+      },
+      {
+        "label": "absent",
+        "outcomes": {
+          "response": "absent"
+        }
+      }
+    ]
+  }
+}

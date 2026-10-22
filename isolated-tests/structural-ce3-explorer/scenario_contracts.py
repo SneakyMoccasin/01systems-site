@@ -4,15 +4,24 @@ from itertools import permutations, product
 
 from bridge import digest, equal, obj, require, validate
 from contracts import materialize as single_input, validate_declaration, SCRIPT_SOURCE
-from fixed_slots import expected_orders, search_size
+from fixed_slots import expected_orders, search_size as fixed_search_size
+import selection
+
+
+WRAPPERS = ("problem", "cell", "manifest", "pins", "execution", "attempt", "run", "observation", "result")
+VERSIONS = {suffix: dict.fromkeys(WRAPPERS, suffix) for suffix in ("1", "2", "3", "4")}
+for suffix, search_version in (("1", "1"), ("2", "2"), ("3", "2"), ("4", "3")):
+    VERSIONS[suffix].update({"search-space": search_version, "candidate": search_version})
 
 
 def version(problem, name):
-    """Goal extension versions wrappers, preserving the fixed-slot search identity."""
     suffix = problem["schema_version"].rsplit("/", 1)[-1]
-    if suffix == "3" and name in ("search-space", "candidate"):
-        suffix = "2"
-    return "ce3-scenario-" + name + "/" + suffix
+    require(suffix in VERSIONS and name in VERSIONS[suffix], "Unsupported scenario payload version")
+    return "ce3-scenario-" + name + "/" + VERSIONS[suffix][name]
+
+
+def search_size(problem):
+    return selection.search_size(problem) if selection.enabled(problem) else fixed_search_size(problem)
 
 
 def effective_problem(problem, scenario):
@@ -24,9 +33,9 @@ def effective_problem(problem, scenario):
 def validate_problem(problem):
     obj(problem, ("schema_version", "revision", "purpose", "profile", "model", "sources",
                   "search", "observation", "scenario_set"), "scenario problem")
-    require(problem["schema_version"] in ("ce3-scenario-problem/1", "ce3-scenario-problem/2", "ce3-scenario-problem/3"),
+    require(problem["schema_version"] in ("ce3-scenario-problem/1", "ce3-scenario-problem/2", "ce3-scenario-problem/3", selection.PROBLEM),
             "Unsupported scenario problem")
-    expanded = problem["schema_version"] in ("ce3-scenario-problem/2", "ce3-scenario-problem/3")
+    expanded = problem["schema_version"] in ("ce3-scenario-problem/2", "ce3-scenario-problem/3", selection.PROBLEM)
     space = problem["scenario_set"]
     obj(space, ("schema_version", "variation", "selection", "members"), "scenario set")
     equal(space["schema_version"], "ce3-scenario-set/1", "Unsupported scenario set")
@@ -43,11 +52,14 @@ def validate_problem(problem):
                 "Unique nonempty scenario label required")
         labels.add(label)
         validate_declaration(effective_problem(problem, scenario), fixed_slots=expanded,
-                             history_goals=problem["schema_version"] == "ce3-scenario-problem/3")
+                             history_goals=problem["schema_version"] == "ce3-scenario-problem/3",
+                             selected=selection.enabled(problem))
     return problem
 
 
 def search_identity(problem):
+    if selection.enabled(problem):
+        return selection.search_identity(problem)
     grammar = deepcopy(problem["search"])
     if problem["schema_version"] in ("ce3-scenario-problem/2", "ce3-scenario-problem/3"):
         grammar["decision_ids"] = sorted(grammar["decision_ids"])
@@ -62,6 +74,8 @@ def scenario_space_identity(problem):
 
 
 def candidate(problem, order):
+    if selection.enabled(problem):
+        return selection.candidate(problem, order)
     script = single_input(effective_problem(problem, problem["scenario_set"]["members"][0]), order)["script"]
     plan_id = digest({"kind": "ce3-plan/1", "script": script})
     return {"candidate_id": digest({"schema_version": version(problem, "candidate"),
@@ -76,6 +90,8 @@ def scenario_member(problem, definition):
 
 
 def materialize(problem, plan, scenario):
+    if selection.enabled(problem):
+        equal(plan, candidate(problem, plan["order"]), "Selected candidate content mismatch")
     run = single_input(effective_problem(problem, scenario["definition"]), plan["order"])
     equal(run["script"], plan["script"], "Fixed script mismatch")
     return validate(run)
@@ -97,9 +113,10 @@ def freeze(problem):
     Shared materialization is additionally checked by direct input tests.
     """
     validate_problem(problem)
-    ids = problem["search"]["decision_ids"]
-    expanded = problem["schema_version"] in ("ce3-scenario-problem/2", "ce3-scenario-problem/3")
-    orders = expected_orders(ids) if expanded else (w for w in product(ids, repeat=3) if len(set(w)) == 3)
+    ids = problem["search"].get("decision_ids")
+    expanded = problem["schema_version"] in ("ce3-scenario-problem/2", "ce3-scenario-problem/3", selection.PROBLEM)
+    orders = (selection.expected_orders(problem) if selection.enabled(problem) else
+              expected_orders(ids) if expanded else (w for w in product(ids, repeat=3) if len(set(w)) == 3))
     plans = [candidate(problem, w) for w in orders]
     scenarios = [scenario_member(problem, s) for s in problem["scenario_set"]["members"]]
     cells = [cell(problem, p, s) for s in scenarios for p in plans]
@@ -111,6 +128,11 @@ def freeze(problem):
                 "candidates": plans, "scenarios": scenarios, "cells": cells}
     if expanded:
         manifest["search_size"] = search_size(problem)
+    if selection.enabled(problem):
+        require(len(plans) == manifest["search_size"]["candidates"] and
+                len(cells) == manifest["search_size"]["cells"], "Manifest count mismatch")
+        manifest["selection_definition"] = selection.definition(problem)
+        manifest["selection_definition_id"] = digest(manifest["selection_definition"])
     return manifest, {"schema_version": version(problem, "pins"), "problem_id": digest(problem),
                       "manifest_id": digest(manifest)}
 
@@ -122,6 +144,11 @@ def verify_frozen(problem, manifest, pins):
 
 
 def generate(problem):
+    if selection.enabled(problem):
+        validate_problem(problem)
+        return [cell(problem, candidate(problem, order), scenario_member(problem, s))
+                for order in selection.generated_orders(problem)
+                for s in problem["scenario_set"]["members"]]
     ids = problem["search"]["decision_ids"]
     if problem["schema_version"] in ("ce3-scenario-problem/2", "ce3-scenario-problem/3"):
         validate_problem(problem)  # size gate also protects direct generator calls
