@@ -1,6 +1,6 @@
 # CE3 manuell explorerpilot /2
 
-Aktuellt presentationsformat: [svenskt modellunderlag /1](PILOT-PRESENTATION-V1.md).
+Aktuellt presentationsformat: [svenskt modellunderlag /1–/2](PILOT-PRESENTATION-V1.md).
 Nya utkast och snapshots använder /3 med ett uttryckligt namnregister;
 kvitton, case, ankare och resultat behåller /2. Äldre paket migreras inte.
 

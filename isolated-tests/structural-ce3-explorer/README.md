@@ -199,8 +199,8 @@ visas i resultatet. [Ursprungligt /1-format](PILOT-FORMAT.md) och dess rapporter
 
 ## Svenskt modellunderlag
 
-Nya prepare använder draft/snapshot /3 och presentation /1 med ett manuellt
-namnregister. Den öppna svenska beskrivningen härleds från modellen;
+Nya prepare använder draft/snapshot /3 och presentation /1–/2 med ett manuellt
+namnregister; /2 kan dessutom ange meningar för booleska tillstånd. Den öppna svenska beskrivningen härleds från modellen;
 sökförklaring och fullständigt tekniskt underlag är stängda detaljsektioner.
 Case/kvitton/ankare/resultat behåller /2. [Versionsbeslut och verifiering](PILOT-PRESENTATION-V1.md).
 Ingen migrering av äldre paket eller återanvändning av äldre bekräftelser.

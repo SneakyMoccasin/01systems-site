@@ -1,9 +1,61 @@
-# Svenskt modellunderlag: presentation /1, draft och snapshot /3
+# Svenskt modellunderlag: presentation /1–/2, draft och snapshot /3
 
 Utgångspunkt: huvudbaslinjen `d4589a8` på `decision-flow-demo-v1`.
 Detta är ett uttryckligt presentations- och indataformatbeslut ovanpå
 [PILOT-FORMAT-V2.md](PILOT-FORMAT-V2.md). Modell, mål, urval, replay, audit,
 körning, filpolicy, klassificering och bekräftelsernas betydelse ändras inte.
+
+## Förenklad huvudvy ovanpå fea13a5
+
+Den aktuella huvudvyn börjar med fråga, tillåtna alternativ och samtliga
+målkrav. Beslutens villkor, effekter, kostnader och följdhändelser samlas i
+ett kort per beslut; obligatoriska beslut visas före alternativen, utan
+att ändra sökningens ordning. Varje avsnitt/kort har stängt **Visa underlag**.
+Källhänvisningar, modellfält och exakta värden finns kvar. Antaganden och
+olösta frågor är synliga. Varningsraden för en otillräcklig körbudget syns
+också direkt. De två tidigare detaljnivåerna behålls stängda.
+
+Startvyn visar de fält som används i villkor, effekter, mål eller budgetkonto.
+Ett helt oanvänt fälts startvärde och alla tillåtna värdemängder finns i det
+tekniska underlaget. Ändrade regler ändrar automatiskt vilka startfält som
+är relevanta. Nollkostnader och frånvaro av följdhändelser skrivs inte ut i
+varje kort. Avsaknad av kostnadskonto förklaras en gång utan påstående om
+kostnadsfrihet i verkligheten. Positiva kostnader och krav på täckning syns.
+
+För naturliga meningar införs ett litet, explicit opt-in-format:
+
+```json
+{
+  "schema_version": "ce3-pilot-presentation/2",
+  "labels": {"/model/domains/done": "Leveransen är klar"},
+  "boolean_states": {
+    "/model/domains/done": {
+      "true": "Leveransen är klar",
+      "false": "Leveransen är inte klar"
+    }
+  }
+}
+```
+
+`boolean_states` är obligatoriskt för /2 men får vara tomt. Endast existerande
+booleska tillståndsfält får anges. Varje post har exakt `true` och `false`,
+med icke-tomma och åtskilda texter. Meningarna beskriver **tillstånd**, inte
+händelser, framtida garantier eller nya regler. Modellen väljer rätt mening
+utifrån det faktiska booleska värdet i startläge, villkor, effekt eller mål.
+Exempel: en effekt visas som ”Efter genomförandet: Leveransen är klar”.
+Inga meningar skapas genom språklig gissning eller tolkning av kodnamn.
+Saknas en bunden mening används neutralt fältnamn och värde. Människor måste
+granska att meningarna återger de avsedda tillstånden korrekt; typkontrollen
+kan inte verifiera ordens verksamhetsbetydelse.
+
+Draft och snapshot behåller /3; case, kvitton och ankare är oförändrade.
+Presentation /1 är fortsatt ett uttryckligt giltigt **författarformat för en
+ny prepare**, utan automatisk komplettering av meningar. Det omvandlas inte
+till /2. Äldre paket måste använda sin registrerade implementation.
+Ändrad renderarkod ändrar buildbindningen även för /1-underlag. Inga gamla
+snapshots, HTML-filer, builds eller kvitton får repareras eller återanvändas.
+Denna förenkling kräver nya paket och två nya bekräftelser. Reglerna för exakt
+snapshot-/HTML-bindning nedan gäller även de nya tillståndsmeningarna.
 
 ## Versionsbeslut och bevarande
 
@@ -50,8 +102,8 @@ Tidigare paket, kvitton och körkataloger bevaras.
 
 ## De tre nivåerna
 
-1. Den öppna modellen visar de nio svenska rubrikerna, konkreta startvärden och
-   tillåtna värden, beslut, villkor, effekter, regelkostnader, schemaläggning,
+1. Den öppna modellen visar överblick, relevanta startvärden och beslutskort
+   med villkor, effekter, relevanta kostnader, schemaläggning,
    tider, scenarier och alla målkrav. Antaganden skiljs från källkopplade
    uppgifter. Frågor, undantag, begränsningar och körbudget syns före bekräftelse.
    Klassificeringen står överst. Sidan är underlag, aldrig ett analysresultat.
@@ -84,7 +136,7 @@ python3 -B -m unittest discover -s isolated-tests/structural-ce3-explorer/pilot_
 ```
 
 CLI-kommandona i [PILOT-CONCIERGE.md](PILOT-CONCIERGE.md) är oförändrade.
-Övningsgeneratorn skapar nu ett uttryckligt /3-utkast med deklarerade svenska
-namn. Alla kvitton den skapar är fortfarande fabricerade testkvitton.
+Övningsgeneratorn skapar ett uttryckligt /3-utkast med presentation /2, svenska
+namn och booleska tillståndsmeningar. Alla kvitton den skapar är fortfarande fabricerade testkvitton.
 Öppna den **nya prepared-katalogens `review.html`** via Finder → Öppna med →
 webbläsare. Ändra aldrig en redan förberedd HTML-fil för att justera visningen.

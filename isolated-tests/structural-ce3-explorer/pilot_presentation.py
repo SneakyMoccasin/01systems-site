@@ -2,10 +2,11 @@
 from html import escape
 import json
 
-from bridge import digest, equal, obj, require
+from bridge import digest, obj, require
 from selection import search_size, generated_orders
 
-VERSION = 'ce3-pilot-presentation/1'
+VERSION = 'ce3-pilot-presentation/2'
+LEGACY_NAMES = 'ce3-pilot-presentation/1'
 
 
 def part(value):
@@ -30,8 +31,18 @@ def label_targets(problem):
 
 
 def validate(definition, problem):
-    obj(definition, ('schema_version', 'labels'), 'presentation names')
-    equal(definition['schema_version'], VERSION, 'Unsupported presentation; new prepare required')
+    version = definition.get('schema_version') if type(definition) is dict else None
+    require(version in (LEGACY_NAMES, VERSION), 'Unsupported presentation; new prepare required')
+    obj(definition, ('schema_version', 'labels') + (('boolean_states',) if version == VERSION else ()), 'presentation names')
+    if version == VERSION:
+        states = definition['boolean_states']
+        allowed = {'/model/domains/' + part(k) for k, d in problem['model']['domains'].items()
+                   if 'enum' in d and all(type(v) is bool for v in d['enum'])}
+        require(type(states) is dict and set(states) <= allowed, 'Boolean phrases require a boolean field')
+        for phrases in states.values():
+            obj(phrases, ('true', 'false'), 'boolean state phrases')
+            require(all(type(v) is str and bool(v.strip()) for v in phrases.values()), 'Nonblank boolean phrases required')
+            require(phrases['true'].strip().casefold() != phrases['false'].strip().casefold(), 'Boolean phrases must distinguish true and false')
     labels = definition['labels']
     require(type(labels) is dict and set(labels) <= label_targets(problem), 'Unknown presentation name target')
     require(all(type(v) is str and bool(v.strip()) for v in labels.values()), 'Nonblank presentation names required')
@@ -87,32 +98,68 @@ def render(snapshot, notice):
         return ('<div class="table-scroll"><table><thead><tr>' + ''.join('<th scope="col">' + esc(x) + '</th>' for x in head) +
                 '</tr></thead><tbody>' + ''.join('<tr>' + ''.join('<td>' + esc(c) + '</td>' for c in row) + '</tr>' for row in rows) +
                 '</tbody></table></div>')
-    def provenance(*prefixes):
+    def document_support(key):
+        return '<details class="support"><summary>Visa underlag</summary><a href="#record-' + key + '">Exakta uppgifter och kopplingar</a></details>'
+    def provenance(*prefixes, document=None):
         matches = [(i, mp) for i, mp in enumerate(snapshot['mapping'], 1)
                    if any(t == pre or t.startswith(pre + '/') for t in mp['targets'] for pre in prefixes)]
         refs = sorted({r['source_id'] for _, mp in matches for r in mp['refs']})
         assumptions = sorted({k for _, mp in matches for k in mp['assumption_ids']})
-        text = ('Källkopplat underlag: ' + ', '.join(source_titles[r] for r in refs) + '. ' if refs else '')
-        text += ('Antaganden: ' + ', '.join(assumption_names[k] for k in assumptions) + '. ' if assumptions else '')
-        if refs and assumptions:
-            text += 'Delar bygger på antaganden; källkopplingen gäller inte allt. '
-        return '<p class="support">' + esc(text) + 'Spårning: ' + ', '.join(
-            '<a href="#mapping-' + str(i) + '">underlag ' + str(i) + '</a>' for i, _ in matches) + '.</p>'
+        support = ('Källor: ' + ', '.join(source_titles[r] for r in refs) + '. ' if refs else '')
+        support += ('Antaganden: ' + ', '.join(assumption_names[k] for k in assumptions) + '.' if assumptions else '')
+        visible = ('<p class="assumption">Bygger på ' + esc(', '.join(assumption_names[k] for k in assumptions)) + '.</p>' if assumptions else '')
+        return visible + '<details class="support"><summary>Visa underlag</summary>' + paragraph(support) + ''.join(
+            '<p><a href="#mapping-' + str(i) + '">Underlag ' + str(i) + '</a></p>' +
+            bullets([t for t in mp['targets'] if any(t == pre or t.startswith(pre + '/') for pre in prefixes)])
+            for i, mp in matches) + (
+                '<p><a href="#record-' + document + '">Avgränsning och användning</a></p>' if document else '') + '</details>'
+    def state(k, v):
+        phrases = definition.get('boolean_states', {}).get('/model/domains/' + part(k))
+        if type(v) is bool and phrases:
+            return phrases['true' if v else 'false']
+        return field(k) + ': ' + value(k, v)
     def predicates(items):
-        return ' och '.join('”' + field(g['field']) + '”' + (' är ' if g['op'] == 'eq' else ' är minst ') +
-                            value(g['field'], g['value']) for g in items) or 'Inga särskilda villkor'
+        return '; '.join(state(g['field'], g['value']) if g['op'] == 'eq' else
+                         field(g['field']) + ' är minst ' + str(g['value']) for g in items)
     def effects(e):
-        lines = ['”' + field(k) + '” blir ' + value(k, v) for k, v in sorted(e['set'].items())]
-        lines += ['”' + field(k) + '”' + (' ökar med ' if v >= 0 else ' minskar med ') + str(abs(v))
+        lines = [state(k, v) for k, v in sorted(e['set'].items())]
+        lines += [field(k) + (' ökar med ' if v >= 0 else ' minskar med ') + str(abs(v))
                   for k, v in sorted(e['add'].items())]
         return '; '.join(lines) or 'Inga värden ändras'
     def equality(values):
-        return ' och '.join('”' + field(k) + '” är ' + value(k, v) for k, v in sorted(values.items()))
+        return '; '.join(state(k, v) for k, v in sorted(values.items()))
+    def goal_lines():
+        lines = []
+        for c in goal['all']:
+            if c['operator'] == 'terminal':
+                timing = 'Vid slutet, ' + time(m['clock']['horizon'])
+            elif c['operator'] == 'reach_by':
+                timing = 'Minst en gång från ' + time(m['clock']['start']) + ' till och med ' + time(c['deadline'])
+            else:
+                timing = 'Vid varje kontrollpunkt från ' + time(m['clock']['start']) + ' till och med ' + time(c['through'])
+            lines.append(timing + ': ' + equality(c['equals']) + '.')
+        return lines
+    def choice_lines():
+        lines = []
+        if s['required_decision_ids']:
+            lines.append('Måste ingå: ' + ', '.join(decision(k) for k in s['required_decision_ids']) + '.')
+        for group in s['choice_groups']:
+            lines.append(('Välj exakt ett' if group['kind'] == 'exactly_one' else 'Välj högst ett') +
+                         ' av: ' + ', '.join(decision(k) for k in group['members']) + '.')
+        grouped = {k for g in s['choice_groups'] for k in g['members']}
+        free = [decision(k) for k in s['optional_decision_ids'] if k not in grouped]
+        if free:
+            lines.append('Kan väljas till eller utelämnas var för sig: ' + ', '.join(free) + '.')
+        if search_size(p)['subsets_by_length'][0]:
+            lines.append('Även en plan utan beslut ingår.')
+        return lines
     parts = ['<!doctype html><html lang="sv"><head><meta charset="utf-8">',
              '<meta name="viewport" content="width=device-width, initial-scale=1">',
              '<title>Underlag för modellbekräftelse</title>',
              '<style>body{font:17px system-ui,sans-serif;color:#172b36;background:#f6f7f8;max-width:1080px;margin:32px auto;padding:0 24px;line-height:1.6}'
              'main{background:white;padding:28px;border-radius:12px}h1{line-height:1.2}h2{margin-top:2em;line-height:1.3}h3{margin-bottom:.4em}'
+             '.decision-card{border:1px solid #bfcbd2;border-left:4px solid #35637d;border-radius:8px;padding:16px 20px;margin:16px 0}.decision-card h3{margin:0}.decision-card p{margin:.5em 0}'
+             '.support{padding:8px 12px;margin:12px 0}.support summary{font-size:1em}.assumption{color:#684d00}.overview{border-bottom:1px solid #bfcbd2;padding-bottom:16px}'
              '.notice{background:#fff0c2;border:2px solid #846000;padding:16px;font-weight:700}.support{font-size:.9em;color:#3c5260}'
              'a{color:#174f83}details{margin:24px 0;border:1px solid #8b9aa4;border-radius:8px;padding:16px;background:white}'
              'summary{font-size:1.15em;font-weight:700;cursor:pointer}li{margin:.4em 0}.table-scroll{overflow-x:auto}'
@@ -121,98 +168,88 @@ def render(snapshot, notice):
              '@media(max-width:600px){body{padding:0 10px}main{padding:16px}}'
              '@media print{body{max-width:none;background:white}main{padding:0}.table-scroll{overflow:visible}table{min-width:0}td,th{min-width:0}}</style></head><body>',
              '<p class="notice">' + esc(notice) + '</p><main><h1>Kontrollera beskrivningen av er verksamhet</h1>',
-             paragraph('Ni bekräftar modellbeskrivningen i denna version. Sidan är inte ett analysresultat och bevisar inte att verksamhetsuppgifterna är sanna. '
-                       'Källornas relevans, reglernas rimlighet och antagandena behöver bedömas av er och den domänansvariga.'),
-             '<h2>Det här ska vi undersöka.</h2>', paragraph(a['question']), paragraph('Användning: ' + a['intended_use']),
-             bullets(a['includes']), paragraph('Vem får besluta: ' + a['decision_authority']),
+             paragraph('Det här är beskrivningen före analysen, inte ett analysresultat eller en rekommendation. Ni ska kontrollera att den stämmer med verksamheten.'),
+             '<section class="overview"><h2>Det här ska vi undersöka.</h2>', paragraph(a['question']), bullets(a['includes']),
+             '<h3>Alternativen</h3>', bullets(choice_lines()),
+             '<h3>Det här räknas som att målet är nått.</h3>', bullets(goal_lines()),
+             paragraph('Alla målkrav ska gälla, och varje valt beslut måste kunna genomföras. Samma plan prövas i alla angivna scenarier.'),
+             paragraph('Kontrollpunkterna omfattar även läget före och efter händelser vid samma tid. Kraven ska gälla oavsett ordningen mellan samtidiga händelser.'),
+             provenance('/search', '/observation', document='analysis'), '</section>',
              '<h2>Så ser läget ut från början.</h2>']
-    for k, v in sorted(m['initial'].items()):
-        domain = m['domains'][k]
-        allowed = ('från ' + str(domain['integer'][0]) + ' till ' + str(domain['integer'][1])
-                   if 'integer' in domain else ', '.join(value(k, x) for x in domain['enum']))
-        parts += [paragraph(field(k) + ': ' + value(k, v) + '. Tillåtna värden: ' + allowed + '.'),
-                  provenance('/model/initial/' + part(k), '/model/domains/' + part(k))]
-    parts += [paragraph('Budgetkonto: ' + field(m['budget']['field']) + '.' if m['budget'] else
-                        'Inget budgetkonto finns i modellen. Alla beslut har regelkostnad 0; detta säger inget om verkliga kostnader.'),
-              provenance('/model/budget'), '<h2>Det här kan ni besluta.</h2>']
-    for k, rule in sorted(m['decisions'].items()):
-        lines = [('Obligatoriskt i varje plan.' if k in s['required_decision_ids'] else 'Valbart, med de valregler som anges nedan.'),
-                 'Om beslutet genomförs: ' + effects(rule['effects']) + '.',
-                 'Regelkostnad: ' + str(rule['cost']) + ('. Dras från ' + field(m['budget']['field']) + '.' if m['budget'] else '.')]
+    # Only fields used by a guard, effect, budget or goal affect this model's question.
+    # All other initial fields and every domain remain available in the technical view.
+    relevant = {k for c in goal['all'] for k in c['equals']}
+    for rule in list(m['decisions'].values()) + list(m['events'].values()):
+        relevant.update(g['field'] for g in rule['requires'])
+        for effect in ([rule['effects']] if 'effects' in rule else rule['outcomes'].values()):
+            relevant.update(effect['set'])
+            relevant.update(effect['add'])
+    if m['budget']:
+        relevant.add(m['budget']['field'])
+    parts += [bullets([state(k, m['initial'][k]) + '.' for k in sorted(relevant)]),
+              provenance('/model/initial', '/model/domains', '/model/budget')]
+    if not m['budget']:
+        parts += [paragraph('Modellen har inget kostnadskonto. Det betyder inte att besluten är kostnadsfria i verkligheten.')]
+    parts += ['<h2>Det här kan ni besluta.</h2>',
+              paragraph('Villkoren i korten ska gälla samtidigt, vid beslutets fasta tid. Annars genomförs beslutet inte och får ingen effekt eller kostnad. Det görs inget nytt försök.')]
+    for k, rule in sorted(m['decisions'].items(), key=lambda item: (item[0] not in s['required_decision_ids'], item[0])):
+        parts += ['<article class="decision-card"><h3>' + esc(decision(k)) + '</h3>',
+                  paragraph('Måste ingå.' if k in s['required_decision_ids'] else 'Ett alternativ enligt valreglerna ovan.'),
+                  paragraph('Kräver: ' + predicates(rule['requires']) + '.') if rule['requires'] else
+                  (paragraph('Inga särskilda förvillkor.') if not rule['cost'] else ''),
+                  paragraph('Efter genomförandet: ' + effects(rule['effects']) + '.')]
+        if rule['cost']:
+            parts += [paragraph('Förbrukar ' + str(rule['cost']) + ' från ' + field(m['budget']['field']) + '. Detta måste finnas tillgängligt när beslutet tas.')]
         if rule['schedule']:
-            lines.append('Schemalägger ' + event(rule['schedule']['event']) + ' med fördröjning ' + time(rule['schedule']['delay']) + ' efter genomfört beslut.')
-        else:
-            lines.append('Schemalägger ingen händelse.')
-        parts += ['<h3>' + esc(decision(k)) + '</h3>', bullets(lines), provenance('/model/decisions/' + part(k))]
-    parts += ['<h2>Det här måste vara uppfyllt.</h2>',
-              paragraph('Villkoren kontrolleras vid beslutets fasta tid. Om något villkor inte är uppfyllt blockeras försöket utan effekt eller kostnad. Det görs inget nytt försök.')]
-    for k, rule in sorted(m['decisions'].items()):
-        requirement = predicates(rule['requires'])
-        if m['budget']:
-            requirement += '; ' + field(m['budget']['field']) + ' måste räcka till regelkostnaden ' + str(rule['cost'])
-        parts += [paragraph(decision(k) + ': ' + requirement + '.'), provenance('/model/decisions/' + part(k) + '/requires', '/model/decisions/' + part(k) + '/cost')]
-    parts += [paragraph('Alla angivna villkor måste gälla samtidigt. Värden måste hållas inom modellens tillåtna intervall; ett värde utanför intervallet är ett modellfel, inte ett vanligt nej.')]
-    for group in s['choice_groups']:
-        parts += [paragraph(('Exakt ett' if group['kind'] == 'exactly_one' else 'Högst ett') + ' av följande beslut får ingå: ' + ', '.join(decision(k) for k in group['members']) + '.')]
-    parts += [provenance('/search'), '<h2>Tider och viktiga besked.</h2>',
-              paragraph('Analysen börjar vid ' + time(m['clock']['start']) + ' och slutar vid ' + time(m['clock']['horizon']) + ', inklusive slutpunkten. '
-                        'Tiden går i steg om ' + time(m['clock']['step']) + '. Händelser hanteras före beslut vid samma tid.'),
-              paragraph('Beslutens fasta tidsplatser: ' + ', '.join(time(t) for t in s['slots']) + '.'), provenance('/model/clock', '/search/slots')]
-    for i, initial in enumerate(m['initial_events']):
-        parts += [paragraph(event(initial['id']) + ': inlagt vid ' + time(initial['scheduled_at']) + ', ska hanteras vid ' + time(initial['due']) + '.'),
-                  provenance('/model/initial_events/' + str(i))]
-    for i, deadline in enumerate(m['metadata']['deadlines']):
-        parts += [paragraph('Angiven sista tid före ' + event(deadline['event']) + ': ' + time(deadline['last_inclusive_step']) + ', inklusive denna tid.'),
-                  provenance('/model/metadata/deadlines/' + str(i))]
+            parts += [paragraph('Följs av ' + event(rule['schedule']['event']) + ' efter ' + time(rule['schedule']['delay']) + '.')]
+        parts += [provenance('/model/decisions/' + part(k)), '</article>']
+    parts += ['<h2>Tider och viktiga besked.</h2>',
+              paragraph('Period: ' + time(m['clock']['start']) + ' till och med ' + time(m['clock']['horizon']) +
+                        '. Händelser hanteras före beslut vid samma tid.'),
+              paragraph('Besluten försöks i vald ordning vid ' + ', '.join(time(t) for t in s['slots']) +
+                        '. Kortare planer använder de första tiderna, så utelämnade beslut kan tidigarelägga andra beslut.')]
+    for deadline in m['metadata']['deadlines']:
+        parts += [paragraph('Sista tid före ' + event(deadline['event']) + ': ' + time(deadline['last_inclusive_step']) + ', inklusive denna tid.')]
     for k, rule in sorted(m['events'].items()):
-        parts += ['<h3>' + esc(event(k)) + '</h3>', paragraph(('Tidsstyrd händelse. ' if rule['kind'] == 'timer' else 'Externt besked. ') + 'Villkor: ' + predicates(rule['requires']) + '.'),
-                  bullets([outcome(k, o) + ': ' + effects(e) + '.' for o, e in sorted(rule['outcomes'].items())])]
-        if rule['absent']:
-            absent = rule['absent']
-            parts += [paragraph('Uteblivet besked representeras av ' + outcome(k, absent['outcome']) + ': ' + field(absent['field']) + ' blir ' + value(absent['field'], absent['value']) + '. Övriga effekter för detta utfall visas ovan.')]
-        parts += [provenance('/model/events/' + part(k))]
-    parts += [paragraph('Endast schemalagda händelser kan inträffa. En schemalagd händelse hanteras en gång. Om dess villkor inte gäller då tas den bort utan effekt. '
-                        'Händelser efter analysens sluttid ligger kvar som väntande och inträffar inte inom analysen.'), '<h3>Scenarier som ska prövas</h3>']
-    for i, sc in enumerate(p['scenario_set']['members']):
-        parts += [paragraph(name('/scenario_set/members/' + str(i) + '/label', sc['label']) + ': ' +
-                            ('; '.join(event(k) + ' → ' + outcome(k, v) for k, v in sorted(sc['outcomes'].items())) or 'Inga externa besked varierar.') ),
-                  provenance('/scenario_set/members/' + str(i))]
-    parts += ['<h2>Det här räknas som att målet är nått.</h2>', paragraph('Alla följande målkrav ska uppfyllas, och alla valda beslutsförsök måste ha godkänts av modellens regler:')]
-    for i, component in enumerate(goal['all']):
-        op = component['operator']
-        timing = {'terminal': 'Vid analysens slut, ' + time(m['clock']['horizon']),
-                  'always': 'Vid varje modellerad kontrollpunkt från ' + time(m['clock']['start']) + ' till och med ' + time(component.get('through', m['clock']['horizon'])),
-                  'reach_by': 'Vid minst en modellerad kontrollpunkt från ' + time(m['clock']['start']) + ' till och med ' + time(component.get('deadline', m['clock']['horizon']))}[op]
-        parts += [paragraph(timing + ': ' + equality(component['equals']) + '.'), provenance('/observation/all/' + str(i))]
-    parts += [paragraph('Kontrollpunkterna omfattar läget före och efter varje registrerad händelse eller steg inom tidsintervallet, även mellan händelser vid samma tid. '
-                        'Slutmålet kontrolleras efter den sista registrerade raden. Detta är modellens diskreta kontrollpunkter, inte ett bevis om verkligheten mellan dem. '
-                        'Kraven gäller på samtliga prövade ordningar av samtidiga händelser. Ett mål uppfyllt i ett scenario betyder inte automatiskt att det gäller i de andra.'),
-              '<h2>Det här antar vi.</h2>', paragraph('Antaganden är uttryckliga hypoteser. Källkopplade uppgifter har hänvisningar till bevarat underlag; hänvisningen bevisar inte att uppgiften är sann.')]
-    parts += [bullets([assumption_names[x['id']].capitalize() + ': ' + x['statement'] + ' Varför: ' + x['reason'] for x in snapshot['assumptions']]) if snapshot['assumptions'] else paragraph('Inga separata antaganden är deklarerade.')]
-    parts += ['<h2>Det här ingår inte i analysen.</h2>', bullets(a['excludes']), '<h3>Viktiga begränsningar</h3>', bullets(a['limitations']),
-              '<h2>Det här behöver ni kontrollera före bekräftelse.</h2>',
-              paragraph('Kontrollera fråga och avgränsning, namn och konkreta värden, villkor, effekter, kostnader, tider, mål och scenarier. '
-                        'Bedöm antaganden, öppna frågor, beslutsurval och körbudget. Namnen i beskrivningen är manuellt angivna presentationstexter, inte ytterligare fakta eller regler.')]
-    missing = sorted(label_targets(p) - set(labels))
+        parts += ['<h3>' + esc(event(k)) + '</h3>']
+        initial = [e for e in m['initial_events'] if e['id'] == k]
+        for e in initial:
+            parts += [paragraph('Hanteras vid ' + time(e['due']) + (', efter analysens slut.' if e['due'] > m['clock']['horizon'] else '.'))]
+        if not initial and not any(d['schedule'] and d['schedule']['event'] == k for d in m['decisions'].values()):
+            parts += [paragraph('Inte schemalagd i denna modell.')]
+        if rule['requires']:
+            parts += [paragraph('Kräver: ' + predicates(rule['requires']) + '. Om villkoren inte gäller då uteblir effekten; händelsen försöks inte igen.')]
+        parts += [bullets([('Uteblivet besked – ' if rule['absent'] and o == rule['absent']['outcome'] else '') +
+                          outcome(k, o) + ': ' + effects(e) + '.' for o, e in sorted(rule['outcomes'].items())])]
+    parts += ['<h3>Scenarier</h3>', bullets([
+        name('/scenario_set/members/' + str(i) + '/label', sc['label']) + ': ' +
+        ('; '.join(event(k) + ' → ' + outcome(k, v) for k, v in sorted(sc['outcomes'].items())) or 'Inga externa besked varierar.')
+        for i, sc in enumerate(p['scenario_set']['members'])]),
+        provenance('/model/clock', '/model/initial_events', '/model/events', '/model/metadata/deadlines', '/scenario_set'),
+        '<h2>Det här antar vi.</h2>',
+        bullets([assumption_names[x['id']].capitalize() + ': ' + x['statement'] + ' ' + x['reason'] for x in snapshot['assumptions']])
+        if snapshot['assumptions'] else paragraph('Inga separata antaganden är deklarerade.'), document_support('assumptions'),
+        '<h2>Det här ingår inte i analysen.</h2>', bullets(a['excludes'] + a['limitations']), document_support('analysis'),
+        '<h2>Det här behöver ni kontrollera före bekräftelse.</h2>']
+    dispositions = {'open': 'Olöst fråga', 'hypothetical': 'Antagande', 'scenarios': 'Osäkert besked',
+                    'scope_excluded': 'Utanför analysen', 'source_resolved': 'Källstödd uppgift'}
+    # Keep every issue's substance visible; detailed ownership, source spans and
+    # former scope are retained in its closed section and the technical snapshot.
+    parts += [bullets([dispositions[x['disposition']] + ': ' + x['question'] + ' ' + x['reason'] for x in snapshot['issues']])]
+    missing = label_targets(p) - set(labels)
     if missing:
-        parts += [paragraph('Begripliga namn saknas för ' + str(len(missing)) + ' delar av underlaget. De visas som ”Namn saknas” med originalnamnet. '
-                            'Komplettera och granska en ny version om betydelsen inte är tydlig; ingen verksamhetsbetydelse har gissats.')]
-    dispositions = {'open': 'Olöst fråga', 'hypothetical': 'Hanteras som antagande', 'scenarios': 'Prövas i deklarerade scenarier',
-                    'scope_excluded': 'Utanför den avgränsade frågan', 'source_resolved': 'Uppgift med källstöd'}
-    impacts = {'blocks_analysis': 'Kritisk för den avgränsade analysen', 'outside_scope': 'Ligger utanför analysen', 'ranking_only': 'Gäller värdering mellan alternativ'}
-    for issue in snapshot['issues']:
-        parts += ['<h3>' + esc(dispositions[issue['disposition']] + ': ' + issue['question']) + '</h3>',
-                  paragraph(issue['reason'] + ' Ansvarig: ' + issue['owner'] + '. ' + impacts[issue['impact']] + '.'),
-                  paragraph('Tidigare omfattning: ' + issue['previous_scope']) if issue['previous_scope'] else '']
-    if not snapshot['issues']:
-        parts += [paragraph('Inga särskilda frågor är registrerade. Detta bevisar inte att underlaget är fullständigt i verkligheten.')]
+        parts += [paragraph('Begripliga namn saknas för ' + str(len(missing)) + ' delar. De markeras med ”Namn saknas”; kontrollera betydelsen innan ni bekräftar.')]
+    parts += [paragraph('Kontrollera särskilt startläget, beslutens villkor, tiderna, målen och antagandena. Källstöd och ordval behöver också granskas; sidan bevisar inte att uppgifterna är sanna.'),
+              '<details class="support"><summary>Visa underlag</summary>',
+              paragraph('Användning: ' + a['intended_use']), paragraph('Vem får besluta: ' + a['decision_authority']),
+              paragraph('Namn och tillståndsmeningar är manuellt angivna. Källkopplade uppgifter hänvisar till bevarade källor; antaganden är hypoteser.'),
+              '<a href="#review-records">Frågor, antaganden och källor med exakta kopplingar</a></details>']
     size = search_size(p)
     budget = snapshot['execution']['max_cells']
-    parts += [paragraph('Körbudget: högst ' + str(budget) + ' av ' + str(size['cells']) + ' kombinationer av plan och scenario. ' +
-                        ('Alla alternativ ryms inte i budgeten. Okörda alternativ har okända resultat.' if budget < size['cells'] else
-                         'Alla kombinationer ryms, men avbrott och körgränser kan ändå lämna okända resultat.'))]
-    parts += [paragraph('Domänansvarig granskar modellen och kunden bekräftar beskrivningen av verksamheten. Bekräftelserna gäller exakt denna version. '
-                        'Ändringar kräver ny prepare, ny granskning och nya bekräftelser. Namn och hashvärden autentiserar inte personer eller faktiska svar.'), '</main>']
+    if budget < size['cells']:
+        parts += [paragraph('Körbudgeten räcker till ' + str(budget) + ' av ' + str(size['cells']) +
+                            ' kombinationer av plan och scenario. Alla alternativ ryms inte i budgeten. Återstående resultat är okända, inte negativa.')]
+    parts += [paragraph('Bekräftelsen gäller denna beskrivning. Ändringar kräver ny granskning och nya bekräftelser.'), '</main>']
     parts += ['<details id="analysis-method"><summary>Visa hur analysen fungerar</summary>',
               paragraph('Obligatoriska beslut: ' + (', '.join(decision(k) for k in s['required_decision_ids']) or 'inga') + '.'),
               paragraph('Valfria beslut: ' + (', '.join(decision(k) for k in s['optional_decision_ids']) or 'inga') + '.'),
@@ -227,6 +264,9 @@ def render(snapshot, notice):
               bullets([' → '.join(decision(k) + ' vid ' + time(t) for t, k in zip(s['slots'], order)) or 'Tom plan: inga beslutsförsök.' for order in generated_orders(p)]),
               paragraph('För varje plan och scenario undersöks samtliga möjliga ordningar av samtidiga händelser. Varje sådan händelsebana måste kontrolleras. '
                         'För att en plan ska nå målet genom alla scenarier måste kraven gälla på alla dessa banor i varje deklarerat scenario.'),
+              paragraph('Tiden går i steg om ' + time(m['clock']['step']) + '. Bara schemalagda händelser kan inträffa, en gång per händelse. Händelser efter sluttiden förblir väntande. '
+                        'Målens kontrollpunkter är varje registrerad rads före- och efterläge inom intervallet; slutmålet gäller efter sista raden. '
+                        'Värden utanför tillåtna värdemängder är modellfel, inte vanliga negativa målresultat.'),
               '<h3>Körgränser</h3>', paragraph('Körbudgeten tillåter högst ' + str(budget) + ' av ' + str(size['cells']) + ' kombinationer. ' +
                   ('Budgeten räcker inte för att pröva alla alternativ. ' if budget < size['cells'] else 'Budgeten rymmer alla kombinationer, men avbrott eller andra gränser kan ändå göra sökningen ofullständig. ') +
                   'Okörda eller ofullständigt kontrollerade alternativ har okända resultat, inte ett nej. '
@@ -238,9 +278,10 @@ def render(snapshot, notice):
                        'Ingen total väggklocksgaranti finns. Gränserna lovar inte en viss total körtid.']),
               paragraph('Ingen plan utses till bäst. Inga sannolikheter, optimalitet eller global omöjlighet följer av sökningen. Underlag, körningskorrekthet, mål och söktäckning är separata besked.'), '</details>',
               '<details id="technical"><summary>Visa tekniskt underlag</summary>',
-              paragraph('Presentationsformat: ' + VERSION + '. Snapshot: ' + digest(snapshot)),
+              paragraph('Presentationsformat: ' + definition['schema_version'] + '. Snapshot: ' + digest(snapshot)),
               table(['Klassificeringsfält', 'Värde'], sorted(snapshot['classification'].items())),
-              '<h3>Manuellt angivna namn</h3>', table(['Exakt modellkoppling', 'Namn som visas'], sorted(labels.items()))]
+              '<h3>Manuellt angivna namn</h3>', table(['Exakt modellkoppling', 'Namn som visas'], sorted(labels.items())),
+              '<h3>Bundna tillståndsmeningar</h3>', table(['Booleskt fält', 'Meningar för true/false'], [(k, raw(v)) for k, v in sorted(definition.get('boolean_states', {}).items())])]
     # Quotes are collected once here. Mapping rows link to that numbered collection.
     refs = {raw(r): r for entry in snapshot['mapping'] + snapshot['issues'] for r in entry['refs']}
     numbered = {key: i for i, key in enumerate(sorted(refs), 1)}
@@ -257,14 +298,15 @@ def render(snapshot, notice):
         parts += ['<section id="source-' + str(i) + '"><h4>Källutdrag ' + str(i) + '</h4>',
                   paragraph(r['source_id'] + '@' + r['source_version'] + ', tecken ' + str(r['start']) + '–' + str(r['end']) + ' (slut ej inkluderat).'),
                   '<pre>' + esc(r['quote']) + '</pre></section>']
-    for key, title in [('assumptions', 'Antaganden med exakta kopplingar'), ('issues', 'Frågor och dispositioner'),
+    parts += ['<section id="review-records">']
+    for key, title in [('analysis', 'Fråga, avgränsning och användning'), ('assumptions', 'Antaganden med exakta kopplingar'), ('issues', 'Frågor och dispositioner'),
                        ('controls', 'Kontrollfall'), ('evidence', 'Bevarade källor'), ('execution', 'Exakta körgränser')]:
         # Keep quotes only in collected source material and the required full snapshot.
         data = json.loads(raw(snapshot[key]))
         if key == 'issues':
             for issue in data:
                 issue['refs'] = ['Källutdrag ' + str(numbered[raw(r)]) for r in issue['refs']]
-        parts += ['<h3>' + title + '</h3>', table(['Kodfält', 'Exakt värde / hänvisning'], [(k, raw(v)) for k, v in leaves(data).items()])]
-    parts += ['<details><summary>Full snapshot och registrerad implementation</summary><pre>',
+        parts += ['<h3 id="record-' + key + '">' + title + '</h3>', table(['Kodfält', 'Exakt värde / hänvisning'], [(k, raw(v)) for k, v in leaves(data).items()])]
+    parts += ['</section><details><summary>Full snapshot och registrerad implementation</summary><pre>',
               esc(json.dumps(snapshot, ensure_ascii=False, sort_keys=True, indent=2)), '</pre></details></details></body></html>\n']
     return '\n'.join(parts).encode('utf-8')

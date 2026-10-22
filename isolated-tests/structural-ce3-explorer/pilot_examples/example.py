@@ -61,14 +61,20 @@ def draft_fixture(directory, max_cells=12):
                      'refs': [], 'assumption_ids': ['time-hypothesis']})
     draft = {'schema_version': 'ce3-pilot-draft/3', 'case_id': 'fabricated-training-case', 'revision': 1,
              'classification': {'case_kind': 'fabricated_exercise', 'receipt_origin': 'fabricated_test'},
-             'analysis': {'question': 'Vilka fasta övningsplaner når leveransmålet i varje deklarerat scenario?',
+             'analysis': {'question': 'Vilka sätt att förbereda och leverera klarar målen vid godkänt besked, avslag eller uteblivet besked?',
                           'intended_use': 'Öva manuell granskning och teknisk pilotantagning. Inget kundbeslut.',
-                          'includes': ['Förberedelse, leveransväg, externt besked och hårda mål i övningen.'],
-                          'excludes': ['Fysisk kapacitet och fortsatt drift.', 'Kostnadsranking och verklighetsprediktion.'],
+                          'includes': ['Förberedelse, val av leveransväg och externt besked.'],
+                          'excludes': ['Fysisk kapacitet och fortsatt drift.', 'Jämförelse av kostnader och förutsägelser om verkliga utfall.'],
                           'decision_authority': 'I övningen får operatören välja och försöka P, N och U enligt grammatiken.',
-                          'time_unit': p['model']['clock']['unit'], 'limitations': ['Helt fabricerat fall; ingen verklig domängranskning.'],
+                          'time_unit': p['model']['clock']['unit'], 'limitations': ['Påhittat övningsfall som ingen verklig verksamhetsansvarig har granskat.'],
                           'ranking': 'none'},
-             'presentation': {'schema_version': 'ce3-pilot-presentation/1', 'labels': {
+             'presentation': {'schema_version': 'ce3-pilot-presentation/2',
+                              'boolean_states': {
+                                  '/model/domains/prepared': {'true': 'Leveransen är förberedd', 'false': 'Leveransen är inte förberedd'},
+                                  '/model/domains/done': {'true': 'Leveransen är klar', 'false': 'Leveransen är inte klar'},
+                                  '/model/domains/aux_done': {'true': 'Det extra momentet är klart', 'false': 'Det extra momentet är inte klart'},
+                                  '/model/domains/safe': {'true': 'Säkerhetsvillkoret är uppfyllt', 'false': 'Säkerhetsvillkoret är inte uppfyllt'}},
+                              'labels': {
                  '/model/clock/unit': 'övningssteg',
                  '/model/decisions/P': 'Förbered leverans',
                  '/model/decisions/N': 'Leverera efter förberedelse',
@@ -94,7 +100,7 @@ def draft_fixture(directory, max_cells=12):
                                         'extraction': 'verbatim_utf8', 'extraction_note': 'Samma UTF-8-bytes; inte verklig källdata.'}],
              'mapping': mappings,
              'assumptions': [{'id': 'time-hypothesis', 'statement': 'Beskedet antas inträffa vid steg 1.',
-                              'reason': 'Hypotetisk tid för övningen, ingen observerad leveranstid.', 'targets': [uncertain]}],
+                              'reason': 'Vald tid för övningen, inte en uppmätt tid.', 'targets': [uncertain]}],
              'issues': [],
              'controls': [{'order': ['P', 'N'], 'scenario_label': 'rejected', 'expected_goal': True,
                            'rationale': 'P vid 0 gör prepared sant. N vid 2 levererar oberoende av response; safe ändras inte.'},
@@ -109,15 +115,15 @@ def draft_fixture(directory, max_cells=12):
         return base
     draft['issues'] = [
         issue(id='time', kind='uncertain_time', question='När kommer beskedet?', targets=[uncertain],
-              disposition='hypothetical', reason='Analysen är villkorad på tid 1.', assumption_ids=['time-hypothesis']),
+              disposition='hypothetical', reason='Analysen förutsätter att beskedet hanteras vid steg 1.', assumption_ids=['time-hypothesis']),
         issue(id='outcome', kind='future_outcome', question='Vilket besked kommer?',
               targets=['/scenario_set/members/' + str(i) + '/outcomes/response' for i in range(3)],
-              disposition='scenarios', scenario_event='response', reason='Pröva alla tre deklarerade utfall utan sannolikhetsanspråk.'),
+              disposition='scenarios', scenario_event='response', reason='Vi undersöker de tre beskeden var för sig, utan att bedöma hur sannolika de är.'),
         issue(id='capacity', kind='model_gap', question='Räcker fysisk kapacitet?', disposition='scope_excluded',
               impact='outside_scope', excluded_scope_index=0, previous_scope='Ursprunglig fråga inkluderade fysisk genomförbarhet.',
-              reason='Frågan har minskats till logisk beslutstillåtlighet; ingen slutsats om fysisk genomförbarhet får dras.'),
+              reason='Vi undersöker bara om beslutens villkor är uppfyllda. Analysen visar inte om fysisk kapacitet räcker.'),
         issue(id='priority', kind='unresolved_priority', question='Vilken väg är bäst?', disposition='open', impact='ranking_only',
-              reason='Ingen ranking görs; värdekriterium saknas.')]
+              reason='Ingen leveransväg utses till bäst. Det är inte bestämt vad som ska väga tyngst.')]
     write_bundle(draft, directory / 'draft.json')
     return draft
 

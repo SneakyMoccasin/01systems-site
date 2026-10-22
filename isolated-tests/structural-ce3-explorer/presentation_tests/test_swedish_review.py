@@ -22,6 +22,7 @@ class Page(HTMLParser):
     def __init__(self, html):
         super().__init__()
         self.depth = 0
+        self.noncontent = 0
         self.visible = []
         self.all_text = []
         self.details = []
@@ -31,6 +32,8 @@ class Page(HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
+        if tag in ('style', 'title'):
+            self.noncontent += 1
         if tag == 'details':
             self.depth += 1
             self.details.append(attrs)
@@ -40,12 +43,14 @@ class Page(HTMLParser):
             self.links.append(attrs['href'])
 
     def handle_endtag(self, tag):
+        if tag in ('style', 'title'):
+            self.noncontent -= 1
         if tag == 'details':
             self.depth -= 1
 
     def handle_data(self, data):
         self.all_text.append(data)
-        if self.depth == 0:
+        if self.depth == 0 and not self.noncontent:
             self.visible.append(data)
 
 
@@ -73,24 +78,25 @@ class SwedishReview(unittest.TestCase):
         page = Page(self.page())
         visible = ' '.join(page.visible)
         for text in ['Det här ska vi undersöka.', 'Så ser läget ut från början.',
-                     'Det här kan ni besluta.', 'Det här måste vara uppfyllt.',
+                     'Det här kan ni besluta.',
                      'Tider och viktiga besked.', 'Det här räknas som att målet är nått.',
                      'Det här antar vi.', 'Det här ingår inte i analysen.',
                      'Det här behöver ni kontrollera före bekräftelse.',
                      'FABRICERAD ÖVNING', 'inte ett analysresultat',
-                     'Förberedelsen är klar: nej', 'Leveransen är klar: nej',
-                     'Säkerhetsvillkoret är uppfyllt: ja', 'Externt besked: Väntar på besked',
-                     'inlagt vid 0 övningssteg, ska hanteras vid 1 övningssteg',
-                     'till och med 2 övningssteg: ”Leveransen är klar” är ja',
-                     'till och med 5 övningssteg: ”Säkerhetsvillkoret är uppfyllt” är ja',
-                     'Antaganden: antagande 1', 'Olöst fråga: Vilken väg är bäst?',
-                     'ingen slutsats om fysisk genomförbarhet får dras']:
+                     'Leveransen är inte förberedd.', 'Leveransen är inte klar.',
+                     'Säkerhetsvillkoret är uppfyllt.', 'Externt besked: Väntar på besked',
+                     'Hanteras vid 1 övningssteg',
+                     'till och med 2 övningssteg: Leveransen är klar',
+                     'till och med 5 övningssteg: Säkerhetsvillkoret är uppfyllt',
+                     'Bygger på antagande 1', 'Olöst fråga: Vilken väg är bäst?',
+                     'Analysen visar inte om fysisk kapacitet räcker']:
             self.assertIn(text, visible)
         for technical in ['/model/', 'sha256', digest(self.snapshot), 'Full snapshot', 'schema_version']:
             self.assertNotIn(technical, visible)
-        self.assertEqual(len(page.details), 3)
+        self.assertGreater(len(page.details), 3)
+        self.assertEqual(sum(x.get('class') == 'support' for x in page.details), 9)
         self.assertTrue(all('open' not in x for x in page.details))
-        self.assertEqual(page.details[:2], [{'id': 'analysis-method'}, {'id': 'technical'}])
+        self.assertEqual([x for x in page.details if 'id' in x], [{'id': 'analysis-method'}, {'id': 'technical'}])
         self.assertTrue(all(link.startswith('#') and link[1:] in page.ids for link in page.links))
         self.assertNotIn('Namn saknas', visible)
         self.assertNotIn('overflow-wrap:anywhere}table', self.page())
@@ -101,17 +107,17 @@ class SwedishReview(unittest.TestCase):
     def test_changed_rules_change_the_corresponding_swedish_sentence(self):
         mutations = [
             (lambda s: s['problem']['model']['decisions']['N']['requires'][0].update(value=False),
-             'Leverera efter förberedelse: ”Förberedelsen är klar” är nej.'),
+             'Kräver: Leveransen är inte förberedd.'),
             (lambda s: s['problem']['model']['decisions']['P']['effects']['set'].update(prepared=False),
-             'Om beslutet genomförs: ”Förberedelsen är klar” blir nej.'),
-            (lambda s: s['problem']['model']['initial'].update(done=True), 'Leveransen är klar: ja.'),
-            (lambda s: s['problem']['model']['initial_events'][0].update(due=3), 'ska hanteras vid 3 övningssteg'),
+             'Efter genomförandet: Leveransen är inte förberedd.'),
+
+            (lambda s: s['problem']['model']['initial_events'][0].update(due=3), 'Hanteras vid 3 övningssteg'),
             (lambda s: s['problem']['observation']['all'][1].update(deadline=4),
-             'till och med 4 övningssteg: ”Leveransen är klar” är ja.'),
+             'till och med 4 övningssteg: Leveransen är klar.'),
             (lambda s: s['problem']['scenario_set']['members'][0]['outcomes'].update(response='rejected'),
              'Godkänt besked: Externt leveransbesked → Avslag'),
             (lambda s: s['problem']['search']['choice_groups'][0].update(kind='at_most_one'),
-             'Högst ett av följande beslut får ingå:'),
+             'Välj högst ett av:'),
             (lambda s: s['execution'].update(max_cells=2), 'Alla alternativ ryms inte i budgeten.')]
         for mutate, sentence in mutations:
             with self.subTest(sentence=sentence):
@@ -141,6 +147,7 @@ class SwedishReview(unittest.TestCase):
         attack = '<script>alert("å&😀")</script>'
         changed['presentation']['labels']['/model/decisions/P'] = attack
         changed['analysis']['question'] = attack
+        changed['presentation']['boolean_states']['/model/domains/done']['true'] = attack
         changed['assumptions'][0]['statement'] = attack
         changed['issues'][0]['question'] = attack
         changed['evidence'][0]['title'] = attack
@@ -154,6 +161,7 @@ class SwedishReview(unittest.TestCase):
     def test_names_new_version_and_rules_invalidate_receipts(self):
         for i, mutate in enumerate([
                 lambda s: s['presentation']['labels'].update({'/model/decisions/P': 'Förbered inför leverans'}),
+                lambda s: s['presentation']['boolean_states']['/model/domains/done'].update(true='Leveransen är genomförd'),
                 lambda s: s['problem']['model']['decisions']['N']['requires'][0].update(value=False)]):
             changed = deepcopy(self.snapshot)
             mutate(changed)
@@ -208,12 +216,12 @@ class SwedishReview(unittest.TestCase):
         P.prepare(draft, directory / 'materials', directory / 'prepared')
         snapshot = read_bundle(directory / 'prepared/snapshot.json')
         visible = self.direct(snapshot)
-        for sentence in ['Budget i poäng: 10. Tillåtna värden: från 0 till 12',
-                         'Regelkostnad: 3. Dras från Budget i poäng',
-                         'Förbered: ”Antal” är minst 1; Budget i poäng måste räcka till regelkostnaden 3',
-                         '”Antal” ökar med 2', '”Antal” minskar med 1',
-                         'Schemalägger Efterarbete med fördröjning 1 teststeg',
-                         'Angiven sista tid före Första tidsgränsen: -1 teststeg']:
+        for sentence in ['Budget i poäng: 10.',
+                         'Förbrukar 3 från Budget i poäng. Detta måste finnas tillgängligt när beslutet tas.',
+                         'Kräver: Antal är minst 1.',
+                         'Antal ökar med 2', 'Antal minskar med 1',
+                         'Följs av Efterarbete efter 1 teststeg',
+                         'Sista tid före Första tidsgränsen: -1 teststeg']:
             self.assertIn(sentence, visible)
         receipts = fabricated_receipts(directory / 'prepared')
         P.freeze(directory / 'prepared', receipts, directory / 'frozen', directory / 'anchor.json')
@@ -221,6 +229,66 @@ class SwedishReview(unittest.TestCase):
         self.assertEqual(result['search_coverage']['status'], 'COMPLETE')
         self.assertEqual([x['order'] for x in result['goal_status'] if x['robust'] == 'TRUE'], [['A', 'B']])
         self.assertEqual(P.verify(directory / 'run', directory / 'anchor.json'), result)
+
+    def test_boolean_phrases_are_strict_typed_and_do_not_guess(self):
+        for mutate in [
+            lambda d: d['presentation']['boolean_states'].update({'/model/domains/response': {'true': 'x', 'false': 'y'}}),
+            lambda d: d['presentation']['boolean_states']['/model/domains/done'].update(false=''),
+            lambda d: d['presentation']['boolean_states']['/model/domains/done'].update(false='Leveransen är klar'),
+            lambda d: d['presentation']['boolean_states']['/model/domains/done'].pop('false'),
+            lambda d: d['presentation']['boolean_states']['/model/domains/done'].update(extra='x'),
+            lambda d: d['presentation']['boolean_states']['/model/domains/done'].update(true=True)]:
+            d = deepcopy(self.draft)
+            mutate(d)
+            with self.assertRaises(ValueError):
+                C.validate_content(d, self.root / 'draft/materials')
+        snapshot = deepcopy(self.snapshot)
+        snapshot['presentation']['boolean_states'] = {}
+        self.assertIn('Efter genomförandet: Förberedelsen är klar: ja.', self.direct(snapshot))
+        # A /1 authoring input is still explicit /1, never silently given phrases.
+        snapshot['presentation'] = {'schema_version': H.LEGACY_NAMES, 'labels': {}}
+        C.validate_content(snapshot, self.root / 'prepared/materials')
+        self.assertIn('Namn saknas: ”prepared”: ja', self.direct(snapshot))
+        self.assertNotIn('Leveransen är förberedd', self.direct(snapshot))
+
+    def test_cards_keep_conditions_once_and_remove_empty_technical_lines(self):
+        html = self.page()
+        cards = html.split('<article class="decision-card">')[1:]
+        self.assertEqual(len(cards), 3)
+        self.assertIn('Förbered leverans', cards[0])
+        card_text = [' '.join(Page(x.split('</article>')[0]).visible) for x in cards]
+        self.assertIn('Kräver: Leveransen är förberedd.', card_text[1])
+        self.assertIn('Efter genomförandet: Leveransen är klar.', card_text[1])
+        self.assertIn('Kräver: Leveransen är förberedd; Externt besked: Godkänt.', card_text[2])
+        visible = self.direct()
+        self.assertEqual(visible.count('Kräver: Leveransen är förberedd.'), 1)
+        self.assertEqual(visible.count('Kräver: Leveransen är förberedd; Externt besked: Godkänt.'), 1)
+        for text in ['Regelkostnad: 0', 'Schemalägger ingen händelse', 'Tillåtna värden',
+                     'Källkopplat underlag', 'Spårning:', 'Extra moment', 'blir ja', 'blir nej']:
+            self.assertNotIn(text, visible)
+        self.assertEqual(visible.count('Modellen har inget kostnadskonto.'), 1)
+        self.assertIn('Uteblivet besked', visible)
+        self.assertIn('Externt besked: Väntar på besked', visible)
+        self.assertIn('Det görs inget nytt försök.', visible)
+        self.assertIn('de första tiderna', visible)
+        self.assertLess(visible.index('Alternativen'), visible.index('Så ser läget ut'))
+        self.assertLess(visible.index('Det här räknas som att målet är nått'), visible.index('Så ser läget ut'))
+
+    def test_initial_and_goal_values_choose_exact_boolean_phrase(self):
+        snapshot = deepcopy(self.snapshot)
+        snapshot['problem']['model']['initial']['done'] = True
+        initial = self.direct(snapshot).split('Så ser läget ut från början.')[1].split('Det här kan ni besluta.')[0]
+        self.assertIn('Leveransen är klar.', initial)
+        self.assertNotIn('Leveransen är inte klar.', initial)
+        snapshot['problem']['observation']['all'][0]['equals']['done'] = False
+        self.assertIn('Vid slutet, 5 övningssteg: Leveransen är inte klar.', self.direct(snapshot))
+        # Newly relevant fields are included automatically; no fixed exercise field list.
+        snapshot['problem']['model']['decisions']['P']['effects']['set']['aux_done'] = True
+        for mapping in snapshot['mapping']:
+            if '/model/decisions/P/effects/set/prepared' in mapping['targets']:
+                mapping['targets'].append('/model/decisions/P/effects/set/aux_done')
+        self.assertIn('Det extra momentet är inte klart.', self.direct(snapshot))
+        self.assertIn('Det extra momentet är klart', self.direct(snapshot))
 
     def test_prefix_empty_budget_and_no_ranking_explanation(self):
         snapshot = deepcopy(self.snapshot)
