@@ -8,7 +8,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from bridge import read_bundle, write_bundle, digest
+from bridge import read_bundle, write_bundle, digest, encode, equal
 import pilot_contract as C
 
 NOTES = '''FABRICERAT ÖVNINGSEXEMPEL – ingen verklig kund eller verksamhet har granskat detta.
@@ -57,7 +57,8 @@ def draft_fixture(directory, max_cells=12):
     mappings[0]['targets'].remove(uncertain)
     mappings.append({'targets': [uncertain], 'explanation': 'Beskedets tid är hypotetiskt 1. En annan tid kräver separat fryst modell.',
                      'refs': [], 'assumption_ids': ['time-hypothesis']})
-    draft = {'schema_version': 'ce3-pilot-draft/1', 'case_id': 'fabricated-training-case', 'revision': 1,
+    draft = {'schema_version': 'ce3-pilot-draft/2', 'case_id': 'fabricated-training-case', 'revision': 1,
+             'classification': {'case_kind': 'fabricated_exercise', 'receipt_origin': 'fabricated_test'},
              'analysis': {'question': 'Vilka fasta övningsplaner når leveransmålet i varje deklarerat scenario?',
                           'intended_use': 'Öva manuell granskning och teknisk pilotantagning. Inget kundbeslut.',
                           'includes': ['Förberedelse, leveransväg, externt besked och hårda mål i övningen.'],
@@ -103,22 +104,31 @@ def fabricated_receipts(prepared):
     """For tests/training ONLY: self-reported, obviously fictitious receipts."""
     prepared = Path(prepared)
     snapshot = read_bundle(prepared / 'snapshot.json')
+    equal(snapshot['schema_version'], 'ce3-pilot-snapshot/2', 'Training receipts require a new /2 snapshot')
+    equal(snapshot['classification'], {'case_kind': 'fabricated_exercise', 'receipt_origin': 'fabricated_test'},
+          'Fabricated receipts cannot confirm a declared real case')
     snapshot_id = digest(snapshot)
     shown = hashlib.sha256((prepared / 'review.html').read_bytes()).hexdigest()
     receipts = []
     for kind in ('domain_review', 'customer_confirmation'):
         person = 'FIKTIV övningsperson ' + kind
         statement = 'FABRICERAT TESTKVITTO: jag godtar övningsmodellens angivna scope, antaganden och begränsningar.'
-        record = 'confirmation/' + kind + '.txt'
+        record = 'confirmation/' + kind + '.json'
+        supporting = 'confirmation/' + kind + '.txt'
         path = C.safe_path(prepared / 'materials', record)
         path.parent.mkdir(parents=True, exist_ok=True)
-        receipt = {'schema_version': 'ce3-pilot-receipt/1', 'kind': kind, 'decision': 'approved', 'snapshot_id': snapshot_id,
+        receipt = {'schema_version': 'ce3-pilot-receipt/2', 'kind': kind, 'decision': 'approved', 'snapshot_id': snapshot_id,
+                   'classification': deepcopy(snapshot['classification']),
                    'presentation_sha256': shown, 'stated_person': person, 'stated_role': 'Fiktiv ' + kind,
                    'recorded_by': 'Fiktiv registrerare', 'recorded_at': '2026-10-22T12:00:00+02:00',
                    'statement': statement, 'acknowledgements': C.ACKNOWLEDGEMENTS[:],
                    'assumption_ids': sorted(a['id'] for a in snapshot['assumptions'])}
-        with path.open('x', encoding='utf-8') as stream:
-            stream.write('\n'.join(str(v) for v in receipt.values()) + '\n')
+        with C.safe_path(prepared / 'materials', supporting).open('xb') as stream:
+            stream.write(('FABRICERADE ÖVNINGSANTECKNINGAR: inget faktiskt kundsvar.\n' + statement + '\n').encode('utf-8'))
+        receipt['supporting_records'] = [C.descriptor(prepared / 'materials', supporting)]
+        confirmation = dict(receipt, schema_version='ce3-pilot-confirmation-record/1')
+        with path.open('xb') as stream:
+            stream.write(encode(confirmation))
         receipt['record'] = C.descriptor(prepared / 'materials', record)
         receipts.append(receipt)
     return receipts

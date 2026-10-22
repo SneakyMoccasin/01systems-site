@@ -3,6 +3,7 @@ from datetime import datetime
 import hashlib
 from html import escape
 import json
+import os
 from pathlib import Path, PurePosixPath
 
 from bridge import (ROOT, digest, equal, explorer_build, file_hash, obj, read_bundle,
@@ -15,9 +16,10 @@ PURPOSE = "bounded_real_pilot"
 BASELINE = ROOT.parent.parent / "docs/ce3/capabilities/engine-baseline-v2.json"
 SECTIONS = ("model", "sources", "search", "observation", "scenario_set")
 DRAFT_KEYS = ("schema_version", "case_id", "revision", "analysis", "translator", "problem",
-              "evidence", "mapping", "assumptions", "issues", "controls", "execution")
+              "evidence", "mapping", "assumptions", "issues", "controls", "execution", "classification")
 ACKNOWLEDGEMENTS = ["scope", "model_mapping", "assumptions", "issues", "goals", "scenarios",
-                    "selection_and_prefix_times", "limits_and_budget", "human_responsibility"]
+                    "selection_and_prefix_times", "limits_and_budget", "human_responsibility",
+                    "classification_and_receipt_origin"]
 
 
 def text(value, label):
@@ -29,6 +31,54 @@ def strings(value, label, nonempty=False):
     for item in value:
         text(item, label)
     require(len(value) == len(set(value)), "Duplicate values: " + label)
+
+
+# These are declarations, not authentication or source-truth attestations.
+CLASSIFICATIONS = {
+    "fabricated_exercise": "fabricated_test",
+    "declared_real_case": "declared_actual_response",
+}
+RECEIPT_FIELDS = ("kind", "decision", "snapshot_id", "presentation_sha256", "classification",
+                  "stated_person", "stated_role", "recorded_by", "recorded_at", "statement",
+                  "acknowledgements", "assumption_ids", "supporting_records")
+
+
+def validate_classification(value):
+    obj(value, ("case_kind", "receipt_origin"), "classification")
+    for key in value:
+        text(value[key], key)
+    require(value["case_kind"] in CLASSIFICATIONS, "Unknown pilot case classification")
+    equal(value["receipt_origin"], CLASSIFICATIONS[value["case_kind"]],
+          "Real cases and fabricated test receipts cannot be mixed")
+
+
+def case_notice(classification):
+    validate_classification(classification)
+    if classification["case_kind"] == "fabricated_exercise":
+        return "FABRICERAD ÖVNING med fabricerade testkvitton – inte en genomförd kundpilot."
+    return ("Deklarerat verkligt fall med uppgivna faktiska svar. "
+            "Personer, svar och verklighetsuppgifter är inte autentiserade.")
+
+
+def package_tree(directory):
+    """Reject symlinks/special files at or below a package root; never follow them.
+
+    Ancestors above the root may use platform aliases such as macOS /tmp.
+    Stable storage is assumed; this is not a concurrent filesystem sandbox.
+    """
+    directory = Path(directory)
+    require(not directory.is_symlink(), "Symlink package root unsupported")
+    if not directory.exists():
+        return
+    require(directory.is_dir(), "Package root must be a directory")
+    def fail(error):
+        raise error
+    for parent, directories, files in os.walk(directory, followlinks=False, onerror=fail):
+        for name in directories + files:
+            path = Path(parent) / name
+            require(not path.is_symlink(), "Symlink package entry unsupported: " + str(path))
+            require(path.is_dir() if name in directories else path.is_file(),
+                    "Special package files unsupported: " + str(path))
 
 
 def pointer_part(value):
@@ -52,6 +102,7 @@ def safe_path(root, relative):
     path = PurePosixPath(relative)
     require(not path.is_absolute() and all(p not in (".", "..") for p in path.parts)
             and str(path) == relative and "\\" not in relative, "Unsafe artifact path")
+    require(not Path(root).is_symlink(), "Symlink material root unsupported")
     root = Path(root).resolve()
     result = root.joinpath(*path.parts)
     require(root in result.resolve().parents, "Artifact escapes material directory")
@@ -97,6 +148,7 @@ def check_targets(value, available, label, nonempty=True):
 
 def validate_content(value, root):
     """Validate authoring content, without claiming review or customer confirmation."""
+    validate_classification(value["classification"])
     text(value["case_id"], "case_id")
     require(type(value["revision"]) is int and value["revision"] >= 1, "Invalid pilot revision")
     a = value["analysis"]
@@ -106,12 +158,12 @@ def validate_content(value, root):
         text(a[key], key)
     for key in ("includes", "excludes", "limitations"):
         strings(a[key], key, True)
-    equal(a["ranking"], "none", "Pilot /1 does not rank candidates")
+    equal(a["ranking"], "none", "Pilot /2 does not rank candidates")
     obj(value["translator"], ("stated_person", "method_version"), "translator")
     for key, item in value["translator"].items():
         text(item, key)
     problem = value["problem"]
-    equal(problem["schema_version"], "ce3-scenario-problem/4", "Pilot /1 requires /4 semantics")
+    equal(problem["schema_version"], "ce3-scenario-problem/4", "Pilot /2 requires /4 semantics")
     scenarios._validate_structure(problem, PURPOSE)
     equal(a["time_unit"], problem["model"]["clock"]["unit"], "Analysis/model time unit mismatch")
     execution = value["execution"]
@@ -249,7 +301,7 @@ def validate_controls(value, root, completed):
 
 def validate_snapshot(snapshot, root):
     obj(snapshot, DRAFT_KEYS + ("implementation",), "snapshot")
-    equal(snapshot["schema_version"], "ce3-pilot-snapshot/1", "Unsupported snapshot")
+    equal(snapshot["schema_version"], "ce3-pilot-snapshot/2", "Unsupported snapshot")
     validate_content(snapshot, root)
     equal(snapshot["implementation"], registration(), "Registered implementation/runtime/baseline changed")
     validate_controls(snapshot, root, True)
@@ -267,6 +319,8 @@ def presentation(snapshot):
              'td{border:1px solid #ccc;padding:8px;vertical-align:top;overflow-wrap:anywhere}'
              'table{border-collapse:collapse;width:100%}pre{white-space:pre-wrap;overflow-wrap:anywhere}</style>',
              '<h1>CE3 – underlag för manuell modellbekräftelse</h1>',
+             '<p><strong>' + esc(case_notice(snapshot["classification"])) + '</strong></p>',
+             table(sorted(snapshot["classification"].items())),
              '<p>Snapshot: <code>' + digest(snapshot) + '</code></p>',
              '<p>Bekräftelsen avser denna exakta version. Maskinen kontrollerar struktur och bindningar. '
              'Källrelevans, modellens rimlighet och antagandenas acceptans är människors ansvar. '
@@ -296,6 +350,8 @@ def presentation(snapshot):
         parts += ['<h2>' + heading + '</h2>', table([(p, json.dumps(v, ensure_ascii=False))
                                                    for p, v in leaves(snapshot[key]).items()])]
     parts += ['<h2>Körgränser</h2>', table(list(leaves(snapshot["execution"]).items())),
+              '<p>Timeout är 60 sekunder per replay-/auditprocess. Förprovens kontrollkörningar '
+              'ligger utanför batchens max_cells-budget. Ingen total väggklocksgaranti finns.</p>',
               '<p>Separata besked krävs för aktuellt pilotunderlag, körningskorrekthet, mål, söktäckning '
               'och batchbudget/prefix. Komplett underlag bevisar inte sann modell eller sanna källor.</p>',
               '<details><summary>Full snapshot och registrerad implementation</summary><pre>',
@@ -304,10 +360,11 @@ def presentation(snapshot):
 
 
 def validate_case(case, root, shown):
-    obj(case, ("schema_version", "snapshot", "presentation_sha256", "receipts"), "pilot case")
-    equal(case["schema_version"], "ce3-pilot-case/1", "Unsupported pilot contract")
+    obj(case, ("schema_version", "snapshot", "presentation_sha256", "receipts", "classification"), "pilot case")
+    equal(case["schema_version"], "ce3-pilot-case/2", "Unsupported pilot contract")
     snapshot = case["snapshot"]
     validate_snapshot(snapshot, root)
+    equal(case["classification"], snapshot["classification"], "Case classification differs from snapshot")
     expected = presentation(snapshot)
     equal(shown.hex(), expected.hex(), "Displayed snapshot differs from registered presentation")
     equal(hashlib.sha256(shown).hexdigest(), case["presentation_sha256"], "Stale presentation hash")
@@ -315,9 +372,9 @@ def validate_case(case, root, shown):
     require(type(receipts) is list and len(receipts) == 2, "Domain review and customer confirmation required")
     require({r["kind"] for r in receipts} == {"domain_review", "customer_confirmation"}, "Two receipt roles required")
     for receipt in receipts:
-        obj(receipt, ("schema_version", "kind", "decision", "snapshot_id", "presentation_sha256", "stated_person", "stated_role",
-                      "recorded_by", "recorded_at", "statement", "acknowledgements", "assumption_ids", "record"), "receipt")
-        equal(receipt["schema_version"], "ce3-pilot-receipt/1", "Unsupported receipt")
+        obj(receipt, ("schema_version", "record") + RECEIPT_FIELDS, "receipt")
+        equal(receipt["schema_version"], "ce3-pilot-receipt/2", "Unsupported receipt; new /2 confirmation required")
+        equal(receipt["classification"], snapshot["classification"], "Receipt classification differs from snapshot")
         equal(receipt["decision"], "approved", "Receipt must explicitly approve the shown snapshot")
         equal(receipt["snapshot_id"], digest(snapshot), "Stale confirmation/review snapshot")
         equal(receipt["presentation_sha256"], case["presentation_sha256"], "Stale confirmation/review presentation")
@@ -327,11 +384,22 @@ def validate_case(case, root, shown):
                 "Receipt time requires timezone (self-reported, not authenticated)")
         equal(receipt["acknowledgements"], ACKNOWLEDGEMENTS, "Incomplete confirmation scope")
         equal(receipt["assumption_ids"], sorted(a["id"] for a in snapshot["assumptions"]), "Unacknowledged assumptions")
-        record = artifact(root, receipt["record"]).read_bytes().decode("utf-8")
-        require(receipt["snapshot_id"] in record and receipt["presentation_sha256"] in record,
-                "Preserved receipt record must identify exact shown snapshot and presentation")
-        require(all(receipt[key] in record for key in ("decision", "stated_person", "stated_role", "recorded_by", "recorded_at", "statement")),
-                "Receipt assertions differ from preserved human record")
+        # Strict JSON parser rejects duplicate keys at every depth. Free prose is
+        # retained separately and is deliberately never searched for approval.
+        record_path = artifact(root, receipt["record"])
+        record = read_bundle(record_path)
+        obj(record, ("schema_version",) + RECEIPT_FIELDS, "confirmation record")
+        expected_record = dict({key: receipt[key] for key in RECEIPT_FIELDS},
+                               schema_version="ce3-pilot-confirmation-record/1")
+        equal(record, expected_record, "Structured confirmation record differs from receipt")
+        supporting = receipt["supporting_records"]
+        require(type(supporting) is list and bool(supporting), "Separate human response material required")
+        seen = set()
+        for item in supporting:
+            supporting_path = artifact(root, item)
+            require(item["path"] not in seen, "Duplicate supporting record")
+            seen.add(item["path"])
+            require(not supporting_path.samefile(record_path), "Confirmation record is not human response material")
     return case
 
 
@@ -339,18 +407,21 @@ def material_descriptors(case):
     snapshot = case["snapshot"]
     return ([s[k] for s in snapshot["evidence"] for k in ("original", "extract")] +
             [c[k] for c in snapshot["controls"] for k in ("history", "audit")] +
-            [r["record"] for r in case["receipts"]])
+            [r["record"] for r in case["receipts"]] +
+            [item for r in case["receipts"] for item in r["supporting_records"]])
 
 
 class Admission:
     """Revalidated local package handle; no boolean bypass or synthetic relabeling."""
     def __init__(self, directory):
         self.directory = Path(directory)
+        package_tree(self.directory)
         self.case = read_bundle(self.directory / "case.json")
         self.case_id = digest(self.case)
         self.validate(self.case["snapshot"]["problem"])
 
     def validate(self, problem):
+        package_tree(self.directory)
         current = read_bundle(self.directory / "case.json")
         equal(digest(current), self.case_id, "Pilot case changed during operation")
         validate_case(current, self.directory / "materials", (self.directory / "review.html").read_bytes())
@@ -360,5 +431,6 @@ class Admission:
         self.validate(problem)
         equal({"limits": limits, "max_cells": max_cells}, self.case["snapshot"]["execution"],
               "Execution differs from confirmed limits/budget")
-        return {"schema_version": "ce3-pilot-binding/1", "case_id": self.case_id,
-                "snapshot_id": digest(self.case["snapshot"])}
+        return {"schema_version": "ce3-pilot-binding/2", "case_id": self.case_id,
+                "snapshot_id": digest(self.case["snapshot"]),
+                "classification": self.case["snapshot"]["classification"]}

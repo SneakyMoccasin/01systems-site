@@ -175,16 +175,24 @@ beskriver den **tidigare omfattningen**, till och med scenario /3. Dess historis
 innehåll och läsanvisning är bevarade; /4 dokumenteras separat ovan. Purpose
 är fortsatt `synthetic_integration_test`; inget pilotläge eller UI ingår.
 
-## Separat manuell pilotingång /1
+## Separat manuell pilotingång /2
 
-`pilot_runner.py` inför ett uttryckligt `ce3-pilot-case/1` ovanpå /4-semantiken.
+`pilot_runner.py` använder ett uttryckligt `ce3-pilot-case/2` ovanpå /4-semantiken.
 Full mapping, bevarade källbytes, frågor/antaganden, handhärledda kontrollfall
 samt exakt snapshot- och presentationsbundna manuella kvitton krävs före
 frysning/körning. Vanliga syntetiska CLI:er behåller sin purpose-grind.
-Läs [pilotkontraktet](PILOT-FORMAT.md), [conciergeflödet med CLI-exempel](PILOT-CONCIERGE.md)
+Läs [pilotkontraktet /2](PILOT-FORMAT-V2.md), [conciergeflödet med CLI-exempel](PILOT-CONCIERGE.md)
 och [arkitekturbeslutet](PILOT-ARCHITECTURE.md). Motorbaslinje v2 och äldre
 leveransrapporter beskriver sin historiska omfattning och ändras inte.
 
 Pilotunderlagets kompletthet/aktualitet, körningskorrekthet, mål, söktäckning och
 budgetprefix rapporteras separat. Ingen AI-/SR-integration, kund-UI, ranking,
 verklighetssanning eller verifierad personidentitet följer av pilotbeskedet.
+
+
+Pilot /2 rättar protokollkontroll, ankarseparation och övningsmärkning från
+oberoende granskning `a8cc1fa` av `599ac9e`. Strikta strukturerade poster
+jämförs exakt med kvitton; fritt svarsunderlag bevaras separat. Paketet tillåter
+inte symlänkar. Klassificering och kvittoursprung binds genom hela kedjan och
+visas i resultatet. [Ursprungligt /1-format](PILOT-FORMAT.md) och dess rapporter
+är historik; äldre paket migreras inte automatiskt. Nya /2-bekräftelser krävs.

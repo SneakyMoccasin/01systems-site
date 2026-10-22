@@ -3,6 +3,7 @@
 import argparse
 from copy import deepcopy
 import hashlib
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -23,8 +24,13 @@ def new_json(path, value):
 
 
 def external_anchor(path, *packages):
+    logical_path = Path(os.path.abspath(path))
     path = Path(path).resolve()
     for package in packages:
+        contract.package_tree(package)
+        logical_package = Path(os.path.abspath(package))
+        require(logical_path != logical_package and logical_package not in logical_path.parents,
+                "Trust anchor must be retained logically outside packages")
         package = Path(package).resolve()
         require(path != package and package not in path.parents, "Trust anchor must be retained outside packages")
         for name in ("anchor-copy.json", "pilot/anchor-copy.json"):
@@ -47,12 +53,14 @@ def copy_materials(descriptors, source, destination):
 
 
 def prepare(draft, materials, output):
+    contract.package_tree(materials)
+    contract.package_tree(output)
     contract.obj(draft, contract.DRAFT_KEYS, "pilot draft")
-    equal(draft["schema_version"], "ce3-pilot-draft/1", "Unsupported pilot draft")
+    equal(draft["schema_version"], "ce3-pilot-draft/2", "Unsupported pilot draft")
     contract.validate_content(draft, materials)
     contract.validate_controls(draft, materials, False)
     snapshot = deepcopy(draft)
-    snapshot.update(schema_version="ce3-pilot-snapshot/1", implementation=contract.registration())
+    snapshot.update(schema_version="ce3-pilot-snapshot/2", implementation=contract.registration())
     output = Path(output)
     output.mkdir(parents=True, exist_ok=False)
     retained = output / "materials"
@@ -79,7 +87,8 @@ def prepare(draft, materials, output):
     write_bundle(snapshot, output / "snapshot.json")
     (output / "review.html").write_bytes(contract.presentation(snapshot))
     return {"snapshot_id": digest(snapshot), "presentation_sha256": hashlib.sha256(contract.presentation(snapshot)).hexdigest(),
-            "status": "PREPARED_NOT_CONFIRMED"}
+            "status": "PREPARED_NOT_CONFIRMED", "classification": snapshot["classification"],
+            "case_notice": contract.case_notice(snapshot["classification"])}
 
 
 def reconstruct(admission):
@@ -89,7 +98,8 @@ def reconstruct(admission):
     impl, execution = snapshot["implementation"], snapshot["execution"]
     spec = engine.batch_spec(problem, manifest, impl["runtime"], impl["explorer_build"],
                              execution["limits"], execution["max_cells"], _admission=admission)
-    anchor = {"schema_version": "ce3-pilot-anchor/1", "case_id": admission.case_id,
+    anchor = {"schema_version": "ce3-pilot-anchor/2", "case_id": admission.case_id,
+              "classification": snapshot["classification"], "case_notice": contract.case_notice(snapshot["classification"]),
               "snapshot_id": digest(snapshot), "explorer_pins": pins, "batch_spec_id": digest(spec),
               "runtime_id": digest(impl["runtime"]), "explorer_build_id": digest(impl["explorer_build"])}
     return manifest, spec, anchor
@@ -99,7 +109,8 @@ def freeze(prepared, receipts, output, anchor_path):
     prepared, output = Path(prepared), Path(output)
     anchor_path = external_anchor(anchor_path, prepared, output)
     require(not anchor_path.exists(), "Anchor already exists; choose a new reviewed anchor")
-    case = {"schema_version": "ce3-pilot-case/1", "snapshot": read_bundle(prepared / "snapshot.json"),
+    snapshot = read_bundle(prepared / "snapshot.json")
+    case = {"schema_version": "ce3-pilot-case/2", "snapshot": snapshot, "classification": snapshot["classification"],
             "presentation_sha256": hashlib.sha256((prepared / "review.html").read_bytes()).hexdigest(),
             "receipts": receipts}
     contract.validate_case(case, prepared / "materials", (prepared / "review.html").read_bytes())
@@ -152,17 +163,20 @@ def run(frozen, anchor_path, output):
 def verify(output, anchor_path):
     """Read only. Both saved result files are deliberately ignored."""
     output = Path(output)
-    anchor = read_bundle(external_anchor(anchor_path, output))
+    anchor = read_bundle(external_anchor(anchor_path, output, output / "pilot"))
     admission, manifest, spec = load_frozen(output / "pilot", anchor)
     equal(read_bundle(output / "explorer/batch.json"), spec, "Run is bound to another pilot/budget")
     result = engine.verify(output / "explorer", anchor["explorer_pins"], _admission=admission)
     equal(result["batch_spec_id"], anchor["batch_spec_id"], "Result/pilot batch mismatch")
     admission.validate(admission.case["snapshot"]["problem"])
+    contract.package_tree(output)
     # A source re-check and external-anchor re-read avoid accepting a mid-check change.
     equal(read_bundle(anchor_path), anchor, "External anchor changed during verification")
-    payload = {"schema_version": "ce3-pilot-result/1", "pilot_case_id": admission.case_id,
+    payload = {"schema_version": "ce3-pilot-result/2", "pilot_case_id": admission.case_id,
                "snapshot_id": anchor["snapshot_id"], "confirmation_ids": [digest(r) for r in admission.case["receipts"]],
                "batch_spec_id": digest(spec), "batch_attempt_id": result["batch_attempt_id"],
+               "classification": admission.case["classification"],
+               "case_notice": contract.case_notice(admission.case["classification"]),
                "pilot_status": "COMPLETE_CURRENT", "identity_assurance": "self_reported_not_authenticated",
                "run_status": "CERTIFIED" if all(c["run_status"] == "CERTIFIED" for c in result["cells"]) else "INCOMPLETE",
                "goal_status": [{"candidate_id": c["candidate_id"], "order": c["order"], "robust": c["robust"]}
