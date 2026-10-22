@@ -30,7 +30,18 @@ def effective_problem(problem, scenario):
                 outcomes=deepcopy(scenario["outcomes"]))
 
 
-def validate_problem(problem):
+def validate_problem(problem, *, _admission=None):
+    purpose = "synthetic_integration_test"
+    if _admission is not None:
+        from pilot_contract import Admission, PURPOSE
+        require(type(_admission) is Admission, "Invalid pilot admission")
+        _admission.validate(problem)
+        purpose = PURPOSE
+    return _validate_structure(problem, purpose)
+
+
+def _validate_structure(problem, purpose):
+    """Shape only; authoring preparation is not admission for execution."""
     obj(problem, ("schema_version", "revision", "purpose", "profile", "model", "sources",
                   "search", "observation", "scenario_set"), "scenario problem")
     require(problem["schema_version"] in ("ce3-scenario-problem/1", "ce3-scenario-problem/2", "ce3-scenario-problem/3", selection.PROBLEM),
@@ -53,7 +64,7 @@ def validate_problem(problem):
         labels.add(label)
         validate_declaration(effective_problem(problem, scenario), fixed_slots=expanded,
                              history_goals=problem["schema_version"] == "ce3-scenario-problem/3",
-                             selected=selection.enabled(problem))
+                             selected=selection.enabled(problem), _purpose=purpose)
     return problem
 
 
@@ -106,13 +117,13 @@ def cell(problem, plan, scenario):
     return dict(payload, cell_id=digest(payload))
 
 
-def freeze(problem):
+def freeze(problem, *, _admission=None):
     """Independent oracle: /1 Cartesian words; /2 and /3 factorial rank decoding.
 
     Crosses by scenario first, unlike generate's permutations then scenario loop.
     Shared materialization is additionally checked by direct input tests.
     """
-    validate_problem(problem)
+    validate_problem(problem, _admission=_admission)
     ids = problem["search"].get("decision_ids")
     expanded = problem["schema_version"] in ("ce3-scenario-problem/2", "ce3-scenario-problem/3", selection.PROBLEM)
     orders = (selection.expected_orders(problem) if selection.enabled(problem) else
@@ -137,21 +148,21 @@ def freeze(problem):
                       "manifest_id": digest(manifest)}
 
 
-def verify_frozen(problem, manifest, pins):
-    expected, expected_pins = freeze(problem)
+def verify_frozen(problem, manifest, pins, *, _admission=None):
+    expected, expected_pins = freeze(problem, _admission=_admission)
     equal(pins, expected_pins, "Trusted problem/manifest identity mismatch")
     equal(manifest, expected, "Manifest differs from declared candidate x scenario population")
 
 
-def generate(problem):
+def generate(problem, *, _admission=None):
     if selection.enabled(problem):
-        validate_problem(problem)
+        validate_problem(problem, _admission=_admission)
         return [cell(problem, candidate(problem, order), scenario_member(problem, s))
                 for order in selection.generated_orders(problem)
                 for s in problem["scenario_set"]["members"]]
     ids = problem["search"]["decision_ids"]
     if problem["schema_version"] in ("ce3-scenario-problem/2", "ce3-scenario-problem/3"):
-        validate_problem(problem)  # size gate also protects direct generator calls
+        validate_problem(problem, _admission=_admission)  # size gate also protects direct generator calls
         ids = sorted(ids)
     return [cell(problem, candidate(problem, order), scenario_member(problem, s))
             for order in permutations(ids)

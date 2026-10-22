@@ -31,7 +31,8 @@ def validate_problem(problem):
     return problem
 
 
-def validate_declaration(problem, *, fixed_slots=False, history_goals=False, selected=False):
+def validate_declaration(problem, *, fixed_slots=False, history_goals=False, selected=False,
+                         _purpose="synthetic_integration_test"):
     """Shared shape/grammar/goal checks, not a public version authorization.
 
     Callers must separately enforce their version and environment contract.
@@ -39,7 +40,7 @@ def validate_declaration(problem, *, fixed_slots=False, history_goals=False, sel
     obj(problem, ("schema_version", "revision", "purpose", "profile", "model", "outcomes",
                   "sources", "search", "observation"), "problem")
     require(type(problem["revision"]) is int and problem["revision"] >= 1, "Invalid revision")
-    equal(problem["purpose"], "synthetic_integration_test", "Only technical integration scope supported")
+    equal(problem["purpose"], _purpose, "Only technical integration scope supported without explicit pilot admission")
     equal(problem["profile"], PROFILE, "Unsupported profile")
     if selected:
         selection.search_size(problem)

@@ -174,3 +174,17 @@ Se [kontrakt och reproducerbara kommandon](OPTIONAL-DECISIONS-FORMAT.md),
 beskriver den **tidigare omfattningen**, till och med scenario /3. Dess historiska
 innehåll och läsanvisning är bevarade; /4 dokumenteras separat ovan. Purpose
 är fortsatt `synthetic_integration_test`; inget pilotläge eller UI ingår.
+
+## Separat manuell pilotingång /1
+
+`pilot_runner.py` inför ett uttryckligt `ce3-pilot-case/1` ovanpå /4-semantiken.
+Full mapping, bevarade källbytes, frågor/antaganden, handhärledda kontrollfall
+samt exakt snapshot- och presentationsbundna manuella kvitton krävs före
+frysning/körning. Vanliga syntetiska CLI:er behåller sin purpose-grind.
+Läs [pilotkontraktet](PILOT-FORMAT.md), [conciergeflödet med CLI-exempel](PILOT-CONCIERGE.md)
+och [arkitekturbeslutet](PILOT-ARCHITECTURE.md). Motorbaslinje v2 och äldre
+leveransrapporter beskriver sin historiska omfattning och ändras inte.
+
+Pilotunderlagets kompletthet/aktualitet, körningskorrekthet, mål, söktäckning och
+budgetprefix rapporteras separat. Ingen AI-/SR-integration, kund-UI, ranking,
+verklighetssanning eller verifierad personidentitet följer av pilotbeskedet.

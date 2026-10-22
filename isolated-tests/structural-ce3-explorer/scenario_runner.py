@@ -19,7 +19,7 @@ import selection
 ERRORS = (OSError, ValueError, KeyError, TypeError, IndexError)
 
 
-def batch_spec(problem, manifest, runtime, build, limits, max_cells):
+def batch_spec(problem, manifest, runtime, build, limits, max_cells, *, _admission=None):
     equal(sorted(limits), sorted(LIMITS), "Invalid limits keys")
     require(all(type(v) is int and v > 0 for v in limits.values()), "Invalid limits")
     require(type(max_cells) is int and 0 <= max_cells <= len(manifest["cells"]), "Invalid cell budget")
@@ -28,6 +28,10 @@ def batch_spec(problem, manifest, runtime, build, limits, max_cells):
             "explorer_build_id": digest(build), "limits": limits, "max_cells": max_cells}
     if problem["schema_version"] in ("ce3-scenario-problem/2", "ce3-scenario-problem/3", selection.PROBLEM):
         spec.update(search_size=search_size(problem), process_timeout_seconds=60)
+    if _admission is not None:
+        from pilot_contract import Admission
+        require(type(_admission) is Admission, "Invalid pilot admission")
+        spec["pilot_binding"] = _admission.binding(problem, limits, max_cells)
     return spec
 
 
@@ -54,12 +58,12 @@ def lookups(manifest):
             {s["scenario_id"]: s for s in manifest["scenarios"]})
 
 
-def run(problem, manifest, pins, output, *, limits=None, max_cells=None):
-    verify_frozen(problem, manifest, pins)
+def run(problem, manifest, pins, output, *, limits=None, max_cells=None, _admission=None):
+    verify_frozen(problem, manifest, pins, _admission=_admission)
     runtime, build = runtime_manifest(), explorer_build()
     spec = batch_spec(problem, manifest, runtime, build, dict(LIMITS if limits is None else limits),
-                      len(manifest["cells"]) if max_cells is None else max_cells)
-    cells = generate(problem)
+                      len(manifest["cells"]) if max_cells is None else max_cells, _admission=_admission)
+    cells = generate(problem, _admission=_admission)
     equal(check_population(manifest, cells)["status"], "COMPLETE", "Generator coverage failed")
     output = Path(output)
     output.mkdir(parents=True, exist_ok=False)  # no overwrite, resume or retry
@@ -71,6 +75,8 @@ def run(problem, manifest, pins, output, *, limits=None, max_cells=None):
         write_bundle(value, output / (name + ".json"))
     plans, scenarios = lookups(manifest)
     for cell in cells[:spec["max_cells"]]:
+        if _admission is not None:
+            _admission.validate(problem)
         equal(runtime_manifest(), runtime, "Runtime changed before replay")
         equal(explorer_build(), build, "Explorer changed before replay")
         directory = output / "runs" / cell["cell_id"]
@@ -102,7 +108,7 @@ def run(problem, manifest, pins, output, *, limits=None, max_cells=None):
                          directory / "record.json")
         except ERRORS + (subprocess.TimeoutExpired,) as error:
             write_bundle({"status": "UNVERIFIED", "reason": str(error)}, directory / "failure.json")
-    result = verify(output, pins)
+    result = verify(output, pins, _admission=_admission)
     write_bundle(result, output / "result.json")
     return result
 
@@ -117,17 +123,17 @@ def robust(cells):
     return "UNKNOWN"
 
 
-def verify(output, pins):
+def verify(output, pins, *, _admission=None):
     """Reconstruct the domain, re-audit, then derive goals. Never read result.json."""
     output = Path(output)
     problem, manifest = read_bundle(output / "problem.json"), read_bundle(output / "manifest.json")
-    verify_frozen(problem, manifest, pins)
+    verify_frozen(problem, manifest, pins, _admission=_admission)
     equal(read_bundle(output / "pins.json"), pins, "Copied pins differ from external trust anchor")
     runtime, build = read_bundle(output / "runtime.json"), read_bundle(output / "explorer-build.json")
     equal(runtime, runtime_manifest(), "Runtime build mismatch")
     equal(build, explorer_build(), "Explorer build mismatch")
     spec, attempt = read_bundle(output / "batch.json"), read_bundle(output / "attempt.json")
-    equal(spec, batch_spec(problem, manifest, runtime, build, spec["limits"], spec["max_cells"]),
+    equal(spec, batch_spec(problem, manifest, runtime, build, spec["limits"], spec["max_cells"], _admission=_admission),
           "Batch specification mismatch")
     equal(attempt, {"schema_version": version(problem, "attempt"), "batch_spec_id": digest(spec),
                     "batch_attempt_id": attempt["batch_attempt_id"]}, "Batch attempt mismatch")
@@ -229,6 +235,10 @@ def verify(output, pins):
         result.update(search_size=spec["search_size"],
                       execution_budget={"max_cells": spec["max_cells"], "limits": spec["limits"],
                                         "process_timeout_seconds": spec["process_timeout_seconds"]})
+    if _admission is not None:
+        _admission.validate(problem)
+        result.update(pilot_binding=spec["pilot_binding"],
+                      execution_prefix_status="VALID" if execution_valid else "INVALID")
     return dict(result, result_id=digest(result))
 
 
