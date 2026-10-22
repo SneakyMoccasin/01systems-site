@@ -56,11 +56,11 @@ def prepare(draft, materials, output):
     contract.package_tree(materials)
     contract.package_tree(output)
     contract.obj(draft, contract.DRAFT_KEYS, "pilot draft")
-    equal(draft["schema_version"], "ce3-pilot-draft/2", "Unsupported pilot draft")
+    equal(draft["schema_version"], "ce3-pilot-draft/3", "Unsupported pilot draft")
     contract.validate_content(draft, materials)
     contract.validate_controls(draft, materials, False)
     snapshot = deepcopy(draft)
-    snapshot.update(schema_version="ce3-pilot-snapshot/2", implementation=contract.registration())
+    snapshot.update(schema_version="ce3-pilot-snapshot/3", implementation=contract.registration())
     output = Path(output)
     output.mkdir(parents=True, exist_ok=False)
     retained = output / "materials"

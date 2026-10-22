@@ -17,6 +17,8 @@ P förbereder. N levererar när förberedelse är klar. U levererar när förber
 alltid väljas. En plan med två beslut försöker dem vid 0 respektive 2. Alla
 ordningar prövas. Inget retry. Tom plan är förbjuden. Budgetkonto saknas;
 alla regelkostnader är 0 och inget beslut schemalägger events.
+prepared betyder att förberedelsen är klar, done att leveransen är klar,
+aux_done att extra moment är klart, safe att säkerhetsvillkoret är uppfyllt.
 prepared, done och aux_done börjar false, safe true, response waiting.
 response kan bli approved, rejected eller waiting (vid absent). Inga andra
 effekter. Eventet finns initialt och är schemalagt vid 0, due antas vara 1.
@@ -57,7 +59,7 @@ def draft_fixture(directory, max_cells=12):
     mappings[0]['targets'].remove(uncertain)
     mappings.append({'targets': [uncertain], 'explanation': 'Beskedets tid är hypotetiskt 1. En annan tid kräver separat fryst modell.',
                      'refs': [], 'assumption_ids': ['time-hypothesis']})
-    draft = {'schema_version': 'ce3-pilot-draft/2', 'case_id': 'fabricated-training-case', 'revision': 1,
+    draft = {'schema_version': 'ce3-pilot-draft/3', 'case_id': 'fabricated-training-case', 'revision': 1,
              'classification': {'case_kind': 'fabricated_exercise', 'receipt_origin': 'fabricated_test'},
              'analysis': {'question': 'Vilka fasta övningsplaner når leveransmålet i varje deklarerat scenario?',
                           'intended_use': 'Öva manuell granskning och teknisk pilotantagning. Inget kundbeslut.',
@@ -66,6 +68,26 @@ def draft_fixture(directory, max_cells=12):
                           'decision_authority': 'I övningen får operatören välja och försöka P, N och U enligt grammatiken.',
                           'time_unit': p['model']['clock']['unit'], 'limitations': ['Helt fabricerat fall; ingen verklig domängranskning.'],
                           'ranking': 'none'},
+             'presentation': {'schema_version': 'ce3-pilot-presentation/1', 'labels': {
+                 '/model/clock/unit': 'övningssteg',
+                 '/model/decisions/P': 'Förbered leverans',
+                 '/model/decisions/N': 'Leverera efter förberedelse',
+                 '/model/decisions/U': 'Leverera efter förberedelse och godkänt besked',
+                 '/model/domains/prepared': 'Förberedelsen är klar',
+                 '/model/domains/done': 'Leveransen är klar',
+                 '/model/domains/aux_done': 'Extra moment är klart',
+                 '/model/domains/safe': 'Säkerhetsvillkoret är uppfyllt',
+                 '/model/domains/response': 'Externt besked',
+                 '/model/domains/response/enum/0': 'Väntar på besked',
+                 '/model/domains/response/enum/1': 'Godkänt',
+                 '/model/domains/response/enum/2': 'Avslag',
+                 '/model/events/response': 'Externt leveransbesked',
+                 '/model/events/response/outcomes/approved': 'Godkänt besked',
+                 '/model/events/response/outcomes/rejected': 'Avslag',
+                 '/model/events/response/outcomes/absent': 'Inget besked under analysperioden',
+                 '/scenario_set/members/0/label': 'Godkänt besked',
+                 '/scenario_set/members/1/label': 'Avslag',
+                 '/scenario_set/members/2/label': 'Uteblivet besked'}},
              'translator': {'stated_person': 'Övningsförfattare (fiktiv)', 'method_version': 'manual-training/1'},
              'problem': p, 'evidence': [{'id': 'training-notes', 'version': '1', 'title': 'Fabricerade övningsnoter',
                                         'original': C.descriptor(materials, 'notes.txt'), 'extract': C.descriptor(materials, 'notes.txt'),
@@ -104,7 +126,7 @@ def fabricated_receipts(prepared):
     """For tests/training ONLY: self-reported, obviously fictitious receipts."""
     prepared = Path(prepared)
     snapshot = read_bundle(prepared / 'snapshot.json')
-    equal(snapshot['schema_version'], 'ce3-pilot-snapshot/2', 'Training receipts require a new /2 snapshot')
+    equal(snapshot['schema_version'], 'ce3-pilot-snapshot/3', 'Training receipts require a new /3 snapshot')
     equal(snapshot['classification'], {'case_kind': 'fabricated_exercise', 'receipt_origin': 'fabricated_test'},
           'Fabricated receipts cannot confirm a declared real case')
     snapshot_id = digest(snapshot)

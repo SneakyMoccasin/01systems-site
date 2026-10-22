@@ -1,4 +1,5 @@
 """Regression adaptation for pilot /2 from independent review a8cc1fa.
+Authoring fixture explicitly uses draft /3 and an empty presentation /1 name map.
 Original tests remain unchanged in that historical commit. Tests 10,16,21,24
 previously asserted broken behavior; now they require rejection or clear labels.
 
@@ -99,7 +100,7 @@ def draft_at(directory):
     mapping=[]
     for section in ['model','sources','search','observation','scenario_set']:
         mapping.append(dict(targets=list(walk(problem[section],'/'+section)), explanation='FABRICERAT TEST: '+section+' enligt notens explicita AB-regler.',refs=deepcopy(refs),assumption_ids=[]))
-    draft = dict(schema_version='ce3-pilot-draft/2',case_id='independent-AB-fabricated',revision=1,
+    draft = dict(schema_version='ce3-pilot-draft/3',presentation={'schema_version':'ce3-pilot-presentation/1','labels':{}},case_id='independent-AB-fabricated',revision=1,
                  classification={'case_kind':'fabricated_exercise','receipt_origin':'fabricated_test'},
                  analysis=dict(question='FABRICERAT TEST: vilken AB-ordning levererar?',intended_use='Oberoende tekniskt test, ingen kundpilot.',includes=['A och B samt två tomma timers.'],excludes=['Verklig verksamhet.'],decision_authority='Fiktiv testoperatör styr A och B.',time_unit='test_step',limitations=['Fabricerat granskningsfall.'],ranking='none'),
                  translator=dict(stated_person='FIKTIV granskare',method_version='independent-manual/1'),problem=problem,

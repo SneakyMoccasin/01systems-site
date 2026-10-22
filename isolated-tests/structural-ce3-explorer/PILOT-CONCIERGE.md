@@ -1,5 +1,9 @@
 # Christians conciergeflöde för en avgränsad CE3-pilot /2
 
+Aktuellt presentationsformat: [svenskt modellunderlag /1](PILOT-PRESENTATION-V1.md).
+Nya utkast och snapshots använder /3 med ett uttryckligt namnregister;
+kvitton, case, ankare och resultat behåller /2. Äldre paket migreras inte.
+
 Kunden ska kunna delta genom samtal, befintliga dokument och ett begripligt
 modellprotokoll. Christian sammanställer JSON och registrerar kvitton.
 [Formatet /2](PILOT-FORMAT-V2.md) anger de maskinella kontrollerna. Ett komplett
@@ -14,7 +18,7 @@ källorna eller verksamhetsmodellen har bevisats sanna.
    Deklarera `classification`: ett verkligt fall har `case_kind=declared_real_case`
    och `receipt_origin=declared_actual_response`; övningar måste ha
    `fabricated_exercise` och `fabricated_test`. Detta är uppgifter, inte bevis
-   på verklighet. /1-paket uppgraderas inte automatiskt; skapa nytt /2-underlag.
+   på verklighet. /1-paket uppgraderas inte automatiskt; skapa nytt /3-underlag med namnregister enligt presentationskontraktet.
 2. **Modellutkast och frågor.** Översätt manuellt till stödd /4-semantik.
    Förklara och mappa alla initialvärden, guards, effekter, kostnader, tider,
    outcomes/absent, mål och urvalsval till källor eller synliga hypoteser.
@@ -77,7 +81,7 @@ python3 -B isolated-tests/structural-ce3-explorer/pilot_runner.py prepare \
 ```
 
 Öppna `prepared-v1/review.html` och genomför granskningen. Katalognamnet v1
-här är fallrevision 1; filernas pilotformat är /2. CLI skriver snapshot_id,
+här är fallrevision 1; utkast och snapshot är /3, övriga pilotformat är /2. CLI skriver snapshot_id,
 presentation_sha256, klassificering och en läsbar notice.
 
 1. Bevara de faktiska svaren, mejlen eller mötesanteckningarna som separata

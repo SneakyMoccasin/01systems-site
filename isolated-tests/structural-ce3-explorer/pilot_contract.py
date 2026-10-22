@@ -1,7 +1,6 @@
 """Manual pilot admission and provenance. No operational model evaluation."""
 from datetime import datetime
 import hashlib
-from html import escape
 import json
 import os
 from pathlib import Path, PurePosixPath
@@ -10,13 +9,14 @@ from bridge import (ROOT, digest, equal, explorer_build, file_hash, obj, read_bu
                     require, runtime_manifest)
 from contracts import LIMITS
 import scenario_contracts as scenarios
+import pilot_presentation
 from observe import observe
 
 PURPOSE = "bounded_real_pilot"
 BASELINE = ROOT.parent.parent / "docs/ce3/capabilities/engine-baseline-v2.json"
 SECTIONS = ("model", "sources", "search", "observation", "scenario_set")
 DRAFT_KEYS = ("schema_version", "case_id", "revision", "analysis", "translator", "problem",
-              "evidence", "mapping", "assumptions", "issues", "controls", "execution", "classification")
+              "evidence", "mapping", "assumptions", "issues", "controls", "execution", "classification", "presentation")
 ACKNOWLEDGEMENTS = ["scope", "model_mapping", "assumptions", "issues", "goals", "scenarios",
                     "selection_and_prefix_times", "limits_and_budget", "human_responsibility",
                     "classification_and_receipt_origin"]
@@ -166,6 +166,7 @@ def validate_content(value, root):
     equal(problem["schema_version"], "ce3-scenario-problem/4", "Pilot /2 requires /4 semantics")
     scenarios._validate_structure(problem, PURPOSE)
     equal(a["time_unit"], problem["model"]["clock"]["unit"], "Analysis/model time unit mismatch")
+    pilot_presentation.validate(value["presentation"], problem)
     execution = value["execution"]
     obj(execution, ("limits", "max_cells"), "execution")
     equal(sorted(execution["limits"]), sorted(LIMITS), "Invalid replay limit keys")
@@ -301,62 +302,16 @@ def validate_controls(value, root, completed):
 
 def validate_snapshot(snapshot, root):
     obj(snapshot, DRAFT_KEYS + ("implementation",), "snapshot")
-    equal(snapshot["schema_version"], "ce3-pilot-snapshot/2", "Unsupported snapshot")
+    equal(snapshot["schema_version"], "ce3-pilot-snapshot/3", "Unsupported snapshot; new /3 prepare required")
     validate_content(snapshot, root)
     equal(snapshot["implementation"], registration(), "Registered implementation/runtime/baseline changed")
     validate_controls(snapshot, root, True)
 
 
 def presentation(snapshot):
-    """Exact, deterministic UTF-8 review document. No executable or remote content."""
-    esc = lambda value: escape(str(value), quote=True)
-    def table(rows):
-        return '<table>' + ''.join('<tr>' + ''.join('<td>' + esc(c) + '</td>' for c in row) + '</tr>'
-                                  for row in rows) + '</table>'
-    a = snapshot["analysis"]
-    parts = ['<!doctype html><html lang="sv"><meta charset="utf-8"><title>CE3 modellbekräftelse</title>',
-             '<style>body{font:16px system-ui;max-width:1100px;margin:40px auto;padding:20px;line-height:1.5}'
-             'td{border:1px solid #ccc;padding:8px;vertical-align:top;overflow-wrap:anywhere}'
-             'table{border-collapse:collapse;width:100%}pre{white-space:pre-wrap;overflow-wrap:anywhere}</style>',
-             '<h1>CE3 – underlag för manuell modellbekräftelse</h1>',
-             '<p><strong>' + esc(case_notice(snapshot["classification"])) + '</strong></p>',
-             table(sorted(snapshot["classification"].items())),
-             '<p>Snapshot: <code>' + digest(snapshot) + '</code></p>',
-             '<p>Bekräftelsen avser denna exakta version. Maskinen kontrollerar struktur och bindningar. '
-             'Källrelevans, modellens rimlighet och antagandenas acceptans är människors ansvar. '
-             'Varken namn eller hash är en verifierad identitet eller digital signatur.</p>',
-             '<h2>Analysfråga och användning</h2>', table([(k, v) for k, v in sorted(a.items()) if type(v) is str])]
-    for key in ("includes", "excludes", "limitations"):
-        parts += ['<h3>' + {"includes": "Ingår", "excludes": "Ingår inte", "limitations": "Begränsningar"}[key] + '</h3>',
-                  '<ul>' + ''.join('<li>' + esc(v) + '</li>' for v in a[key]) + '</ul>']
-    parts += ['<h2>Så ska sökningen förstås</h2><p>Obligatoriska beslut ingår alltid. Valfria beslut och '
-              'valgrupper bestämmer tillåtna urval. Varje valt beslut försöks exakt en gång. Ett kortare '
-              'urval använder de första tidsplatserna: utelämning kan tidigarelägga senare beslut. '
-              'Samma fasta plan prövas i samtliga scenarier. Tom plan kräver uttryckligt tillstånd. '
-              'Scenarier varierar bara externa utfall, inte tider eller modellregler. Alla eventbanor '
-              'måste auditeras. Ingen ranking, sannolikhet, optimalitet eller global omöjlighet påstås.</p>',
-              '<p>terminal = vid horisonten; always = varje modellerad snapshot till och med gränsen; '
-              'reach_by = minst en snapshot senast gränsen. Alla valda försök måste accepteras.</p>',
-              '<h2>Modell, mål, scenarier och sökning: värde, förklaring, underlag</h2>']
-    values = targets(snapshot["problem"])
-    for mapping in snapshot["mapping"]:
-        parts += ['<p>' + esc(mapping["explanation"]) + '</p>',
-                  table([(p, json.dumps(values[p], ensure_ascii=False)) for p in mapping["targets"]]),
-                  '<p>Antaganden: ' + esc(', '.join(mapping["assumption_ids"]) or 'inga') + '</p>',
-                  table([(r["source_id"] + '@' + r["source_version"], r["start"], r["end"], r["quote"])
-                         for r in mapping["refs"]])]
-    for key, heading in (("assumptions", "Synliga hypotetiska antaganden"), ("issues", "Frågor och dispositioner"),
-                         ("controls", "Handhärledda kontrollfall"), ("evidence", "Bevarade källor")):
-        parts += ['<h2>' + heading + '</h2>', table([(p, json.dumps(v, ensure_ascii=False))
-                                                   for p, v in leaves(snapshot[key]).items()])]
-    parts += ['<h2>Körgränser</h2>', table(list(leaves(snapshot["execution"]).items())),
-              '<p>Timeout är 60 sekunder per replay-/auditprocess. Förprovens kontrollkörningar '
-              'ligger utanför batchens max_cells-budget. Ingen total väggklocksgaranti finns.</p>',
-              '<p>Separata besked krävs för aktuellt pilotunderlag, körningskorrekthet, mål, söktäckning '
-              'och batchbudget/prefix. Komplett underlag bevisar inte sann modell eller sanna källor.</p>',
-              '<details><summary>Full snapshot och registrerad implementation</summary><pre>',
-              esc(json.dumps(snapshot, ensure_ascii=False, sort_keys=True, indent=2)), '</pre></details></html>\n']
-    return '\n'.join(parts).encode('utf-8')
+    """Exact registered presentation; no legacy package rendering or migration."""
+    equal(snapshot["schema_version"], "ce3-pilot-snapshot/3", "Presentation requires a new /3 snapshot")
+    return pilot_presentation.render(snapshot, case_notice(snapshot["classification"]))
 
 
 def validate_case(case, root, shown):

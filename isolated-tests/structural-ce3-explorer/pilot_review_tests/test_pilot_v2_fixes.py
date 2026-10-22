@@ -255,7 +255,9 @@ class PilotV2Fixes(unittest.TestCase):
             values.append(R.read(self.root / 'frozen/materials' / receipt['record']['path']))
         for value in values:
             self.assertEqual(value['classification'], FAKE)
-        for value in [case, case['snapshot'], anchor, spec['pilot_binding'], self.result, *case['receipts']]:
+        self.assertEqual(case['snapshot']['schema_version'], 'ce3-pilot-snapshot/3')
+        self.assertEqual(self.draft['schema_version'], 'ce3-pilot-draft/3')
+        for value in [case, anchor, spec['pilot_binding'], self.result, *case['receipts']]:
             self.assertTrue(value['schema_version'].endswith('/2'))
         html = (self.root / 'prepared/review.html').read_text()
         for text in ['FABRICERAD ÖVNING', 'inte en genomförd kundpilot', 'fabricated_exercise', 'fabricated_test']:
