@@ -4,6 +4,7 @@ from itertools import product
 
 from bridge import PROFILE, digest, equal, in_domain, obj, require, validate
 from fixed_slots import validate_search
+from temporal_goals import validate_goal
 
 SCRIPT_SOURCE = "CE3 minimal explorer: fixed permutation, one attempt per slot; synthetic integration test."
 LIMITS = {"max_paths": 10000, "max_rows": 1000000, "max_steps": 10000}
@@ -27,7 +28,7 @@ def validate_problem(problem):
     return problem
 
 
-def validate_declaration(problem, *, fixed_slots=False):
+def validate_declaration(problem, *, fixed_slots=False, history_goals=False):
     """Shared shape/grammar/goal checks, not a public version authorization.
 
     Callers must separately enforce their version and environment contract.
@@ -55,6 +56,9 @@ def validate_declaration(problem, *, fixed_slots=False):
     if not fixed_slots:
         require(clock["start"] == 0 and clock["horizon"] == 2, "Only horizon 0..2 supported")
     observation = problem["observation"]
+    if history_goals:
+        validate_goal(observation, problem["model"])
+        return problem
     obj(observation, ("schema_version", "goal_id", "sampling", "quantifier", "terminal_equals",
                       "all_attempts_accepted"), "observation")
     equal(observation["schema_version"], "ce3-terminal-goal/1", "Unsupported observation version")

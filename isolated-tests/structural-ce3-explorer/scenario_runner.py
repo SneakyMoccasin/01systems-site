@@ -26,7 +26,7 @@ def batch_spec(problem, manifest, runtime, build, limits, max_cells):
     spec = {"schema_version": version(problem, "execution"), "problem_id": digest(problem),
             "manifest_id": digest(manifest), "runtime_id": digest(runtime),
             "explorer_build_id": digest(build), "limits": limits, "max_cells": max_cells}
-    if problem["schema_version"] == "ce3-scenario-problem/2":
+    if problem["schema_version"] in ("ce3-scenario-problem/2", "ce3-scenario-problem/3"):
         spec.update(search_size=search_size(problem), process_timeout_seconds=60)
     return spec
 
@@ -224,7 +224,7 @@ def verify(output, pins):
                                 "unexpected_run_directories": unexpected},
               "cells": results, "candidates": aggregates,
               "interpretation": "frozen_scenario_set_only_not_probability_or_customer_value"}
-    if problem["schema_version"] == "ce3-scenario-problem/2":
+    if problem["schema_version"] in ("ce3-scenario-problem/2", "ce3-scenario-problem/3"):
         result.update(search_size=spec["search_size"],
                       execution_budget={"max_cells": spec["max_cells"], "limits": spec["limits"],
                                         "process_timeout_seconds": spec["process_timeout_seconds"]})

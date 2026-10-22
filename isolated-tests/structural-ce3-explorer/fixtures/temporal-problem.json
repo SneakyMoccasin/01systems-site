@@ -1,0 +1,179 @@
+{
+  "schema_version": "ce3-scenario-problem/3",
+  "revision": 1,
+  "purpose": "synthetic_integration_test",
+  "profile": "fixed-replay/0.1",
+  "sources": {},
+  "model": {
+    "schema_version": "ce3-model/1",
+    "source": "Synthetic temporal acceptance model.",
+    "clock": {
+      "start": 0,
+      "horizon": 4,
+      "step": 1,
+      "unit": "step",
+      "events_before_decisions": true,
+      "horizon_inclusive": true
+    },
+    "domains": {
+      "flag": {
+        "enum": [
+          false,
+          true
+        ]
+      },
+      "latch": {
+        "enum": [
+          false,
+          true
+        ]
+      },
+      "count": {
+        "integer": [
+          0,
+          1
+        ]
+      }
+    },
+    "initial": {
+      "flag": true,
+      "latch": false,
+      "count": 0
+    },
+    "budget": null,
+    "decisions": {
+      "D": {
+        "requires": [],
+        "effects": {
+          "set": {},
+          "add": {}
+        },
+        "cost": 0,
+        "schedule": null,
+        "source": "Unconditional no-op."
+      }
+    },
+    "events": {
+      "drop": {
+        "kind": "timer",
+        "requires": [],
+        "absent": null,
+        "outcomes": {
+          "apply": {
+            "set": {
+              "flag": false
+            },
+            "add": {}
+          }
+        },
+        "source": "Declared synthetic timer."
+      },
+      "restore": {
+        "kind": "timer",
+        "requires": [],
+        "absent": null,
+        "outcomes": {
+          "apply": {
+            "set": {
+              "flag": true
+            },
+            "add": {}
+          }
+        },
+        "source": "Declared synthetic timer."
+      }
+    },
+    "initial_events": [
+      {
+        "id": "drop",
+        "due": 1,
+        "scheduled_at": 0
+      },
+      {
+        "id": "restore",
+        "due": 3,
+        "scheduled_at": 0
+      }
+    ],
+    "reference_event_order": [
+      "drop",
+      "restore"
+    ],
+    "metadata": {
+      "assumption": "Synthetic only.",
+      "time_basis": "Inclusive integer steps.",
+      "deadlines": []
+    }
+  },
+  "search": {
+    "kind": "permutations_once/2",
+    "decision_ids": [
+      "D"
+    ],
+    "slots": [
+      4
+    ],
+    "mode": "attempt",
+    "retry": false,
+    "early_stop": false
+  },
+  "scenario_set": {
+    "schema_version": "ce3-scenario-set/1",
+    "variation": "outcomes_only",
+    "selection": "explicit_complete_list",
+    "members": [
+      {
+        "label": "only",
+        "outcomes": {}
+      }
+    ]
+  },
+  "observation": {
+    "schema_version": "ce3-history-goal/1",
+    "goal_id": "declared_goal",
+    "sampling": "each_row.before_after.snapshot_step/1",
+    "quantifier": "all_event_paths",
+    "all_attempts_accepted": true,
+    "all": [
+      {
+        "id": "terminal",
+        "operator": "terminal",
+        "equals": {
+          "flag": true
+        }
+      },
+      {
+        "id": "always",
+        "operator": "always",
+        "equals": {
+          "flag": true
+        },
+        "through": 4
+      },
+      {
+        "id": "reach_by",
+        "operator": "reach_by",
+        "equals": {
+          "flag": false
+        },
+        "deadline": 1
+      },
+      {
+        "id": "stable_count",
+        "operator": "always",
+        "equals": {
+          "count": 0
+        },
+        "through": 4
+      },
+      {
+        "id": "no_confirmation",
+        "operator": "reach_by",
+        "equals": {
+          "latch": true
+        },
+        "deadline": 4
+      }
+    ]
+  }
+}

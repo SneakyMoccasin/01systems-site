@@ -8,12 +8,15 @@ from fixed_slots import expected_orders, search_size
 
 
 def version(problem, name):
-    """Only changed explorer payloads use /2; unchanged scenario/CE3 types stay /1."""
-    return "ce3-scenario-" + name + ("/2" if problem["schema_version"].endswith("/2") else "/1")
+    """Goal extension versions wrappers, preserving the fixed-slot search identity."""
+    suffix = problem["schema_version"].rsplit("/", 1)[-1]
+    if suffix == "3" and name in ("search-space", "candidate"):
+        suffix = "2"
+    return "ce3-scenario-" + name + "/" + suffix
 
 
 def effective_problem(problem, scenario):
-    """Projection for the existing input builder and terminal goal observer."""
+    """Projection for the existing input builder and versioned goal observer."""
     return dict({k: deepcopy(v) for k, v in problem.items() if k != "scenario_set"},
                 outcomes=deepcopy(scenario["outcomes"]))
 
@@ -21,9 +24,9 @@ def effective_problem(problem, scenario):
 def validate_problem(problem):
     obj(problem, ("schema_version", "revision", "purpose", "profile", "model", "sources",
                   "search", "observation", "scenario_set"), "scenario problem")
-    require(problem["schema_version"] in ("ce3-scenario-problem/1", "ce3-scenario-problem/2"),
+    require(problem["schema_version"] in ("ce3-scenario-problem/1", "ce3-scenario-problem/2", "ce3-scenario-problem/3"),
             "Unsupported scenario problem")
-    expanded = problem["schema_version"] == "ce3-scenario-problem/2"
+    expanded = problem["schema_version"] in ("ce3-scenario-problem/2", "ce3-scenario-problem/3")
     space = problem["scenario_set"]
     obj(space, ("schema_version", "variation", "selection", "members"), "scenario set")
     equal(space["schema_version"], "ce3-scenario-set/1", "Unsupported scenario set")
@@ -39,13 +42,14 @@ def validate_problem(problem):
         require(type(label) is str and bool(label.strip()) and label not in labels,
                 "Unique nonempty scenario label required")
         labels.add(label)
-        validate_declaration(effective_problem(problem, scenario), fixed_slots=expanded)
+        validate_declaration(effective_problem(problem, scenario), fixed_slots=expanded,
+                             history_goals=problem["schema_version"] == "ce3-scenario-problem/3")
     return problem
 
 
 def search_identity(problem):
     grammar = deepcopy(problem["search"])
-    if problem["schema_version"] == "ce3-scenario-problem/2":
+    if problem["schema_version"] in ("ce3-scenario-problem/2", "ce3-scenario-problem/3"):
         grammar["decision_ids"] = sorted(grammar["decision_ids"])
     return digest({"schema_version": version(problem, "search-space"),
                    "model_id": digest(problem["model"]), "source_set_id": digest(problem["sources"]),
@@ -87,14 +91,14 @@ def cell(problem, plan, scenario):
 
 
 def freeze(problem):
-    """Independent oracle: /1 Cartesian words; /2 factorial rank decoding.
+    """Independent oracle: /1 Cartesian words; /2 and /3 factorial rank decoding.
 
     Crosses by scenario first, unlike generate's permutations then scenario loop.
     Shared materialization is additionally checked by direct input tests.
     """
     validate_problem(problem)
     ids = problem["search"]["decision_ids"]
-    expanded = problem["schema_version"] == "ce3-scenario-problem/2"
+    expanded = problem["schema_version"] in ("ce3-scenario-problem/2", "ce3-scenario-problem/3")
     orders = expected_orders(ids) if expanded else (w for w in product(ids, repeat=3) if len(set(w)) == 3)
     plans = [candidate(problem, w) for w in orders]
     scenarios = [scenario_member(problem, s) for s in problem["scenario_set"]["members"]]
@@ -119,7 +123,7 @@ def verify_frozen(problem, manifest, pins):
 
 def generate(problem):
     ids = problem["search"]["decision_ids"]
-    if problem["schema_version"] == "ce3-scenario-problem/2":
+    if problem["schema_version"] in ("ce3-scenario-problem/2", "ce3-scenario-problem/3"):
         validate_problem(problem)  # size gate also protects direct generator calls
         ids = sorted(ids)
     return [cell(problem, candidate(problem, order), scenario_member(problem, s))

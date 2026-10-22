@@ -152,3 +152,11 @@ horisont 14. Standardkommandona ovan fortsätter använda de gamla /1-fixturerna
 ```sh
 python3 -B -m unittest discover -s isolated-tests/structural-ce3-explorer/fixed_slots_tests -p 'test_*.py' -v
 ```
+
+## Tidsbundna mål
+
+Opt-in `ce3-scenario-problem/3` stöder konjunktioner av terminalmål, `always`
+och `reach_by` från fullständigt auditerad historik. Se
+[format och reproduktion](TEMPORAL-GOALS-FORMAT.md),
+[arkitektur](TEMPORAL-GOALS-ARCHITECTURE.md) och
+[leveransrapport](TEMPORAL-GOALS-REPORT.md). Äldre /1 och /2 behåller sin betydelse.
