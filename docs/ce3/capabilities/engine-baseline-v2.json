@@ -1,0 +1,738 @@
+{
+  "schema_version": "ce3-engine-capabilities/1",
+  "baseline_id": "ce3-optional-decisions-f31033b",
+  "profile": "fixed-replay/0.1",
+  "semantic_reference": "Structural CE v1.0 frozen 2026-09-26",
+  "conformance": "explicit_replay_subset_plus_bounded_explorer_not_full_structural_ce",
+  "implementation_binding": {
+    "implementation_commit": "f31033b57f6fad7ccccf2912692746710ba6648a",
+    "implementation_base_commit": "250f0210f44cfb1262885e7786c20107a7d8af52",
+    "review_commit": "f63bc0d7556e82bb5ef29b950fc8e748f73fbab5",
+    "main_branch": "decision-flow-demo-v1",
+    "meaning": "Describes reviewed implementation bytes at f31033b, integrated with architecture 250f021 by fast-forward from 85e19b0 to report-and-tests-only child f63bc0d. Neither this document nor its later documentation commit is an identity input.",
+    "source_files_sha256": {
+      "isolated-tests/structural-ce3-explorer/bridge.py": "e4bcaa102fab8b9cc15879798510acce9e956ec68e2207d391d1faba2ba49ccf",
+      "isolated-tests/structural-ce3-explorer/contracts.py": "bd03f2739c4b87afbb1646cc1ee134c7bb6473739538e993c6cbd1f9f6f737b2",
+      "isolated-tests/structural-ce3-explorer/enumerate_scripts.py": "e0681fa3ea569c1221b1e563a380ed3ba052f1660a23cb90f4368545ecc5fc2e",
+      "isolated-tests/structural-ce3-explorer/fixed_slots.py": "3987c2f9ab10d8a71f491e079d179abac9b821564a359357453825b35df73047",
+      "isolated-tests/structural-ce3-explorer/observe.py": "66396b37e5d33f05d5af569309f62d79e801a0d44e5eda490b81fe7b1090c154",
+      "isolated-tests/structural-ce3-explorer/runner.py": "ad672ece5d0c46ddf4d3682b8fd54bd723037249623c822a24e343a758dd7698",
+      "isolated-tests/structural-ce3-explorer/scenario_contracts.py": "c35630dd43dfd8f16cffa05881f13cc202315c2c12421f0034c0cc01c39bad71",
+      "isolated-tests/structural-ce3-explorer/scenario_runner.py": "5e75113b27196bdfa8d8811958840f21be09946881fac28ca8a78d226a0f6d7d",
+      "isolated-tests/structural-ce3-explorer/selection.py": "1a3346f7e43df866a1eccf12d88bab09082f493d8f7ecbc8ff5d769d6c4545bb",
+      "isolated-tests/structural-ce3-explorer/temporal_goals.py": "3425629cfeff4e1cee5a8591e753190e94521d2e004fde2df507c6d299111f4e",
+      "isolated-tests/structural-ce3-replay/audit/__init__.py": "3ed3a104003763ef4b32eaa9298c563b8cfed18aa37ac37dff65be56f542112c",
+      "isolated-tests/structural-ce3-replay/audit/verify.py": "bd1730fbbc8dfaa1df3d6d649ea6aa2a61169ff98e527ad3b42e335b05a6bde2",
+      "isolated-tests/structural-ce3-replay/cli.py": "34f688257a9fb07b402400ee00f707f89676845d4f01c1f0f21993fbb7068130",
+      "isolated-tests/structural-ce3-replay/core/__init__.py": "dbcfa5cfef1418afd86b81cb33a43cb2f635a3c4cddcfa0918b6821290007040",
+      "isolated-tests/structural-ce3-replay/core/expressions.py": "fd300183a1413e2c4144369a0426b8dccaa5c360cac0a6ff90b99da9951e710e",
+      "isolated-tests/structural-ce3-replay/core/history.py": "3f74ae776627a9c15f8c610b8c61d7d7b0ba712c131e7d4fdad920be751cf202",
+      "isolated-tests/structural-ce3-replay/core/profile.json": "4728501369e7ecb2f3ec502a6ac649b71e05821400d79383504e07f26989445d",
+      "isolated-tests/structural-ce3-replay/core/replay.py": "3e38d31dd378b1145f34eaaf76ab7194f9d47223bffb7515bb6f417b64884580",
+      "isolated-tests/structural-ce3-replay/core/schema.py": "04d853968cf6f49e4f0ea8a2f8bb5f39b3b259e1a3018f98a46b0df70c827600",
+      "isolated-tests/structural-ce3-replay/core/transitions.py": "4fb4386e9714ae933fd8d4335e54f156280ac3d9a83f2d9d4d4c76cb00942ee1"
+    },
+    "explorer_build": {
+      "schema_version": "ce3-explorer-build/1",
+      "files": {
+        "bridge.py": "e4bcaa102fab8b9cc15879798510acce9e956ec68e2207d391d1faba2ba49ccf",
+        "contracts.py": "bd03f2739c4b87afbb1646cc1ee134c7bb6473739538e993c6cbd1f9f6f737b2",
+        "enumerate_scripts.py": "e0681fa3ea569c1221b1e563a380ed3ba052f1660a23cb90f4368545ecc5fc2e",
+        "fixed_slots.py": "3987c2f9ab10d8a71f491e079d179abac9b821564a359357453825b35df73047",
+        "observe.py": "66396b37e5d33f05d5af569309f62d79e801a0d44e5eda490b81fe7b1090c154",
+        "runner.py": "ad672ece5d0c46ddf4d3682b8fd54bd723037249623c822a24e343a758dd7698",
+        "scenario_contracts.py": "c35630dd43dfd8f16cffa05881f13cc202315c2c12421f0034c0cc01c39bad71",
+        "scenario_runner.py": "5e75113b27196bdfa8d8811958840f21be09946881fac28ca8a78d226a0f6d7d",
+        "selection.py": "1a3346f7e43df866a1eccf12d88bab09082f493d8f7ecbc8ff5d769d6c4545bb",
+        "temporal_goals.py": "3425629cfeff4e1cee5a8591e753190e94521d2e004fde2df507c6d299111f4e"
+      }
+    },
+    "explorer_build_id": "d4c049fb4613fcaaa9ed2856a81653c9a0beb989fcef708f75eb4a1be2db105f",
+    "runtime_identity": "ce3-runtime-manifest/1 also binds the Python implementation/version for each actual run; use the recorded runtime/build to verify archived packages.",
+    "previous_common_baseline_commit": "85e19b09f5e5b1daca23873efb33b53f533e7388",
+    "architecture_commit": "250f0210f44cfb1262885e7786c20107a7d8af52"
+  },
+  "reviews": [
+    {
+      "commit": "3ab8948f2e186960d5386cd725b4dc53cdf019b7",
+      "reviewed_commit": "d24d6d1388542dead140226bc0e77406c0037b9c",
+      "verdict": "PASS",
+      "integrated_in_main_ancestry": false,
+      "report": "isolated-tests/structural-ce3-explorer/FIXED-SLOTS-R1-INDEPENDENT-REVIEW-d24d6d1.md",
+      "report_access": "git show <commit>:<report>; retained on codex/review-budget-d24d6d1"
+    },
+    {
+      "commit": "2ceb06b65f3fe2125ad3de934a259358e88bc643",
+      "reviewed_commit": "9b705f04f8756c9c0bb9ce43f427a6c3253a4dd9",
+      "verdict": "PASS",
+      "integrated_in_main_ancestry": true,
+      "report": "isolated-tests/structural-ce3-explorer/TEMPORAL-GOALS-INDEPENDENT-REVIEW-9b705f0.md",
+      "report_access": "repository file",
+      "required_fixes": []
+    },
+    {
+      "commit": "f63bc0d7556e82bb5ef29b950fc8e748f73fbab5",
+      "reviewed_commit": "f31033b57f6fad7ccccf2912692746710ba6648a",
+      "verdict": "PASS",
+      "integrated_in_main_ancestry": true,
+      "report": "isolated-tests/structural-ce3-explorer/OPTIONAL-DECISIONS-INDEPENDENT-REVIEW-f31033b.md",
+      "report_access": "repository file",
+      "required_fixes": [],
+      "review_test_methods_passed": 234,
+      "new_independent_review_test_methods": 20
+    }
+  ],
+  "contract_inventory": [
+    {
+      "path": "isolated-tests/structural-ce3-replay/core/profile.json",
+      "role": "authoritative replay capability description",
+      "relationship": "Reuse profile, semantic_reference, versions, validation, supported, unsupported, resource_policy and audit structure; unchanged. Its alternative_plan_search exclusion applies to replay alone, not the separate bounded explorer."
+    },
+    {
+      "path": "isolated-tests/structural-ce3-workbench/onboarding-evaluation/profile-context.json",
+      "role": "older replay-only onboarding context",
+      "relationship": "Not a current combined engine contract; does not advertise the bounded explorer or temporal goals. Left unchanged; no onboarding support inferred."
+    },
+    {
+      "path": "isolated-tests/structural-ce3-workbench/contracts/onboarding-v1/README.md",
+      "role": "separate onboarding handoff contract",
+      "relationship": "Proposal, review, dialogue and handoff /1 are not engine input contracts. Customer confirmation and SR review do not certify executable translation, run validity or goal satisfaction."
+    },
+    {
+      "path": "isolated-tests/structural-ce3-replay/FORMAT.md",
+      "role": "normative executable-layer format",
+      "relationship": "Retains its own version and scope; this capability inventory summarizes, not replaces, it."
+    },
+    {
+      "path": "isolated-tests/structural-ce3-explorer/FORMAT.md",
+      "role": "normative executable-layer format",
+      "relationship": "Retains its own version and scope; this capability inventory summarizes, not replaces, it."
+    },
+    {
+      "path": "isolated-tests/structural-ce3-explorer/SCENARIO-FORMAT.md",
+      "role": "normative executable-layer format",
+      "relationship": "Retains its own version and scope; this capability inventory summarizes, not replaces, it."
+    },
+    {
+      "path": "isolated-tests/structural-ce3-explorer/FIXED-SLOTS-FORMAT.md",
+      "role": "normative executable-layer format",
+      "relationship": "Retains its own version and scope; this capability inventory summarizes, not replaces, it."
+    },
+    {
+      "path": "isolated-tests/structural-ce3-explorer/TEMPORAL-GOALS-FORMAT.md",
+      "role": "normative executable-layer format",
+      "relationship": "Retains its own version and scope; this capability inventory summarizes, not replaces, it."
+    },
+    {
+      "path": "isolated-tests/structural-ce3-explorer/OPTIONAL-DECISIONS-FORMAT.md",
+      "role": "normative scenario /4 selected-plan format",
+      "relationship": "Opt-in selected_permutations_once/1 and candidate-script acceptance; preserves older version meanings and temporal operators."
+    },
+    {
+      "path": "isolated-tests/structural-ce3-explorer/OPTIONAL-DECISIONS-ARCHITECTURE-PROPOSAL.md",
+      "role": "historical architecture proposal at 250f021",
+      "relationship": "Implemented synthetic scope is specified by OPTIONAL-DECISIONS-FORMAT; proposed real-pilot admission remains future work, not an accepted purpose."
+    }
+  ],
+  "versions": {
+    "replay": {
+      "run": "ce3-run/1",
+      "model": "ce3-model/1",
+      "script": "ce3-script/1",
+      "history": "ce3-history/1"
+    },
+    "legacy_single_scenario": {
+      "problem": "ce3-explorer-problem/1",
+      "search": "permutations_once/1",
+      "goal": "ce3-terminal-goal/1",
+      "projection": "ce3-goal-observation/1",
+      "scope": "Exactly three decisions, slots [0,1,2], clock 0..2, timer-only events, empty outcomes."
+    },
+    "scenario_problem_versions": [
+      "ce3-scenario-problem/1",
+      "ce3-scenario-problem/2",
+      "ce3-scenario-problem/3",
+      "ce3-scenario-problem/4"
+    ],
+    "scenario_v1": {
+      "search": "permutations_once/1",
+      "goal": "ce3-terminal-goal/1",
+      "projection": "ce3-goal-observation/1",
+      "scope": "Three decisions at [0,1,2], clock 0..2; outcome-only scenarios."
+    },
+    "scenario_v2": {
+      "search": "permutations_once/2",
+      "goal": "ce3-terminal-goal/1",
+      "projection": "ce3-goal-observation/1",
+      "scope": "1..6 decisions and declared fixed slots; terminal goal."
+    },
+    "scenario_v3": {
+      "search": "permutations_once/2",
+      "goal": "ce3-history-goal/1",
+      "projection": "ce3-goal-observation/2",
+      "wrappers": [
+        "ce3-scenario-problem/3",
+        "ce3-scenario-cell/3",
+        "ce3-scenario-manifest/3",
+        "ce3-scenario-pins/3",
+        "ce3-scenario-execution/3",
+        "ce3-scenario-attempt/3",
+        "ce3-scenario-run/3",
+        "ce3-scenario-observation/3",
+        "ce3-scenario-result/3"
+      ],
+      "unchanged_search_identities": [
+        "ce3-scenario-search-space/2",
+        "ce3-scenario-candidate/2"
+      ]
+    },
+    "shared": [
+      "ce3-scenario-set/1",
+      "ce3-scenario-space/1",
+      "ce3-scenario/1",
+      "ce3-plan/1",
+      "ce3-execution/1",
+      "ce3-audit-receipt/1",
+      "ce3-runtime-manifest/1",
+      "ce3-explorer-build/1"
+    ],
+    "onboarding_handoff": [
+      "ce3-onboarding-proposal/1",
+      "ce3-onboarding-review/1",
+      "ce3-onboarding-dialogue/1",
+      "ce3-onboarding-handoff/1"
+    ],
+    "migration": "Explicit opt-in only. Explorer /1 and scenario /1-/3 retain their previous grammars and meanings. No automatic conversion of old declarations, fixtures, pins or archived run packages.",
+    "scenario_v4": {
+      "search": "selected_permutations_once/1",
+      "slot_policy": "prefix/1",
+      "selection_definition": "ce3-selection-definition/1",
+      "goal": "ce3-history-goal/2",
+      "acceptance_scope": "candidate_script",
+      "projection": "ce3-goal-observation/3",
+      "wrappers": [
+        "ce3-scenario-problem/4",
+        "ce3-scenario-cell/4",
+        "ce3-scenario-manifest/4",
+        "ce3-scenario-pins/4",
+        "ce3-scenario-execution/4",
+        "ce3-scenario-attempt/4",
+        "ce3-scenario-run/4",
+        "ce3-scenario-observation/4",
+        "ce3-scenario-result/4"
+      ],
+      "search_identities": [
+        "ce3-scenario-search-space/3",
+        "ce3-scenario-candidate/3"
+      ]
+    }
+  },
+  "purpose": {
+    "explorer_allowed_values": [
+      "synthetic_integration_test"
+    ],
+    "enforcement": "isolated-tests/structural-ce3-explorer/contracts.py:validate_declaration",
+    "applies_to": [
+      "ce3-explorer-problem/1",
+      "ce3-scenario-problem/1",
+      "ce3-scenario-problem/2",
+      "ce3-scenario-problem/3",
+      "ce3-scenario-problem/4"
+    ],
+    "meaning": "Technical integration scope only. Descriptive business interpretation does not widen accepted purpose. No customer-value, real-world truth, probability, optimality or production applicability certification.",
+    "replay_boundary": "The generic ce3-run/1 format has no purpose field. Explorer entry points enforce the listed purpose; generic replay is not a pilot-admission bypass or a semantic customer-data detector."
+  },
+  "validation": {
+    "replay": {
+      "all_rules_before_replay": true,
+      "unknown_fields": "UnsupportedFeature",
+      "duplicate_json_keys": "reject",
+      "type_coercion": false
+    },
+    "explorer": "Strict version-specific exact fields; nonempty typed predicates; no coercion. Whole materialized CE3 input is validated before freeze, including unused rules and external bindings.",
+    "source_of_authority": "Executable validators plus their versioned format contracts; this document does not add accepted inputs."
+  },
+  "supported": {
+    "replay": {
+      "domains": [
+        "homogeneous_finite_enum_of_bool_string_or_integer",
+        "bounded_integer"
+      ],
+      "guards": [
+        "conjunction",
+        "eq_typed_constant",
+        "ge_integer_constant"
+      ],
+      "effects": [
+        "set",
+        "constant_integer_add"
+      ],
+      "budget": {
+        "accounts": 1,
+        "optional": true,
+        "lower_bound": 0,
+        "automatic_funding_guard": true,
+        "one_cost_debit_per_accepted_decision": true,
+        "event_add": true
+      },
+      "decisions": {
+        "once_only_on_acceptance": true,
+        "blocked_attempt_mutates_snapshot": false,
+        "schedules_at_most_one_event": true
+      },
+      "script_modes": [
+        "attempt",
+        "if_not_taken"
+      ],
+      "event_origins": [
+        "initial",
+        "accepted_decision"
+      ],
+      "event_scheduling_sites_per_id_maximum": 1,
+      "events": [
+        "guard_at_due_time",
+        "timer_single_outcome",
+        "fixed_external_outcome",
+        "explicit_absent_waiting_enum",
+        "inapplicable_without_outcome"
+      ],
+      "clock": {
+        "integer_start_and_horizon": true,
+        "step": 1,
+        "horizon_inclusive": true,
+        "events_before_decisions": true,
+        "visit_empty_steps": true,
+        "positive_decision_delays": true,
+        "pending_after_horizon_retained": true
+      },
+      "ordering": "all_simultaneous_permutations_cartesian_product_no_merging",
+      "history": "full_typed_before_after_states_taken_queue_phase_provenance"
+    },
+    "explorer": {
+      "applies_to": [
+        "ce3-scenario-problem/2",
+        "ce3-scenario-problem/3"
+      ],
+      "search_kind": "permutations_once/2",
+      "decisions_min": 1,
+      "decisions_max": 6,
+      "all_model_decisions_required": true,
+      "attempts_per_decision_per_candidate": 1,
+      "mode": "attempt",
+      "population": "All n! permutations of the complete declared decision set; no pruning or rule evaluation by generator.",
+      "clock": {
+        "integer_start_and_horizon": true,
+        "start_le_horizon": true,
+        "step": 1,
+        "horizon_inclusive": true,
+        "negative_times": true,
+        "start_equals_horizon": true,
+        "separate_horizon_declaration": true,
+        "slots_count": "n",
+        "slots_strictly_increasing": true,
+        "slot_bounds": "start <= slot <= horizon",
+        "slot_types": "integer only, excluding bool, float and string",
+        "empty_steps_visited": true,
+        "events_before_decisions": true,
+        "events_beyond_horizon": "retained pending, not executed"
+      },
+      "support_bounds": {
+        "max_candidates": 720,
+        "max_cells": 2160,
+        "candidates": "n!",
+        "cells": "n! * declared_scenarios",
+        "inclusive": true,
+        "checked_before_enumeration": true,
+        "scenario_count": "1..floor(2160/n!); not always at most three"
+      },
+      "scenarios": {
+        "schema_version": "ce3-scenario-set/1",
+        "variation": "outcomes_only",
+        "selection": "explicit_complete_list",
+        "nonempty": true,
+        "labels": "unique nonblank strings; different labels with identical outcomes remain distinct",
+        "outcomes": "Exactly every external event, including unused events, bound to a valid declared outcome; timer events may coexist. No missing bindings, patches, model overrides or probabilities.",
+        "shared": [
+          "model",
+          "initial_state",
+          "sources",
+          "clock",
+          "slots",
+          "goal",
+          "candidate_script"
+        ],
+        "absent": "Explicit declared absent/waiting outcome at scheduled event phase; not omitted data, guard failure or a predicted future response."
+      }
+    },
+    "goals": {
+      "legacy_terminal": {
+        "schema_version": "ce3-terminal-goal/1",
+        "sampling": "last_row.after",
+        "predicate": "Nonempty conjunction of typed state equalities at inclusive horizon.",
+        "quantifier": "all_event_paths",
+        "all_attempts_accepted": true
+      },
+      "history": {
+        "schema_version": "ce3-history-goal/1",
+        "problem_version": "ce3-scenario-problem/3",
+        "sampling": "each_row.before_after.snapshot_step/1",
+        "quantifier": "all_event_paths",
+        "all_attempts_accepted": true,
+        "conjunction": "Nonempty all list, unique nonblank component IDs; every component must hold on every path.",
+        "predicate": "Nonempty equals map of declared fields to in-domain typed constants; all equalities at the same snapshot. Boolean true differs from integer 1.",
+        "time_limits": "Integer through/deadline within [model.clock.start, model.clock.horizon], inclusive; negative integers allowed, bool/float/string rejected.",
+        "points": "Every audited history row in index order, before then after, including initial, marker, event, decision, blocked and inapplicable rows. Duplicates retained. Time is row[side].step, not row.step; advance.before=t, advance.after=t+1.",
+        "operators": {
+          "terminal": {
+            "quantification": "predicate(last_row.after)",
+            "time": "horizon",
+            "time_field": null
+          },
+          "always": {
+            "quantification": "for every point p with start <= time(p) <= through: predicate(p)",
+            "time_field": "through"
+          },
+          "reach_by": {
+            "quantification": "there exists a point p with start <= time(p) <= deadline: predicate(p)",
+            "time_field": "deadline"
+          }
+        },
+        "cross_path_quantification": "For every audited path, for every component: its predicate/temporal condition holds. For reach_by this is FOR ALL paths EXISTS a witness per component/path, not EXISTS one shared witness FOR ALL paths.",
+        "boundary_cases": "Initial and transient success suffice for reach_by even if later lost; drop and recovery at the same step violates always. Events and decisions at limit included. Different components may use different witnesses.",
+        "atomicity": "No observable internal suboperations of atomic transitions; no interpolation, continuous-time measurement or inferred effects of pending events.",
+        "evidence": "Complete ordered row_index/side/step references and inclusive interval; first witness for successful reach_by, first counterexample for failed universal check, terminal state for terminal. Recomputed after fresh full audit."
+      },
+      "acceptance": {
+        "scope": "whole run, including decisions after component deadlines",
+        "executed_rows": "Legacy explorer /1 and scenario /1-/3 require all n model decisions. Scenario /4 requires exactly the k selected script entries, with matching decisions, times, order and script_position; every matched row must be decision_executed.",
+        "blocked_rows": 0,
+        "path_goal": "components_satisfied AND all_attempts_accepted",
+        "cell_goal": "conjunction of path_goal over ALL fully audited event paths",
+        "selection": "Scenario /4 rederives required/group membership and canonical prefix script from trusted input. An operational replay/audit PASS does not authorize a selection-invalid script.",
+        "omission": "Omitted optional decisions are not blocked attempts; selected but blocked decisions fail the combined goal even if all state components hold."
+      },
+      "certification_gate": "Fresh audit PASS, verified=true and all_event_permutations=true, with expected input and complete identity bindings, precedes all projections. No partial-path proofs; errors, limits, missing paths or corruption yield UNKNOWN/null, even when partial traces appear decisive.",
+      "selected_history": {
+        "schema_version": "ce3-history-goal/2",
+        "problem_version": "ce3-scenario-problem/4",
+        "sampling": "each_row.before_after.snapshot_step/1",
+        "quantifier": "all_event_paths",
+        "all_attempts_accepted": true,
+        "conjunction": "Nonempty all list, unique nonblank component IDs; every component must hold on every path.",
+        "predicate": "Nonempty equals map of declared fields to in-domain typed constants; all equalities at the same snapshot. Boolean true differs from integer 1.",
+        "time_limits": "Integer through/deadline within [model.clock.start, model.clock.horizon], inclusive; negative integers allowed, bool/float/string rejected.",
+        "points": "Every audited history row in index order, before then after, including initial, marker, event, decision, blocked and inapplicable rows. Duplicates retained. Time is row[side].step, not row.step; advance.before=t, advance.after=t+1.",
+        "operators": {
+          "terminal": {
+            "quantification": "predicate(last_row.after)",
+            "time": "horizon",
+            "time_field": null
+          },
+          "always": {
+            "quantification": "for every point p with start <= time(p) <= through: predicate(p)",
+            "time_field": "through"
+          },
+          "reach_by": {
+            "quantification": "there exists a point p with start <= time(p) <= deadline: predicate(p)",
+            "time_field": "deadline"
+          }
+        },
+        "cross_path_quantification": "For every audited path, for every component: its predicate/temporal condition holds. For reach_by this is FOR ALL paths EXISTS a witness per component/path, not EXISTS one shared witness FOR ALL paths.",
+        "boundary_cases": "Initial and transient success suffice for reach_by even if later lost; drop and recovery at the same step violates always. Events and decisions at limit included. Different components may use different witnesses.",
+        "atomicity": "No observable internal suboperations of atomic transitions; no interpolation, continuous-time measurement or inferred effects of pending events.",
+        "evidence": "Complete ordered row_index/side/step references and inclusive interval; first witness for successful reach_by, first counterexample for failed universal check, terminal state for terminal. Recomputed after fresh full audit.",
+        "acceptance_scope": "candidate_script",
+        "projection": "ce3-goal-observation/3",
+        "temporal_semantics": "Exactly the existing terminal/always/reach_by operators and snapshot-time sampling of history goal /1; only attempt scope and selection evidence extend the contract."
+      }
+    },
+    "robustness": {
+      "scope": "Each fixed candidate over its entire declared scenario set; all audited event paths inside each scenario cell.",
+      "FALSE": "At least one CERTIFIED scenario cell has goal=false, even if others are UNKNOWN.",
+      "TRUE": "Every declared scenario cell is CERTIFIED and goal=true.",
+      "UNKNOWN": "No certified refutation and at least one uncertified or unrun scenario cell.",
+      "interpretation": "Not probability, general robustness beyond declared scenarios, or evidence of real-world completeness."
+    },
+    "selected_explorer": {
+      "applies_to": [
+        "ce3-scenario-problem/4"
+      ],
+      "search_kind": "selected_permutations_once/1",
+      "model_decisions_min": 1,
+      "model_decisions_max": 6,
+      "partition": "Required R and optional O are unique nonblank string-ID lists, disjoint, whose union is exactly all model decision IDs U. R or O may be empty.",
+      "groups": {
+        "kinds": [
+          "exactly_one",
+          "at_most_one"
+        ],
+        "members": "At least two distinct IDs, all in O; groups pairwise disjoint; unique nonblank group IDs.",
+        "selection": "R subset A subset U; exactly one member from each exactly_one group, at most one from each at_most_one group; ungrouped optional IDs chosen independently.",
+        "no_operational_filtering": "Selection never evaluates guards, effects, costs or outcomes; syntactically valid blocked plans remain in the population."
+      },
+      "candidate": "Every permutation of every valid selected set; each selected ID attempted exactly once. No retry or early stop.",
+      "clock": {
+        "integer_start_and_horizon": true,
+        "start_le_horizon": true,
+        "step": 1,
+        "horizon_inclusive": true,
+        "negative_times": true,
+        "start_equals_horizon": true,
+        "separate_horizon_declaration": true,
+        "slots_count": "Kmax = |R| + count(ungrouped optional IDs) + count(groups)",
+        "slots_strictly_increasing": true,
+        "slot_bounds": "start <= slot <= horizon",
+        "slot_types": "integer only, excluding bool, float and string",
+        "empty_steps_visited": true,
+        "events_before_decisions": true,
+        "events_beyond_horizon": "retained pending, not executed",
+        "slot_policy": "prefix/1",
+        "candidate_times": "A word of length k uses exactly slots[0:k]; remaining slots produce no keys or empty entries.",
+        "omission_consequence": "Removing X from PXU at [0,2,4] yields PU at [0,2], not P@0,U@4. Omission can change goal outcomes by advancing later attempts. No hidden WAIT or time-choice dimension."
+      },
+      "allow_empty": {
+        "type": "strict bool, explicitly required",
+        "conditions": "Empty selected set only if allow_empty=true AND R is empty AND no exactly_one group requires a member. Does not override other constraints.",
+        "script": "steps={} exactly",
+        "execution": "Full horizon, initial events and every event path still run and require complete audit.",
+        "goal": "Zero attempts gives vacuous attempt acceptance after full audit, not automatic truth of temporal/state components."
+      },
+      "model_preservation": "All model rules, sources, initial state, clock and complete external outcomes remain present and validated, including omitted decisions and unused events. Omitted decisions make no attempts, debit or schedule.",
+      "population": {
+        "polynomial": "P(z)=z^r (1+z)^f product(a_i z) product(1+b_j z); r=|R|, f=ungrouped optional count, a_i=exactly_one sizes, b_j=at_most_one sizes.",
+        "coefficients": "c_k=[z^k]P(z); set c_0=0 when allow_empty=false.",
+        "candidates": "C=sum(c_k*k!), including 0!=1",
+        "cells": "M=C*S for the nonempty declared scenario list",
+        "production": "choice product then itertools.permutations",
+        "independent_expected": "bitmask cardinality checks then factorial-rank decoding; exact population and contents reconstructed during freeze/verify",
+        "shared_helpers": "Validation, codec and small identity/materialization helpers are shared; independent direct full-input oracles test that boundary."
+      },
+      "support_bounds": {
+        "max_candidates": 720,
+        "max_cells": 2160,
+        "inclusive": true,
+        "checked_before_enumeration_and_materialization": true,
+        "empty_population": "invalid",
+        "scenario_count": "1..floor(2160/C)",
+        "execution_budget_does_not_reduce_domain": true,
+        "six_model_decisions_not_sufficient": true,
+        "examples": [
+          {
+            "required": 6,
+            "free_optional": 0,
+            "allow_empty": false,
+            "candidates": 720,
+            "maximum_scenarios": 3,
+            "supported": true
+          },
+          {
+            "required": 0,
+            "free_optional": 5,
+            "allow_empty": true,
+            "candidates": 326,
+            "supported": true
+          },
+          {
+            "required": 0,
+            "free_optional": 6,
+            "allow_empty": true,
+            "candidates": 1957,
+            "supported": false
+          },
+          {
+            "required": 0,
+            "free_optional": 6,
+            "allow_empty": false,
+            "candidates": 1956,
+            "supported": false
+          }
+        ]
+      },
+      "execution_order": [
+        "candidate length ascending",
+        "lexicographic word order across all sets of that length",
+        "declared scenario order"
+      ],
+      "scenarios": {
+        "schema_version": "ce3-scenario-set/1",
+        "variation": "outcomes_only",
+        "selection": "explicit_complete_list",
+        "nonempty": true,
+        "labels": "unique nonblank strings; different labels with identical outcomes remain distinct",
+        "outcomes": "Exactly every external event, including unused events, bound to a valid declared outcome; timer events may coexist. No missing bindings, patches, model overrides or probabilities.",
+        "shared": [
+          "model",
+          "initial_state",
+          "sources",
+          "clock",
+          "slots",
+          "goal",
+          "candidate_script"
+        ],
+        "absent": "Explicit declared absent/waiting outcome at scheduled event phase; not omitted data, guard failure or a predicted future response."
+      },
+      "canonicalization": "Sort R/O, group members and groups by group ID for selection/search identity; preserve slots and candidate order. Set-list reordering preserves search/candidate/plan, but the exact original problem and pins change. Scenario order is identity- and budget-significant. No ID normalization.",
+      "identity": "Selection/group kind/allow_empty binds selection and search identities even if a particular script is unchanged. Candidate binds search_space_id and plan_id. Redundant selected_ids/omitted_ids/order must match actual canonical script; rehashing cannot substitute for domain reconstruction."
+    }
+  },
+  "evidence_axes": {
+    "run_verification": {
+      "field": "run_status",
+      "values": [
+        "CERTIFIED",
+        "NOT_RUN",
+        "UNVERIFIED"
+      ],
+      "meaning": "Audited execution and artifact bindings; CERTIFIED does not mean the goal is true."
+    },
+    "goal_assessment": {
+      "field": "goal_status",
+      "values": [
+        "SATISFIED",
+        "NOT_SATISFIED",
+        "UNKNOWN"
+      ],
+      "boolean_field": "goal_satisfied",
+      "meaning": "true/false only for certified full runs; otherwise null. An accepted negative is valid evidence, not a process failure."
+    },
+    "search_coverage": {
+      "enumeration": "Exact expected cell membership AND content, no duplicates or unexpected cells.",
+      "candidate_coverage": "Each candidate represented by at least one certified scenario cell.",
+      "scenario_coverage": "Each scenario represented by at least one certified candidate cell.",
+      "cell_coverage": "Entire candidate x scenario crossing, certification, enumeration and execution-prefix validity.",
+      "event_path_coverage": "Per-cell COMPLETE only after fresh audit of every simultaneous event permutation; otherwise UNKNOWN with null count.",
+      "warning": "Complete candidate and scenario projections do not imply complete cell coverage; complete coverage does not imply satisfied goals."
+    },
+    "batch_validity": {
+      "separate_boolean_field": false,
+      "top_level": "Invalid declarations, pins, runtime/build or batch specification are rejected (CLI 1).",
+      "reportable_invalidity": "Invalid enumeration or execution prefix yields cell_coverage INVALID (CLI 2), even if some cells are individually certified.",
+      "execution_rule": "Every retained runs entry, including empty, input-only, started-only and failure-only, consumes an attempt and must be within the first max_cells positions; retained count <= max_cells. /1-/3 use candidate lexical order then declared scenario order; /4 uses candidate length, lexical word, declared scenario order. Verify reconstructs order from declared domain, never saved enumeration. Missing entries remain UNKNOWN; chronological execution and wholly erased attempts are not attested.",
+      "incomplete": "Missing certification/short execution can yield INCOMPLETE (CLI 2).",
+      "complete": "CLI 0 means complete verified cell coverage, including when all goals are false.",
+      "cell_findings": "Unaffected certified cells remain reportable; a robust result does not repair batch invalidity."
+    }
+  },
+  "resource_policy": {
+    "replay": {
+      "status_on_limit": "INCOMPLETE",
+      "partial_pass": false,
+      "max_paths": "maximum live paths after expansion, all permutations or none",
+      "max_rows": "maximum newly emitted work rows across the branch tree, excluding copied shared prefixes",
+      "max_steps": "maximum integer steps from start through horizon",
+      "partial_diagnostics": "last committed snapshot and history; no complete paths certified"
+    },
+    "explorer": {
+      "default_replay_limits": {
+        "max_paths": 10000,
+        "max_rows": 1000000,
+        "max_steps": 10000
+      },
+      "process_timeout_seconds": 60,
+      "timeout_scope": "per replay or audit subprocess",
+      "max_cells": "Execution budget 0..full population, default full; distinct from 2160 support bound.",
+      "budget_exhaustion": "Full expected population retained; remaining cells NOT_RUN, goal UNKNOWN, event coverage UNKNOWN.",
+      "support_bound_is_completion_guarantee": false,
+      "retry_resume": false,
+      "size_gate": "720 candidates and 2160 cells are support gates before enumeration/materialization/output, independent of execution max_cells. Small/zero budget cannot admit an oversized domain. Event-path growth, model size and total runtime are not bounded by C/M."
+    }
+  },
+  "audit": {
+    "replay": {
+      "separate_process_supported": true,
+      "trusted_input_identity_required": true,
+      "runtime_predicate_effect_transition_imports": false,
+      "checks_permutation_tree_completeness": true
+    },
+    "verify": "Read-only: reconstruct frozen domain, check external pins and current code/runtime identities, freshly audit history, recompute full observations/evidence and compare records. Does not replay, write artifacts or trust saved result.json.",
+    "trust": "Separately trusted pins, trusted code and stable files. Hashes bind content; not signatures, execution attestation or truth of source/model. Erased complete attempt history is not reconstructed."
+  },
+  "unsupported": {
+    "replay": [
+      "set_add_overlap",
+      "direct_account_set",
+      "decision_account_add",
+      "multiple_scheduling_sites",
+      "zero_time_chains",
+      "event_repetition",
+      "cancellation",
+      "rescheduling",
+      "callbacks",
+      "formulas",
+      "conditional_effects",
+      "state_triggered_feedback",
+      "clock_guards",
+      "general_script_conditions",
+      "alternative_plan_search",
+      "optimization",
+      "AI_runtime",
+      "AI_onboarding",
+      "traffic_prediction"
+    ],
+    "replay_v1_allowed_but_unsupported_here": [
+      "event_outcome_schedules_event",
+      "external_review_without_absent_under_response_guarantee",
+      "general_possible_closed_securable_analysis"
+    ],
+    "explorer": [
+      "free_time_choice_or_time_search",
+      "multiple_decisions_per_slot",
+      "retry_or_resume",
+      "early_stop_as_complete_search",
+      "adaptive_or_observation_conditioned_policies",
+      "scenario_model_or_initial_state_variation",
+      "scenario_probabilities",
+      "optimization_or_ranking",
+      "general_reachability_or_possible_closed_securable_analysis",
+      "continuous_time",
+      "arbitrary_temporal_logic_or_intervals",
+      "nested_temporal_operators",
+      "existential_event_path_goals",
+      "general_operating_model_or_business_truth",
+      "automatic_AI_domain_compilation",
+      "overlapping_or_nested_choice_groups",
+      "conditional_or_operational_selection_constraints",
+      "wait_instructions_or_preserved_unused_slots_in_prefix_search",
+      "arbitrary_optional_population_above_support_caps"
+    ],
+    "layer_scope": "Replay supports attempt and if_not_taken scripts; explorer generates attempt only. Replay alternative_plan_search exclusion remains true within replay; the bounded wrapper supports fixed permutations and /4 selected fixed plans. This does not provide a general operating model, policy solver or business-truth certification."
+  },
+  "onboarding": {
+    "branch": "codex/ce3-onboarding",
+    "observed_head": "27bec92ebcb1cd2a7b2fadcbfdd4b87ef219ff98",
+    "status": "separate_worktree_not_integrated",
+    "engine_target": {
+      "baseline_id": "ce3-optional-decisions-f31033b",
+      "implementation_commit": "f31033b57f6fad7ccccf2912692746710ba6648a",
+      "review_commit": "f63bc0d7556e82bb5ef29b950fc8e748f73fbab5",
+      "profile": "fixed-replay/0.1",
+      "scenario_problem": "ce3-scenario-problem/4",
+      "search": "selected_permutations_once/1",
+      "goal": "ce3-history-goal/2",
+      "meaning": "Recommended engine reference for a future explicitly assessed compiler/adapter, not a claim of implemented onboarding/SR feature coverage."
+    },
+    "capability_does_not_imply": [
+      "onboarding_can_compile_feature",
+      "SR_can_review_feature",
+      "customer_confirmation_proves_executability",
+      "onboarding_contract_has_been_migrated"
+    ],
+    "required_future_work": "Separately assess translation and SR coverage for exact /4 grammar, required/optional choices, groups, prefix effects, empty plans, temporal goals, scenarios, evidence and purpose. Customer confirmation or a complete SR receipt is not execution/goal certification.",
+    "observed_layer_support": {
+      "evidence_commit": "27bec92ebcb1cd2a7b2fadcbfdd4b87ef219ff98",
+      "references": [
+        "isolated-tests/structural-ce3-workbench/onboarding-session/v2/README.md",
+        "isolated-tests/structural-ce3-workbench/onboarding-sr/structured/README.md"
+      ],
+      "session": "Versioned proposal/source/review/confirmation archives and handoff ready_for_separate_compilation_and_validation; ce3_validation_status and ce3_run_status remain not_run.",
+      "SR": "Structured-grounded adapter with pinned SR code, coverage and receipts; recorded-response offline checks and archived-result interfaces are not proof of live quality or executable CE3 translation.",
+      "not_established": "No support claim for compiling or semantically reviewing /4 selections, prefix timing or candidate-relative acceptance. This integration does not migrate onboarding capability context or SR."
+    }
+  },
+  "baseline_version": 2,
+  "previous_baseline": {
+    "path": "docs/ce3/capabilities/engine-baseline-v1.json",
+    "baseline_id": "ce3-fixed-slots-temporal-9b705f0",
+    "historical_unchanged": true
+  }
+}

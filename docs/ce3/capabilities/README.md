@@ -1,66 +1,119 @@
 # Gemensam CE3-motorbaslinje
 
-Läs [engine-baseline-v1.json](engine-baseline-v1.json) som ett versionsbundet
-inventarium över faktisk motorförmåga. `schema_version` är
-`ce3-engine-capabilities/1`. Sökvägar i JSON räknas från repositoryroten.
-Börja med `implementation_binding` och `purpose`, följt av `versions`,
-`supported` och `evidence_axes`. `unsupported` och `onboarding` anger gränserna.
-Detta är dokumentation, inte ett nytt indataformat eller en ändring av validatorerna.
+**Aktuell rekommenderad version är [engine-baseline-v2.json](engine-baseline-v2.json)**,
+med baseline-ID `ce3-optional-decisions-f31033b`. Den beskriver den granskade
+implementationen `f31033b` och dess oförändrade äldre motorstöd.
+[engine-baseline-v1.json](engine-baseline-v1.json) bevaras byteoförändrad som
+historik för tidsmålsetappen `9b705f0`/`2ceb06b`, genom scenario /3.
+Filversionen v2 ändrar inte inventarieformatets `ce3-engine-capabilities/1`
+eller något exekverbart indataformat.
 
-Dokumentet beskriver implementationen **9b705f0**, ovanpå budgeträttningen
-**d24d6d1**, granskad i **2ceb06b**. `decision-flow-demo-v1` fast-forwardades
-från d24d6d1 till 2ceb06b. Den senare har exakt 9b705f0 som förälder och tillför
-endast granskningsrapport och tester. Ingen implementationskod ändrades vid
-integrationen. Budgetgranskningen **3ab8948** bevaras separat och refereras med
-commit och rapportsökväg; den är inte en ancestor till den integrerade etappen.
-Ingen slutlig dokumentationscommit används som självrefererande identitet.
+Sökvägar i JSON räknas från repositoryroten. Läs `implementation_binding`,
+`purpose` och `versions` först, därefter `supported`, `evidence_axes`,
+`unsupported` och `onboarding`. `supported.explorer` gäller uttryckligen
+scenario /2–/3; `supported.selected_explorer` beskriver /4. Motsvarande mål
+finns i `goals.history` respektive `goals.selected_history`.
 
-Inventeringen återanvänder strukturen i
-[replayprofilen](../../../isolated-tests/structural-ce3-replay/core/profile.json)
-för kärnans profil, versioner, stöd, begränsningar, resursregler och audit.
-Profilen förblir oförändrad: dess `alternative_plan_search`-begränsning gäller
-replaylagret. Det separata explorerlagret stöder den avgränsade permutationssökningen.
-Äldre explorer /1 och scenario /1–/2 behåller sina kontrakt; tidsmål kräver
-uttryckligen scenario /3. Arkiverade körpaket kräver fortsatt sin registrerade
-runtime/build, även när formatversionen är densamma.
+## Versionsbindning och integration
 
-`source_files_sha256` binder samtliga 19 filer i replayns och explorerns
-befintliga kodmanifest. `explorer_build_id` använder motorns kanoniska digest,
-inte SHA-256 av JSON-filens formaterade bytes. Dokumentation ingår inte i
-explorerns kodmanifest. Formatkontrakten i `contract_inventory` och de
-exekverbara validatorerna avgör vilka indata som accepteras.
+`decision-flow-demo-v1` fast-forwardades från `85e19b0` via arkitekturförslaget
+`250f021` och implementationen `f31033b` till den oberoende granskningen
+`f63bc0d`. Granskningen är direkt barn till implementationen och tillför
+endast rapport och granskningstester. Status är PASS utan nödvändiga rättningar.
+Ingen integrationsändring av implementationen gjordes.
 
-För onboarding är den gemensamma referensen implementation 9b705f0 med
-granskning 2ceb06b: `fixed-replay/0.1`, `ce3-scenario-problem/3`,
-`permutations_once/2`, `ce3-history-goal/1` och `ce3-goal-observation/2`.
-Onboarding ligger separat på `codex/ce3-onboarding`, observerad HEAD **27bec92**.
-Dess äldre `onboarding-evaluation/profile-context.json` är en replaybeskrivning,
-inte det samlade motorstödet. Motorförmåga visar inte att onboarding redan kan
-kompilera eller SR-granska funktionen. Ingen onboardingfil eller SR-integration
-ändras här. Explorerns enda tillåtna `purpose` är fortfarande
-`synthetic_integration_test`; dokumentet vidgar inte det användningsområdet.
+V2 binder dessa fullständiga commit-ID:n, granskningarnas rapportsökvägar och
+20 faktiska kod-/profilhashar från replayns och explorerns manifest, inklusive
+`selection.py`. `explorer_build_id` är motorns kanoniska JSON/LF-digest av
+kodmanifestet, inte SHA-256 av denna formaterade JSON-fil. Ingen slutlig
+dokumentationscommit eller egen dokumenthash används som självrefererande
+bindning. Arkiverade körpaket kräver sin registrerade build och Python-runtime.
+Budgetgranskningen `3ab8948` refereras fortsatt separat; den har inte mergats.
 
-## Verifiering vid integrationen, 2026-10-22
+[Integrationsrapporten](OPTIONAL-DECISIONS-INTEGRATION-REPORT.md) redovisar
+bytekontroll, färsk körning, dokumentkontroller och bevarande.
 
-Färsk freeze/run/verify av
-[temporal-problem.json](../../../isolated-tests/structural-ce3-explorer/fixtures/temporal-problem.json)
-gav exitkod **0/0/0**, en certifierad cell och fullständig söktäckning.
-Målet var avsiktligt `NOT_SATISFIED`, robusthet `FALSE`. Komponenterna gav
-terminal=true, always=false, reach_by=true, stable_count=true och
-no_confirmation=false; samtliga beslutsförsök accepterades. Run och verify
-beräknade samma resultatidentitet. Detta skiljer korrekt körning från uppfyllt mål.
+## Nytt motorstöd i scenario /4
 
-Dokumentkontrollerna omfattade unik JSON-nyckelsättning, dokumentstruktur,
-commit-föräldrar, granskningsreferenser, alla 19 kodhashar, exakt återanvändning
-av replayprofilen, kontraktssökvägar, versionskonstanter, stödgränser,
-körbudgetstandarder och syftesbegränsningen. Fixturer för ursprunglig explorer
-samt scenario /1, /2 och /3 validerades utan att hela testsviter kördes om.
-Alla spårade filer från 9b705f0 jämfördes byte för byte med huvudspårets
-arbetskopia. Den godkända granskningssvitens 189 testmetoder återkördes inte;
-resultatet finns i den [oberoende granskningen](../../../isolated-tests/structural-ce3-explorer/TEMPORAL-GOALS-INDEPENDENT-REVIEW-9b705f0.md).
+[Det normativa kontraktet](../../../isolated-tests/structural-ce3-explorer/OPTIONAL-DECISIONS-FORMAT.md)
+definierar `ce3-scenario-problem/4` och `selected_permutations_once/1`.
+Obligatoriska R och valfria O är en exakt disjunkt partition av modellens
+1–6 beslut. Grupper består av minst två valfria beslut, är parvis disjunkta
+och kräver `exactly_one` eller `at_most_one`. Ogrupperade valfria beslut väljs
+oberoende. Varje giltig valmängd får alla permutationer, ett `attempt` per
+valt beslut. Urvalslogiken verkställer inga guards, effekter eller kostnader.
 
-Reproducera freeze/run/verify med nya utmatningskataloger enligt
-[tidsmålskontraktet](../../../isolated-tests/structural-ce3-explorer/TEMPORAL-GOALS-FORMAT.md#reproduction).
-Lokala integrationsloggar, tillitsankare, körpaket och bevarandeinventering
-finns i `/private/tmp/ce3-baseline-integration-20261022/`; de är tillfälliga
-arbetsartefakter och inte normativa referenser.
+`prefix/1` kräver exakt Kmax stigande heltalsslots, där
+Kmax=antal obligatoriska + antal ogrupperade valfria + antal grupper.
+Ett ord med k beslut använder de första k slotsen. Att utelämna X från
+PXU@0/2/4 ger **PU@0/2**, inte P@0,U@4. Tidigareläggningen kan ändra utfallet
+kring events och deadlines. Det finns ingen dold WAIT eller oanvänd slotnyckel.
+
+Tom kandidat kräver uttryckligt `allow_empty=true` och att inga obligatoriska
+beslut eller exakt-ett-grupper kräver ett val. Scriptet är `steps={}`, men
+initiala events, hela horisonten och alla eventbanor körs och auditeras.
+Noll försök gör försökskravet sant efter audit, inte målkomponenterna.
+
+`ce3-history-goal/2` har `acceptance_scope=candidate_script`;
+`ce3-goal-observation/3` binder urvalsbevis och förväntade entries. Verifieraren
+kräver exakt beslut, tid, ordning och position enligt scriptet. Utelämnat
+valfritt beslut är inget blockerat försök. Ett valt men blockerat beslut
+fäller helhetsmålet. Operativ audit PASS räcker inte för ett urvalsstridigt
+script. Hela modellen och fulla outcomes, även för oanvända regler/events,
+behålls. Samma fasta script används i samtliga scenarier.
+
+Stödtaken är **720 kandidater och 2160 celler, inklusivt**, före enumeration,
+materialisering och output. Polynomkoefficienterna c_k räknar giltiga
+valmängder per längd; C=Σ c_k·k! och M=C·antal scenarier. Sex modellbeslut
+innebär inte automatiskt stöd: sex helt valfria ger 1957 kandidater med tomt
+val och 1956 utan, och avvisas. Sex obligatoriska ger 720 och tillåter högst
+tre scenarier. Fem helt valfria med tomt val ger 326. En liten eller noll
+körbudget kan inte legitimera en större sökrymd.
+
+## Bevarade garantier och gränser
+
+Terminal, always och reach_by behåller tidigare typstrikta och inklusiva
+snapshot-semantik. Scenarier varierar endast fulla externa outcomes.
+Robust TRUE kräver samma kandidat positiv i alla deklarerade scenarier och
+alla deras eventbanor. Ett certifierat motexempel ger FALSE; övrig ofullständig
+evidens ger UNKNOWN. Run-, mål-, kandidat-, scenario-, cell- och eventtäckning
+är skilda besked. Replayfel, limits eller saknad bana ger inga delbevis.
+
+Körbudget är skild från stödtaken. /4 startar efter längd, lexikografiskt ord,
+sedan deklarerad scenarioordning. Alla kvarvarande försöksposter, även tomma
+eller misslyckade, räknas. Sparad enumeration får inte bestämma prefixet.
+Verify återhärleder hela domänen, återauditerar och räknar om mål utan att
+skriva, köra replay eller lita på result.json. Fullt omhashade ofullständiga
+medlemslistor kan inte ersätta domänkontrollen.
+
+Kvarstår: inga fria tidsval, överlappande/operativa urvalsvillkor, adaptiva
+policyer, retry/resume, ranking, generell nåbarhetsanalys eller pilotläge.
+Stödtaken garanterar inte att eventbanor eller körning ryms inom replaylimits.
+Hashar kräver betrodda pins/kod och stabila filer; de är inte signaturer,
+verklighetssanning eller attestering av raderade försök och väggklocksordning.
+Explorer /1 och scenario /1–/3 behåller sina kontrakt.
+
+**Purpose är fortsatt endast `synthetic_integration_test`.** Ingen ny tillåten
+användning införs. Replayprofilens `alternative_plan_search`-begränsning gäller
+replaylagret; den separata explorern har den här uttryckligt begränsade sökningen.
+Arkitekturförslagets framtida pilotprocess är inte implementerat motorstöd.
+
+## Motor jämfört med onboarding och SR
+
+V2 är rekommenderad motorreferens för framtida översättning och granskning.
+Det innebär inte att onboarding kan kompilera /4 eller att SR redan kan
+verifiera dess domänsemantik. Onboarding ligger kvar separat på
+`codex/ce3-onboarding`, observerad HEAD `27bec92`.
+
+Den befintliga session/2-dokumentationen beskriver versionsbundna underlag,
+förslag, granskningsarkiv, kundbekräftelse och överlämning för **separat
+kompilering och validering**, med CE3 validation/run fortfarande `not_run`.
+Den strukturerade SR-adaptern har pinnad SR-kod, täckning och receipts samt
+offlinekontroller med sparade svar. Detta är ingen verifierad /4-kompilator
+eller garanti för livegranskningens kvalitet. Gamla onboardingkontrakt och
+den äldre replay-only `profile-context.json` har inte migrerats.
+
+En separat bedömning behöver omfatta valbarhet, gruppkrav, prefixets
+tidskonsekvenser, tom plan, mål, scenarios, källstöd och purpose. Kundbekräftelse
+eller ett komplett SR-kvitto ersätter inte exekverbar validering, audit eller
+målbevis. Inga onboarding- eller SR-filer ändras i denna integration.
